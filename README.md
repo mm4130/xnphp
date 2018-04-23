@@ -10,7 +10,7 @@ function add_user ($user) {
 }
 function valid_user ($user) {
   $result = fpos("users.txt", $user);
-  return $result == -1 || $result == false;
+  return $result != -1 && $result != false;
 }
 function remove_user ($user) {
   return freplace("users.txt", "$user\n", '');
