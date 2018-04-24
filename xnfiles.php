@@ -213,36 +213,6 @@ $to=fopen($to,'w');
 fwrite($to,fread($fm,filesize($from)));
 fclose($fm);
 return fclose($to);
-}class CURLURL {
-private $file;
-public function load($url,$name=false,$mime='',$postname=''){
-if(!$name)$name="xn_log.CURLFile.".fname($url);
-if(!copy($url,$name))return false;
-$this->file=$name;
-return new CURLFile($name,$mime,$postname);
-}public function __destruct(){
-if(isset($this->file)){
-unlink($this->file);
-unset($this->file);
-}}
-}class CURLStr {
-private $file;
-public function load($str,$name=false,$mime='',$postname=''){
-if(!$name)$name="xn_log.CURLFile.txt";
-if(!fput($name,$str))return false;
-$this->file=$name;
-return new CURLFile($name,$mime,$postname);
-}public function __destruct(){
-if(isset($this->file)){
-unlink($this->file);
-unset($this->file);
-}}
-}function CURLFile($name='',$mime='',$postname=''){
-return new CURLFile($name,$mime,$postname);
-}function CURLURL($url,$name='',$mime='',$postname=''){
-return (new CURLURL)->load($url,$name,$mime,$postname);
-}function CURLStr($str,$name='',$mime='',$postname=''){
-return (new CURLStr)->load($str,$name,$mime,$postname);
 }function freplace($file,$str,$to){
 $f=fopen($file,'r');
 $d=fopen("xn_log.$file",'w');
