@@ -1,7 +1,7 @@
 <?php
 
 // Created by whiteweb // xn.white-web.ir // @white_web
-// xn plugin files
+// xn plugin types v1
 
 class XNStringPosition {
 private $s='',$p=0;
@@ -87,7 +87,7 @@ $debug=debug_backtrace();
 $th=end($debug);
 $date=date("ca");
 $console="[$date]XN $type > $in : $text in {$th['file']} on line {$th['line']}\n";
-$message="<br>\n[$date]<b>XN $type</b> &gt; <i>$in</i> : $text in <b>{$th['file']}</b> on line <b>{$th['line']}</b>\n<br>";
+$message="<br>\n[$date]<b>XN $type</b> &gt; <i>$in</i> : ".str_replace("\n","<br>",$text)." in <b>{$th['file']}</b> on line <b>{$th['line']}</b>\n<br>";
 $this->HTMLMessage=$message;
 $this->consoleMessage=$console;
 $this->message="XN $type > $in : $text";

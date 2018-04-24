@@ -48,7 +48,7 @@ return $this->results[]=$this->final=$res;
 }if($res===false)return false;
 if($res===true)return true;
 if(!$res->ok){
-new XNError("TelegramBot","$res->description ($res->error_code)",1);
+new XNError("TelegramBot","$res->description [$res->error_code]",1);
 return false;
 }return $res->result;
 }public function reset(){
@@ -731,7 +731,7 @@ if($r===null){
 new XNError("PWRTelegram","PWRTelegram api is offlined",1);
 return null;
 }if(!$r->ok){
-new XNError("PWRTelegram","$r->description ($r->error_code)",1);
+new XNError("PWRTelegram","$r->description [$r->error_code]",1);
 return false;
 }return $r->result;
 }public function login($level=2){
@@ -1624,7 +1624,6 @@ return $this->authRequest("recoverPassword",[
 class XNTelegram {
 // Soon ...
 }
-
 
 
 

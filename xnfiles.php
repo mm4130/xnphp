@@ -1,7 +1,7 @@
 <?php
 
 // Created by whiteweb // xn.white-web.ir // @white_web
-// xn plugin files
+// xn plugin files v1
 
 function fvalid($file){
 ob_start();
