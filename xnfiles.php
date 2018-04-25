@@ -189,7 +189,9 @@ if($str==$l||$str=='')$r[]='';
 return $r;
 }function foundurl($file){
 return filter_var($file,FILTER_VALIDATE_URL)&&fvalid($file)&&!file_exists($file);
-}function fsubget($file,$from=0,$to=-1){
+}function fsubget($file,$from=0,$to=false){
+if($to===false)$t=filesize($file);
+elseif($to<0)$to=filesize($file)+$to;
 $f=fopen($file,'r');
 fseek($f,$from);
 $r='';
@@ -198,7 +200,9 @@ $r="$r$c";
 $to--;
 }fclose($r);
 return $r;
-}function mb_fsubget($file,$from=0,$to=-1){
+}function mb_fsubget($file,$from=0,$to=false){
+if($to===false)$t=filesize($file);
+elseif($to<0)$to=filesize($file)+$to;
 $f=fopen($file,'r');
 fseek($f,$from);
 $r='';
