@@ -16,6 +16,7 @@ plugins :
   * TelegramCode
 * Types
 * Files
+* Time&Date
 
 **[Learn on XN website](/)**
 
