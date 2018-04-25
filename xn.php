@@ -19,12 +19,14 @@ if(file_exists("xntypes.php")){
   
   include "xnfiles.php";
   include "xntelegram.php";
+  include "xntime.php";
   ob_end_clean();
 }else{
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntypes.php");
   
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php");
+  require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php");
 }
 
 $GLOBALS['-XN-']['endTime'] = explode(' ',microtime());
