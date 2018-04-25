@@ -1,11 +1,5 @@
 # xnphp
 
-**[Learn on XN website](/)**
-
-**[Learn on github](/LEARN.md)**
-
-**[Learn on Telegram](http://telegram.me/xnlib)**
-
 **`version : 1.0`**
 
 import XNLib :
@@ -22,3 +16,9 @@ plugins :
   * TelegramCode
 * Types
 * Files
+
+**[Learn on XN website](/)**
+
+**[Learn on github](/LEARN.md)**
+
+**[Learn on Telegram](http://telegram.me/xnlib)**
