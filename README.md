@@ -6,6 +6,7 @@ import XNLib :
 ```php
 include "xn.php";
 ```
+> You can import the rest of the files online with the file xn.php only!
 
 plugins :
 * Telegram
