@@ -1,5 +1,11 @@
 # xnphp
-## > [Learn](/)
+
+**[Learn on XN website](/)**
+
+**[Learn on github](/LEARN.md)**
+
+**[Learn on Telegram](http://telegram.me/xnlib)**
+
 **`version : 1.0`**
 
 import XNLib :
