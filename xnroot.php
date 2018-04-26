@@ -1,7 +1,7 @@
 <?php
 
 // Created by ...
-// xn plugin types v1
+// xn Root File v1
 
 class XNError extends Error {
 protected $message;
