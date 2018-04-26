@@ -1,79 +1,8 @@
 <?php
 
-// Created by whiteweb // xn.white-web.ir // @white_web
+// Created by ...
 // xn plugin types v1
 
-class XNStringPosition {
-private $s='',$p=0;
-public function __construct($s){
-$this->s=$s;
-}public function pos(){
-return $this->p;
-}public function end(){
-return $this->s[$this->p=strlen($this->s)-1];
-}public function eof(){
-return !isset($this->s[$this->p]);
-}public function next(){
-return $this->s[++$this->p];
-}public function back(){
-return $this->s[--$this->p];
-}public function start(){
-return $this->s[$this->p=0];
-}public function goto($c){
-return $this->s[$this->p=$c];
-}public function backby($c){
-return $this->s[$this->p-=$c];
-}public function nextby($c){
-return $this->s[$this->p+=$c];
-}public function endto($c){
-return $this->s[$this->p=strlen($this->s)-1-$c];
-}public function sliceto($l,$k=false){
-if(!$k)$this->p+=$l;
-return substr($this->s,$this->p,$l);
-}public function slicefrom($l,$k=false){
-if(!$k)$this->p-=$l;
-return substr($this->s,$this->p-$l,$l);
-}public function XNMBStringPosition(){
-return new XNMBStringPosition($this->s);
-}}function XNStringPosition($x){
-return new XNStringPosition($x);
-}class XNMBStringPosition {
-private $s='',$p=0;
-public function __construct($s){
-$this->s=$s;
-}public function pos(){
-return $this->p;
-}public function end(){
-$this->p=mb_strlen($this->s);
-return mb_substr($this->s,-1,1);
-}public function eof(){
-return mb_substr($this->s,$this->p,1)!=true;
-}public function next(){
-return mb_substr($this->s,++$this->p,1);
-}public function back(){
-return mb_substr($this->s,--$this->p,1);
-}public function start(){
-$this->p=0;
-return mb_substr($this->s,0,1);
-}public function goto($c){
-return mb_substr($this->s,$this->p=$c,1);
-}public function backby($c){
-return mb_substr($this->s,$this->p-=$c,1);
-}public function nextby($c){
-return mb_substr($this->s,$this->p+=$c,1);
-}public function endto($c){
-return mb_substr($this->s,$this->p=mb_strlen($this->s)-1-$c,1);
-}public function sliceto($l,$k=false){
-if(!$k)$this->p+=$l;
-return mb_substr($this->s,$this->p,$l);
-}public function slicefrom($l,$k=false){
-if(!$k)$this->p-=$l;
-return mb_substr($this->s,$this->p-$l,$l);
-}public function XNStringPosition(){
-return new XNStringPosition($this->s);
-}}function XNMBStringPosition($x){
-return new XNMBStringPosition($x);
-}$GLOBALS['-XN-']['errorShow']=true;
 class XNError extends Error {
 protected $message;
 static function show($sh=null){
