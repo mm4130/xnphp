@@ -34,7 +34,7 @@ _methods_ :
   ```php
   XNError::show(false); // off show errors
   XNError::show(); // togle show errors
-  ZNError::show("error.log"); // show errors and save in file
+  XNError::show("error.log"); // show errors and save in file
   ```
   
   **handlr**
