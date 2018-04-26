@@ -1,6 +1,6 @@
 <?php
 
-// Created by whiteweb // xn.white-web.ir // @white_web
+// Created by ...
 // xn script v1
 
 $GLOBALS['-XN-'] = [];
