@@ -15,14 +15,14 @@ function require_url_nter($url){
 // include librarys
 if(file_exists("xntypes.php")){
   ob_start();
-  include "xntypes.php";
+  include "xnroot.php";
   
   include "xnfiles.php";
   include "xntelegram.php";
   include "xntime.php";
   ob_end_clean();
 }else{
-  require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntypes.php");
+  require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnroot.php");
   
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php");
