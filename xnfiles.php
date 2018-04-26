@@ -1,6 +1,6 @@
 <?php
 
-// Created by whiteweb // xn.white-web.ir // @white_web
+// Created ...
 // xn plugin files v1
 
 function fvalid($file){
