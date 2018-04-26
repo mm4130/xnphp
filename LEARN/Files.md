@@ -26,6 +26,24 @@ numeric fpos ( string File_name , string Search_query [, integer Offset ] );
 numeric mb_fpos ( string File_name , string Search_query [, integer Offset ] );
 ```
 **Write** :
+fput : write content in file
+fputjson : write json content in file
+fadd : add content in file (no limit memory)
+faddjson : add json content in file
+fcopy : copy from file or url to file
+freplace : replace file content (no limit memory)
+```php
+integer fput ( string File_name , string Content );
+integer fputjson ( string File_name , mixed Content );
+
+integer fadd ( string File_name , string Content );
+integer faddjson ( string File_name , mixed Content );
+
+integer fcopy ( string From_file , string To_file );
+
+integer freaplce ( string File_name , string From_content , string To_content );
+```
+**Info** :
 
 
 ---
