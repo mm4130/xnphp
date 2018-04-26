@@ -25,6 +25,7 @@ array fexplode ( string File_name , string Parse_by );
 numeric fpos ( string File_name , string Search_query [, integer Offset ] );
 numeric mb_fpos ( string File_name , string Search_query [, integer Offset ] );
 ```
+
 **Write** :
 * fput : write content in file
 * fputjson : write json content in file
@@ -43,8 +44,38 @@ integer fcopy ( string From_file , string To_file );
 
 integer freaplce ( string File_name , string From_content , string To_content );
 ```
-**Info** :
 
+**Info** :
+* fperms : file perms
+* ftype : file type (dir/file)
+* fsize : file size
+* fspeed : open,close address (check speed)
+* fexists : file exists
+* fvalid : file or url valid
+* urlfound : check valid url
+* fdir : dir address
+* fname : file address
+* fformat : file format
+```php
+integer[4] fperms ( string File_name );
+string ftype ( string File_name );
+numeric fsize ( string File_name );
+bool fspeed ( string File_name );
+bool fexists ( string File_name );
+bool fvalid ( string File_name );
+bool urlfound ( string URLAddress );
+string fdir ( string File_name );
+string fname ( string File_name );
+string fformat ( string File_name );
+```
+
+**Tool** :
+* fdel : delete file
+* fcreate : touch file
+```php
+bool fdel ( string File_name );
+bool fcreate ( string File_name );
+```
 
 ---
 # Dirs
