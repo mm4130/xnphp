@@ -5,7 +5,7 @@ import files :
 require "xn.php";
 ```
 
-or import on file (for example xnfile.php file) :
+or import one file (for example xnfile.php file) :
 ```php
 require "xnroot.php";
 
