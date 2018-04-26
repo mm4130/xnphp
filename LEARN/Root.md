@@ -28,7 +28,7 @@ use XNError **Class** :
 ```php
 new XNError( string From , string Error [, string Error_code = 0 ] );
 ```
-_methods_ :
+_methods_ :<br>
   **show**
   hidden or show errors from Output ( not throw )
   ```php
