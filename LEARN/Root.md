@@ -22,7 +22,8 @@ try {
   throw new XNError("Main","Error Test");
 }catch(XNError $e){
   var_dump($e);
-}```
+}
+```
 use XNError **Class** :
 ```php
 new XNError( string From , string Error [, string Error_code = 0 ] );
