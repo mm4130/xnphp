@@ -20,6 +20,6 @@ plugins :
 
 **[Learn on XN website](/)**
 
-**[Learn on github](/LEARN.md)**
+**[Learn on github](/LEARN)**
 
 **[Learn on Telegram](http://telegram.me/xnlib)**
