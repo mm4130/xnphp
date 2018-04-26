@@ -8,10 +8,10 @@ _date_ option :
 ```php
 xndateoption( int Type );
 ```
-Types :
-1 -> AD
-2 -> Solar
-3 -> Lunar
+Types :<br>
+1 -> AD<br>
+2 -> Solar<br>
+3 -> Lunar<br>
 _time_ option :
 ```php
 xntimeoption( string timeZone );
