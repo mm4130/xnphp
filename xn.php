@@ -34,7 +34,7 @@ $GLOBALS['-XN-']['endTime'] = $GLOBALS['-XN-']['endTime'][0] + $GLOBALS['-XN-'][
 
 function xnscript() {
   return ["version"=> "1",
-          "libs"=>["types", "index", "telegram", "files"],
+          "libs"=>["types", "index", "telegram", "files", "time"],
           "start_time"=>$GLOBALS['-XN-']['startTime'],
           "end_time"=>$GLOBALS['-XN-']['endTime'],
           "loaded_time"=>$GLOBALS['-XN-']['endTime'] - $GLOBALS['-XN-']['startTime']
