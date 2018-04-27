@@ -7,9 +7,16 @@ $GLOBALS['-XN-'] = [];
 $GLOBALS['-XN-']['startTime'] = explode(' ',microtime());
 $GLOBALS['-XN-']['startTime'] = $GLOBALS['-XN-']['startTime'][0] + $GLOBALS['-XN-']['startTime'][1];
 function require_url_nter($url){
-  copy($url,"xn.log");
-  require "xn.log";
-  unlink("xn.log");
+  $random = rand(0,99999999).rand(0,99999999);
+  copy($url,"xn$random.log");
+  require "xn$random.log";
+  unlink("xn$random.log");
+}
+function xnupdate(){
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnroot.php","xnroot.php");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php","xnfiles.php");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php","xntelegram.php");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php","xntime.php");
 }
 
 // include librarys
