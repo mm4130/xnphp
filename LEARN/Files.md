@@ -1,3 +1,7 @@
+Capabilities :
+> very speedso comfortable
+> very fast
+> so wide
 # Files
 
 **Read** :
