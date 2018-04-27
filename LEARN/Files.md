@@ -5,11 +5,11 @@
 * fgetjson : json reading
 * fgetprogress : progress downloading
 * fgetjsonprogress : progrees downloding and return json result
-* fsubget : substr get content (no limit memory)
-* mb_fsubget : mb_substr get content (no limit memory)
+* fsubget : substr get content _(no limit memory)_
+* mb_fsubget : mb_substr get content _(no limit memory)_
 * fexplode : explode content
-* fpos : get position str in file content (no limit memory)
-* mb_fpos : get mb position str in file content (no limit memory)
+* fpos : get position str in file content _(no limit memory)_
+* mb_fpos : get mb position str in file content _(no limit memory)_
 ```php
 string fget ( string File_name );
 array|object fgetjson ( string File_name [, mixed Json_type = false ] );
@@ -29,10 +29,10 @@ numeric mb_fpos ( string File_name , string Search_query [, integer Offset ] );
 **Write** :
 * fput : write content in file
 * fputjson : write json content in file
-* fadd : add content in file (no limit memory)
+* fadd : add content in file _(no limit memory)_
 * faddjson : add json content in file
 * fcopy : copy from file or url to file
-* freplace : replace file content (no limit memory)
+* freplace : replace file content _(no limit memory)_
 ```php
 integer fput ( string File_name , string Content );
 integer fputjson ( string File_name , mixed Content );
