@@ -80,4 +80,33 @@ bool fcreate ( string File_name );
 ---
 # Dirs
 
+**Scan** :
+* dirscan : get files list
+* dirread : get files full list and Can use files tool
+* dirsearch : search in files
+* preg_dirsearch : search in files by regex
+```php
+array dirscan ( string Dir_address );
+array dirread ( string Dir_address );
+array dirsearch ( string Dir_address , string Search );
+array preg_dirsearch ( string Dir_address , string Search );
+```
 
+**Info** :
+* dirfilesinfo : sizes info
+```php
+array dirfilesinfo ( string Dir_address );
+@return [
+  "file" => integer File_count
+  "folder" => integer Folder_count
+  "size" => integer Size_files
+]
+```
+
+**Tool** :
+* dirdel : remove diractory and files in diractory
+* dircopy : copy diractory and files in diractory
+```php
+bool dirdel ( string Dir_address );
+bool dircopy ( string From_dir , string To_dir );
+```
