@@ -1,5 +1,5 @@
 Capabilities :
-> very speedso comfortable<br>
+> so comfortable<br>
   very fast<br>
   so wide
 # Files
