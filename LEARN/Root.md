@@ -45,3 +45,21 @@ XNError::handlr( function( Object:XNError $error ){
 // Codes to run ...
 });
 ```
+# XN Connects :
+**xnscript**
+get xn script info
+```php
+array xnscript ( );
+@return [
+  "varsion" => string Version ,
+  "libs" => array Libs_imported ,
+  "start_time" => numeric Start_unixMicroTime ,
+  "end_time" => numeric End_unixMicroTime ,
+  "loaded_time" => numeric Load_MicroTime
+]
+```
+**xnupdate**
+update all files
+```php
+null xnupdate ( );
+```
