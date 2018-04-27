@@ -1,6 +1,6 @@
 <?php
 
-// Created ...
+// Created by whiteweb // xn.white-web.ir // @white_web
 // xn plugin files v1
 
 function fvalid($file){
@@ -71,9 +71,7 @@ return end($file);
 $file=explode('.',$file);
 return end($file);
 }function dirdel($dir){
-$s=scandir($dir);
-if($s[0]=='..')unset($s[0]);
-if($s[1]=='.')unset($s[1]);
+$s=dirscan($dir);
 foreach($s as $f){
 if(filetype("$dir/$f")=='dir')dirdel("$dir/$f");
 else unlink("$dir/$f");
@@ -82,29 +80,24 @@ else unlink("$dir/$f");
 $s=scandir($dir);
 if($s[0]=='..')unset($s[0]);
 if($s[1]=='.')unset($s[1]);
+if($s[0]=='.')unset($s[0]);
 return $s;
 }function dircopy($from,$to){
-$s=scandir($dir);
-unset($s[0]);
-unset($s[1]);
+$s=dirscan($dir);
 mkdir($to);
 foreach($s as $file){
 if(filetype("$dir/$file")=='dir')dircopy("$dir/$file","$to/$file");
 else copy("$dir/$file","$to/$file");
 }
 }function dirsearch($dir,$search){
-$s=scandir($dir);
-unset($s[0]);
-unset($s[1]);
+$s=dirscan($dir);
 $r=[];
 foreach($s as $file){
 if(strpos($file,$search))$r[]="$dir/$file";
 if(filetype("$dir/$file")=='dir')$r=array_merge($r,dirsearch("$dir/$file",$search));
 }return $r;
 }function preg_dirsearch($dir,$search){
-$s=scandir($dir);
-unset($s[0]);
-unset($s[1]);
+$s=dirscan($dir);
 $r=[];
 foreach($s as $file){
 if(preg_match($search,$file))$r[]="$dir/$file";
@@ -273,9 +266,7 @@ return json_decode($r,$json);
 $size=0;
 $foldercount=0;
 $filecount=0;
-$s=scandir($dir);
-if($s[0]=='..')unset($s[0]);
-if($s[1]=='.')unset($s[1]);
+$s=dirscan($dir);
 if($dir=='/')$dir='';
 foreach($s as $file){
 if($file=='.'||$file=='..');
