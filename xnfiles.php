@@ -59,7 +59,10 @@ return file_exists($file);
 }function fsize($file){
 return filesize($file);
 }function fspeed($file,$type='r'){
+ob_start();
 if($f=fopen($file,$type))fclose($f);
+ob_end_clean();
+return $f;
 }function ftype($file){
 return filetype($file);
 }function fdir($file){
