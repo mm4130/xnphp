@@ -50,7 +50,7 @@ if($res===true)return true;
 if(!$res->ok){
 new XNError("TelegramBot","$res->description [$res->error_code]",1);
 return $res;
-}return $res->result;
+}return $res;
 }public function reset(){
 $this->final=null;
 $this->results=[];
@@ -733,7 +733,7 @@ return null;
 }if(!$r->ok){
 new XNError("PWRTelegram","$r->description [$r->error_code]",1);
 return $r;
-}return $r->result;
+}return $r;
 }public function login($level=2){
 $r=$this->request("phonelogin",[
 "phone"=>$this->token
