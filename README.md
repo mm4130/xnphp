@@ -17,6 +17,7 @@ plugins :
 * Types
 * Files
 * Time&Date
+* Coding
 
 **[Learn on XN website](/)**
 
