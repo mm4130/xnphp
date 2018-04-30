@@ -56,5 +56,6 @@ if($phone){
     ]);
   }
 }
+$bot->close();
 
 ?>
