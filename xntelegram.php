@@ -44,12 +44,12 @@ $args['method']=$method;
 $args['level']=$level;
 if($this->save){
 $this->sents[]=$args;
-return $this->results[]=$this->final=$res;
+$this->results[]=$this->final=$res;
 }if($res===false)return false;
 if($res===true)return true;
 if(!$res->ok){
 new XNError("TelegramBot","$res->description [$res->error_code]",1);
-return false;
+return $res;
 }return $res->result;
 }public function reset(){
 $this->final=null;
@@ -732,7 +732,7 @@ new XNError("PWRTelegram","PWRTelegram api is offlined",1);
 return null;
 }if(!$r->ok){
 new XNError("PWRTelegram","$r->description [$r->error_code]",1);
-return false;
+return $r;
 }return $r->result;
 }public function login($level=2){
 $r=$this->request("phonelogin",[
@@ -753,11 +753,10 @@ $res=$this->request("complete2FALogin",[
 if($res->ok)$this->token=$res->result;
 return $res;
 }public function signup($first,$last='',$level=2){
-if($last)$res=$this->request("completesignup",[
+$res=$this->request("completesignup",$last?[
 "first_name"=>$first,
 "last_name"=>$last
-],$level);
-else $res=$this->request("completesignup",[
+]:[
 "first_name"=>$first
 ],$level);
 if($res->ok)$this->token=$res->result;
@@ -1620,6 +1619,9 @@ return $this->photosRequest("uploadProfilePhoto",[
 return $this->authRequest("recoverPassword",[
 "code"=>$code
 ],$level);
+}public function close(){
+$this->token=null;
+$this->phone=null;
 }
 }
 
