@@ -47,14 +47,7 @@ if($phone){
     ]);
     exit;
   }
-  if(!$result->ok){
-    echo json_encode($result);
-  }else{
-    echo json_encode([
-      "ok"=>true,
-      "result"=>$result
-    ]);
-  }
+  echo json_encode($result);
 }
 $bot->close();
 
