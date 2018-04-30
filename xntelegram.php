@@ -9,6 +9,15 @@ private $btntype,$btnline=0,$btn=[],$btnresize=null;
 public function create($type="keyboard"){
 $this->btntype=$type;
 return $this;
+}public function fromstring($type="keyboard",$text,$json=false){
+$btn=explode("\n",$text);
+foreach($btn as $x=>$y){
+$btn[$x]=explode('|',$y);
+foreach($btn[$x] as $a=>$b)
+$btn[$x][$a]=["text"=>$b];
+}$btns=[];
+$btns[$type]=$btn;
+return $json?json_encode($btns):$btns;
 }public function add($text,$type=false,$data=''){
 $btn=["text"=>$text];
 if($type)$btn[$type]=$data;
@@ -750,7 +759,18 @@ return base_convert(bin2hex(substr($code,4,4)),16,10);
 
 class PWRTelegram {
 public $token,$phone;
-public function __construct($phone=''){
+public function setUser($phone=''){
+$phone=str_replace(['+',' ','(',')','.',','],'',$phone);
+if(is_numeric($phone))$this->phone=$phone;
+else $this->token=$phone;
+}public function checkAPI(){
+$ch=curl_init("https://api.pwrtelegram.xyz");
+curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
+curl_exec($ch);
+$code=curl_getinfo($ch,CURLINFO_HTTP_CODE);
+curl_close($ch);
+return $code==400||$code==200;
+}public function __construct($phone=''){
 $phone=str_replace(['+',' ','(',')','.',','],'',$phone);
 if(is_numeric($phone))$this->phone=$phone;
 else $this->token=$phone;
