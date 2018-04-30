@@ -1,11 +1,48 @@
 <?php
 
 // Created by ...
-// xn plugin telegram v2
+// xn plugin telegram v2.1
 
 class TelegramBot {
-public $data,$token,$final,$results=[],$sents=[],$save=true;
-public function __construct($token){
+public $data,$token,$final,$results=[],$sents=[],$save=true,$last;
+private $btntype,$btnline=0,$btn=[],$btnresize=null;
+public function create($type="keyboard"){
+$this->btntype=$type;
+return $this;
+}public function add($text,$type=false,$data=''){
+$btn=["text"=>$text];
+if($type)$btn[$type]=$data;
+$this->btn[$this->btnline][]=$btn;
+return $this;
+}public function line(){
+$this->btn[++$this->btnline]=[];
+return $this;
+}public function get($json=false){
+$btn=$this->btn;
+$type=$this->btntype;
+$resize=$this->btnresize;
+$this->btntype=null;
+$this->btnline=0;
+$this->btn=[];
+$this->btnresize=null;
+$btns=[];
+$btns[$type]=$btn;
+if($resize!==null)$btns["resize_keyboard"]=$resize;
+return $json?json_encode($btns):$btns;
+}public function resize($resize=null){
+if($resize===null)$this->btnresize=$this->btnresize==false;
+else $this->btnresize=$resize==true;
+return $this;
+}public function setToken($token=''){
+$this->last=$this->token;
+$this->token=$token;
+return $this;
+}public function backToken(){
+$token=$this->token;
+$this->token=$this->last;
+$this->last=$token;
+return $this;
+}public function __construct($token=''){
 $this->token=$token;
 }public function update($offset=-1,$limit=1,$timeout=0){
 if(isset($this->data->message_id))return $this->data;
@@ -56,12 +93,20 @@ $this->final=null;
 $this->results=[];
 $this->sents=[];
 $this->data=null;
+$this->btntype=null;
+$this->btnline=0;
+$this->btn=[];
+$this->btnresize=null;
 }public function close(){
 $this->final=null;
 $this->results=null;
 $this->sents=null;
 $this->data=null;
 $this->token=null;
+$this->btntype=null;
+$this->btnline=null;
+$this->btn=null;
+$this->btnresize=null;
 }public function sendMessage($chat,$text,$args=[],$level=3){
 $args['chat_id']=$chat;
 $args['text']=$text;
