@@ -1,14 +1,14 @@
 <?php
 require "xn.php";
 
-$im = imagecreatetrucolor(1024,814);
+$im = imagecreatetruecolor(1024,814);
 $x = 0;
 while($x < 1024){
 $y = 0;
 while($y < 814){
 imagesetpixel($im,$x,$y,$x%($y+1)+$y%($x+1));
-$y--;
-}$x--;
+$y++;
+}$x++;
 }
 
 imagepng($im,"image.binary");
