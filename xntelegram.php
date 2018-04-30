@@ -811,11 +811,13 @@ return (array)$this->request("getUpdates",[
 "limit"=>$limit,
 "timeout"=>$timeout
 ]);
+}public function LastUpdate(){
+return $this->getUpdates(-1,1,0);
 }public function readUpdates($func,$while=0,$limit=1,$timeout=0){
 if($while==0)$while=-1;
 $offset=0;
 while($while>0||$while<0){
-$updates=$this->getUpdates($offset,$limit,$timeout)['result'];
+$updates=$this->getUpdates($offset,$limit,$timeout);
 foreach($updates as $update){
 $offset=$update->update_id+1;
 if($func($update))return true;
@@ -884,11 +886,11 @@ return $this->contactsRequest("deleteContact",[
 if($channel===true||$channel===false)
 return $this->messagesRequest("deleteMessages",[
 "revoke"=>$channel,
-"id"=>$ids
+"id"=>json_encode($ids)
 ],$level);
 return $this->channelsRequest("deleteMessages",[
 "channel"=>$channel,
-"id"=>$ids
+"id"=>json_encode($ids)
 ],$level);
 }public function unblock($user,$level=2){
 return $this->contactsRequest("unblock",[

@@ -1,6 +1,6 @@
 <?php
 
-// Created by whiteweb // xn.white-web.ir // @white_web
+// Created by ...
 // xn plugin files v1
 
 function fvalid($file){
@@ -234,20 +234,18 @@ fclose($d);
 copy("xn_log.$file",$file);
 return unlink("xn_log.$file");
 }function fgetprogress($file,$func,$al){
+$al=$al>0?$al:1;
 ob_start();
 $f=fopen($file,'r');
 ob_end_clean();
 if(!$f)return false;
 $r='';
-$k=$al;
 while(($c=fgetc($f))!==false){
-$r="$r$c";
-if((--$k)<=0){
-$k=$al;if($func($r)){
+$r="$r$c".($al>1?fread($f,$al-1):'');
+if($func($r)){
 fclose($f);
 return $r;
-}}
-}fclose($f);
+}}fclose($f);
 return $r;
 }function fgetjsonprogress($file,$func,$al,$json=false){
 ob_start();
@@ -257,13 +255,11 @@ if(!$f)return false;
 $r='';
 $k=$al;
 while(($c=fgetc($f))!==false){
-$r="$r$c";
-if((--$k)<=0){
-$k=$al;if($func($r)){
+$r="$r$c".($al>1?fread($f,$al-1):'');
+if($func($r)){
 fclose($f);
 return json_decode($r,$json);
-}}
-}fclose($f);
+}}fclose($f);
 return json_decode($r,$json);
 }function dirfilesinfo($dir){
 $size=0;
@@ -285,5 +281,18 @@ $filecount++;
 $size+=filesize("$dir/$file");
 }
 }return (object)["size"=>$size,"folder"=>$foldercount,"file"=>$filecount];
+}function dirfcreate($dir,$cur='.',$in=false){
+$dirs=$dir=explode('/',$dir);
+unset($dirs[count($dirs)-1]);
+ob_start();
+foreach($dirs as $d){
+$pt=false;
+if(file_exists("$cur/$d")&&filetype("$cur/$d")=="file"){
+if($in)$pt=fget("$cur/$d");
+unlink("$cur/$d");
+}mkdir($cur="$cur/$d");
+if($in&&$pt!==false)fput("$cur/$d/$in",$pt);
+}ob_end_clean();
+return fcreate("$cur/".end($dir));
 }
 ?>
