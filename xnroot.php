@@ -54,9 +54,9 @@ $str=mb_substr($str,$len%$num);
 $arr[]=mb_substr($str,0,$num);
 $str=mb_substr($str,$num);
 }return $arr;
-}function var_read(&$var){
+}function var_read(...$var){
 ob_start();
-var_dump($var);
+var_dump(...$var);
 $r=ob_get_contents();
 ob_end_clean();
 return $r;
