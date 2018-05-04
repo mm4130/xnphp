@@ -57,7 +57,21 @@ while($bs>0){
 $r=$toe[$bs%$toc].$r;
 $bs=floor($bs/$toc);
 }return "$r";
+}function number_string_encode($str){
+$c=0;
+$s='';
+while(isset($str[$c])){
+$s.='9'.base_convert(ord($str[$c++]),10,9);
+}return substr($s,1);
+}function number_string_decode($str){
+$c=0;
+$str=explode('9',$str);
+$s='';
+while(isset($str[$c])){
+$s.=chr(base_convert($str[$c++],9,10));
+}return $s;
 }
 
+echo "hello";
 
 ?>

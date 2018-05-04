@@ -547,10 +547,8 @@ static function getMessage($chat,$message){
 try{
 $g=file_get_contents("https://t.me/$chat/$message?embed=1");
 $x=new DOMDocument;
-ob_start();
-$x->loadHTML($g);
-ob_end_clean();
-$x=new DOMXPath($x);
+@$x->loadHTML($g);
+$x=@new DOMXPath($x);
 $path="//div[@class='tgme_widget_message_bubble']";
 $enti=$x->query("$path//div[@class='tgme_widget_message_text']")[0];
 $entities=[];
@@ -788,12 +786,12 @@ $r=json_decode(file_get_contents("https://api.pwrtelegram.xyz/user$this->token/$
 }elseif($level==4){
 $r=json_decode(fget("https://api.pwrtelegram.xyz/user$this->token/$method?".http_build_query($args)));
 }else{
-new XNError("PWRTelegram","invalid level type",1);
+new XNError("PWRTelegram","invalid level type");
 return false;
 }if($r===false)return false;
 if($r===true)return true;
 if($r===null){
-new XNError("PWRTelegram","PWRTelegram api is offlined",1);
+new XNError("PWRTelegram","PWRTelegram api is offlined");
 return null;
 }if(!$r->ok){
 new XNError("PWRTelegram","$r->description [$r->error_code]",1);
@@ -881,7 +879,7 @@ return $this->getUpdates(-1,1,0);
 if($while==0)$while=-1;
 $offset=0;
 while($while>0||$while<0){
-$updates=$this->getUpdates($offset,$limit,$timeout);
+$updates=$this->getUpdates($offset,$limit,$timeout)['result'];
 foreach($updates as $update){
 $offset=$update->update_id+1;
 if($func($update))return true;

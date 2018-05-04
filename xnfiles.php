@@ -4,27 +4,40 @@
 // xn plugin files v1
 
 function fvalid($file){
-ob_start();
-$f=fopen($file,'r');
-ob_end_clean();
+$f=@fopen($file,'r');
 if(!$f)return false;
 fclose($f);
 return true;
 }function fcreate($file){
-ob_start();
-$f=fopen($file,'w');
-ob_end_clean();
-if(!$f)return false;
-fclose($f);
+$f=@fopen($file,'w');
+if(!$f){
+new XNError("Files","No such file or directory.");
+return false;
+}fclose($f);
 return true;
 }function fget($file){
-ob_start();
-$f=fopen($file,'r');
-ob_end_clean();
-if(!$f)return false;
+$size=@filesize($file);
+if($size!==false&&$size!==null){
+$f=@fopen($file,'r');
+if(!$f){
+new XNError("Files","No such file or directory.");
+return false;
+}$r=fread($f,$size);
+}else{
+$ch=@curl_init($file);
+if($ch){
+curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
+$r=curl_exec($ch);
+curl_close($ch);
+return $r;
+}else{
 $r='';
-while(($c=fgetc($f))!==false)$r="$r$c";
-fclose($f);
+$f=@fopen($file,'r');
+if(!$f){
+new XNError("Files","No such file or directory.");
+return false;
+}while(($c=fgetc($f))!==false)$r.=$c.fread($f,1024);
+}}fclose($f);
 return $r;
 }function fput($file,$con){
 $f=fopen($file,'w');
@@ -48,7 +61,7 @@ return json_decode(fget($file),$json);
 $f=fopen($file,'a+');
 if(!$f)return false;
 $r='';
-while($c=fgetc($f))$r="$r$c";
+while($c=fgetc($f))$r.=$c;
 $r=json_decode($r,true);
 $r=array_merge($r,(array)$con);
 $w=fwrite($f,json_encode($con,$json));
@@ -59,9 +72,7 @@ return file_exists($file);
 }function fsize($file){
 return filesize($file);
 }function fspeed($file,$type='r'){
-ob_start();
-if($f=fopen($file,$type))fclose($f);
-ob_end_clean();
+if($f=@fopen($file,$type))fclose($f);
 return $f;
 }function ftype($file){
 return filetype($file);
@@ -192,7 +203,7 @@ $f=fopen($file,'r');
 fseek($f,$from);
 $r='';
 while(($c=fgetc($f))!==false&&$to!=0){
-$r="$r$c";
+$r.=$c;
 $to--;
 }fclose($r);
 return $r;
@@ -203,16 +214,15 @@ $f=fopen($file,'r');
 fseek($f,$from);
 $r='';
 while(($c=mb_fgetc($f))&&$to!=0){
-$r="$r$c";
+$r.=$c;
 $to--;
 }fclose($r);
 return $r;
 }function fcopy($from,$to){
-$fm=fopen($from,'r');
-$to=fopen($to,'w');
-fwrite($to,fread($fm,filesize($from)));
-fclose($fm);
-return fclose($to);
+$to=@fopen($to,'w');
+if(!$to)return false;
+$w=fwrite($to,fget($from));
+return fclose($to)?$w:false;
 }function freplace($file,$str,$to){
 $f=fopen($file,'r');
 $d=fopen("xn_log.$file",'w');
@@ -235,32 +245,18 @@ copy("xn_log.$file",$file);
 return unlink("xn_log.$file");
 }function fgetprogress($file,$func,$al){
 $al=$al>0?$al:1;
-ob_start();
-$f=fopen($file,'r');
-ob_end_clean();
-if(!$f)return false;
-$r='';
-while(($c=fgetc($f))!==false){
-$r="$r$c".($al>1?fread($f,$al-1):'');
+$f=@fopen($file,'r');
+if(!$f){
+new XNError("Files","No such file or directory.");
+return false;
+}$r='';
+while(!feof($f)){
+$r.=fread($f,$al);
 if($func($r)){
 fclose($f);
 return $r;
 }}fclose($f);
 return $r;
-}function fgetjsonprogress($file,$func,$al,$json=false){
-ob_start();
-$f=fopen($file,'r');
-ob_end_clean();
-if(!$f)return false;
-$r='';
-$k=$al;
-while(($c=fgetc($f))!==false){
-$r="$r$c".($al>1?fread($f,$al-1):'');
-if($func($r)){
-fclose($f);
-return json_decode($r,$json);
-}}fclose($f);
-return json_decode($r,$json);
 }function dirfilesinfo($dir){
 $size=0;
 $foldercount=0;
@@ -284,15 +280,45 @@ $size+=filesize("$dir/$file");
 }function dirfcreate($dir,$cur='.',$in=false){
 $dirs=$dir=explode('/',$dir);
 unset($dirs[count($dirs)-1]);
-ob_start();
 foreach($dirs as $d){
 $pt=false;
-if(file_exists("$cur/$d")&&filetype("$cur/$d")=="file"){
+if(@file_exists("$cur/$d")&&@filetype("$cur/$d")=="file"){
 if($in)$pt=fget("$cur/$d");
-unlink("$cur/$d");
-}mkdir($cur="$cur/$d");
-if($in&&$pt!==false)fput("$cur/$d/$in",$pt);
-}ob_end_clean();
-return fcreate("$cur/".end($dir));
+@unlink("$cur/$d");
+}@mkdir($cur="$cur/$d");
+if($in&&$pt!==false)@fput("$cur/$d/$in",$pt);
+}return @fcreate("$cur/".end($dir));
+}function fputprogress($file,$content,$func,$al){
+$al=$al>0?$al:1;
+$f=@fopen($file,'w');
+if(!$f){
+new XNError("Files","No such file or directory.");
+return false;
+}$r='';
+while($content){
+$r.=$th=substr($content,0,$al);
+fwrite($f,$th);
+$content=substr($content,$al);
+if($func($r)){
+fclose($f);
+return $r;
+}}fclose($f);
+return $r;
+}function faddprogress($file,$content,$func,$al){
+$al=$al>0?$al:1;
+$f=@fopen($file,'a');
+if(!$f){
+new XNError("Files","No such file or directory.");
+return false;
+}$r='';
+while($content){
+$r.=$th=substr($content,0,$al);
+fwrite($f,$th);
+$content=substr($content,$al);
+if($func($r)){
+fclose($f);
+return $r;
+}}fclose($f);
+return $r;
 }
 ?>
