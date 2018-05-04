@@ -32,6 +32,34 @@ if($GLOBALS['-XN-']['errorShow']&&is_string($GLOBALS['-XN-']['errorShow']))fadd(
 }public function __toString(){
 return $this->message;
 }
+}function subsplit($str,$num=1,$rms=false){
+$arr=[];
+if($rms){
+$len=strlen($str);
+if($len%$num){
+$arr[]=substr($str,0,$len%$num);
+$str=substr($str,$len%$num);
+}}while($str){
+$arr[]=substr($str,0,$num);
+$str=substr($str,$num);
+}return $arr;
+}function mb_subsplit($str,$num=1,$rms=false){
+$arr=[];
+if($rms){
+$len=mb_strlen($str);
+if($len%$num){
+$arr[]=mb_substr($str,0,$len%$num);
+$str=mb_substr($str,$len%$num);
+}}while($str){
+$arr[]=mb_substr($str,0,$num);
+$str=mb_substr($str,$num);
+}return $arr;
+}function var_read(&$var){
+ob_start();
+var_dump($var);
+$r=ob_get_contents();
+ob_end_clean();
+return $r;
 }
 
 ?>
