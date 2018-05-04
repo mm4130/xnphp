@@ -63,3 +63,20 @@ update all files
 ```php
 null xnupdate ( );
 ```
+**subsplit**
+split str by length
+* subsplit : split normal
+* mb_subsplit : MB split
+```php
+subsplit ( string Str , int Limit [, bool LFS = false ] );
+@example :
+subsplit ( "hello" , 2 ); // ["he","ll","o"]
+subsplit ( "hello" , 2 , true ); // ["h","el","lo"]
+```
+**var_read**
+* var_read : get string for *var_dump*
+```php
+var_read ( mixed Parameters , ... );
+@example
+echo var_read ( "hello" );
+```
