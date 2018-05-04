@@ -14,13 +14,12 @@ plugins :
   * TelegramBot
   * TelegramLink
   * TelegramCode
-* Types
 * Files
 * Time&Date
-* Coding
-* Wikipedia site
-* CFile
-* Calc
+* Coding _(creating...)_
+* Wikipedia site _(creating...)_
+* CFile _(creating...)_
+* Calc _(creating...)_
 
 **[Learn on XN website](/)**
 
