@@ -18,6 +18,9 @@ plugins :
 * Files
 * Time&Date
 * Coding
+* Wikipedia site
+* CFile
+* Calc
 
 **[Learn on XN website](/)**
 
