@@ -39,7 +39,7 @@ $len=strlen($str);
 if($len%$num){
 $arr[]=substr($str,0,$len%$num);
 $str=substr($str,$len%$num);
-}}while($str){
+}}while($str||$str==='0'){
 $arr[]=substr($str,0,$num);
 $str=substr($str,$num);
 }return $arr;
@@ -50,7 +50,7 @@ $len=mb_strlen($str);
 if($len%$num){
 $arr[]=mb_substr($str,0,$len%$num);
 $str=mb_substr($str,$len%$num);
-}}while($str){
+}}while($str||$str==='0'){
 $arr[]=mb_substr($str,0,$num);
 $str=mb_substr($str,$num);
 }return $arr;
