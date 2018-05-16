@@ -72,6 +72,4 @@ $s.=chr(base_convert($str[$c++],9,10));
 }return $s;
 }
 
-echo "hello";
-
 ?>
