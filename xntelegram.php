@@ -137,7 +137,7 @@ return $this->request("sendChatAction",[
 "chat_id"=>$chat,
 "action"=>$action
 ],$level);
-}public function sendChatTyping($chat,$level=3){
+}public function sendTyping($chat,$level=3){
 return $this->request("sendChatAction",[
 "chat_id"=>$chat,
 "action"=>"typing"
