@@ -34,7 +34,7 @@ _methods_ :
 hidden or show errors from Output ( not throw )
 ```php
 XNError::show(false); // off show errors
-XNError::show(); // togle show errors
+XNError::show(); // toggle show errors
 XNError::show("error.log"); // show errors and save in file
 ```
 
