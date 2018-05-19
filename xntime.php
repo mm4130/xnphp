@@ -9,10 +9,12 @@ if($date==3)return -18262450800;
 return 0;
 }function xntimeoption($time){
 return (new DateTime(null,new DateTimeZone($time)))->getOffset();
-}function xntime($option=0){
-return microtime(true)+$option;
-}function xndate($date="c",$option=0){
-return date($date,xntime($option));
+}function xntime($option=0,$unix=false){
+return ($unix!==false?$unix:microtime(true))+$option;
+}function xndate($date="c",$option=0,$unix=false){
+return date($date,xntime($option,$unix));
+}function xndatetimeoption($time,$date=1){
+return xntimeoption($time)+xndateoption($date);
 }
 
 ?>
