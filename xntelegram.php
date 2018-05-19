@@ -3,46 +3,120 @@
 // Created by ...
 // xn plugin telegram v2.1
 
-class TelegramBot {
-public $data,$token,$final,$results=[],$sents=[],$save=true,$last;
-private $btntype,$btnline=0,$btn=[],$btnresize=null;
-public function create($type="keyboard"){
-$this->btntype=$type;
+class TelegramBotKeyboard {
+private $btn=[],$button=[];
+public $resize=false,$onetime=false,$selective=false;
+public function size($size=null){
+if($size===null)$size=!$this->resize;
+$this->resize=$size==true;
 return $this;
-}public function fromstring($type="keyboard",$text,$json=false){
-$btn=explode("\n",$text);
-foreach($btn as $x=>$y){
-$btn[$x]=explode('|',$y);
-foreach($btn[$x] as $a=>$b)
-$btn[$x][$a]=["text"=>$b];
-}$btns=[];
-$btns[$type]=$btn;
-return $json?json_encode($btns):$btns;
-}public function add($text,$type=false,$data=''){
-$btn=["text"=>$text];
-if($type)$btn[$type]=$data;
-$this->btn[$this->btnline][]=$btn;
+}public function onetime($onetime=null){
+if($onetime===null)$onetime=!$this->onetime;
+$this->onetime=$onetime==true;
+return $this;
+}public function selective($selective=null){
+if($selective===null)$selective=!$this->selective;
+$this->selective=$selective==true;
+return $this;
+}public function add($name,$type=''){
+$btn=["text"=>$name];
+if($type=="contact")$btn["request_contact"]=true;
+elseif($type=="location")$btn["request_location"]=true;
+$this->btn[]=$btn;
 return $this;
 }public function line(){
-$this->btn[++$this->btnline]=[];
+$this->button[]=$this->btn;
+$this->btn=[];
 return $this;
 }public function get($json=false){
-$btn=$this->btn;
-$type=$this->btntype;
-$resize=$this->btnresize;
-$this->btntype=null;
-$this->btnline=0;
+$this->button[]=$this->btn;
+$btn=["keyboard"=>$this->button];
+if($this->resize)$btn['resize_keyboard']=true;
+if($this->onetime)$btn['one_time_keyboard']=true;
+if($this->selective)$btn['selective']=true;
+$this->button=[];
 $this->btn=[];
-$this->btnresize=null;
-$btns=[];
-$btns[$type]=$btn;
-if($resize!==null)$btns["resize_keyboard"]=$resize;
-return $json?json_encode($btns):$btns;
-}public function resize($resize=null){
-if($resize===null)$this->btnresize=$this->btnresize==false;
-else $this->btnresize=$resize==true;
+$this->size=false;
+return $json?json_encode($btn):$btn;
+}public function reset(){
+$this->button=[];
+$this->btn=[];
+$this->size=false;
 return $this;
-}public function setToken($token=''){
+}
+}class TelegramBotInlineKeyboard {
+private $btn=[],$button=[];
+public $resize=false,$onetime=false,$selective=false;
+public function size($size=null){
+if($size===null)$size=!$this->resize;
+$this->resize=$size==true;
+return $this;
+}public function onetime($onetime=null){
+if($onetime===null)$onetime=!$this->onetime;
+$this->onetime=$onetime==true;
+return $this;
+}public function selective($selective=null){
+if($selective===null)$selective=!$this->selective;
+$this->selective=$selective==true;
+return $this;
+}public function add($name,$type,$data=''){
+$btn=["text"=>$name];
+if($type=="pay")$data=true;
+elseif($type=="game")$type="callback_game";
+elseif($type=="switch")$type="switch_inline_query";
+elseif($type=="switch_current_chat")$type="switch_inline_query_current_chat";
+elseif($type=="callback"||$type=="data")$type="callback_data";
+elseif($type=="link")$type="url";
+$btn[$type]=$data;
+$this->btn[]=$btn;
+return $this;
+}public function line(){
+$this->button[]=$this->btn;
+$this->btn=[];
+return $this;
+}public function get($json=false){
+$this->button[]=$this->btn;
+$btn=["inline_keyboard"=>$this->button];
+if($this->resize)$btn['resize_keyboard']=true;
+if($this->onetime)$btn['one_time_keyboard']=true;
+if($this->selective)$btn['selective']=true;
+$this->button=[];
+$this->btn=[];
+$this->size=false;
+return $json?json_encode($btn):$btn;
+}public function reset(){
+$this->button=[];
+$this->btn=[];
+$this->size=false;
+return $this;
+}
+}class TelegramBotQueryResult {
+public $get;
+public function add($type,$id,$title,$input,$args=[]){
+$args["type"]=$type;
+$args["id"]=$id;
+$args["title"]=$title;
+$args["input_message_content"]=$input;
+$this->get[]=$args;
+return $this;
+}public function inputMessage($text,$parse=false,$preview=false){
+$args=["message_text"=>$text];
+if($parse)$args["parse_mode"]=$parse;
+if($preview)$args["disable_web_page_preview"]=$preview;
+return $args;
+}public function inputLocation($latitude,$longitude,$live=false){
+$args=["latitude"=>$latitude,"longitude"=>$longitude];
+if($live)$args['live_period']=$live;
+return $args;
+}public function inputVenue($latitude,$longitude,$title,$address,$id=false){
+$args=["latitude"=>$latitude,"longitude"=>$longitude,"title"=>$title,"address"=>$address];
+if($id)$args["foursquare_id"]=$id;
+return $args;
+}
+}class TelegramBot {
+public $data,$token,$final,$results=[],$sents=[],$save=true,$last;
+public $keyboard,$inlineKeyboard,$foreReply,$removeKeyboard,$queryResult;
+public function setToken($token=''){
 $this->last=$this->token;
 $this->token=$token;
 return $this;
@@ -53,6 +127,11 @@ $this->last=$token;
 return $this;
 }public function __construct($token=''){
 $this->token=$token;
+$this->keyboard=new TelegramBotKeyboard;
+$this->inlineKeyboard=new TelegramBotInlineKeyboard;
+$this->queryResult=new TelegramBotQueryResult;
+$this->forceReply=["force_reply"=>true];
+$this->removeKeyboard=["remove_keyboard"=>true];
 }public function update($offset=-1,$limit=1,$timeout=0){
 if(isset($this->data->message_id))return $this->data;
 elseif($this->data=json_decode(file_get_contents("php://input")))return $this->data;
@@ -102,20 +181,12 @@ $this->final=null;
 $this->results=[];
 $this->sents=[];
 $this->data=null;
-$this->btntype=null;
-$this->btnline=0;
-$this->btn=[];
-$this->btnresize=null;
 }public function close(){
 $this->final=null;
 $this->results=null;
 $this->sents=null;
 $this->data=null;
 $this->token=null;
-$this->btntype=null;
-$this->btnline=null;
-$this->btn=null;
-$this->btnresize=null;
 }public function sendMessage($chat,$text,$args=[],$level=3){
 $args['chat_id']=$chat;
 $args['text']=$text;
