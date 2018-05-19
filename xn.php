@@ -40,7 +40,7 @@ $GLOBALS['-XN-']['endTime'] = explode(' ',microtime());
 $GLOBALS['-XN-']['endTime'] = $GLOBALS['-XN-']['endTime'][0] + $GLOBALS['-XN-']['endTime'][1];
 
 function xnscript() {
-  return ["version"=> "1",
+  return ["version"=> "1.2",
           "libs"=>["types", "index", "telegram", "files", "time"],
           "start_time"=>$GLOBALS['-XN-']['startTime'],
           "end_time"=>$GLOBALS['-XN-']['endTime'],
