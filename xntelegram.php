@@ -395,7 +395,7 @@ return $this->request("deleteStickerFromSet",[
 ],$level);
 }public function answerInline($id,$results,$args=[],$switch=[],$level=3){
 $args['inline_query_id']=$id;
-$args['results']=$results;
+$args['results']=is_array($results)?json_encode($results):$results;
 if($switch['text'])$args['switch_pm_text']=$switch['text'];
 if($switch['parameter'])$args['switch_pm_parameter']=$switch['parameter'];
 return $this->request("answerInlineQuery",$args,$level);
