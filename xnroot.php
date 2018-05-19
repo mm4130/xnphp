@@ -60,6 +60,8 @@ var_dump(...$var);
 $r=ob_get_contents();
 ob_end_clean();
 return $r;
+}function replaceone($from,$to,$str){
+return substr_replace($str,$to,strpos($str,$from),strlen($from));
 }
 
 ?>
