@@ -13,6 +13,7 @@ function require_url_nter($url){
   unlink("xn$random.log");
 }
 function xnupdate(){
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php","xn.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnroot.php","xnroot.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php","xnfiles.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php","xntelegram.php");
@@ -23,14 +24,12 @@ function xnupdate(){
 if(file_exists("xntypes.php")){
   ob_start();
   include "xnroot.php";
-  
   include "xnfiles.php";
   include "xntelegram.php";
   include "xntime.php";
   ob_end_clean();
 }else{
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnroot.php");
-  
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php");
