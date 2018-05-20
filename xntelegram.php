@@ -143,6 +143,7 @@ else $res=$this->data=$this->request("getUpdates",[
 if(!$res->ok)return (object)[];
 return $res;
 }public function request($method,$args=[],$level=3){
+$args=$this->parse_args($args);
 if($level==1){
 header("Content-Type: application/json");
 $args['method']=$method;
@@ -612,6 +613,27 @@ $r=$this->sendMedia($chat,$type,new CURLFile($name));
 unlink($name);
 if($read!==false)file_put_contents($name,$read);
 return $r;
+}private function parse_args($args=[]){
+if(isset($args['user']))$args['user_id']=$args['user'];
+if(isset($args['chat']))$args['chat_id']=$args['chat'];
+if(isset($args['message']))$args['message_id']=$args['message'];
+if(isset($args['msg']))$args['message_id']=$args['msg'];
+if(isset($args['msg_id']))$args['message_id']=$args['msg_id'];
+if(!isset($args['chat_id'])&&isset($args['message_id'])){
+$args['inline_message_id']=$args['message_id'];
+unset($args['message_id']);
+}if(isset($args['id']))$args['callback_query_id']=$args['inline_query_id']=$args['id'];
+if(isset($args['mode']))$args['parse_mode']=$args['mode'];
+if(isset($args['markup']))$args['reply_markup']=$args['markup'];
+if(isset($args['reply']))$args['reply_to_message_id']=$args['reply'];
+if(isset($args['from_chat']))$args['from_chat_id']=$args['from_chat'];
+if(isset($args['file']))$args['photo']=$args['document']=$args['video']=$args['voice']=$args['video_note']=$args['audio']=$args['sticker']=
+                        $args['photo_file_id']=$args['document_file_id']=$args['video_file_id']=
+                        $args['voice_file_id']=$args['video_note_file_id']=$args['audio_file_id']=$args['sticker_file_id']=
+                        $args['photo_url']=$args['document_url']=$args['video_url']=$args['voice_url']=$args['video_note_url']=
+                        $args['audio_url']=$args['sticker_url']=$args['file_id']=$args['file'];
+if(isset($args['phone']))$args['phone_number']=$args['phone'];
+return $args;
 }
 }
 
