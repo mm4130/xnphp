@@ -70,6 +70,8 @@ $this->code=$func;
 if($this->code)$this->code();
 }public function close(){
 $this->code=false;
+}public function __clone(){
+return new ThembCode($this->code);
 }
 }function thumbCode($func){
 return new ThumbCode($func);
