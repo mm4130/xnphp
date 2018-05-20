@@ -203,7 +203,7 @@ $args['chat_id']=$chat;
 $args['text']=$text;
 $args['reply_markup']=json_encode(['force_reply'=>true]);
 return $this->request("sendMessage",$args,$level);
-}public function sendChatAction($chat,$action,$level=3){
+}public function sendAction($chat,$action,$level=3){
 return $this->request("sendChatAction",[
 "chat_id"=>$chat,
 "action"=>$action
@@ -246,6 +246,8 @@ return $this->request("unbanChatMember",[
 "chat_id"=>$chat,
 "user_id"=>$user
 ],$level);
+}public function kickMember($chat,$user,$level=3){
+return [$this->banMember($chat,$user,$level),$this->unbanMember($chat,$user,$level)];
 }public function getMe($level=3){
 return $this->request("getMe",[],$level);
 }public function getWebhook($level=3){
