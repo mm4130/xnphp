@@ -66,8 +66,8 @@ return substr_replace($str,$to,strpos($str,$from),strlen($from));
 private $code=false;
 public function __construct($func){
 $this->code=$func;
-}public fuunction __destruct(){
-if($this->code)$this->code();
+}public function __destruct(){
+if($this->code)($this->code)();
 }public function close(){
 $this->code=false;
 }public function __clone(){
