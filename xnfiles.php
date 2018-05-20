@@ -320,5 +320,11 @@ fclose($f);
 return $r;
 }}fclose($f);
 return $r;
+}function sizeformater($size,$join=' ',$offset=1){
+if($size<1024*$offset)return floor($size).$join.'B';
+if($size<1048576*$offset)return floor($size/1024).$join.'K';
+if($size<1073741824*$offset)return floor($size/1048576).$join.'M';
+if($site<1099511627776*$offset)return floor($size/1073741824).$join.'G';
+return floor($size/109951162776).$join.'T';
 }
 ?>
