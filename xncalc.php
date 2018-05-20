@@ -245,7 +245,7 @@ $c=count($a)-1;
 while($c>=0){
 $a[$c]+=$b[$c];
 $k=0;
-while(@$a[$c-$k]>9999999999999){
+while(isset($a[$c-$k])&&$a[$c-$k]>9999999999999){
 $a[$c-$k-1]+=1;
 $a[$c-$k]-=10000000000000;
 $k++;
@@ -279,7 +279,7 @@ $c=count($a)-1;
 while($c>=0){
 $a[$c]-=$b[$c];
 $k=0;
-while(@$a[$c-$k]<0){
+while(isset($a[$c-$k])&&$a[$c-$k]<0){
 $a[$c-$k-1]-=1;
 $a[$c-$k]+=10000000000000;
 $k++;
@@ -354,8 +354,8 @@ self::_setfull($a,$b);
 $r=$b==0?0:
    $b==1?$a:
    $b==2?self::mulTwo($a):
+   $a==2?self::mulTwo($b):
    $a==0?0:
-   $a==$b?powTwo($a):
    $a==1?$b:
    self::_mul2($a,$b);
 return self::_get3($r);
@@ -407,6 +407,28 @@ if(self::mulTwo($c)>$a)return 7;
 if(self::mul($b,'9')>$a)return 8;
                         return 9;
 }static function _div2($a,$b,$c=0){
+$a=self::_nm($a);
+$b=self::_nm($b);
+if($c<0)$c=0;
+return self::_div1($a,$b,$c);
+}static function _div3($a,$b,$c=0){
+if( self::_view($a)&& self::_view($b))return     self::_div2(self::abs($a),self::abs($b),$c);
+if( self::_view($a)&&!self::_view($b))return '-'.self::_div2(self::abs($a),self::abs($b),$c);
+if(!self::_view($a)&& self::_view($b))return '-'.self::_div2(self::abs($a),self::abs($b),$c);
+                                      return     self::_div2(self::abs($a),self::abs($b),$c);
+}static function div($a,$b,$c=0){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+self::_setfull($a,$b);
+if($b==0){
+new XNError("XNProCalc","not can div by Ziro");
+return false;
+}$r=$a==0?0:
+    $a==$b?1:
+    $b==1?$a:
+    self::_div3($a,$b,$c);
+return self::_get2($r);
+}static function _rest0($a,$b){
 $a=subsplit($a,1);
 $p=$r=$i=$d='0';
 $c=count($a);
@@ -414,12 +436,30 @@ while($i<$c){
 $d.=$a[$i];
 if($d>=$b){
 $p=self::_div0($d,$b);
-$d=self::rem($d,self::_mul($p,$b));
+$d=self::rem($d,self::mul($p,$b));
 $r.=$p;
-}else $d.='0';
+}else $r.='0';
 $i++;
-}if($c==0||$d==0)return $r;
-return $d;
+}return $d;
+}static function _rest1($a,$b){
+$a=self::_nm($a);
+$b=self::_nm($b);
+return self::_rest0($a,$b);
+}static function _rest2($a,$b){
+if(self::_view($a))return '-'.self::_rest1(self::abs($a),self::abs($b));
+                   return     self::_rest1(self::abs($a),self::abs($b));
+}static function rest($a,$b){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+self::_setfull($a,$b);
+if($b==0){
+new XNError("XNProCalc","not can div by Ziro");
+return false;
+}$r=$a==0?0:
+    $b==1?0:
+    $a==$b?0:
+    self::_rest2($a,$b);
+return self::_get($r);
 }
 // run functions
 static function fromNumberString($a='0'){
