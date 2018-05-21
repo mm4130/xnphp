@@ -18,6 +18,8 @@ function xnupdate(){
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php","xnfiles.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php","xntelegram.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php","xntime.php");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.php","xndata.php");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.txt","xndata.txt");
 }
 
 // include librarys
@@ -33,6 +35,7 @@ if(file_exists("xntypes.php")){
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php");
+  require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.php");
 }
 
 $GLOBALS['-XN-']['endTime'] = explode(' ',microtime());
