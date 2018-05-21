@@ -79,6 +79,36 @@ return new ThumbCode($func);
 $var3=$var1;
 $var1=$var2;
 $var2=$var3;
+}function var_add($to,...$args){
+$t=gettype($to);
+switch($t){
+case "NULL":return null;break;
+case "boolean":
+foreach($args as $arg){
+if($arg)return true;
+}return false;
+break;case "integer":
+case "float":
+case "double":
+foreach($args as $arg){
+$to+=$arg;
+}return $to;
+break;case "string":
+foreach($args as $arg){
+$to.=$arg;
+}return $to;
+break;case "array":
+foreach($args as $arg){
+$to=array_merge($to,$arg);
+}return $to;
+break;case "object":
+if(get_class($to)=="stdClass"){
+$to=(array)$to;
+foreach($args as $arg){
+$to=array_merge($to,(array)$arg);
+}return (object)$to;
+}break;
+}new XNError("var_add","type invalid");
 }
 
 ?>
