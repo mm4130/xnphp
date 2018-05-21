@@ -3,7 +3,7 @@
 // Created by avid
 // xn plugin data v1
 
-$GLOBALS['-XN-']['xnData']="xndate.txt";
+$GLOBALS['-XN-']['xnData']="xndata.txt";
 class XNData {
 static function get($data){
 $f=$GLOBALS['-XN-']['xnData'];
