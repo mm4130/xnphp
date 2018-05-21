@@ -75,6 +75,10 @@ return new ThumbCode($this->code);
 }
 }function thumbCode($func){
 return new ThumbCode($func);
+}function var_move(&$var1,&$var2){
+$var3=$var1;
+$var1=$var2;
+$var2=$var3;
 }
 
 ?>
