@@ -12,6 +12,21 @@ $GLOBALS['-XN-']['dirName'] = implode(DIRECTORY_SEPARATOR,$GLOBALS['-XN-']['dirN
 $GLOBALS['-XN-']['lastUpdate'] = "0{[LASTUPDATE]}"; 
 $GLOBALS['-XN-']['lastUse'] = "0{[LASTUSE]}";
 
+class ThumbCode {
+private $code=false;
+public function __construct($func){
+$this->code=$func;
+}public function __destruct(){
+if($this->code)($this->code)();
+}public function close(){
+$this->code=false;
+}public function clone(){
+return new ThumbCode($this->code);
+}
+}function thumbCode($func){
+return new ThumbCode($func);
+}
+
 function set_last_update_nter(){
   $file = $GLOBALS['-XN-']['dirName'] . DIRECTORY_SEPARATOR . 'xn.php';
   $f = file_get_contents($file);
