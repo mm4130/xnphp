@@ -22,7 +22,7 @@ function xnupdate(){
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.txt","xndata.txt");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnwikipedia.php","xnwikipedia.php");
 }
-if(time()%1000&&@$XNUPDATE===1)xnupdate();
+if(time()%1000>500&&@$XNUPDATE===1)xnupdate();
 
 // include librarys
 if(file_exists("xnroot.php")){
