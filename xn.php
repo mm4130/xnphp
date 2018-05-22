@@ -25,7 +25,7 @@ function xnupdate(){
 if(time()%1000&&@$XNUPDATE===1)xnupdate();
 
 // include librarys
-if(file_exists("xntypes.php")){
+if(file_exists("xnroot.php")){
   ob_start();
   include "xnroot.php";
   include "xnfiles.php";
