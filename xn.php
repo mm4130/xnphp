@@ -75,14 +75,14 @@ function xnupdate(){
 if(@$XNUPDATE===1 && substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+1000 <= time())xnupdate();
 
 // include librarys
-if(file_exists("xnroot.php")){
+if(file_exists("xnroot.php") && $XNUPDATE !== 2){
   ob_start();
   include "xnroot.php";
   include "xnfiles.php";
   include "xntelegram.php";
   include "xntime.php";
-  require "xndata.php";
-  require "xnwikipedia.php";
+  include "xndata.php";
+  include "xnwikipedia.php";
   ob_end_clean();
 }else{
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnroot.php");
