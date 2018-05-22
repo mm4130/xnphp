@@ -62,19 +62,6 @@ ob_end_clean();
 return $r;
 }function replaceone($from,$to,$str){
 return substr_replace($str,$to,strpos($str,$from),strlen($from));
-}class ThumbCode {
-private $code=false;
-public function __construct($func){
-$this->code=$func;
-}public function __destruct(){
-if($this->code)($this->code)();
-}public function close(){
-$this->code=false;
-}public function clone(){
-return new ThumbCode($this->code);
-}
-}function thumbCode($func){
-return new ThumbCode($func);
 }function var_move(&$var1,&$var2){
 $var3=$var1;
 $var1=$var2;
