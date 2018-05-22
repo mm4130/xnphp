@@ -892,7 +892,7 @@ return $r;
 $r=$this->request("phonelogin",[
 "phone"=>$this->token
 ],$level);
-$this->token=$r->result;
+$this->token=$r;
 return $r;
 }public function completeLogin($pass,$level=2){
 $res=$this->request("completephonelogin",[
