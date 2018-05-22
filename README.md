@@ -16,13 +16,11 @@ plugins :
   * TelegramCode
 * Files
 * Time&Date
-* Coding _(creating...)_
-* Wikipedia site _(creating...)_
-* CFile _(creating...)_
-* Calc _(creating...)_
+* Coding
+* Wikipedia
+* Data
+* CFile
 
-**[Learn on XN website](/)**
 
-**[Learn on github](/LEARN)**
 
 **[Learn on Telegram](http://telegram.me/xnlib)**
