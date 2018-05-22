@@ -67,7 +67,7 @@ private $code=false;
 public function __construct($func){
 $this->code=$func;
 }public function __destruct(){
-if($this->code)($this->code);
+if(($this->code)($this->code));
 }public function close(){
 $this->code=false;
 }public function clone(){
