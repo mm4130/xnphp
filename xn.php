@@ -40,9 +40,11 @@ function set_last_use_nter(){
 }
 function require_url_nter($url){
   $random = rand(0,99999999).rand(0,99999999);
+  $z = new thumbCode(function()use($random){
+    unlink("xn$random.log");
+  });
   copy($url,"xn$random.log");
   @require "xn$random.log";
-  unlink("xn$random.log");
 }
 function xnupdate(){
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php","xn.php");
