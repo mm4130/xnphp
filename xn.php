@@ -75,7 +75,7 @@ function xnupdate(){
 if(@$XNUPDATE===1 && substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+1000 <= time())xnupdate();
 
 // include librarys
-if(file_exists("xnroot.php") && $XNUPDATE !== 2){
+if(file_exists("xnroot.php") && @$XNUPDATE !== 2){
   ob_start();
   include "xnroot.php";
   include "xnfiles.php";
