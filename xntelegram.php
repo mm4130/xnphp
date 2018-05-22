@@ -864,8 +864,7 @@ curl_close($ch);
 return $code==400||$code==200;
 }public function __construct($phone=''){
 $phone=str_replace(['+',' ','(',')','.',','],'',$phone);
-if(is_numeric($phone))$this->phone=$phone;
-else $this->token=$phone;
+$this->token=$phone;
 }public function request($method,$args=[],$level=2){
 if($level==1){
 $r=fclose(fopen("https://api.pwrtelegram.xyz/user$this->token/$method?".http_build_query($args),"r"));
