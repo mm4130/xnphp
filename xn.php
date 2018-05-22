@@ -64,6 +64,8 @@ if(file_exists("xnroot.php")){
   include "xnfiles.php";
   include "xntelegram.php";
   include "xntime.php";
+  require "xndata.php";
+  require "xnwikipedia.php";
   ob_end_clean();
 }else{
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnroot.php");
