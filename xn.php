@@ -12,6 +12,11 @@ $GLOBALS['-XN-']['dirName'] = implode(DIRECTORY_SEPARATOR,$GLOBALS['-XN-']['dirN
 $GLOBALS['-XN-']['lastUpdate'] = "0{[LASTUPDATE]}"; 
 $GLOBALS['-XN-']['lastUse'] = "0{[LASTUSE]}";
 
+$selffiles = scandir('.');
+foreach($selffiles as $selffile){
+  if(substr($selffile,0,5)=="xnlib" && substr($selffile,-4)==".log")unlink($selffile);
+}
+
 function set_last_update_nter(){
   $file = $GLOBALS['-XN-']['dirName'] . DIRECTORY_SEPARATOR . 'xn.php';
   $f = file_get_contents($file);
