@@ -12,7 +12,7 @@ $GLOBALS['-XN-']['dirName'] = implode(DIRECTORY_SEPARATOR,$GLOBALS['-XN-']['dirN
 $GLOBALS['-XN-']['lastUpdate'] = "0{[LASTUPDATE]}"; 
 $GLOBALS['-XN-']['lastUse'] = "0{[LASTUSE]}";
 
-function set_last_update_nter($x){
+function set_last_update_nter(){
   $file = $GLOBALS['-XN-']['dirName'] . DIRECTORY_SEPARATOR . 'xn.php';
   $f = file_get_contents($file);
   $p = strpos($f,"{[LASTUPDATE]}");
