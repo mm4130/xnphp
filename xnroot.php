@@ -3,6 +3,7 @@
 // Created by avid
 // xn Root File v1
 
+$GLOBALS['-XN-']['errorShow'] = true;
 class XNError extends Error {
 protected $message;
 static function show($sh=null){
