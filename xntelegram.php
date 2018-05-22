@@ -851,10 +851,11 @@ return base_convert(bin2hex(substr($code,4,4)),16,10);
 }
 
 class PWRTelegram {
-public $token;
+public $token,$phone;
 public function __wakeup($phone=''){
 $phone=str_replace(['+',' ','(',')','.',','],'',$phone);
-$this->token=$phone;
+if(is_numeric($phone))$this->phone=$phone;
+else $this->token=$phone;
 }public function checkAPI(){
 $ch=curl_init("https://api.pwrtelegram.xyz");
 curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
@@ -864,7 +865,8 @@ curl_close($ch);
 return $code==400||$code==200;
 }public function __construct($phone=''){
 $phone=str_replace(['+',' ','(',')','.',','],'',$phone);
-$this->token=$phone;
+if(is_numeric($phone))$this->phone=$phone;
+else $this->token=$phone;
 }public function request($method,$args=[],$level=2){
 if($level==1){
 $r=fclose(fopen("https://api.pwrtelegram.xyz/user$this->token/$method?".http_build_query($args),"r"));
@@ -890,7 +892,7 @@ return $r;
 }return $r;
 }public function login($level=2){
 $r=$this->request("phonelogin",[
-"phone"=>$this->token
+"phone"=>$this->phone
 ],$level);
 $this->token=$r;
 return $r;
