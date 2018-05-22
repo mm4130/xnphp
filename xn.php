@@ -20,7 +20,7 @@ function xnupdate(){
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php","xntime.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.php","xndata.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.txt","xndata.txt");
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnwikipedia.txt","xnwikipedia.txt");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnwikipedia.php","xnwikipedia.php");
 }
 if(time()%1000&&@$XNUPDATE===1)xnupdate();
 
