@@ -88,7 +88,7 @@ function xnscript() {
   $lastupdate = substr($GLOBALS['-XN-']['lastUpdate'],0,-14);
   $dir = $GLOBALS['-XN-']['dirName'];
   return ["version"=> "1.3",
-          "libs"=>["types", "index", "telegram", "files", "time"],
+          "libs"=>["types", "index", "telegram", "files", "time", "data", "wikipedia"],
           "start_time"=>$GLOBALS['-XN-']['startTime'],
           "end_time"=>$GLOBALS['-XN-']['endTime'],
           "loaded_time"=>$GLOBALS['-XN-']['endTime'] - $GLOBALS['-XN-']['startTime'],
