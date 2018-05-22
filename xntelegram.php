@@ -868,6 +868,7 @@ $phone=str_replace(['+',' ','(',')','.',','],'',$phone);
 if(is_numeric($phone))$this->phone=$phone;
 else $this->token=$phone;
 }public function request($method,$args=[],$level=2){
+if(@$this->token){
 if($level==1){
 $r=fclose(fopen("https://api.pwrtelegram.xyz/user$this->token/$method?".http_build_query($args),"r"));
 }elseif($level==2){
@@ -878,6 +879,28 @@ $r=json_decode(curl_exec($ch));
 curl_close($ch);
 }elseif($level==3){
 $r=json_decode(file_get_contents("https://api.pwrtelegram.xyz/user$this->token/$method?".http_build_query($args)));
+}else{
+new XNError("PWRTelegram","invalid level type");
+return false;
+}if($r===false)return false;
+if($r===true)return true;
+if($r===null){
+new XNError("PWRTelegram","PWRTelegram api is offlined");
+return null;
+}if(!$r->ok){
+new XNError("PWRTelegram","$r->description [$r->error_code]",1);
+return $r;
+}return $r;
+}if($level==1){
+$r=fclose(fopen("https://api.pwrtelegram.xyz/$method?".http_build_query($args),"r"));
+}elseif($level==2){
+$ch=curl_init("https://api.pwrtelegram.xyz/$method");
+curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
+curl_setopt($ch,CURLOPT_POSTFIELDS,$args);
+$r=json_decode(curl_exec($ch));
+curl_close($ch);
+}elseif($level==3){
+$r=json_decode(file_get_contents("https://api.pwrtelegram.xyz/$method?".http_build_query($args)));
 }else{
 new XNError("PWRTelegram","invalid level type");
 return false;
