@@ -851,11 +851,10 @@ return base_convert(bin2hex(substr($code,4,4)),16,10);
 }
 
 class PWRTelegram {
-public $token,$phone;
-public function setUser($phone=''){
+public $token;
+public function __wakeup($phone=''){
 $phone=str_replace(['+',' ','(',')','.',','],'',$phone);
-if(is_numeric($phone))$this->phone=$phone;
-else $this->token=$phone;
+$this->token=$phone;
 }public function checkAPI(){
 $ch=curl_init("https://api.pwrtelegram.xyz");
 curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
@@ -878,8 +877,6 @@ $r=json_decode(curl_exec($ch));
 curl_close($ch);
 }elseif($level==3){
 $r=json_decode(file_get_contents("https://api.pwrtelegram.xyz/user$this->token/$method?".http_build_query($args)));
-}elseif($level==4){
-$r=json_decode(fget("https://api.pwrtelegram.xyz/user$this->token/$method?".http_build_query($args)));
 }else{
 new XNError("PWRTelegram","invalid level type");
 return false;
@@ -896,7 +893,7 @@ return $r;
 $r=$this->request("phonelogin",[
 "phone"=>$this->token
 ],$level);
-$this->token=$r;
+$this->token=$r->result;
 return $r;
 }public function completeLogin($pass,$level=2){
 $res=$this->request("completephonelogin",[
