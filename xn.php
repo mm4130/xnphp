@@ -9,7 +9,7 @@ $GLOBALS['-XN-']['startTime'] = $GLOBALS['-XN-']['startTime'][0] + $GLOBALS['-XN
 function require_url_nter($url){
   $random = rand(0,99999999).rand(0,99999999);
   copy($url,"xn$random.log");
-  require "xn$random.log";
+  @require "xn$random.log";
   unlink("xn$random.log");
 }
 function xnupdate(){
@@ -22,6 +22,7 @@ function xnupdate(){
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.txt","xndata.txt");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnwikipedia.txt","xnwikipedia.txt");
 }
+if(time()%1000&&@$XNUPDATE===1)xnupdate();
 
 // include librarys
 if(file_exists("xntypes.php")){
