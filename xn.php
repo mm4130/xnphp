@@ -74,7 +74,7 @@ if(file_exists("xnroot.php")){
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnwikipedia.php");
 }
 
-$GLOBALS['-XN-']['lastUseRun'] = thembCode(function(){
+$GLOBALS['-XN-']['lastUseRun'] = thumbCode(function(){
   set_last_use_nter();
 });
 
