@@ -109,13 +109,19 @@ $to=array_merge($to,(array)$arg);
 }return (object)$to;
 }break;
 }new XNError("var_add","type invalid");
-}function xneval($code){
+}function xneval($code,&$save=5636347437634){
 $p=strpos($code,"<?");
 if($p===false||$p==-1)$code="<?php ".$code;
 $random = rand(0,99999999).rand(0,99999999);
 fput("xn$random.log",$code);
+if($save===5636347437634){
 $r=@require "xn$random.log";
-unlink("xn$random.log");
+}else{
+ob_start();
+$r=@require "xn$random.log";
+$save=ob_get_contents();
+ob_end_clean();
+}unlink("xn$random.log");
 return $r;
 }
 
