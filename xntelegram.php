@@ -852,7 +852,7 @@ return base_convert(bin2hex(substr($code,4,4)),16,10);
 
 class PWRTelegram {
 public $token,$phone;
-public function __wakeup($phone=''){
+public function __invoke($phone=''){
 $phone=str_replace(['+',' ','(',')','.',','],'',$phone);
 if(is_numeric($phone))$this->phone=$phone;
 else $this->token=$phone;
