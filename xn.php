@@ -6,11 +6,13 @@
 $GLOBALS['-XN-'] = [];
 $GLOBALS['-XN-']['startTime'] = explode(' ',microtime());
 $GLOBALS['-XN-']['startTime'] = $GLOBALS['-XN-']['startTime'][0] + $GLOBALS['-XN-']['startTime'][1];
-$GLOBALS['-XN-']['dirName'] = explode(DIRECTOY_SEPARATOR,__FILE__);
+$GLOBALS['-XN-']['dirName'] = explode(DIRECTORY_SEPARATOR,__FILE__);
 unset($GLOBALS['-XN-']['dirName'][count($GLOBALS['-XN-']['dirName']) - 1]);
 $GLOBALS['-XN-']['dirName'] = implode(DIRECTORY_SEPARATOR,$GLOBALS['-XN-']['dirName']);
-$GLOBALS['-XN-']['lastUpdate'] = "0{[LASTUPDATE]}"; 
-$GLOBALS['-XN-']['lastUse'] = "0{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUpdate'] = "1526928733{[LASTUPDATE]}";
+$GLOBALS['-XN-']['lastUse'] = "1526993739{[LASTUSE]}";
+$GLOBALS['-XN-']['DATA'] = "W10={[DATA]}";
+$DATA = json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA === 1);
 
 class ThumbCode {
 private $code=false;
@@ -27,11 +29,11 @@ return new ThumbCode($this->code);
 return new ThumbCode($func);
 }
 
-function set_last_update_ter(){
+function set_last_update_nter(){
   $file = $GLOBALS['-XN-']['dirName'] . DIRECTORY_SEPARATOR . 'xn.php';
   $f = file_get_contents($file);
   $p = strpos($f,"{[LASTUPDATE]}");
-  while($p>0 && $f[$p--] != '"'');
+  while($p>0 && $f[$p--] != '"');
   if($p<=0)return false;
   $h = '';
   $p += 2;
@@ -53,8 +55,21 @@ function set_last_use_nter(){
   $f = str_replace("$h{[LASTUSE]}",time()."{[LASTUSE]}",$f);
   return file_put_contents($file,$f);
 }
+function set_data_nter(){
+  $data = base64_encode(json_encode($GLOBALS['DATA']));
+  $file = $GLOBALS['-XN-']['dirName'] . DIRECTORY_SEPARATOR . 'xn.php';
+  $f = file_get_contents($file);
+  $p = strpos($f,"{[DA"."TA]}");
+  while($p>0 && $f[$p--] != '"');
+  if($p<=0)return false;
+  $h = '';
+  $p += 2;
+  while($f[$p] != '{')$h .= $f[$p++];
+  $f = str_replace("$h{[DA"."TA]}","$data{[D"."ATA]}",$f);
+  return file_put_contents($file,$f);
+}
 function require_url_nter($url){
-  $random = rand(0,9999999).rand(0,9999999);
+  $random = rand(0,99999999).rand(0,99999999);
   $z = new thumbCode(function()use($random){
     unlink("xn$random.log");
   });
@@ -72,7 +87,7 @@ function xnupdate(){
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnwikipedia.php","xnwikipedia.php");
   set_last_update_nter();
 }
-if(@$XNUPDATE===1 && substr($GLOBALS['-XN-']['lastUpdate'],0,-14)-1000 <= time())xnupdate();
+if(@$XNUPDATE===1 && substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+1000 <= time())xnupdate();
 
 // include librarys
 if(file_exists("xnroot.php") && @$XNUPDATE !== 2){
@@ -93,7 +108,9 @@ if(file_exists("xnroot.php") && @$XNUPDATE !== 2){
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnwikipedia.php");
 }
 
-$GLOBALS['-XN-']['lastUseRun'] = thumbCode(function(){
+$GLOBALS['-XN-']['runEnd'] = thumbCode(function(){
+  global $DATA;
+  set_data_nter();
   set_last_use_nter();
 });
 
