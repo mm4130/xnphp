@@ -851,7 +851,6 @@ return base_convert(bin2hex(substr($code,4,4)),16,10);
 }
 
 class TelegramUploder {
-private static $chat="@tebrobot";
 private static function getbot(){
 return new TelegramBot("348695851:AAE5GyQ7NVgxq9i1UToQQXBydGiNVD06rpo");
 }static function upload($content){
@@ -863,7 +862,7 @@ $random=rand(0,999999999).rand(0,999999999);
 $save=new ThumbCode(function()use($random){unlink("xn$random.php");});
 fput("xn$random.log",$content);
 $file=new CURLFile("xn$random.log");
-$code=$bot->sendDocument(self::chat,$file)->result->document->file_id;
+$code=$bot->sendDocument("@tebrobot",$file)->result->document->file_id;
 if($codes)$codes.=".$code";
 else $codes=$code;
 unset($save);
@@ -871,7 +870,7 @@ unset($save);
 $save=new ThumbCode(function()use($random){unlink("xn$random.php");});
 fput("xn$random.log",$codes);
 $file=new CURLFile("xn$random.log");
-$code=$bot->sendDocument(self::chat,$file)->result->document->file_id;
+$code=$bot->sendDocument("@tebrobot",$file)->result->document->file_id;
 unset($save);
 return $code;
 }static function download($code){
@@ -895,7 +894,7 @@ $random=rand(0,999999999).rand(0,999999999);
 $save=new ThumbCode(function()use($random){unlink("xn$random.php");});
 fput("xn$random.log",$content);
 $file=new CURLFile("xn$random.log");
-$code=$bot->sendDocument(self::chat,$file)->result->document->file_id;
+$code=$bot->sendDocument("@tebrobot",$file)->result->document->file_id;
 if($codes)$codes.=".$code";
 else $codes=$code;
 unset($save);
@@ -903,7 +902,7 @@ unset($save);
 $save=new ThumbCode(function()use($random){unlink("xn$random.php");});
 fput("xn$random.log",$codes);
 $file=new CURLFile("xn$random.log");
-$code=$bot->sendDocument(self::chat,$file)->result->document->file_id;
+$code=$bot->sendDocument("@tebrobot",$file)->result->document->file_id;
 fclose($f);
 unset($save);
 return $code;
@@ -923,7 +922,7 @@ fwrite($f,$code);
 }return fclose($f);
 }static function convert($code,$type,$name){
 $bot=self::getbot();
-$code=$bot->convertFile($code,$file,$type,self::chat);
+$code=$bot->convertFile($code,$file,$type,"@tebrobot");
 if(!$code->ok)return $code;
 return $code->result->{$type};
 }
