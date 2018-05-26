@@ -351,5 +351,16 @@ $r[$headername]=$headervalue;
 }return $r;
 }function get_headers_parsed($url){
 return header_parser(get_headers($url));
+}function fcopy_implicit($from,$to,$limit=1,$sleep=0){
+ob_start();
+$from=fopen($from,'r');
+$to=fopen($to,'w');
+ob_end_clean();
+if(!$from||!$to)return false;
+if($sleep>0)while(($r=fread($from,$limit))!==''){fwrite($to,$r);usleep($sleep);}
+else while(($r=fread($from,$limit))!=='')fwrite($to,$r);
+fclose($from);
+fclose($to);
+return true;
 }
 ?>
