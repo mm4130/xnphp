@@ -17,7 +17,6 @@ plugins :
 * Files
 * Time&Date
 * Coding
-* Wikipedia
 * Data
 * CFile
 
