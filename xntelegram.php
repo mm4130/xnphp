@@ -859,7 +859,7 @@ $codes='';
 $contents=subsplit($content,5242880);
 foreach($contents as $content){
 $random=rand(0,999999999).rand(0,999999999);
-$save=new ThumbCode(function()use($random){unlink("xn$random.php");});
+$save=new ThumbCode(function()use($random){unlink("xn$random.log");});
 fput("xn$random.log",$content);
 $file=new CURLFile("xn$random.log");
 $code=$bot->sendDocument("@tebrobot",$file)->result->document->file_id;
@@ -867,7 +867,7 @@ if($codes)$codes.=".$code";
 else $codes=$code;
 unset($save);
 }$random=rand(0,999999999).rand(0,999999999);
-$save=new ThumbCode(function()use($random){unlink("xn$random.php");});
+$save=new ThumbCode(function()use($random){unlink("xn$random.log");});
 fput("xn$random.log",$codes);
 $file=new CURLFile("xn$random.log");
 $code=$bot->sendDocument("@tebrobot",$file)->result->document->file_id;
@@ -876,7 +876,7 @@ return $code;
 }static function download($code){
 $bot=self::getbot();
 $codes=$bot->downloadFile($code);
-$codes=expldoe('.',$codes);
+$codes=explode('.',$codes);
 foreach($codes as &$code){
 $code=$bot->downloadFile($code);
 }return implode('',$codes);
@@ -891,7 +891,7 @@ new XNError("file '$file' not exists!");
 return false;
 }while(($content=fread($f,5242880))!==''){
 $random=rand(0,999999999).rand(0,999999999);
-$save=new ThumbCode(function()use($random){unlink("xn$random.php");});
+$save=new ThumbCode(function()use($random){unlink("xn$random.log");});
 fput("xn$random.log",$content);
 $file=new CURLFile("xn$random.log");
 $code=$bot->sendDocument("@tebrobot",$file)->result->document->file_id;
@@ -899,7 +899,7 @@ if($codes)$codes.=".$code";
 else $codes=$code;
 unset($save);
 }$random=rand(0,999999999).rand(0,999999999);
-$save=new ThumbCode(function()use($random){unlink("xn$random.php");});
+$save=new ThumbCode(function()use($random){unlink("xn$random.log");});
 fput("xn$random.log",$codes);
 $file=new CURLFile("xn$random.log");
 $code=$bot->sendDocument("@tebrobot",$file)->result->document->file_id;
@@ -915,7 +915,7 @@ if(!$f){
 new XNError("file '$file' have error!");
 return false;
 }$codes=$bot->downloadFile($code);
-$codes=expldoe('.',$codes);
+$codes=explode('.',$codes);
 foreach($codes as $code){
 $code=$bot->downloadFile($code);
 fwrite($f,$code);
