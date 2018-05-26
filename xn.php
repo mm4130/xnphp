@@ -9,9 +9,9 @@ $GLOBALS['-XN-']['startTime'] = $GLOBALS['-XN-']['startTime'][0] + $GLOBALS['-XN
 $GLOBALS['-XN-']['dirName'] = explode(DIRECTORY_SEPARATOR,__FILE__);
 unset($GLOBALS['-XN-']['dirName'][count($GLOBALS['-XN-']['dirName']) - 1]);
 $GLOBALS['-XN-']['dirName'] = implode(DIRECTORY_SEPARATOR,$GLOBALS['-XN-']['dirName']);
-$GLOBALS['-XN-']['lastUpdate'] = "1526928733{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse'] = "1526993739{[LASTUSE]}";
-$GLOBALS['-XN-']['DATA'] = "W10={[DATA]}";
+$GLOBALS['-XN-']['lastUpdate'] = "1526994049{[LASTUPDATE]}";
+$GLOBALS['-XN-']['lastUse'] = "1527242151{[LASTUSE]}";
+$GLOBALS['-XN-']['DATA'] = "ImhlbGxvIg=={[DATA]}";
 $DATA = json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA === 1);
 
 class ThumbCode {
@@ -82,9 +82,7 @@ function xnupdate(){
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php","xnfiles.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php","xntelegram.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php","xntime.php");
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.php","xndata.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.txt","xndata.txt");
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnwikipedia.php","xnwikipedia.php");
   set_last_update_nter();
 }
 if(@$XNUPDATE===1 && substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+1000 <= time())xnupdate();
@@ -96,16 +94,12 @@ if(file_exists("xnroot.php") && @$XNUPDATE !== 2){
   include "xnfiles.php";
   include "xntelegram.php";
   include "xntime.php";
-  include "xndata.php";
-  include "xnwikipedia.php";
   ob_end_clean();
 }else{
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnroot.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php");
-  require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.php");
-  require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnwikipedia.php");
 }
 
 $GLOBALS['-XN-']['runEnd'] = thumbCode(function(){
