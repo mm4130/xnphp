@@ -326,5 +326,30 @@ if($size<1048576*$offset)return floor($size/1024).$join.'K';
 if($size<1073741824*$offset)return floor($size/1048576).$join.'M';
 if($site<1099511627776*$offset)return floor($size/1073741824).$join.'G';
 return floor($size/109951162776).$join.'T';
+}function header_parser($headers){
+$r=[];
+if(is_string($headers))$headers=explode("\n",$headers);
+elseif(!is_array($headers))return false;
+$http=explode(' ',$headers[0]);
+$r['protocol']=$http[0];
+$r['http_code']=(int)$http[1];
+$r['description']=$http[2];
+unset($headers[0]);
+foreach($headers as $header){
+$header=explode(':',$header);
+$headername=trim(trim($header[0],"\t"));
+$headername=strtr($headername,"QWERTYUIOPASDFGHJKLZXCVBNM-","qwertyuiopasdfghjklzxcvbnm_");
+unset($header[0]);
+$header=trim(trim(implode(':',$header),"\t"));
+$header=explode(';',$header);
+if(isset($header[1])){
+$eadervalue=[];
+foreach($header as $hdr){
+$headervalue[]=$hdr;
+}}else $headervalue=$header[0];
+$r[$headername]=$headervalue;
+}return $r;
+}function get_headers_parsed($url){
+return header_parser(get_headers($url));
 }
 ?>
