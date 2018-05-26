@@ -344,8 +344,8 @@ $header=trim(trim(implode(':',$header),"\t"));
 $header=explode(';',$header);
 if(isset($header[1])){
 $eadervalue=[];
-foreach($header as $hdr){
-$headervalue[]=$hdr;
+foreach($header as $k=>$hdr){
+$headervalue[$k]=$hdr;
 }}else $headervalue=$header[0];
 $r[$headername]=$headervalue;
 }return $r;
