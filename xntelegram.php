@@ -335,6 +335,23 @@ return $this->request("deleteMessage",[
 "chat_id"=>$chat,
 "message_id"=>$message
 ],$level);
+}public function deleteMessages($chat,$messages,$level=3){
+if($level>5){
+$level-=5;
+$from=min(...$messages);
+$to=max(...$messages);
+for(;$from<=$to;$from++)
+$this->request("deleteMessage",[
+"chat_id"=>$chat,
+"message_id"=>$from
+],$level);
+}else{
+foreach($messages as $message)
+$this->request("deleteMessage",[
+"chat_id"=>$chat,
+"message_id"=>$message
+],$level);
+}
 }public function sendMedia($chat,$type,$file,$args=[],$level=3){
 $type=strtolower($type);
 if($type=="videonote")$type="video_note";
@@ -844,7 +861,11 @@ $type=[
 13=>"video_note",
 8=>"sticker"
 ];return $type[ord($file[0])];
-}static function getJoinChatId($code){
+}static function getMimeType($type,$mime_type="text/plan"){
+return ["document"=>$mime_type,"audio"=>"audio/mp3","video"=>"video/mp4","vide_note"=>"video/mp4","voice"=>"audio/ogg","photo"=>"image/jpeg","sticker"=>"image/webp"][$file];
+}static function getFormat($type,$format="txt"){
+return ["document"=>$format,"audio"=>"mp3","video"=>"mp4","vide_note"=>"mp4","voice"=>"ogg","photo"=>"jpg","sticker"=>"webp"][$file];
+}static function getJoinChat($code){
 $code=base64_decode(strtr($code,'-_','+/'));
 return base_convert(bin2hex(substr($code,4,4)),16,10);
 }
