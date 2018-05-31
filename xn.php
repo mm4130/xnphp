@@ -85,9 +85,6 @@ function xnupdate(){
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xncoding.txt","xncoding.txt");
   set_last_update_nter();
 }
-function update_xndata(){
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.txt","xndata.txt");
-}
 if(@$XNUPDATE===1 && substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+1000 <= time())xnupdate();
 
 // include librarys
