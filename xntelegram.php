@@ -1903,6 +1903,22 @@ $this->phone=null;
 }
 }
 
+class TelegramFind {
+public function token($s){
+preg_match_all("/[0-9]{4,20}:AA[GFHE][a-zA-Z0-9-_]{32}/",$s,$u);
+return $u[0];
+}public function username($s){
+preg_match_all("/@[a-zA-Z][a-zA-Z0-9_]{4,31}/",$s,$u);
+return $u;
+}public function start($s){
+if(strpos($s,"/start ")===0){
+return substr($s,7);
+}if(strpos($s,"/start")===0){
+return true;
+}return false;
+}
+}
+
 class XNTelegram {
 // Soon ...
 }
