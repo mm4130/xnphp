@@ -82,8 +82,11 @@ function xnupdate(){
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php","xnfiles.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php","xntelegram.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php","xntime.php");
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.txt","xndata.txt");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xncoding.txt","xncoding.txt");
   set_last_update_nter();
+}
+function update_xndata(){
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.txt","xndata.txt");
 }
 if(@$XNUPDATE===1 && substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+1000 <= time())xnupdate();
 
@@ -94,12 +97,14 @@ if(file_exists("xnroot.php") && @$XNUPDATE !== 2){
   include "xnfiles.php";
   include "xntelegram.php";
   include "xntime.php";
+  include "xncoding.php";
   ob_end_clean();
 }else{
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnroot.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php");
+  require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xncoding.php");
 }
 
 $GLOBALS['-XN-']['runEnd'] = thumbCode(function(){
