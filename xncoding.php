@@ -94,7 +94,7 @@ return $this;
 $this->xnj->set($key,$this->xnj->value($key)%$count);
 return $this;
 }public function calc($key,$calc){
-$this->xnj->set($key,XNCalc::calc($calc,['x'=>$this->xnj->value($key)])));
+$this->xnj->set($key,XNCalc::calc($calc,['x'=>$this->xnj->value($key)]));
 return $this;
 }public function join($key,$data){
 $this->xnj->set($key,$this->xnj->value($key).$data);
@@ -123,7 +123,7 @@ return $this;
 $this->xnj->set($key,XNProCalc::pow($this->xnj->value($key),$count));
 return $this;
 }public function calc($key,$calc){
-$this->xnj->set($key,XNProCalc::calc($calc,['x'=>$this->xnj->value($key)])));
+$this->xnj->set($key,XNProCalc::calc($calc,['x'=>$this->xnj->value($key)]));
 return $this;
 }
 }
