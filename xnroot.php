@@ -113,6 +113,13 @@ $r=@require "xn$random.log";
 $save=ob_get_contents();
 ob_end_clean();
 }return $r;
+}function is_function($f){
+return is_callable($f)&&!is_string($f);
+}function is_json($str){
+$json=json_decode($str);
+return is_string($str)&&
+       $str&&$json!==false&&
+       (is_object($json)||is_array($json));
 }
 
 ?>
