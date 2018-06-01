@@ -93,6 +93,12 @@ return $this;
 }public function rect($key,$count=1){
 $this->xnj->set($key,$this->xnj->value($key)%$count);
 return $this;
+}public function calc($key,$calc){
+$this->xnj->set($key,XNCalc::calc($calc,['x'=>$this->xnj->value($key)])));
+return $this;
+}public function join($key,$data){
+$this->xnj->set($key,$this->xnj->value($key).$data);
+return $this;
 }
 }class XNJsonProMath {
 private $xnj;
@@ -115,6 +121,9 @@ $this->xnj->set($key,XNProCalc::rect($this->xnj->value($key),$count));
 return $this;
 }public function pow($key,$count=1){
 $this->xnj->set($key,XNProCalc::pow($this->xnj->value($key),$count));
+return $this;
+}public function calc($key,$calc){
+$this->xnj->set($key,XNProCalc::calc($calc,['x'=>$this->xnj->value($key)])));
 return $this;
 }
 }
