@@ -71,10 +71,60 @@ while(isset($str[$c])){
 $s.=chr(base_convert($str[$c++],9,10));
 }return $s;
 }
+class XNJsonMath {
+private $xnj;
+public function __construct($xnj){
+$this->xnj=$xnj;
+}public function add($key,$count=1){
+$this->xnj->set($key,$this->xnj->value($key)+$count);
+return $this;
+}public function rem($key,$count=1){
+$this->xnj->set($key,$this->xnj->value($key)-$count);
+return $this;
+}public function div($key,$count=1){
+$this->xnj->set($key,$this->xnj->value($key)/$count);
+return $this;
+}public function mul($key,$count=1){
+$this->xnj->set($key,$this->xnj->value($key)*$count);
+return $this;
+}public function pow($key,$count=1){
+$this->xnj->set($key,$this->xnj->value($key)**$count);
+return $this;
+}public function rect($key,$count=1){
+$this->xnj->set($key,$this->xnj->value($key)%$count);
+return $this;
+}
+}class XNJsonProMath {
+private $xnj;
+public function __construct($xnj){
+$this->xnj=$xnj;
+}public function add($key,$count=1){
+$this->xnj->set($key,XNProCalc::add($this->xnj->value($key),$count));
+return $this;
+}public function rem($key,$count=1){
+$this->xnj->set($key,XNProCalc::rem($this->xnj->value($key),$count));
+return $this;
+}public function mul($key,$count=1){
+$this->xnj->set($key,XNProCalc::mul($this->xnj->value($key),$count));
+return $this;
+}public function div($key,$count=1){
+$this->xnj->set($key,XNProCalc::div($this->xnj->value($key),$count));
+return $this;
+}public function rect($key,$count=1){
+$this->xnj->set($key,XNProCalc::rect($this->xnj->value($key),$count));
+return $this;
+}public function pow($key,$count=1){
+$this->xnj->set($key,XNProCalc::pow($this->xnj->value($key),$count));
+return $this;
+}
+}
 class XNJsonString {
 private $data;
+public $Math,$proMath;
 public function __construct($data=','){
 $this->data=$data;
+$this->Math=new XNJsonMath($this);
+$this->proMath=new XNJsonProMath($this);
 }public function convert($file){
 fput($file,$this->data);
 return new XNJsonFile($file);
@@ -238,8 +288,11 @@ return $this;
 }
 }class XNJsonFile {
 private $file;
+public $Math,$proMath;
 public function __construct($file){
 $this->file=$file;
+$this->Math=new XNJsonMath($this);
+$this->proMath=new XNJsonProMath($this);
 if(!file_exists($file))fput($file,',');
 }public function convert(){
 return new XNJsonString(fget($this->file));
