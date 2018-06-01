@@ -113,9 +113,35 @@ $args=["latitude"=>$latitude,"longitude"=>$longitude,"title"=>$title,"address"=>
 if($id)$args["foursquare_id"]=$id;
 return $args;
 }
+}class TelegramBotButtonSave {
+private $btns=[],$btn=[];
+public function get($name,$json=true){
+if($json)return @$this->btn[$name];
+return @$this->btns[$name];
+}public function add($name,$btn){
+if(is_array($btn))$btns=json_encode($btn);
+elseif(!is_json($btn))return false;
+else $btn=json_decode($btns=$btn);
+if(!isset($btns['inline_keyboard'])||
+   !isset($btns['keyboard'])||
+   !isset($btns['force_reply'])||
+   !isset($btns['remove_keyboard']))
+   return false;
+$this->btns=$btns;
+$this->btn=$btn;
+return $this;
+}public function delete($name){
+if(isset($this->btn[$name])){
+unset($this->btn[$name]);
+unset($this->btns[$name]);
+}return $this;
+}public function reset(){
+$this->btn=[];
+$this->btns=[];
+}
 }class TelegramBot {
 public $data,$token,$final,$results=[],$sents=[],$save=true,$last;
-public $keyboard,$inlineKeyboard,$foreReply,$removeKeyboard,$queryResult;
+public $keyboard,$inlineKeyboard,$foreReply,$removeKeyboard,$queryResult,$menu;
 public function setToken($token=''){
 $this->last=$this->token;
 $this->token=$token;
@@ -130,6 +156,7 @@ $this->token=$token;
 $this->keyboard=new TelegramBotKeyboard;
 $this->inlineKeyboard=new TelegramBotInlineKeyboard;
 $this->queryResult=new TelegramBotQueryResult;
+$this->menu=new TelegramBotButtonSave;
 $this->forceReply=["force_reply"=>true];
 $this->removeKeyboard=["remove_keyboard"=>true];
 }public function update($offset=-1,$limit=1,$timeout=0){
@@ -191,9 +218,14 @@ $this->token=null;
 }public function sendMessage($chat,$text,$args=[],$level=3){
 $args['chat_id']=$chat;
 $args['text']=$text;
-if(isset($args['reply_markup'])&&is_array($args['reply_markup']))
-$args['reply_markup']=json_encode($args['reply_markup']);
 return $this->request("sendMessage",$args,$level);
+}public function sendMessages($chat,$text,$args=[],$level=3){
+$args['chat_id']=$chat;
+$texts=subsplit($text,4096);
+foreach($texts as $text){
+$args['text']=$text;
+$this->request("sendMessage",$args,$level);
+}return $this;
 }public function sendMessageRemoveKeyboard($chat,$text,$args=[],$level=3){
 $args['chat_id']=$chat;
 $args['text']=$text;
@@ -214,11 +246,11 @@ return $this->request("sendChatAction",[
 "chat_id"=>$chat,
 "action"=>"typing"
 ],$level);
-}public function setWebhook($args=[],$level=3){
-if(!isset($args['url'])||!$args['url'])$args['url']='';
-if(is_array($args['allowed_updates']))
-$args['allowed_updates']=json_encode($args['allowed_updates']);
+}public function setWebhook($url='',$args=[],$level=3){
+$args['url']=$url?$url:'';
 return $this->request("setWebhook",$args,$level);
+}public function deleteWebhook($level=3){
+return $this->request("setWebhook",[],$level);
 }public function getChat($chat,$level=3){
 return $this->request("getChat",[
 "chat_id"=>$chat
@@ -650,6 +682,10 @@ if(isset($args['file']))$args['photo']=$args['document']=$args['video']=$args['v
                         $args['photo_url']=$args['document_url']=$args['video_url']=$args['voice_url']=$args['video_note_url']=
                         $args['audio_url']=$args['sticker_url']=$args['file_id']=$args['file'];
 if(isset($args['phone']))$args['phone_number']=$args['phone'];
+if(isset($args['allowed_updates'])&&is_array($args['allowed_updates']))
+$args['allowed_updates']=json_encode($args['allowed_updates']);
+if(isset($args['reply_markup'])&&is_array($args['reply_markup']))
+$args['reply_markup']=json_encode($args['reply_markup']);
 return $args;
 }
 }
