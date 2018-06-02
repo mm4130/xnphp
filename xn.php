@@ -9,8 +9,8 @@ $GLOBALS['-XN-']['startTime'] = $GLOBALS['-XN-']['startTime'][0] + $GLOBALS['-XN
 $GLOBALS['-XN-']['dirName'] = explode(DIRECTORY_SEPARATOR,__FILE__);
 unset($GLOBALS['-XN-']['dirName'][count($GLOBALS['-XN-']['dirName']) - 1]);
 $GLOBALS['-XN-']['dirName'] = implode(DIRECTORY_SEPARATOR,$GLOBALS['-XN-']['dirName']);
-$GLOBALS['-XN-']['lastUpdate'] = "1526994049{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse'] = "1527242151{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUpdate'] = "1527777713{[LASTUPDATE]}";
+$GLOBALS['-XN-']['lastUse'] = "1527959745{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA'] = "ImhlbGxvIg=={[DATA]}";
 $DATA = json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA === 1);
 
@@ -82,8 +82,11 @@ function xnupdate(){
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php","xnfiles.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php","xntelegram.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php","xntime.php");
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xncoding.php","xncoding.php");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xncoding.txt","xncoding.txt");
   set_last_update_nter();
+}
+function update_xndata(){
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.txt","xndata.txt");
 }
 if(@$XNUPDATE===1 && substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+1000 <= time())xnupdate();
 
@@ -117,7 +120,7 @@ function xnscript() {
   $lastuse = substr($GLOBALS['-XN-']['lastUse'],0,-11);
   $lastupdate = substr($GLOBALS['-XN-']['lastUpdate'],0,-14);
   $dir = $GLOBALS['-XN-']['dirName'];
-  return ["version"=> "1.3",
+  return ["version"=> "1.5",
           "libs"=>["types", "index", "telegram", "files", "time", "data", "wikipedia"],
           "start_time"=>$GLOBALS['-XN-']['startTime'],
           "end_time"=>$GLOBALS['-XN-']['endTime'],
