@@ -35,25 +35,27 @@ return $this->message;
 }
 }function subsplit($str,$num=1,$rms=false){
 $arr=[];
+$f=0;
 if($rms){
 $len=strlen($str);
 if($len%$num){
-$arr[]=substr($str,0,$len%$num);
-$str=substr($str,$len%$num);
-}}while($str||$str==='0'){
-$arr[]=substr($str,0,$num);
-$str=substr($str,$num);
+$f=$len%$num;
+$arr[]=substr($str,0,$f);
+}}while(isset($str[$f])){
+$arr[]=substr($str,$f,$num);
+$f+=$num;
 }return $arr;
 }function mb_subsplit($str,$num=1,$rms=false){
 $arr=[];
+$f=0;
 if($rms){
 $len=mb_strlen($str);
 if($len%$num){
-$arr[]=mb_substr($str,0,$len%$num);
-$str=mb_substr($str,$len%$num);
-}}while($str||$str==='0'){
-$arr[]=mb_substr($str,0,$num);
-$str=mb_substr($str,$num);
+$f=$len%$num;
+$arr[]=mb_substr($str,0,$f);
+}}while(isset($str[$f])){
+$arr[]=mb_substr($str,$f,$num);
+$f+=$num;
 }return $arr;
 }function var_read(...$var){
 ob_start();
@@ -113,13 +115,67 @@ $r=@require "xn$random.log";
 $save=ob_get_contents();
 ob_end_clean();
 }return $r;
-}function is_function($f){
-return is_callable($f)&&!is_string($f);
-}function is_json($str){
-$json=json_decode($str);
-return is_string($str)&&
-       $str&&$json!==false&&
-       (is_object($json)||is_array($json));
+}function thecode(){
+$t=debug_backtrace();
+$l=file($t[0]['file']);
+$c=$l[$t[0]['line']-1];
+return $c;
+}function theline(){
+$t=debug_backtrace();
+return $t[0]['line'];
+}function thefile(){
+$t=debug_backtrace();
+return $t[0]['file'];
+}function thedir(){
+$t=debug_backtrace();
+return dirname($t[0]['file']);
+}function var_name(&$var){
+$t=debug_backtrace();
+$l=file($t[0]['file']);
+$c=$l[$t[0]['line']-1];
+preg_match('/var_name[\n ]*\([@\n ]*\$([a-zA-Z_0-9]+)[\n ]*((\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\)))*\)/',$c,$s);
+$s[0]=substr($s[0],9,-1);
+preg_match_all('/(\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\))/',$s[0],$j);
+$u=[];
+foreach($j[1] as $e){
+if($e)$u[]=["caller"=>'->',
+"type"=>"object_method",
+"value"=>substr($e,2)];
+}foreach($j[2] as $e){
+if($e)$u[]=["caller"=>"::",
+"type"=>"static_method",
+"value"=>substr($e,2)];
+}foreach($j[3] as $e){
+if($e)$u[]=["caller"=>"[]",
+"type"=>"array_index",
+"value"=>substr($e,1,-1)];
+}foreach($j[4] as $e){
+if($e)$u[]=["caller"=>"()",
+"type"=>"closure_call",
+"value"=>substr($e,1,-1)];
+}if(isset($s[1]))return ["name"=>$s[1],
+"full"=>$s[0],
+"calls"=>$u];
+new XNError("var_name","invalid variable");
+return false;
+}function define_name($define){
+$t=debug_backtrace();
+$l=file($t[0]['file']);
+$c=$l[$t[0]['line']-1];
+preg_match('/define_name[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\)/',$c,$s);
+if(isset($s[1]))return $s[1];
+new XNError("define_name","define type error");
+return false;
+}function countin($text,$in){
+return count(explode($in,$text))-1;
+}function function_name($func){
+$t=debug_backtrace();
+$l=file($t[0]['file']);
+$c=$l[$t[0]['line']-1];
+preg_match('/function_name[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\(/',$c,$s);
+if(isset($s[1]))return $s[1];
+new XNError("define_name","this not is a function");
+return false;
 }
 
 ?>
