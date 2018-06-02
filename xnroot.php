@@ -117,18 +117,22 @@ ob_end_clean();
 }return $r;
 }function thecode(){
 $t=debug_backtrace();
-$l=file($t[0]['file']);
-$c=$l[$t[0]['line']-1];
+$t=end($t);
+$l=file($t['file']);
+$c=$l[$t['line']-1];
 return $c;
 }function theline(){
 $t=debug_backtrace();
-return $t[0]['line'];
+$t=end($t);
+return $t['line'];
 }function thefile(){
 $t=debug_backtrace();
-return $t[0]['file'];
+$t=end($t);
+return $t['file'];
 }function thedir(){
 $t=debug_backtrace();
-return dirname($t[0]['file']);
+$t=end($t);
+return dirname($t['file']);
 }function var_name(&$var){
 $t=debug_backtrace();
 $l=file($t[0]['file']);
