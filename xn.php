@@ -83,7 +83,7 @@ function xnupdate(){
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php",$GLOBALS['-XN-']['dirNameDir'] . "xnfiles.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php",$GLOBALS['-XN-']['dirNameDir'] . "xntelegram.php");
   copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php",$GLOBALS['-XN-']['dirNameDir'] . "xntime.php");
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xncoding.txt",$GLOBALS['-XN-']['dirNameDir'] . "xncoding.txt");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xncoding.php",$GLOBALS['-XN-']['dirNameDir'] . "xncoding.txt");
   set_last_update_nter();
 }
 if(@$XNUPDATE===1 && substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+10000 <= time())xnupdate();
