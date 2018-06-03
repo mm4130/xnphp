@@ -7,6 +7,7 @@ $GLOBALS['-XN-'] = [];
 $GLOBALS['-XN-']['startTime'] = explode(' ',microtime());
 $GLOBALS['-XN-']['startTime'] = $GLOBALS['-XN-']['startTime'][0] + $GLOBALS['-XN-']['startTime'][1];
 $GLOBALS['-XN-']['dirName'] = explode(DIRECTORY_SEPARATOR,__FILE__);
+$GLOBALS['-XN-']['dirNameDir'] = $GLOBALS['-XN-']['dirName'] . DIRECTORY_SEPARATOR;
 unset($GLOBALS['-XN-']['dirName'][count($GLOBALS['-XN-']['dirName']) - 1]);
 $GLOBALS['-XN-']['dirName'] = implode(DIRECTORY_SEPARATOR,$GLOBALS['-XN-']['dirName']);
 $GLOBALS['-XN-']['lastUpdate'] = "1527777713{[LASTUPDATE]}";
@@ -30,7 +31,7 @@ return new ThumbCode($func);
 }
 
 function set_last_update_nter(){
-  $file = $GLOBALS['-XN-']['dirName'] . DIRECTORY_SEPARATOR . 'xn.php';
+  $file = $GLOBALS['-XN-']['dirNameDir'] . 'xn.php';
   $f = file_get_contents($file);
   $p = strpos($f,"{[LASTUPDATE]}");
   while($p>0 && $f[$p--] != '"');
@@ -43,7 +44,7 @@ function set_last_update_nter(){
   return file_put_contents($file,$f);
 }
 function set_last_use_nter(){
-  $file = $GLOBALS['-XN-']['dirName'] . DIRECTORY_SEPARATOR . 'xn.php';
+  $file = $GLOBALS['-XN-']['dirNameDir'] . 'xn.php';
   $f = file_get_contents($file);
   $p = strpos($f,"{[LASTUSE]}");
   while($p>0 && $f[$p--] != '"');
@@ -57,7 +58,7 @@ function set_last_use_nter(){
 }
 function set_data_nter(){
   $data = base64_encode(json_encode($GLOBALS['DATA']));
-  $file = $GLOBALS['-XN-']['dirName'] . DIRECTORY_SEPARATOR . 'xn.php';
+  $file = $GLOBALS['-XN-']['dirNameDir'] . 'xn.php';
   $f = file_get_contents($file);
   $p = strpos($f,"{[DA"."TA]}");
   while($p>0 && $f[$p--] != '"');
@@ -77,27 +78,24 @@ function require_url_nter($url){
   @require "xn$random.log";
 }
 function xnupdate(){
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php","xn.php");
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnroot.php","xnroot.php");
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php","xnfiles.php");
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php","xntelegram.php");
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php","xntime.php");
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xncoding.txt","xncoding.txt");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php",$GLOBALS['-XN-']['dirNameDir'] . "xn.php");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnroot.php",$GLOBALS['-XN-']['dirNameDir'] . "xnroot.php");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php",$GLOBALS['-XN-']['dirNameDir'] . "xnfiles.php");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntelegram.php",$GLOBALS['-XN-']['dirNameDir'] . "xntelegram.php");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xntime.php",$GLOBALS['-XN-']['dirNameDir'] . "xntime.php");
+  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xncoding.txt",$GLOBALS['-XN-']['dirNameDir'] . "xncoding.txt");
   set_last_update_nter();
 }
-function update_xndata(){
-  copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.txt","xndata.txt");
-}
-if(@$XNUPDATE===1 && substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+1000 <= time())xnupdate();
+if(@$XNUPDATE===1 && substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+10000 <= time())xnupdate();
 
 // include librarys
-if(file_exists("xnroot.php") && @$XNUPDATE !== 2){
+if(file_exists($GLOBALS['-XN-']['dirNameDir'] . "xnroot.php") && @$XNUPDATE !== 2){
   ob_start();
-  include "xnroot.php";
-  include "xnfiles.php";
-  include "xntelegram.php";
-  include "xntime.php";
-  include "xncoding.php";
+  include $GLOBALS['-XN-']['dirNameDir'] . "xnroot.php";
+  include $GLOBALS['-XN-']['dirNameDir'] . "xnfiles.php";
+  include $GLOBALS['-XN-']['dirNameDir'] . "xntelegram.php";
+  include $GLOBALS['-XN-']['dirNameDir'] . "xntime.php";
+  include $GLOBALS['-XN-']['dirNameDir'] . "xncoding.php";
   ob_end_clean();
 }else{
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnroot.php");
@@ -119,13 +117,12 @@ $GLOBALS['-XN-']['endTime'] = $GLOBALS['-XN-']['endTime'][0] + $GLOBALS['-XN-'][
 function xnscript() {
   $lastuse = substr($GLOBALS['-XN-']['lastUse'],0,-11);
   $lastupdate = substr($GLOBALS['-XN-']['lastUpdate'],0,-14);
-  $dir = $GLOBALS['-XN-']['dirName'];
   return ["version"=> "1.5",
           "libs"=>["types", "index", "telegram", "files", "time", "data", "wikipedia"],
           "start_time"=>$GLOBALS['-XN-']['startTime'],
           "end_time"=>$GLOBALS['-XN-']['endTime'],
           "loaded_time"=>$GLOBALS['-XN-']['endTime'] - $GLOBALS['-XN-']['startTime'],
-          "dir_name"=>$dir,
+          "dir_name"=>$GLOBALS['-XN-']['dirName'],
           "last_update"=>$lastupdate,
           "last_use"=>$lastuse
          ];
