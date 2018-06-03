@@ -180,6 +180,17 @@ preg_match('/function_name[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\(/',$c,$s);
 if(isset($s[1]))return $s[1];
 new XNError("define_name","this not is a function");
 return false;
+}function printsc($k=true){
+$t=debug_backtrace();
+$l=file($t[0]['file']);
+$p=$t[0]['line'];
+if($k)while(isset($l[$p][1])&&$l[$p][0].$l[$p][1]=='#>'){
+echo evalc(substr($l[$p++],2));
+}else while(isset($l[$p][1])&&$l[$p][0].$l[$p][1]=='#>'){
+echo substr($l[$p++],2);
+}
+}function evalc($code){
+return eval('return '.$code.';');
 }
 
 ?>
