@@ -90,13 +90,11 @@ if(@$XNUPDATE===1 && substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+10000 <= time(
 
 // include librarys
 if(file_exists($GLOBALS['-XN-']['dirNameDir'] . "xnroot.php") && @$XNUPDATE !== 2){
-  ob_start();
   include $GLOBALS['-XN-']['dirNameDir'] . "xnroot.php";
   include $GLOBALS['-XN-']['dirNameDir'] . "xnfiles.php";
   include $GLOBALS['-XN-']['dirNameDir'] . "xntelegram.php";
   include $GLOBALS['-XN-']['dirNameDir'] . "xntime.php";
   include $GLOBALS['-XN-']['dirNameDir'] . "xncoding.php";
-  ob_end_clean();
 }else{
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnroot.php");
   require_url_nter("https://raw.githubusercontent.com/xnlib/xnphp/master/xnfiles.php");
