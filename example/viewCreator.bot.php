@@ -15,8 +15,8 @@ $chat = $update->chat->id;
 $text = $update->text;
 
 if($text == "/start"){
-  $bot->send($chat,3)->typing()->
-                       msg("Hello dear!\nWelcom to bot.");
+  $bot->sendTyping($chat);
+  $bot->sendMessage($chat,"Hello dear!\nWelcome.");
 }else{
   $id = $bot->forwardMessage($channel,$chat,$msg);
   $id = $id->result->message_id;
