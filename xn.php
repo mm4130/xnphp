@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528148303{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528152504{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -398,6 +398,10 @@ $r.=json_encode($v,$js);
 $p++;
 }else $r.=json_encode($k,$js).'=>'.json_encode($v,$js);
 }$r.=']';
+return $r;
+}function func_repeat($func,$c){
+$r='';
+while($c>0)$r.=$func($c--);
 return $r;
 }
 // Data-----------------------------------
@@ -3562,27 +3566,21 @@ if($o){
 $p--;
 if($m==$l-1){
 $m=0;
-echo "Matched : ".$this->elencode(substr($key,0,-1),$value)."\n";
-fwrite($t,$this->elencode(substr($key,0,-1),$value));
-fseek($f,$p+1,SEEK_CUR);
-echo "Seeking $h ".($p+1)."\n";
+fwrite($t,$this->elencode(substr($key,0,-1),substr($value,0,-1)));
+fseek($f,$p,SEEK_CUR);
 break;
 }elseif($key[$m]==$h){
 $m++;
 }else{
 $o=false;
-echo "not matched : ".substr($key,0,$m)."  $h\n";
-fwrite($t,self::elencode(...explode('.',($m>0?substr($key,0,$m):'').fread($f,$p+1))));
-echo "Seeking $h ".($p+1)."\n";
+fwrite($t,self::elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
 $m=0;
 $p='';
 }
 }else{
 if($h==';'){
 $o=true;
-echo "Size : $p ";
 $p=$this->sizedecode($p);
-echo "$p\n";
 }else{
 $p.=$h;
 }}}
