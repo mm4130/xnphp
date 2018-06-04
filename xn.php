@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528111458{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528123873{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -268,6 +268,34 @@ echo substr($l[$p++],2);
 }
 }function evalc($code){
 return eval('return '.$code.';');
+}function is_function($f){
+return (is_string($f)&&function_exists($f))||(is_object($f)&&($f instanceof Closure));
+}function is_json($json){
+$obj=@json_decode($json);
+return $obj!==false&&is_string($json)&&(is_object($obj)||is_array($obj));
+}function random($str,$leng=1){
+if(is_string($str))$str=str_split($str);
+$r='';$c=count($str)-1;
+while($leng>0){
+$r=$r.$str[rand(0,$c)];
+$leng--;}
+return $r;
+}function split($str,$count=1,$space=1){
+$arr=[];
+$length=strlen($str);
+$str=str_split($str);
+$loc=0;
+while($loc<$length){
+$c=0;
+$r='';
+while($c<$count){
+$r=$r.$str[$loc+$c];
+$c++;}
+$arr[]=$r;
+$loc+=$space;}
+return $arr;
+}function ContentType($c){
+return header("Content-Type: $c");
 }
 // Telegram-------------------------------
 class TelegramBotKeyboard {
@@ -406,10 +434,191 @@ unset($this->btns[$name]);
 $this->btn=[];
 $this->btns=[];
 }
+}class TelegramBotSends {
+private $bot;
+public $chat,$level;
+public function chat($chat){
+$this->chat;
+return $this;
+}public function level($level){
+$lthis->level=$level;
+return $this;
+}public function __construct($bot,$chat=null,$level=null){
+$this->bot=$bot;
+$this->chat=$chat;
+$this->level=$level;
+}public function __wakeup($chat=null,$level=null){
+if($chat&&$level){
+$this->chat=$chat;
+$this->level=$level;
+}elseif($chat){
+if($chat<100)$this->level=$chat;
+else $this->chat=$chat;
+}return $this;
+}public function action($action){
+$this->bot->sendAction($this->chat,$action,$this->level);
+return $this;
+}public function typing(){
+$this->bot->sendAction($this->chat,"typing",$this->level);
+return $this;
+}public function msg($text,$args=[]){
+$this->bot->sendMessage($this->chat,$text,$args,$this->level);
+return $this;
+}public function btnmsg($text,$btn,$args=[]){
+$args['reply_markup']=$btn;
+$this->bot->sendMessage($this->chat,$text,$args,$this->level);
+return $this;
+}public function media($type,$media,$args=[]){
+$this->bot->sendMedia($this->chat,$type,$media,$args,$this->level);
+return $this;
+}public function mediamsg($type,$media,$caption,$args=[]){
+$args['caption']=$caption;
+$this->bot->sendMedia($this->chat,$type,$media,$args,$this->level);
+return $this;
+}public function mediabtn($type,$media,$markup,$args=[]){
+$args['reply_markup']=$markup;
+$this->bot->sendMedia($this->chat,$type,$media,$args,$this->level);
+return $this;
+}public function mediamsgbtn($type,$media,$caption,$markup,$args=[]){
+$args['caption']=$caption;
+$args['reply_markup']=$markup;
+$this->bot->sendMedia($this->chat,$type,$media,$args,$this->level);
+return $this;
+}public function photo($photo,$args=[]){
+$this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
+return $this;
+}public function voice($voice,$args=[]){
+$this->bot->sendVoice($this->chat,$voice,$args,$this->level);
+return $this;
+}public function video($video,$args=[]){
+$this->bot->sendVideo($this->chat,$video,$args,$this->level);
+return $this;
+}public function audio($audio,$args=[]){
+$this->bot->sendAudio($this->chat,$audio,$args,$this->level);
+return $this;
+}public function videonote($videonote,$args=[]){
+$this->bot->sendVideoNote($this->chat,$videonote,$args,$this->level);
+return $this;
+}public function sticker($sticker,$args=[]){
+$this->bot->sendSticker($this->chat,$sticker,$args,$this->level);
+return $this;
+}public function document($document,$args=[]){
+$this->bot->sendDocument($this->chat,$document,$args,$this->level);
+return $this;
+}public function file($file,$args=[]){
+$this->bot->sendFile($this->chat,$file,$args,$this->level);
+return $this;
+}public function photomsg($photo,$caption,$args=[]){
+$args['caption']=$caption;
+$this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
+return $this;
+}public function voicemsg($voice,$caption,$args=[]){
+$args['caption']=$caption;
+$this->bot->sendVoice($this->chat,$voice,$args,$this->level);
+return $this;
+}public function videomsg($video,$caption,$args=[]){
+$args['caption']=$caption;
+$this->bot->sendVideo($this->chat,$video,$args,$this->level);
+return $this;
+}public function audiomsg($audio,$caption,$args=[]){
+$args['caption']=$caption;
+$this->bot->sendAudio($this->chat,$audio,$args,$this->level);
+return $this;
+}public function videonotemsg($videonote,$caption,$args=[]){
+$args['caption']=$caption;
+$this->bot->sendVideoNote($this->chat,$videonote,$args,$this->level);
+return $this;
+}public function stickermsg($sticker,$caption,$args=[]){
+$args['caption']=$caption;
+$this->bot->sendSticker($this->chat,$sticker,$args,$this->level);
+return $this;
+}public function documentmsg($document,$caption,$args=[]){
+$args['caption']=$caption;
+$this->bot->sendDocument($this->chat,$document,$args,$this->level);
+return $this;
+}public function filemsg($file,$caption,$args=[]){
+$args['caption']=$caption;
+$this->bot->sendFile($this->chat,$file,$args,$this->level);
+return $this;
+}public function photobtn($photo,$markup,$args=[]){
+$args['caption']=$caption;
+$this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
+return $this;
+}public function voicebtn($voice,$markup,$args=[]){
+$args['reply_markup']=$caption;
+$this->bot->sendVoice($this->chat,$voice,$args,$this->level);
+return $this;
+}public function videobtn($video,$markup,$args=[]){
+$args['reply_markup']=$caption;
+$this->bot->sendVideo($this->chat,$video,$args,$this->level);
+return $this;
+}public function audiobtn($audio,$markup,$args=[]){
+$args['reply_markup']=$caption;
+$this->bot->sendAudio($this->chat,$audio,$args,$this->level);
+return $this;
+}public function videonotebtn($videonote,$markup,$args=[]){
+$args['reply_markup']=$caption;
+$this->bot->sendVideoNote($this->chat,$videonote,$args,$this->level);
+return $this;
+}public function stickerbtn($sticker,$markup,$args=[]){
+$args['reply_markup']=$caption;
+$this->bot->sendSticker($this->chat,$sticker,$args,$this->level);
+return $this;
+}public function documentbtn($document,$markup,$args=[]){
+$args['reply_markup']=$caption;
+$this->bot->sendDocument($this->chat,$document,$args,$this->level);
+return $this;
+}public function filebtn($file,$markup,$args=[]){
+$args['reply_markup']=$markup;
+$this->bot->sendFile($this->chat,$file,$args,$this->level);
+return $this;
+}public function photomsgbtn($photo,$caption,$markup,$args=[]){
+$args['caption']=$caption;
+$args['reply_markup']=$caption;
+$this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
+return $this;
+}public function voicemsgbtn($voice,$caption,$markup,$args=[]){
+$args['caption']=$caption;
+$args['reply_markup']=$caption;
+$this->bot->sendVoice($this->chat,$voice,$args,$this->level);
+return $this;
+}public function videomsgbtn($video,$caption,$markup,$args=[]){
+$args['caption']=$caption;
+$args['reply_markup']=$caption;
+$this->bot->sendVideo($this->chat,$video,$args,$this->level);
+return $this;
+}public function audiomsgbtn($audio,$caption,$markup,$args=[]){
+$args['caption']=$caption;
+$args['reply_markup']=$caption;
+$this->bot->sendAudio($this->chat,$audio,$args,$this->level);
+return $this;
+}public function videonotemsgbtn($videonote,$caption,$markup,$args=[]){
+$args['caption']=$caption;
+$args['reply_markup']=$caption;
+$this->bot->sendVideoNote($this->chat,$videonote,$args,$this->level);
+return $this;
+}public function stickermsgbtn($sticker,$caption,$markup,$args=[]){
+$args['caption']=$caption;
+$args['reply_markup']=$caption;
+$this->bot->sendSticker($this->chat,$sticker,$args,$this->level);
+return $this;
+}public function documentmsgbtn($document,$caption,$markup,$args=[]){
+$args['caption']=$caption;
+$args['reply_markup']=$caption;
+$this->bot->sendDocument($this->chat,$document,$args,$this->level);
+return $this;
+}public function filemsgbtn($file,$caption,$markup,$args=[]){
+$args['caption']=$caption;
+$args['reply_markup']=$caption;
+$this->bot->sendFile($this->chat,$file,$args,$this->level);
+return $this;
+}
 }class TelegramBot {
 public $data,$token,$final,$results=[],$sents=[],$save=true,$last;
-public $keyboard,$inlineKeyboard,$foreReply,$removeKeyboard,$queryResult,$menu;
-public function setToken($token=''){
+public $keyboard,$inlineKeyboard,$foreReply,$removeKeyboard,$queryResult,$menu,$send;
+public function send($chat=null,$level=null){
+return new TelegramBotSends($this,$chat,$level);
+}public function setToken($token=''){
 $this->last=$this->token;
 $this->token=$token;
 return $this;
@@ -424,6 +633,7 @@ $this->keyboard=new TelegramBotKeyboard;
 $this->inlineKeyboard=new TelegramBotInlineKeyboard;
 $this->queryResult=new TelegramBotQueryResult;
 $this->menu=new TelegramBotButtonSave;
+$this->send=new TelegramBotSends($this);
 $this->forceReply=["force_reply"=>true];
 $this->removeKeyboard=["remove_keyboard"=>true];
 }public function update($offset=-1,$limit=1,$timeout=0){
@@ -654,6 +864,12 @@ $this->request("deleteMessage",[
 }public function sendMedia($chat,$type,$file,$args=[],$level=3){
 $type=strtolower($type);
 if($type=="videonote")$type="video_note";
+$args['chat_id']=$chat;
+$args[$type]=$file;
+return $this->request("send".str_replace('_','',$type),$args,$level);
+}public function sendFile($chat,$file,$args=[],$level=3){
+$type=TelegramCode::getFileType($file);
+if(!$type)return false;
 $args['chat_id']=$chat;
 $args[$type]=$file;
 return $this->request("send".str_replace('_','',$type),$args,$level);
@@ -1153,7 +1369,7 @@ return (object)[
 class TelegramCode {
 static function getFileType($file){
 $file=base64_decode(strtr($file,'-_','+/'));
-$type=[
+return [
 0=>"thumb",
 2=>"image",
 5=>"document",
@@ -1163,11 +1379,11 @@ $type=[
 9=>"audio",
 13=>"video_note",
 8=>"sticker"
-];return $type[ord($file[0])];
+][ord($file[0])];
 }static function getMimeType($type,$mime_type="text/plan"){
-return ["document"=>$mime_type,"audio"=>"audio/mp3","video"=>"video/mp4","vide_note"=>"video/mp4","voice"=>"audio/ogg","photo"=>"image/jpeg","sticker"=>"image/webp"][$file];
+return ["document"=>$mime_type,"audio"=>"audio/mp3","video"=>"video/mp4","vide_note"=>"video/mp4","voice"=>"audio/ogg","photo"=>"image/jpeg","sticker"=>"image/webp"][$type];
 }static function getFormat($type,$format="txt"){
-return ["document"=>$format,"audio"=>"mp3","video"=>"mp4","vide_note"=>"mp4","voice"=>"ogg","photo"=>"jpg","sticker"=>"webp"][$file];
+return ["document"=>$format,"audio"=>"mp3","video"=>"mp4","vide_note"=>"mp4","voice"=>"ogg","photo"=>"jpg","sticker"=>"webp"][$type];
 }static function getJoinChat($code){
 $code=base64_decode(strtr($code,'-_','+/'));
 return base_convert(bin2hex(substr($code,4,4)),16,10);
@@ -1259,12 +1475,9 @@ $phone=str_replace(['+',' ','(',')','.',','],'',$phone);
 if(is_numeric($phone))$this->phone=$phone;
 else $this->token=$phone;
 }public function checkAPI(){
-$ch=curl_init("https://api.pwrtelegram.xyz");
-curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
-curl_exec($ch);
-$code=curl_getinfo($ch,CURLINFO_HTTP_CODE);
-curl_close($ch);
-return $code==400||$code==200;
+$f=fopen("https://api.pwrtelegram.xyz",'r');
+fclose($f);
+return !!$f;
 }public function __construct($phone=''){
 $phone=str_replace(['+',' ','(',')','.',','],'',$phone);
 if(is_numeric($phone))$this->phone=$phone;
@@ -2592,7 +2805,9 @@ unlink("xn$random.log");
 });copy($url,"xn$random.log");
 require "xn$random.log";
 }function xnfprint($file,$limit=1,$sleep=0){
-ob_start();
+if(!isset($GLOBALS['-XN-']['xnprint'])){
+new XNError("xnprint","please one starting XNPrint");
+}ob_start();
 $file=fopen($file,'r');
 ob_end_clean();
 if(!$file)return false;
@@ -2601,7 +2816,9 @@ else while(($r=fread($file,$limit))!=='')fwrite($GLOBALS['-XN-']['xnprint'],$r);
 fclose($file);
 return true;
 }function xnprint($text,$limit=1,$sleep=0){
-$from=0;$l=strlen($text)-1;
+if(!isset($GLOBALS['-XN-']['xnprint'])){
+new XNError("xnprint","please one starting XNPrint");
+}$from=0;$l=strlen($text)-1;
 if($sleep>0)while($from<=$l){fwrite($GLOBALS['-XN-']['xnprint'],substr($text,$from,$limit));usleep($sleep);$from+=$limit;}
 else while($from<=$l){fwrite($GLOBALS['-XN-']['xnprint'],substr($text,$from,$limit));$from+=$limit;}
 return true;
@@ -2613,7 +2830,19 @@ $GLOBALS['-XN-']['xnprintsave']=new ThumbCode(function(){
 fclose($GLOBALS['-XN-']['xnprint']);
 });
 }function xnecho($d){
-fwrite($GLOBALS['-XN-']['xnprint'],$d);
+if(!isset($GLOBALS['-XN-']['xnprint'])){
+new XNError("xnprint","please one starting XNPrint");
+}fwrite($GLOBALS['-XN-']['xnprint'],$d);
+}function get_uploaded_file($file){
+$random=rand(0,999999999).rand(0,999999999);
+if(!move_uploaded_file($file,"xn$random.log"))return false;
+$get=fget("xn$random.log");
+unlink("xn$random.log");
+return $get;
+}function format_to_mimetype($format){
+return json_decode(zlib_decode(base64_decode("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")),true)[$format];
+}function mimetype_to_format($mimetype){
+return json_decode(zlib_decode(base64_decode("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")),true)[$mimetype];
 }
 // Time-------------------------------------
 function xndateoption($date=1){
@@ -3313,6 +3542,8 @@ return $xnj;
 }if(!$file&&$j!='.'&&$j!='..'&&file_exists($j))return new XNJsonFile($j);
 if($file)return new XNJsonFile($j);
 return new XNJsonString($j);
+}function hashlength($algo){
+return json_decode(zlib_decode(base64_decode("H4sIAAAAAAAACl2R0W6DMAxF/4XnoZHEiSjfwksGtDDRBgXWaar673PiAJHfznWcE1t5FfdeFo2SHwiwgyZYRyuKBqpIUuKxNsTaFI2ByKrG+oXqWsi2bT/z1r2U3cBS0QhZ0/Uy78aUq8tcrsrzop+W4d4j0qApmoqmpXiYKCqJpzWe/o6Tnxfn5uTaptvgAymSUTZVyMFG+SJjzvuB9QPrB+pfH8PV/6SlIh+T3dy6nVR2/m/ZHBVsPw9e4b5o6HyX01fE6+MpUjWgzdjgy8Kk+h6+nbVbbBnt087ZwpTPhSmfC8eMvxRy+CfKSIpGPXzAfMB8wHzAfMB8mvk082nm08yng+/9D2adFgPjAgAA")),true)[$algo];
 }
 // Calc-------------------------------------
 class XNProCalc {
@@ -3811,9 +4042,7 @@ return self::_get($r);
 if(!self::_check($a))return false;
 $r='1';
 while($a>0){
-echo "$r * $a = ";
 $r=self::mul($r,$a);
-echo "$r\n";
 $a=self::rem($a,'1');
 }return $r;
 }
@@ -3860,6 +4089,12 @@ if($n>=171)return INF;
 while($n>0){
 $r*=$n--;
 }return $r;
+}function strprogress($p1,$p2,$c,$x,$n,$o=''){
+if($n>$x)var_move($x,$n);
+$p=(int)($n/$x*$c);
+if($p==$c)return str_repeat($p1,$p).$o;
+if($p==0)return $o.str_repeat($p2,$c);
+return str_repeat($p1,$p).$o.str_repeat($p2,$c-$p);
 }
 // CFile----------------------------------------------
 class XNColor {
@@ -4167,6 +4402,141 @@ $pos+=4;
 return $this;
 }
 
+}
+// API
+function clockanalogimage($req=[],$rs=false){
+$size=ifstr($req['size'],512);
+$borderwidth=ifstr($req['borderwidth'],3);
+$bordercolor=ifstr($req['bordercolor'],'000');
+$numberspace=ifstr($req['numberspace'],76);
+$line1space=ifstr($req['line1space'],98);
+$line1length=ifstr($req['line1length'],10);
+$line1width=ifstr($req['line1width'],1);
+$line1color=ifstr($req['line1color'],'000');
+$line1type=ifstr($req['line1type'],3);
+$line2space=ifstr($req['line2space'],98);
+$line2length=ifstr($req['line2length'],10);
+$line2width=ifstr($req['line2width'],1);
+$line2color=ifstr($req['line2color'],'000');
+$line2type=ifstr($req['line2type'],3);
+$line3space=ifstr($req['line3space'],98);
+$line3length=ifstr($req['line3length'],10);
+$line3width=ifstr($req['line3width'],1);
+$line3color=ifstr($req['line3color'],'000');
+$line3type=ifstr($req['line3type'],3);
+$numbersize=ifstr($req['numbersize'],20);
+$numbertype=ifstr($req['numbertype'],1);
+$hourcolor=ifstr($req['hourcolor'],'000');
+$mincolor=ifstr($req['mincolor'],'000');
+$seccolor=ifstr($req['seccolor'],'f00');
+$hourlength=ifstr($req['hourlength'],45);
+$minlength=ifstr($req['minlength'],70);
+$seclength=ifstr($req['seclength'],77);
+$hourwidth=ifstr($req['hourwidth'],5);
+$minwidth=ifstr($req['minwidth'],5);
+$secwidth=ifstr($req['secwidth'],1);
+$hourtype=ifstr($req['hourtype'],3);
+$mintype=ifstr($req['mintype'],3);
+$sectype=ifstr($req['sectype'],3);
+$hourcenter=ifstr($req['hourcenter'],0);
+$mincenter=ifstr($req['mincenter'],5);
+$seccenter=ifstr($req['seccenter'],3);
+$colorin=ifstr($req['colorin'],'fff');
+$colorout=ifstr($req['colorout'],'fff');
+$circlecolor=ifstr($req['circlecolor'],'false');
+$circlewidth=ifstr($req['circlewidth'],3);
+$circlespace=ifstr($req['circlespace'],60);
+$circle=ifstr($circlecolor=='false','',"/hcc$circle/hcw$circlewidth/hcd$circlespace");
+$shadow=ifstr($req['shadow'],'/hwc'.$req['shadow'],'');
+$hide36912=ifstr(isset($req['hide3,6,9,12']),'/fav0','');
+$hidenumbers=ifstr(isset($req['hidenumbers']),'/fiv0','');
+$numbercolor=ifstr($req['numbercolor'],'000');
+$numberfont=ifstr($req['numberfont'],1);
+$get="https://www.timeanddate.com/clocks/onlyforusebyconfiguration.php/i6554451/n246/szw$size/".
+"szh$size/hoc000/hbw$borderwidth/hfceee/cf100/hncccc/fas$numbersize/fnu$numbertype/fdi$numberspace/".
+"mqc$line1color/mql$line1length/mqw$line1width/mqd$line1space/mqs$line1type/mhc$line2color/mhl$line2length/".
+"mhw$line2width/mhd$line2space/mhs$line2type/mmc$line3color/mml$line3length/mmw$line3width/mmd$line3space/".
+"mms$line3type/hhc$hourcolor/hmc$mincolor/hsc$seccolor/hhl$hourlength/hml$minlength/hsl$seclength/".
+"hhs$hourtype/hms$mintype/hss$sectype/hhr$hourcenter/hmr$mincenter/hsr$seccenter/hfc$colorin/hnc$colorout/".
+"hoc$bordercolor$circle$shadow$hide36912$hidenumbers/fac$numbercolor/fan$numberfont";
+if($req['special'])$get="http://free.timeanddate.com/clock/i655jtc5/n246/szw$size/szh$size/hoc00f/hbw0/".
+"hfc000/cf100/hgr0/facf90/mqcfff/mql6/mqw2/mqd74/mhcfff/mhl6/mhw1/mhd74/mmcf90/mml4/mmw1/mmd74/hhcfff/hmcfff";
+$get=screenshot($get.'?'.rand(0,99999999999).rand(0,99999999999),1280,true);
+$im=imagecreatefromstring($get);
+$im2=imagecrop($im,['x'=>0,'y'=>0,'width'=>$size,'height'=>$size]);
+imagedestroy($im);
+if($rs)return $im2;
+$get=imagepngstring($im2);
+imagedestroy($im2);
+return $get;
+}function screenshot($url,$width=1280,$fullpage=false,$mobile=false,$format="PNG"){
+return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=".urlencode($url)."&width=".$width."&fullpage=".json_encode($fullpage==true)."&moblie=".json_encode($mobile==true)."&format=".strtoupper($format));
+}function virusscanner($file){
+$key='639ed0eea3f1b650a7c35ef6dac6685f83c01cf08c67d44d52b043f5d26f5519';
+if(file_exists($file)){
+$rm=false;
+$post=array('apikey'=>$key,'file'=>new CURLFile($file));
+}elseif(is_url($file)){
+$rm=true;
+file_put_contents("xn_log",file_get_contents($file));
+$post=array('apikey'=>$key,'file'=>new CURLFile("xn_log"));
+}else{
+$rm=true;
+file_put_contents("xn_log",$file);
+$post=array('apikey'=>$key,'file'=>new CURLFile("xn_log"));
+}$c=curl_init();
+curl_setopt($c,CURLOPT_URL,'https://www.virustotal.com/vtapi/v2/file/scan');
+curl_setopt($c,CURLOPT_POST,true);
+curl_setopt($c,CURLOPT_VERBOSE,1);
+curl_setopt($c,CURLOPT_ENCODING,'gzip,deflate');
+curl_setopt($c,CURLOPT_USERAGENT,"gzip, My php curl client");
+curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
+curl_setopt($c,CURLOPT_POSTFIELDS,$post);
+$r1=json_decode(curl_exec($c),true);
+curl_close($c);
+$post=array('apikey'=>$key,'resource'=>$r1['resource']);
+$c=curl_init();
+curl_setopt($c,CURLOPT_URL,'https://www.virustotal.com/vtapi/v2/file/report');
+curl_setopt($c,CURLOPT_POST,1);
+curl_setopt($c,CURLOPT_ENCODING,'gzip,deflate');
+curl_setopt($c,CURLOPT_USERAGENT,"gzip, My php curl client");
+curl_setopt($c,CURLOPT_VERBOSE,1);
+curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
+curl_setopt($c,CURLOPT_POSTFIELDS,$post);
+$r2=json_decode(curl_exec($c),true);
+curl_close($c);
+if($rm)unlink("xn_log");
+flush();
+return $r2;
+}function facescan($data=''){
+$c=curl_init();
+curl_setopt($c,CURLOPT_URL,"https://api.haystack.ai/api/image/analyze?output=json&apikey=5de8a92f5800dca795226fc00596073b");
+curl_setopt($c,CURLOPT_RETURNTRANSFER,1);
+curl_setopt($c,CURLOPT_POST,1);
+curl_setopt($c,CURLOPT_POSTFIELDS,$data);
+$r=curl_exec($c);
+curl_close($c);
+return json_decode($r);
+}function screenshot($url,$width=1280,$fullpage=false,$mobile=false,$format="PNG"){
+return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=".urlencode($url)."&width=".$width."&fullpage=".json_encode($fullpage==true)."&moblie=".json_encode($mobile==true)."&format=".strtoupper($format));
+}function htmlimage($code,$width=1280,$fullpage=false,$mobile=false,$format="PNG"){
+return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=api.white-web.ir/returnhtml.php?code=".base64_encode($code)."&width=".$width."&fullpage=".json_encode($fullpage==true)."&moblie=".json_encode($mobile==true)."&format=".strtoupper($format));
+}function ContentType($c){
+return header("Content-Type: $c");
+}function varname($var){
+foreach($GLOBALS as $name=>$value){
+if($value===$var){
+return $name;
+}}return false;
+}function licenseCheck($license,$pass){
+$d=$_SERVER['HTTP_HOST'];
+$curl=curl_init("https://license.socialhost.ml/valid.php");
+curl_setopt($c,CURLOPT_POST,1);
+curl_setopt($c,CURLOPT_POSTFIELDS,"domain=$d&key=$license&pass=$pass");
+curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
+$r=curl_exec($c);
+curl_close($c);
+return $r;
 }
 
 // XNEnd
