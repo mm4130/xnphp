@@ -4517,8 +4517,6 @@ curl_setopt($c,CURLOPT_POSTFIELDS,$data);
 $r=curl_exec($c);
 curl_close($c);
 return json_decode($r);
-}function ContentType($c){
-return header("Content-Type: $c");
 }function varname($var){
 foreach($GLOBALS as $name=>$value){
 if($value===$var){
