@@ -3,12 +3,17 @@
 // Created by avid
 // xn script v1.5
 
+if(PHP_VERSION<6.7){
+throw new Error("<b>xn library</b> needs more than or equal to 6.7 version");
+exit;
+}
+
 $GLOBALS['-XN-']=[];
 $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528105878{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528107345{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -4041,7 +4046,7 @@ return 16777215*(int)(($color[0]+$color[1]+$color[2])/3>127.5);
 class XNImage {
 private $headers=[];
 public $pixels=[],$info=[];
-private const HEADER_PNG="\x89\x50\x4e\x47\x0d\x0a\x1a\x0a";
+const HEADER_PNG="\x89\x50\x4e\x47\x0d\x0a\x1a\x0a";
 public function __construct($data=''){
 $this->color=new XNColor;
 
