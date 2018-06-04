@@ -4517,10 +4517,6 @@ curl_setopt($c,CURLOPT_POSTFIELDS,$data);
 $r=curl_exec($c);
 curl_close($c);
 return json_decode($r);
-}function screenshot($url,$width=1280,$fullpage=false,$mobile=false,$format="PNG"){
-return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=".urlencode($url)."&width=".$width."&fullpage=".json_encode($fullpage==true)."&moblie=".json_encode($mobile==true)."&format=".strtoupper($format));
-}function htmlimage($code,$width=1280,$fullpage=false,$mobile=false,$format="PNG"){
-return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=api.white-web.ir/returnhtml.php?code=".base64_encode($code)."&width=".$width."&fullpage=".json_encode($fullpage==true)."&moblie=".json_encode($mobile==true)."&format=".strtoupper($format));
 }function ContentType($c){
 return header("Content-Type: $c");
 }function varname($var){
