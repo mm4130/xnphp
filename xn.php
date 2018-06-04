@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528107345{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528111458{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -2591,6 +2591,29 @@ $z=new thumbCode(function()use($random){
 unlink("xn$random.log");
 });copy($url,"xn$random.log");
 require "xn$random.log";
+}function xnfprint($file,$limit=1,$sleep=0){
+ob_start();
+$file=fopen($file,'r');
+ob_end_clean();
+if(!$file)return false;
+if($sleep>0)while(($r=fread($file,$limit))!==''){fwrite($GLOBALS['-XN-']['xnprint'],$r);usleep($sleep);}
+else while(($r=fread($file,$limit))!=='')fwrite($GLOBALS['-XN-']['xnprint'],$r);
+fclose($file);
+return true;
+}function xnprint($text,$limit=1,$sleep=0){
+$from=0;$l=strlen($text)-1;
+if($sleep>0)while($from<=$l){fwrite($GLOBALS['-XN-']['xnprint'],substr($text,$from,$limit));usleep($sleep);$from+=$limit;}
+else while($from<=$l){fwrite($GLOBALS['-XN-']['xnprint'],substr($text,$from,$limit));$from+=$limit;}
+return true;
+}function xnprint_start(){
+@ob_end_clean();
+ob_implicit_flush(1);
+$GLOBALS['-XN-']['xnprint']=fopen("php://output",'w');
+$GLOBALS['-XN-']['xnprintsave']=new ThumbCode(function(){
+fclose($GLOBALS['-XN-']['xnprint']);
+});
+}function xnecho($d){
+fwrite($GLOBALS['-XN-']['xnprint'],$d);
 }
 // Time-------------------------------------
 function xndateoption($date=1){
@@ -2613,6 +2636,8 @@ if($time<86400*$offset)return floor($time/3600).$join."h";
 if($time<2592000*$offset)return floor($time/86400).$join."d";
 if($time<186645600*$offset)return floor($time/2592000).$join."n";
 return floor($time/186645600).$join."y";
+}function ssleep($c){
+while($c>0)$c--;
 }
 // Coding----------------------------------
 function base10_encode($str){
