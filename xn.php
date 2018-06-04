@@ -1186,8 +1186,13 @@ if($func($update))return true;
 }$while--;}}
 }public function filterUpdates($filter=[],$func=false){
 if(in_array($this->updateType(),$filter)){
-$func($this->data);exit();
-}}public function getUser($update=false){
+if($func)$func($this->data);exit();
+}
+}public function unfilterUpdates($filter=[],$func=false){
+if(!in_array($this->updateType(),$filter)){
+if($func)$func($this->data);exit();
+}
+}public function getUser($update=false){
 $update=$this->getUpdateInType($update);
 if(!isset($update->chat))return (object)[
 "chat"=>$update->from,
