@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528136328{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528148303{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -296,6 +296,109 @@ $loc+=$space;}
 return $arr;
 }function ContentType($c){
 return header("Content-Type: $c");
+}function equal($a,$b,$c='==',$d=false){
+$ia=is_array($a)||is_object($a);
+$ib=is_array($b)||is_object($a);
+if($ia)$a=(array)$a;
+if($ib)$b=(array)$b;
+if($c[0]=='-'||$c[0]=='+'||$c[0]=='*'||$c[0]=='/'||$c[0]=='~'){
+if($ia){
+if($c[0]=='-')foreach($a as &$x){
+$t=gettype($x);
+$x--;
+settype($x,$t);
+}elseif($c[0]=='+')foreach($a as &$x){
+$t=gettype($x);
+$x++;
+settype($x,$t);
+}elseif($c[0]=='*')foreach($a as &$x){
+$t=gettype($x);
+$x*=$x;
+settype($x,$t);
+}elseif($c[0]=='/')foreach($a as &$x){
+$t=gettype($x);
+$x=1/$x;
+settype($x,$t);
+}elseif($c[0]=='~')foreach($a as &$x){
+$t=gettype($x);
+$x=~$x;
+settype($x,$t);
+}
+}else{
+$t=gettype($a);
+if($c[0]=='-')$a--;
+if($c[0]=='+')$a++;
+if($c[0]=='*')$a*=$a;
+if($c[0]=='/')$a=1/$a;
+if($c[0]=='~')$a=~$a;
+settype($a,$t);
+}$c=substr($c,1);
+}if(is_numeric($c))$c=@['==','!=','>=','<=','>','<','!==','==='][$c];
+if($c!='=='&&$c!='!='&&$c!='>='&&$c!='<='&&$c!='<'&&$c!='>'&&$c!='!=='&&$c!='==='){
+new XNError("equal","equal type invalid");
+return false;
+}if($d){
+if($ia&&$ib){
+foreach($a as $x){
+$x=serialize($x);
+foreach($b as $y){
+$y=serialize($y);
+if($r=eval("return unserialize('$x'){$c}unserialize('$y');"))break;
+}if($r)return true;
+}return false;
+}if($ia){
+$b=serialize($b);
+foreach($a as $x){
+$x=serialize($x);
+if($r=eval("return unserialize('$x'){$c}unserialize('$b')"))return true;
+}return false;
+}if($ib){
+$a=serialize($a);
+foreach($b as $x){
+$x=serialize($x);
+if($r=eval("return unserialize('$a'){$c}unserialize('$x')"))return true;
+}return false;
+}
+}else{
+if($ia&&$ib){
+foreach($a as $x){
+$x=serialize($x);
+foreach($b as $y){
+$y=serialize($y);
+if($r=eval("return unserialize('$x'){$c}unserialize('$y');"))break;
+}if(!$r)return false;
+}return true;
+}if($ia){
+$b=serialize($b);
+foreach($a as $x){
+$x=serialize($x);
+if(!$r=eval("return unserialize('$x'){$c}unserialize('$b')"))return false;
+}return true;
+}if($ib){
+$a=serialize($a);
+foreach($b as $x){
+$x=serialize($x);
+if(!$r=eval("return unserialize('$a'){$c}unserialize('$x')"))return false;
+}return true;
+}
+}$a=serialize($a);
+$b=serialize($b);
+return eval("return unserialize('$a'){$c}unserialize('$b');");
+}function array_string($arr,$js=false){
+if(!is_array($arr)&&!is_object($arr)){
+new XNError("array_string","can not convert ".gettype($arr)." to array string");
+return false;
+}$r='[';
+$p=0;
+foreach((array)$arr as $k=>$v){
+if($r!='[')$r.=',';
+if(is_array($v))$v=array_string($v,$js);
+if(is_numeric($k)&&$k==$p){
+$r.=json_encode($v,$js);
+$p++;
+}else $r.=json_encode($k,$js).'=>'.json_encode($v,$js);
+}$r.=']';
+return $r;
 }
 // Data-----------------------------------
 function xndata($name){
@@ -2430,21 +2533,9 @@ $this->token=null;
 $this->phone=null;
 }
 }
-
-class TelegramFind {
-public function token($s){
+function findtokens($s){
 preg_match_all("/[0-9]{4,20}:AA[GFHE][a-zA-Z0-9-_]{32}/",$s,$u);
 return $u[0];
-}public function username($s){
-preg_match_all("/@[a-zA-Z][a-zA-Z0-9_]{4,31}/",$s,$u);
-return $u;
-}public function start($s){
-if(strpos($s,"/start ")===0){
-return substr($s,7);
-}if(strpos($s,"/start")===0){
-return true;
-}return false;
-}
 }
 
 class XNTelegram {
@@ -3461,6 +3552,7 @@ $f=fopen($this->file,'r');
 $random=rand(0,999999999).rand(0,999999999);
 $t=fopen("xn$random.$this->file.log",'w');
 fwrite($t,',');
+fseek($f,1);
 $l=strlen($key);
 $p='';
 $m=0;
@@ -3470,21 +3562,27 @@ if($o){
 $p--;
 if($m==$l-1){
 $m=0;
+echo "Matched : ".$this->elencode(substr($key,0,-1),$value)."\n";
 fwrite($t,$this->elencode(substr($key,0,-1),$value));
 fseek($f,$p+1,SEEK_CUR);
+echo "Seeking $h ".($p+1)."\n";
 break;
 }elseif($key[$m]==$h){
 $m++;
 }else{
-$m=0;
 $o=false;
-fwrite($t,substr($key,0,$m).fread($f,$p).',');
+echo "not matched : ".substr($key,0,$m)."  $h\n";
+fwrite($t,self::elencode(...explode('.',($m>0?substr($key,0,$m):'').fread($f,$p+1))));
+echo "Seeking $h ".($p+1)."\n";
+$m=0;
 $p='';
 }
 }else{
 if($h==';'){
 $o=true;
+echo "Size : $p ";
 $p=$this->sizedecode($p);
+echo "$p\n";
 }else{
 $p.=$h;
 }}}
