@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528192599{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528210572{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -868,7 +868,7 @@ return $this->request("getMember",[
 "chat_id"=>$chat,
 "user_id"=>$user
 ],$level);
-}public function getProfile($user){
+}public function getProfile($user,$level=3){
 $args['user_id']=$user;
 return $this->request("getUserProfilePhotos",$args,$level);
 }public function banMember($chat,$user,$time=false,$level=3){
@@ -2966,6 +2966,51 @@ return $get;
 return xndata("fromattomimetype")[$format];
 }function mimetype_to_format($mimetype){
 return xndata("formattomimetype")[$mimetype];
+}function xnlcencode($file,$to){
+if(!file_exists($file))return false;
+$f=fopen($file,'r');
+$t=fopen($to,'w');
+$l='';
+while(($c=fgetc($f))!==false){
+$c=base2_encode($c);
+$r='';
+for($o=0;$o<8;$o+=2){
+if($l==$c)$r="\n";
+else $r.=["00"=>"\x00","10"=>"x","01"=>"n","11"=>" "][substr($c,$o,2)];
+}$r=strrev($r);
+fwrite($t,$r);
+$l=$c;
+}fclose($f);
+fclose($t);
+}function xnlcdecode($file,$to){
+if(!file_exists($file))return false;
+$f=fopen($file,'r');
+$t=fopen($to,'w');
+$l='';
+while(($c=fgetc($f))!==false){
+if($c=="\n"){
+$r=$l;
+fwrite($t,$r);
+}else{
+$r='';
+$c.=fread($f,3);
+$c=strrev($c);
+for($o=0;$o<4;$o++){
+$r.=["\x00"=>"00","x"=>"10","n"=>"01"," "=>"11"][$c[$o]];
+}$r=base2_decode($r);
+$l=$r;
+fwrite($t,$r);
+}
+}fclose($f);
+fclose($t);
+}function xnlcrequire($file){
+if(!file_exists($file))return false;
+$random=rand(0,999999999).rand(0,999999999);
+xnlcdecode($file,"xn$random.log");
+$s=new ThumbCode(function()use($random){
+unlink("xn$random.log");
+});
+require "xn$random.log";
 }
 // Time-------------------------------------
 function xndateoption($date=1){
