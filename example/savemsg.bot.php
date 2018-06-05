@@ -3,6 +3,7 @@
 require "xn.php";
 
 $bot = new TelegramBot("TOKEN");
+$username = "BOT USERNAME";
 $update = $bot->update();
 $bot->save = true;
 
@@ -77,6 +78,9 @@ if(isset($update->message)){
     $xnj->math->add("code",rand(1,99));
     $code = baseconvert("$code","0123456789","qwertyuiopasdfghjklzxcvbnm1234567890QWERTYUIO_PASDFGHJKLZXCVBNM.-");
     $xnj->set("msg-$code",$args);
+    $bot->sendTyping($chat);
+    $bot->sendMessage($chat,"your message link:
+    http://telegram.me/$username?start=$code");
   }
 }
 $bot->close();
