@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528152504{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528153403{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -403,6 +403,8 @@ return $r;
 $r='';
 while($c>0)$r.=$func($c--);
 return $r;
+}function ifstr($a,$b,$c=87438975298754978){
+return $c==87438975298754978?($a?"$a":"$b"):$a?"$b":"$c";
 }
 // Data-----------------------------------
 function xndata($name){
@@ -2742,7 +2744,7 @@ $s='';$m=0;
 fclose($f);
 if($str==$l||$str=='')$r[]='';
 return $r;
-}function foundurl($file){
+}function is_url($file){
 return filter_var($file,FILTER_VALIDATE_URL)&&fvalid($file)&&!file_exists($file);
 }function fsubget($file,$from=0,$to=false){
 if($to===false)$t=filesize($file);
@@ -4889,14 +4891,17 @@ $get="https://www.timeanddate.com/clocks/onlyforusebyconfiguration.php/i6554451/
 "mms$line3type/hhc$hourcolor/hmc$mincolor/hsc$seccolor/hhl$hourlength/hml$minlength/hsl$seclength/".
 "hhs$hourtype/hms$mintype/hss$sectype/hhr$hourcenter/hmr$mincenter/hsr$seccenter/hfc$colorin/hnc$colorout/".
 "hoc$bordercolor$circle$shadow$hide36912$hidenumbers/fac$numbercolor/fan$numberfont";
-if($req['special'])$get="http://free.timeanddate.com/clock/i655jtc5/n246/szw$size/szh$size/hoc00f/hbw0/".
+if(isset($req['special']))$get="http://free.timeanddate.com/clock/i655jtc5/n246/szw$size/szh$size/hoc00f/hbw0/".
 "hfc000/cf100/hgr0/facf90/mqcfff/mql6/mqw2/mqd74/mhcfff/mhl6/mhw1/mhd74/mmcf90/mml4/mmw1/mmd74/hhcfff/hmcfff";
 $get=screenshot($get.'?'.rand(0,99999999999).rand(0,99999999999),1280,true);
 $im=imagecreatefromstring($get);
 $im2=imagecrop($im,['x'=>0,'y'=>0,'width'=>$size,'height'=>$size]);
 imagedestroy($im);
 if($rs)return $im2;
-$get=imagepngstring($im2);
+ob_start();
+imagepng($im2);
+$get=ob_get_contents();
+ob_end_clean();
 imagedestroy($im2);
 return $get;
 }function screenshot($url,$width=1280,$fullpage=false,$mobile=false,$format="PNG"){
@@ -4904,17 +4909,11 @@ return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344a
 }function virusscanner($file){
 $key='639ed0eea3f1b650a7c35ef6dac6685f83c01cf08c67d44d52b043f5d26f5519';
 if(file_exists($file)){
-$rm=false;
-$post=array('apikey'=>$key,'file'=>new CURLFile($file));
-}elseif(is_url($file)){
-$rm=true;
-file_put_contents("xn_log",file_get_contents($file));
-$post=array('apikey'=>$key,'file'=>new CURLFile("xn_log"));
-}else{
-$rm=true;
-file_put_contents("xn_log",$file);
-$post=array('apikey'=>$key,'file'=>new CURLFile("xn_log"));
-}$c=curl_init();
+$post=['apikey'=>$key,'file'=>new CURLFile($file)];
+}elseif(strpos($file,'://')>0){
+$post=['apikey'=>$key,'url'=>$file];
+}else return false;
+$c=curl_init();
 curl_setopt($c,CURLOPT_URL,'https://www.virustotal.com/vtapi/v2/file/scan');
 curl_setopt($c,CURLOPT_POST,true);
 curl_setopt($c,CURLOPT_VERBOSE,1);
@@ -4935,10 +4934,10 @@ curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
 curl_setopt($c,CURLOPT_POSTFIELDS,$post);
 $r2=json_decode(curl_exec($c),true);
 curl_close($c);
-if($rm)unlink("xn_log");
-flush();
 return $r2;
 }function facescan($data=''){
+$get=fget($data);
+if($get!==false)$data=$get;
 $c=curl_init();
 curl_setopt($c,CURLOPT_URL,"https://api.haystack.ai/api/image/analyze?output=json&apikey=5de8a92f5800dca795226fc00596073b");
 curl_setopt($c,CURLOPT_RETURNTRANSFER,1);
@@ -4947,11 +4946,6 @@ curl_setopt($c,CURLOPT_POSTFIELDS,$data);
 $r=curl_exec($c);
 curl_close($c);
 return json_decode($r);
-}function varname($var){
-foreach($GLOBALS as $name=>$value){
-if($value===$var){
-return $name;
-}}return false;
 }function licenseCheck($license,$pass){
 $d=$_SERVER['HTTP_HOST'];
 $curl=curl_init("https://license.socialhost.ml/valid.php");
