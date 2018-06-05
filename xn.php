@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528210572{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528211091{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -860,11 +860,11 @@ return $this->request("getChat",[
 "chat_id"=>$chat
 ],$level);
 }public function getMembersCount($chat,$level=3){
-return $this->request("getMembersCount",[
+return $this->request("getChatMembersCount",[
 "chat_id"=>$chat
 ],$level);
 }public function getMember($chat,$user,$level=3){
-return $this->request("getMember",[
+return $this->request("getCjatMember",[
 "chat_id"=>$chat,
 "user_id"=>$user
 ],$level);
