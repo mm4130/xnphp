@@ -864,7 +864,7 @@ return $this->request("getChatMembersCount",[
 "chat_id"=>$chat
 ],$level);
 }public function getMember($chat,$user,$level=3){
-return $this->request("getCjatMember",[
+return $this->request("getChatMember",[
 "chat_id"=>$chat,
 "user_id"=>$user
 ],$level);
