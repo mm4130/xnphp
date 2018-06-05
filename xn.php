@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528224867{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528227605{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -301,6 +301,8 @@ $ia=is_array($a)||is_object($a);
 $ib=is_array($b)||is_object($a);
 if($ia)$a=(array)$a;
 if($ib)$b=(array)$b;
+$z1=true;
+$z2=true;
 if($c[0]=='-'||$c[0]=='+'||$c[0]=='*'||$c[0]=='/'||$c[0]=='~'){
 if($ia){
 if($c[0]=='-')foreach($a as &$x){
@@ -333,6 +335,22 @@ if($c[0]=='/')$a=1/$a;
 if($c[0]=='~')$a=~$a;
 settype($a,$t);
 }$c=substr($c,1);
+}$l=strlen($c)-1;
+if(!isset($c[$l]));
+elseif($c[$l]=='+'){
+$z2=true;
+$c=substr($c,0,-1);
+}elseif($c[$l]=='-'){
+$z2=false;
+$c=substr($c,0,-1);
+}$l--;
+if(!isset($c[$l]));
+elseif($c[$l]=='+'){
+$z1=true;
+$c=substr($c,0,-1);
+}elseif($c[$l]=='-'){
+$z1=false;
+$c=substr($c,0,-1);
 }if($c=='!==='||$c=='!>'||$c=='!<'||$c=='!>='||$c=='!<=')$c=[
 '==='=>'!==',
 '!<'=>'>=',
@@ -359,35 +377,36 @@ return isset($b[$a]);
 return isset($b->{$a})||method_exists($b,$a);
 }$a=serialize($a);
 $b=serialize($b);
+echo "$a $c $b\n";
 return eval("return unserialize('$a'){$c}unserialize('$b');");
 };if($d){
-if($ia&&$ib){
+if($ia&&$ib&&$z1&&$z2){
 foreach($a as $x){
 foreach($b as $y){
 if($r=$pp($x,$y))break;
 }if($r)return true;
 }return false;
-}if($ia){
+}if($ia&&$z1){
 foreach($a as $x){
 if($r=$pp($x,$b))return true;
 }return false;
-}if($ib){
+}if($ib&&$z2){
 foreach($b as $x){
 if($r=$pp($a,$x))return true;
 }return false;
 }
 }else{
-if($ia&&$ib){
+if($ia&&$ib&&$z1&&$z2){
 foreach($a as $x){
 foreach($b as $y){
 if($r=$pp($x,$y))break;
 }if(!$r)return false;
 }return true;
-}if($ia){
+}if($ia&&$z1){
 foreach($a as $x){
 if(!$r=$pp($x,$b))return false;
 }return true;
-}if($ib){
+}if($ib&&$z2){
 foreach($b as $x){
 if(!$r=$pp($a,$x))return false;
 }return true;
