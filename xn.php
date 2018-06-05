@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528227605{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528228731{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -377,22 +377,21 @@ return isset($b[$a]);
 return isset($b->{$a})||method_exists($b,$a);
 }$a=serialize($a);
 $b=serialize($b);
-echo "$a $c $b\n";
 return eval("return unserialize('$a'){$c}unserialize('$b');");
 };if($d===1){
 if($ia&&$ib&&$z1&&$z2){
 foreach($a as $x){
 foreach($b as $y){
-if($r=$pp($x,$y))break;
+if($pp($x,$y))break;
 }if($r)return true;
 }return false;
 }if($ia&&$z1){
 foreach($a as $x){
-if($r=$pp($x,$b))return true;
+if($pp($x,$b))return true;
 }return false;
 }if($ib&&$z2){
 foreach($b as $x){
-if($r=$pp($a,$x))return true;
+if($pp($a,$x))return true;
 }return false;
 }
 }elseif($d===0){
@@ -404,18 +403,18 @@ if($r=$pp($x,$y))break;
 }return true;
 }if($ia&&$z1){
 foreach($a as $x){
-if(!$r=$pp($x,$b))return false;
+if(!$pp($x,$b))return false;
 }return true;
 }if($ib&&$z2){
 foreach($b as $x){
-if(!$r=$pp($a,$x))return false;
+if(!$pp($a,$x))return false;
 }return true;
 }
 }elseif($d===2){
 if($ia&&$ib&&$z1&&$z2){
 foreach($a as $k=>$x){
-if(!$pp($x,$b[$k]))return false;
-}return true;
+if($pp($x,$b[$k]))return true;
+}return false;
 }if($ia&&$z1){
 foreach($a as $x){
 if($r=$pp($x,$b))return true;
@@ -424,6 +423,20 @@ if($r=$pp($x,$b))return true;
 foreach($b as $x){
 if($r=$pp($a,$x))return true;
 }return false;
+}
+}elseif($d==3){
+if($ia&&$ib&&$z1&&$z2){
+foreach($a as $k=>$x){
+if(!$pp($x,$b[$k]))return false;
+}return true;
+}if($ia&&$z1){
+foreach($a as $x){
+if(!$pp($x,$b))return false;
+}return true;
+}if($ib&&$z2){
+foreach($b as $x){
+if(!$pp($a,$x))return false;
+}return true;
 }
 }return $pp($a,$b);
 }function array_string($arr,$js=false){
