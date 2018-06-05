@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528211091{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528224867{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -2976,7 +2976,7 @@ $c=base2_encode($c);
 $r='';
 for($o=0;$o<8;$o+=2){
 if($l==$c)$r="\n";
-else $r.=["00"=>"\x00","10"=>"x","01"=>"n","11"=>" "][substr($c,$o,2)];
+else $r.=["00"=>["X","N"][rand(0,1)],"10"=>"x","01"=>"n","11"=>" "][$c[$o].$c[$o+1]];
 }$r=strrev($r);
 fwrite($t,$r);
 $l=$c;
@@ -2996,7 +2996,7 @@ $r='';
 $c.=fread($f,3);
 $c=strrev($c);
 for($o=0;$o<4;$o++){
-$r.=["\x00"=>"00","x"=>"10","n"=>"01"," "=>"11"][$c[$o]];
+$r.=["X"=>"00","N"=>"00","x"=>"10","n"=>"01"," "=>"11"][$c[$o]];
 }$r=base2_decode($r);
 $l=$r;
 fwrite($t,$r);
