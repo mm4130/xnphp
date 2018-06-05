@@ -296,7 +296,7 @@ $loc+=$space;}
 return $arr;
 }function ContentType($c){
 return header("Content-Type: $c");
-}function equal($a,$b,$c='==',$d=false){
+}function equal($a,$b,$c='==',$d=0){
 $ia=is_array($a)||is_object($a);
 $ib=is_array($b)||is_object($a);
 if($ia)$a=(array)$a;
@@ -379,7 +379,7 @@ return isset($b->{$a})||method_exists($b,$a);
 $b=serialize($b);
 echo "$a $c $b\n";
 return eval("return unserialize('$a'){$c}unserialize('$b');");
-};if($d){
+};if($d===1){
 if($ia&&$ib&&$z1&&$z2){
 foreach($a as $x){
 foreach($b as $y){
@@ -395,7 +395,7 @@ foreach($b as $x){
 if($r=$pp($a,$x))return true;
 }return false;
 }
-}else{
+}elseif($d===0){
 if($ia&&$ib&&$z1&&$z2){
 foreach($a as $x){
 foreach($b as $y){
@@ -410,6 +410,20 @@ if(!$r=$pp($x,$b))return false;
 foreach($b as $x){
 if(!$r=$pp($a,$x))return false;
 }return true;
+}
+}elseif($d===2){
+if($ia&&$ib&&$z1&&$z2){
+foreach($a as $k=>$x){
+if(!$pp($x,$b[$k]))return false;
+}return true;
+}if($ia&&$z1){
+foreach($a as $x){
+if($r=$pp($x,$b))return true;
+}return false;
+}if($ib&&$z2){
+foreach($b as $x){
+if($r=$pp($a,$x))return true;
+}return false;
 }
 }return $pp($a,$b);
 }function array_string($arr,$js=false){
