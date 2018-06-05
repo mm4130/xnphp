@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528188851{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528192599{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -341,56 +341,58 @@ settype($a,$t);
 '!<='=>'>'
 ][substr($c,1)];
 if(is_numeric($c))$c=@['==','!=','>=','<=','>','<','!==','==='][$c];
-if($c!='=='&&$c!='!='&&$c!='>='&&$c!='<='&&$c!='<'&&$c!='>'&&$c!='!=='&&$c!='==='){
+$cv=$c[0]=='.'||$c[0]=='$'?substr($c,1):$c;
+if($c!='$'&&$c!='.'&&$cv!='=='&&$cv!='!='&&$cv!='>='&&$cv!='<='&&$cv!='<'&&$cv!='>'&&$cv!='!=='&&$cv!='==='){
 new XNError("equal","equal type invalid");
 return false;
-}if($d){
+}$pp=function($a,$b)use($c){
+$ia=(is_string($a)||is_numeric($a));
+$ib=(is_string($b)||is_numeric($b));
+if($c[0]=='.'&&is_array($b)){
+return in_array($a,$b);
+}elseif($c[0]=='.'&&$ia&&$ib){
+$p=strpos($a,$b);
+return $p!==false&&$p!=-1;
+}elseif($c[0]=='$'&&is_array($b)){
+return isset($b[$a]);
+}elseif($c[0]=='$'&&is_object($b)){
+return isset($b->{$a})||method_exists($b,$a);
+}$a=serialize($a);
+$b=serialize($b);
+return eval("return unserialize('$a'){$c}unserialize('$b');");
+};if($d){
 if($ia&&$ib){
 foreach($a as $x){
-$x=serialize($x);
 foreach($b as $y){
-$y=serialize($y);
-if($r=eval("return unserialize('$x'){$c}unserialize('$y');"))break;
+if($r=$pp($x,$y))break;
 }if($r)return true;
 }return false;
 }if($ia){
-$b=serialize($b);
 foreach($a as $x){
-$x=serialize($x);
-if($r=eval("return unserialize('$x'){$c}unserialize('$b')"))return true;
+if($r=$pp($x,$b))return true;
 }return false;
 }if($ib){
-$a=serialize($a);
 foreach($b as $x){
-$x=serialize($x);
-if($r=eval("return unserialize('$a'){$c}unserialize('$x')"))return true;
+if($r=$pp($a,$x))return true;
 }return false;
 }
 }else{
 if($ia&&$ib){
 foreach($a as $x){
-$x=serialize($x);
 foreach($b as $y){
-$y=serialize($y);
-if($r=eval("return unserialize('$x'){$c}unserialize('$y');"))break;
+if($r=$pp($x,$y))break;
 }if(!$r)return false;
 }return true;
 }if($ia){
-$b=serialize($b);
 foreach($a as $x){
-$x=serialize($x);
-if(!$r=eval("return unserialize('$x'){$c}unserialize('$b')"))return false;
+if(!$r=$pp($x,$b))return false;
 }return true;
 }if($ib){
-$a=serialize($a);
 foreach($b as $x){
-$x=serialize($x);
-if(!$r=eval("return unserialize('$a'){$c}unserialize('$x')"))return false;
+if(!$r=$pp($a,$x))return false;
 }return true;
 }
-}$a=serialize($a);
-$b=serialize($b);
-return eval("return unserialize('$a'){$c}unserialize('$b');");
+}return $pp($a,$b);
 }function array_string($arr,$js=false){
 if(!is_array($arr)&&!is_object($arr)){
 new XNError("array_string","can not convert ".gettype($arr)." to array string");
