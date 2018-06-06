@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528277120{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528296736{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -351,6 +351,14 @@ $c=substr($c,0,-1);
 }elseif($c[$l]=='-'){
 $z1=false;
 $c=substr($c,0,-1);
+}$l--;
+if(!isset($c[$l]));
+elseif($c[$l]=='/'){
+$c=substr($c,0,-1);
+if(is_array($a)&&$z1)foreach($a as &$x)$x=(string)$x;
+else $a=(string)$a;
+if(is_array($b)&&$z2)foreach($b as &$x)$x=(string)$x;
+else $b=(string)$b;
 }if($c=='!==='||$c=='!>'||$c=='!<'||$c=='!>='||$c=='!<=')$c=[
 '==='=>'!==',
 '!<'=>'>=',
@@ -467,6 +475,8 @@ foreach($arr as $v)$arr[]=$v;
 }function array_settype($type,$arr){
 foreach($arr as &$v)settype($v,$type);
 return $arr;
+}function evals($str){
+return evalc("\"$str\"");
 }
 // Data-----------------------------------
 function xndata($name){
@@ -990,7 +1000,7 @@ return $this->request("unpinChatMessage",[
 return $this->request("leaveChat",[
 "chat_id"=>$chat
 ],$level);
-}public function getAdministrators($chat,$level=3){
+}public function getAdmins($chat,$level=3){
 return $this->request("getChatAdministrators",[
 "chat_id"=>$chat
 ],$level);
@@ -1010,14 +1020,50 @@ return $this->request("answerCallbackQuery",$args,$level);
 }public function editText($text,$args=[],$level=3){
 $args['text']=$text;
 return $this->request("editMessageText",$args,$level);
+}public function editMessageText($chat,$msg,$text,$args=[],$level=3){
+$args['chat_id']=$chat;
+$args['message_id']=$msg;
+$args['text']=$text;
+return $this->request("editMessageText",$args,$level);
+}public function editInlineText($msg,$text,$args=[],$level=3){
+$args['inline_message_id']=$msg;
+$args['text']=$text;
+return $this->request("editMessageText",$args,$level);
 }public function editCaption($caption,$args=[],$level=3){
 $args['caption']=$caption;
 return $this->request("editMessageCaption",$args,$level);
+}public function editMessageCaption($chat,$msg,$caption,$args=[],$level=3){
+$args['chat_id']=$chat;
+$arsg['message_id']=$msg;
+$args['caption']=$caption;
+return $this->request("editMessageCaption",$args,$level);
+}public function editInlineCaption($msg,$caption,$args=[],$level=3){
+$arsg['inline_message_id']=$msg;
+$args['caption']=$caption;
+return $this->request("editMessageCaption",$args,$level);
 }public function editReplyMarkup($reply_makup,$args=[],$level=3){
-$args['reply_markup']=json_encode($reply_markup);
+$args['reply_markup']=$reply_markup;
+return $this->request("editMessageReplyMarkup",$args,$level);
+}public function editMessageReplyMarkup($chat,$msg,$reply_makup,$args=[],$level=3){
+$args['chat_id']=$chat;
+$args['message_id']=$msg;
+$args['reply_markup']=$reply_markup;
+return $this->request("editMessageReplyMarkup",$args,$level);
+}public function editInlineReplyMarkup($msg,$reply_makup,$args=[],$level=3){
+$args['inline_message_id']=$msg;
+$args['reply_markup']=$reply_markup;
 return $this->request("editMessageReplyMarkup",$args,$level);
 }public function editInlineKeyboard($reply_makup,$args=[],$level=3){
-$args['reply_markup']=json_encode(["inline_keyboard"=>$reply_markup]);
+$args['reply_markup']=["inline_keyboard"=>$reply_markup];
+return $this->request("editMessageReplyMarkup",$args,$level);
+}public function editMessageInlineKeyboard($chat,$msg,$reply_makup,$args=[],$level=3){
+$args['chat_id']=$chat;
+$args['message_id']=$msg;
+$args['reply_markup']=["inline_keyboard"=>$reply_markup];
+return $this->request("editMessageReplyMarkup",$args,$level);
+}public function editInlineInlineKeyboard($msg,$reply_makup,$args=[],$level=3){
+$args['inline_message_id']=$msg;
+$args['reply_markup']=["inline_keyboard"=>$reply_markup];
 return $this->request("editMessageReplyMarkup",$args,$level);
 }public function deleteMessage($chat,$message,$level=3){
 return $this->request("deleteMessage",[
