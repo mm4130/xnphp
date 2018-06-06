@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528298943{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528326798{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -250,7 +250,7 @@ if(isset($s[1]))return $s[1];
 new XNError("define_name","define type error");
 return false;
 }function countin($text,$in){
-return count(explode($in,$text))-1;
+return count(explode($in,$text));
 }function function_name($func){
 $t=debug_backtrace();
 $l=file($t[0]['file']);
