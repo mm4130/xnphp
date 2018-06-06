@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528230518{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528275075{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -460,6 +460,13 @@ while($c>0)$r.=$func($c--);
 return $r;
 }function ifstr($a,$b,$c=87438975298754978){
 return $c==87438975298754978?($a?"$a":"$b"):$a?"$b":"$c";
+}function array_repeat($arr,$count=1){
+for($c-0;$c<$count;$c++){
+foreach($arr as $v)$arr[]=$v;
+}return $arr;
+}function array_settype($type,&$arr){
+foreach($arr as &$v)settype($type,$v);
+return $arr;
 }
 // Data-----------------------------------
 function xndata($name){
@@ -1604,11 +1611,9 @@ $code=$bot->downloadFile($code);
 }static function uploadFile($file){
 $bot=self::getbot();
 $codes='';
-ob_start();
-$f=fopen($file,'r');
-ob_end_clean();
+$f=@fopen($file,'r');
 if(!$f){
-new XNError("file '$file' not exists!");
+new XNError("file '$file' not found!");
 return false;
 }while(($content=fread($f,5242880))!==''){
 $random=rand(0,999999999).rand(0,999999999);
@@ -1629,11 +1634,9 @@ unset($save);
 return $code;
 }static function downloadFile($code,$file){
 $bot=self::getbot();
-ob_start();
-$f=fopen($file,'w');
-ob_end_clean();
+$f=@fopen($file,'w');
 if(!$f){
-new XNError("file '$file' have error!");
+new XNError("not can open file '$file'!");
 return false;
 }$codes=$bot->downloadFile($code);
 $codes=explode('.',$codes);
@@ -1656,9 +1659,10 @@ $phone=str_replace(['+',' ','(',')','.',','],'',$phone);
 if(is_numeric($phone))$this->phone=$phone;
 else $this->token=$phone;
 }public function checkAPI(){
-$f=fopen("https://api.pwrtelegram.xyz",'r');
+$f=@fopen("https://api.pwrtelegram.xyz",'r');
+if(!$f)return false;
 fclose($f);
-return !!$f;
+return true;
 }public function __construct($phone=''){
 $phone=str_replace(['+',' ','(',')','.',','],'',$phone);
 if(is_numeric($phone))$this->phone=$phone;
@@ -1666,7 +1670,7 @@ else $this->token=$phone;
 }public function request($method,$args=[],$level=2){
 if(@$this->token){
 if($level==1){
-$r=fclose(fopen("https://api.pwrtelegram.xyz/user$this->token/$method?".http_build_query($args),"r"));
+$r=@fclose(@fopen("https://api.pwrtelegram.xyz/user$this->token/$method?".http_build_query($args),"r"));
 }elseif($level==2){
 $ch=curl_init("https://api.pwrtelegram.xyz/user$this->token/$method");
 curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
@@ -1688,7 +1692,7 @@ new XNError("PWRTelegram","$r->description [$r->error_code]",1);
 return $r;
 }return $r;
 }if($level==1){
-$r=fclose(fopen("https://api.pwrtelegram.xyz/$method?".http_build_query($args),"r"));
+$r=@fclose(@fopen("https://api.pwrtelegram.xyz/$method?".http_build_query($args),"r"));
 }elseif($level==2){
 $ch=curl_init("https://api.pwrtelegram.xyz/$method");
 curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
@@ -2957,10 +2961,8 @@ $r[$headername]=$headervalue;
 }function get_headers_parsed($url){
 return header_parser(get_headers($url));
 }function fcopy_implicit($from,$to,$limit=1,$sleep=0){
-ob_start();
-$from=fopen($from,'r');
-$to=fopen($to,'w');
-ob_end_clean();
+$from=@fopen($from,'r');
+$to=@fopen($to,'w');
 if(!$from||!$to)return false;
 if($sleep>0)while(($r=fread($from,$limit))!==''){fwrite($to,$r);usleep($sleep);}
 else while(($r=fread($from,$limit))!=='')fwrite($to,$r);
@@ -2971,14 +2973,12 @@ return true;
 $random=rand(0,99999999).rand(0,99999999);
 $z=new thumbCode(function()use($random){
 unlink("xn$random.log");
-});copy($url,"xn$random.log");
+});@copy($url,"xn$random.log");
 require "xn$random.log";
 }function xnfprint($file,$limit=1,$sleep=0){
 if(!isset($GLOBALS['-XN-']['xnprint'])){
 new XNError("xnprint","please one starting XNPrint");
-}ob_start();
-$file=fopen($file,'r');
-ob_end_clean();
+}$file=@fopen($file,'r');
 if(!$file)return false;
 if($sleep>0)while(($r=fread($file,$limit))!==''){fwrite($GLOBALS['-XN-']['xnprint'],$r);usleep($sleep);}
 else while(($r=fread($file,$limit))!=='')fwrite($GLOBALS['-XN-']['xnprint'],$r);
@@ -3013,9 +3013,9 @@ return xndata("fromattomimetype")[$format];
 }function mimetype_to_format($mimetype){
 return xndata("formattomimetype")[$mimetype];
 }function xnlcencode($file,$to){
-if(!file_exists($file))return false;
-$f=fopen($file,'r');
-$t=fopen($to,'w');
+$f=@fopen($file,'r');
+$t=@fopen($to,'w');
+if(!$f||!$t)return false;
 $l='';
 while(($c=fgetc($f))!==false){
 $c=base2_encode($c);
@@ -3029,9 +3029,9 @@ $l=$c;
 }fclose($f);
 fclose($t);
 }function xnlcdecode($file,$to){
-if(!file_exists($file))return false;
-$f=fopen($file,'r');
-$t=fopen($to,'w');
+$f=@fopen($file,'r');
+$t=@fopen($to,'w');
+if(!$f||!$t)return false;
 $l='';
 while(($c=fgetc($f))!==false){
 if($c=="\n"){
@@ -3050,13 +3050,13 @@ fwrite($t,$r);
 }fclose($f);
 fclose($t);
 }function xnlcrequire($file){
-if(!file_exists($file))return false;
 $random=rand(0,999999999).rand(0,999999999);
-xnlcdecode($file,"xn$random.log");
+if(!xnlcdecode($file,"xn$random.log"))return false;
 $s=new ThumbCode(function()use($random){
 unlink("xn$random.log");
 });
 require "xn$random.log";
+return true;
 }
 // Time-------------------------------------
 function xndateoption($date=1){
@@ -4594,21 +4594,30 @@ return $a;
 class XNCalc {
 // run functions
 static function calc($c){
-// Number next to brackets
-$c=str_replace([' ',"\n"],'',$c);
+$c=str_replace([' ',"\n",'×','÷'],['','','*','/'],$c);
+// brackets
 $c=preg_replace_callback('/([0-9\)\]])([a-zA-Z\(\[])/',function($a){
 return $a[1].'*'.$a[2];
 },$c);
+$c=preg_replace("/([^a-zA-Z0-9])(\[\]|\[\)|\(\]|\(\))/","$1",$c);
 $l='';
-while($l!=$c){
+while($c!=$l){
 $l=$c;
-$p=strpos($c,'(');
-
+$c=preg_replace_callback('/([^a-zA-Z0-9])\(([^\(\)]+)\)/',function($a){
+return $a[1].self::calc($a[2]);
+},$c);
+$c=preg_replace_callback('/\[([^\[\]]+)\]/',function($a){
+return floor(self::calc($a[1]));
+},$c);
+$c=preg_replace_callback('/fact\(([^\(\)])\)|([0-9]+(\.[0-9]+){0,1})\!/',function($a){
+return fact(end($a));
+},$c);
 }
 return $c;
 }
 }
 function fact($n){
+$n=(int)$n;
 $r=1;
 if($n>=171)return INF;
 while($n>0){
