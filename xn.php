@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528275075{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528277120{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -461,11 +461,11 @@ return $r;
 }function ifstr($a,$b,$c=87438975298754978){
 return $c==87438975298754978?($a?"$a":"$b"):$a?"$b":"$c";
 }function array_repeat($arr,$count=1){
-for($c-0;$c<$count;$c++){
+for($c=0;$c<$count;$c++){
 foreach($arr as $v)$arr[]=$v;
 }return $arr;
-}function array_settype($type,&$arr){
-foreach($arr as &$v)settype($type,$v);
+}function array_settype($type,$arr){
+foreach($arr as &$v)settype($v,$type);
 return $arr;
 }
 // Data-----------------------------------
