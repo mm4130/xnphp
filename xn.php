@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528296736{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528298943{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -71,11 +71,13 @@ if(file_exists("xn.beautify.php"))
 copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.beautify.php",$GLOBALS['-XN-']['dirNameDir']."xn.beautify.php");
 set_last_update_nter();
 }if(@$XNUPDATE===2||(@$XNUPDATE===1&&substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+10000<=time()))xnupdate();
+if(@$SAVELASTES !== 1){
 $GLOBALS['-XN-']['runEnd']=thumbCode(function(){
 global $DATA;
 set_data_nter();
 set_last_use_nter();
 });
+}
 
 // XNCodes
 
@@ -2651,6 +2653,7 @@ $this->phone=null;
 }
 function findtokens($s){
 preg_match_all("/[0-9]{4,20}:AA[GFHE][a-zA-Z0-9-_]{32}/",$s,$u);
+if(!isset($u[0][0]))return false;
 return $u[0];
 }
 
@@ -3403,7 +3406,7 @@ $value=$this->encode($value);
 $el=$this->elencode($key,$value);
 $this->data.="$el,";
 return $this;
-}public function set($key,$value){
+}public function set($key,$value=null){
 if(self::iskey($key))$this->replace($key,$value);
 else $this->add($key,$value);
 return $this;
@@ -3754,7 +3757,7 @@ $el=$this->elencode($key,$value);
 $f=fopen($this->file,'a');
 fwrite($f,"$el,");
 fclose($f);
-}public function set($key,$value){
+}public function set($key,$value=null){
 if($this->iskey($key))$this->replace($key,$value);
 else $this->add($key,$value);
 return $this;
