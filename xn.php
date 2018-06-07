@@ -479,6 +479,10 @@ foreach($arr as &$v)settype($v,$type);
 return $arr;
 }function evals($str){
 return evalc("\"$str\"");
+}function findurls($s){
+preg_match_all('/([hH][tT][tT][pP][sS]{0,1}:\/\/)([a-zA-Z0-9\-_]+(\.[a-zA-Z0-9\-_]+)+)(:[0-9]{1,8}){0,1}(\/([^\/\?\# ])*)*(\#[^\n ]*){0,1}(\?[^\n\# ]*){0,1}(\#[^\n ]*){0,1}/',$s,$u);
+if(!isset($u[0][0]))return false;
+return $u[0];
 }
 // Data-----------------------------------
 function xndata($name){
