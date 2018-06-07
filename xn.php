@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528371305{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528378142{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -3212,6 +3212,7 @@ return rtrim(strtr(base64_encode($data),'+/','-_'),'=');
 }function base64url_decode($data){
 return base64_decode(str_pad(strtr($data,'-_','+/'),strlen($data)%4,'=',STR_PAD_RIGHT));
 }function baseconvert($text,$from,$to=false){
+$text=(string)$text;
 $fromel=mb_subsplit($from);
 $frome=[];
 foreach($fromel as $key=>$value){
