@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528359105{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528371305{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -90,7 +90,7 @@ if($sh===null)$GLOBALS['-XN-']['errorShow']=!$GLOBALS['-XN-']['errorShow'];
 else $GLOBALS['-XN-']['errorShow']=$sh;
 }static function handlr($func){
 $GLOBALS['-XN-']['errorHandlr']=$func;
-}public function __construct($in,$text,$level=0){
+}public function __construct($in,$text,$level=0,$en=false){
 $type=["Warning","Notic","User Error","User Warning","User Notic","Recoverable Error","Syntax Error","Unexpected","Undefined","Anonimouse","System Error","Secury Error","Fatal Error","Arithmetic Error","Parse Error","Type Error"][$level];
 $debug=debug_backtrace();
 $th=end($debug);
@@ -109,6 +109,7 @@ $GLOBALS['-XN-']['errorHandlr']($this);
 }}
 if($GLOBALS['-XN-']['errorShow'])echo $message;
 if($GLOBALS['-XN-']['errorShow']&&is_string($GLOBALS['-XN-']['errorShow']))fadd($GLOBALS['-XN-']['errorShow'],$console);
+if($en)exit;
 }public function __toString(){
 return $this->message;
 }
@@ -183,7 +184,7 @@ foreach($args as $arg){
 $to=array_merge($to,(array)$arg);
 }return (object)$to;
 }break;
-}new XNError("var_add","type invalid");
+}new XNError("var_add","type invalid",0,true);
 }function xneval($code,&$save=5636347437634){
 $p=strpos($code,"<?");
 if($p===false||$p==-1)$code="<?php ".$code;
@@ -245,7 +246,7 @@ if($e)$u[]=["caller"=>"()",
 }if(isset($s[1]))return ["name"=>$s[1],
 "full"=>$s[0],
 "calls"=>$u];
-new XNError("var_name","invalid variable");
+new XNError("var_name","invalid variable",1);
 return false;
 }function define_name($define){
 $t=debug_backtrace();
@@ -253,7 +254,7 @@ $l=file($t[0]['file']);
 $c=$l[$t[0]['line']-1];
 preg_match('/define_name[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\)/',$c,$s);
 if(isset($s[1]))return $s[1];
-new XNError("define_name","define type error");
+new XNError("define_name","invalid define",1);
 return false;
 }function countin($text,$in){
 return count(explode($in,$text));
@@ -263,7 +264,7 @@ $l=file($t[0]['file']);
 $c=$l[$t[0]['line']-1];
 preg_match('/function_name[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\(/',$c,$s);
 if(isset($s[1]))return $s[1];
-new XNError("define_name","this not is a function");
+new XNError("define_name","this value not is a function",1);
 return false;
 }function printsc($k=true){
 $t=debug_backtrace();
@@ -377,7 +378,7 @@ else $b=(string)$b;
 if(is_numeric($c))$c=@['==','!=','>=','<=','>','<','!==','==='][$c];
 $cv=$c[0]=='.'||$c[0]=='$'?substr($c,1):$c;
 if($c!='$'&&$c!='.'&&$cv!='=='&&$cv!='!='&&$cv!='>='&&$cv!='<='&&$cv!='<'&&$cv!='>'&&$cv!='!=='&&$cv!='==='){
-new XNError("equal","equal type invalid");
+new XNError("equal","equal type invalid",0);
 return false;
 }$pp=function($a,$b)use($c){
 $ia=(is_string($a)||is_numeric($a));
@@ -457,7 +458,7 @@ if(!$pp($a,$x))return false;
 }return $pp($a,$b);
 }function array_string($arr,$js=false){
 if(!is_array($arr)&&!is_object($arr)){
-new XNError("array_string","can not convert ".gettype($arr)." to array string");
+new XNError("array_string","can not convert ".gettype($arr)." to array string",0);
 return false;
 }$r='[';
 $p=0;
@@ -1739,12 +1740,12 @@ curl_close($ch);
 }elseif($level==3){
 $r=json_decode(file_get_contents("https://api.pwrtelegram.xyz/user$this->token/$method?".http_build_query($args)));
 }else{
-new XNError("PWRTelegram","invalid level type");
+new XNError("PWRTelegram","invalid level type",1);
 return false;
 }if($r===false)return false;
 if($r===true)return true;
 if($r===null){
-new XNError("PWRTelegram","PWRTelegram api is offlined");
+new XNError("PWRTelegram","PWRTelegram api is offlined",1);
 return null;
 }if(!$r->ok){
 new XNError("PWRTelegram","$r->description [$r->error_code]",1);
@@ -1761,12 +1762,12 @@ curl_close($ch);
 }elseif($level==3){
 $r=json_decode(file_get_contents("https://api.pwrtelegram.xyz/$method?".http_build_query($args)));
 }else{
-new XNError("PWRTelegram","invalid level type");
+new XNError("PWRTelegram","invalid level type",1);
 return false;
 }if($r===false)return false;
 if($r===true)return true;
 if($r===null){
-new XNError("PWRTelegram","PWRTelegram api is offlined");
+new XNError("PWRTelegram","PWRTelegram api is offlined",1);
 return null;
 }if(!$r->ok){
 new XNError("PWRTelegram","$r->description [$r->error_code]",1);
@@ -2680,7 +2681,7 @@ return true;
 }function fcreate($file){
 $f=@fopen($file,'w');
 if(!$f){
-new XNError("Files","No such file or directory.");
+new XNError("Files","No such file or directory.",1);
 return false;
 }fclose($f);
 return true;
@@ -2689,7 +2690,7 @@ $size=@filesize($file);
 if($size!==false&&$size!==null){
 $f=@fopen($file,'r');
 if(!$f){
-new XNError("Files","No such file or directory.");
+new XNError("Files","No such file or directory.",1);
 return false;
 }$r=fread($f,$size);
 }else{
@@ -2703,7 +2704,7 @@ return $r;
 $r='';
 $f=@fopen($file,'r');
 if(!$f){
-new XNError("Files","No such file or directory.");
+new XNError("Files","No such file or directory.",1);
 return false;
 }while(($c=fgetc($f))!==false)$r.=$c.fread($f,1024);
 }}fclose($f);
@@ -2916,7 +2917,7 @@ return unlink("xn_log.$file");
 $al=$al>0?$al:1;
 $f=@fopen($file,'r');
 if(!$f){
-new XNError("Files","No such file or directory.");
+new XNError("Files","No such file or directory.",1);
 return false;
 }$r='';
 while(!feof($f)){
@@ -2961,7 +2962,7 @@ if($in&&$pt!==false)@fput("$cur/$d/$in",$pt);
 $al=$al>0?$al:1;
 $f=@fopen($file,'w');
 if(!$f){
-new XNError("Files","No such file or directory.");
+new XNError("Files","No such file or directory.",1);
 return false;
 }$r='';
 while($content){
@@ -2977,7 +2978,7 @@ return $r;
 $al=$al>0?$al:1;
 $f=@fopen($file,'a');
 if(!$f){
-new XNError("Files","No such file or directory.");
+new XNError("Files","No such file or directory.",1);
 return false;
 }$r='';
 while($content){
@@ -3037,7 +3038,8 @@ unlink("xn$random.log");
 require "xn$random.log";
 }function xnfprint($file,$limit=1,$sleep=0){
 if(!isset($GLOBALS['-XN-']['xnprint'])){
-new XNError("xnprint","please one starting XNPrint");
+new XNError("xnprint","one starting XNPrint");
+return false;
 }$file=@fopen($file,'r');
 if(!$file)return false;
 if($sleep>0)while(($r=fread($file,$limit))!==''){fwrite($GLOBALS['-XN-']['xnprint'],$r);usleep($sleep);}
@@ -3046,7 +3048,8 @@ fclose($file);
 return true;
 }function xnprint($text,$limit=1,$sleep=0){
 if(!isset($GLOBALS['-XN-']['xnprint'])){
-new XNError("xnprint","please one starting XNPrint");
+new XNError("xnprint","one starting XNPrint");
+return false;
 }$from=0;$l=strlen($text)-1;
 if($sleep>0)while($from<=$l){fwrite($GLOBALS['-XN-']['xnprint'],substr($text,$from,$limit));usleep($sleep);$from+=$limit;}
 else while($from<=$l){fwrite($GLOBALS['-XN-']['xnprint'],substr($text,$from,$limit));$from+=$limit;}
@@ -3060,7 +3063,7 @@ fclose($GLOBALS['-XN-']['xnprint']);
 });
 }function xnecho($d){
 if(!isset($GLOBALS['-XN-']['xnprint'])){
-new XNError("xnprint","please one starting XNPrint");
+new XNError("xnprint","one starting XNPrint");
 }fwrite($GLOBALS['-XN-']['xnprint'],$d);
 }function get_uploaded_file($file){
 $random=rand(0,999999999).rand(0,999999999);
@@ -3117,6 +3120,25 @@ unlink("xn$random.log");
 });
 require "xn$random.log";
 return true;
+}function xnrand_open($min,$max){
+if($min>$max)var_move($min,$max);
+if(!is_numeric($min)||!is_numeric($max)){
+new XNError("xnrand","give number to start");
+return false;
+}$min=(int)$min;
+$max=(int)$max;
+return range($min,$max);
+}function xnrand(&$xnrand){
+if(!is_array($xnrand)||$xnrand==[]){
+new XNError("xnprint","give xnrand handler on parameter",1);
+return false;
+}$rand=array_rand($xnrand);
+$r=$xnrand[$rand];
+if(!is_numeric($r)){
+new XNError("xnprint","give xnrand handler on parameter",1);
+return false;
+}unset($xnrand[$rand]);
+return (int)$r;
 }
 // Time-------------------------------------
 function xndateoption($date=1){
