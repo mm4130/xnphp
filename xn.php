@@ -3134,11 +3134,13 @@ new XNError("xnprint","give xnrand handler on parameter",1);
 return false;
 }$rand=array_rand($xnrand);
 $r=$xnrand[$rand];
-if(!is_numeric($r)){
-new XNError("xnprint","give xnrand handler on parameter",1);
-return false;
-}unset($xnrand[$rand]);
+unset($xnrand[$rand]);
 return (int)$r;
+}function xnrandopen($str){
+if(is_string($str))$str=str_split($str);
+elseif(is_array($str));
+else return false;
+return $str;
 }
 // Time-------------------------------------
 function xndateoption($date=1){
