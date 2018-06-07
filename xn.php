@@ -3141,6 +3141,18 @@ if(is_string($str))$str=str_split($str);
 elseif(is_array($str));
 else return false;
 return $str;
+}function strhave($str,$in){
+$p=strpos($str,$in);
+return $p!==false&&$p!=-1;
+}function strihave($str,$in){
+$p=stripos($str,$in);
+return $p!==false&&$p!=-1;
+}function strshave($str,$in){
+$p=strpos($str,$in);
+return $p===0;
+}function strsihave($str,$in){
+$p=stripos($str,$in);
+return $p===0;
 }
 // Time-------------------------------------
 function xndateoption($date=1){
