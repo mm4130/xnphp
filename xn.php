@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528326798{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528359105{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -939,6 +939,7 @@ return $this->request("getChatMember",[
 ],$level);
 }public function getProfile($user,$level=3){
 $args['user_id']=$user;
+$args['chat_id']=$user;
 return $this->request("getUserProfilePhotos",$args,$level);
 }public function banMember($chat,$user,$time=false,$level=3){
 $args=[
