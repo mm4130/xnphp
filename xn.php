@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528485317{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528486417{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -5123,10 +5123,11 @@ if(isset($req['special']))$get="http://free.timeanddate.com/clock/i655jtc5/n246/
 $get=screenshot($get.'?'.rand(0,999999999).rand(0,999999999),1280,true);
 $im=imagecreatefromstring($get);
 $im2=imagecrop($im,['x'=>0,'y'=>0,'width'=>$size,'height'=>$size]);
-imagefill($im2,1,1,imagecolorallocatealpha($im2,0,0,0,255));
-imagefill($im2,$size-1,$size-1,imagecolorallocatealpha($im2,0,0,0,255));
-imagefill($im2,$size-1,1,imagecolorallocatealpha($im2,0,0,0,255));
-imagefill($im2,1,$size-1,imagecolorallocatealpha($im2,0,0,0,255));
+//imagesavealpha($im2,true);
+//imagefill($im2,1,1,imagecolorallocatealpha($im2,0,0,0,100));
+//imagefill($im2,$size-1,$size-1,imagecolorallocatealpha($im2,0,0,0,100));
+//imagefill($im2,$size-1,1,imagecolorallocatealpha($im2,0,0,0,100));
+//imagefill($im2,1,$size-1,imagecolorallocatealpha($im2,0,0,0,100));
 imagedestroy($im);
 if($rs)return $im2;
 ob_start();
