@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528378142{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528485317{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -91,7 +91,7 @@ else $GLOBALS['-XN-']['errorShow']=$sh;
 }static function handlr($func){
 $GLOBALS['-XN-']['errorHandlr']=$func;
 }public function __construct($in,$text,$level=0,$en=false){
-$type=["Warning","Notic","User Error","User Warning","User Notic","Recoverable Error","Syntax Error","Unexpected","Undefined","Anonimouse","System Error","Secury Error","Fatal Error","Arithmetic Error","Parse Error","Type Error"][$level];
+$type=["Warning","Notic","Log","Status","User Error","User Warning","User Notic","Recoverable Error","Syntax Error","Unexpected","Undefined","Anonimouse","System Error","Secury Error","Fatal Error","Arithmetic Error","Parse Error","Type Error"][$level];
 $debug=debug_backtrace();
 $th=end($debug);
 $date=date("ca");
@@ -3254,28 +3254,28 @@ public function __construct($xnj){
 $this->xnj=$xnj;
 }public function add($key,$count=1){
 $this->xnj->set($key,$this->xnj->value($key)+$count);
-return $xnj;
+return $this->xnj;
 }public function rem($key,$count=1){
 $this->xnj->set($key,$this->xnj->value($key)-$count);
-return $xnj;
+return $this->xnj;
 }public function div($key,$count=1){
 $this->xnj->set($key,$this->xnj->value($key)/$count);
-return $xnj;
+return $this->xnj;
 }public function mul($key,$count=1){
 $this->xnj->set($key,$this->xnj->value($key)*$count);
-return $xnj;
+return $this->xnj;
 }public function pow($key,$count=1){
 $this->xnj->set($key,$this->xnj->value($key)**$count);
-return $xnj;
+return $this->xnj;
 }public function rect($key,$count=1){
 $this->xnj->set($key,$this->xnj->value($key)%$count);
-return $xnj;
+return $this->xnj;
 }public function calc($key,$calc){
 $this->xnj->set($key,XNCalc::calc($calc,['x'=>$this->xnj->value($key)]));
-return $xnj;
+return $this->xnj;
 }public function join($key,$data){
 $this->xnj->set($key,$this->xnj->value($key).$data);
-return $xnj;
+return $this->xnj;
 }
 }class XNJsonProMath {
 private $xnj;
@@ -3283,25 +3283,25 @@ public function __construct($xnj){
 $this->xnj=$xnj;
 }public function add($key,$count=1){
 $this->xnj->set($key,XNProCalc::add($this->xnj->value($key),$count));
-return $xnj;
+return $this->xnj;
 }public function rem($key,$count=1){
 $this->xnj->set($key,XNProCalc::rem($this->xnj->value($key),$count));
-return $xnj;
+return $this->xnj;
 }public function mul($key,$count=1){
 $this->xnj->set($key,XNProCalc::mul($this->xnj->value($key),$count));
-return $xnj;
+return $this->xnj;
 }public function div($key,$count=1){
 $this->xnj->set($key,XNProCalc::div($this->xnj->value($key),$count));
-return $xnj;
+return $this->xnj;
 }public function rect($key,$count=1){
 $this->xnj->set($key,XNProCalc::rect($this->xnj->value($key),$count));
-return $xnj;
+return $this->xnj;
 }public function pow($key,$count=1){
 $this->xnj->set($key,XNProCalc::pow($this->xnj->value($key),$count));
-return $xnj;
+return $this->xnj;
 }public function calc($key,$calc){
 $this->xnj->set($key,XNProCalc::calc($calc,['x'=>$this->xnj->value($key)]));
-return $xnj;
+return $this->xnj;
 }
 }
 class XNJsonString {
@@ -4160,7 +4160,7 @@ if(is_array($j)){
 if($file&&$file!='.'&&$file!='..')$xnj=new XNJsonFile($file);
 else $xnj=new XNJsonString();
 $xnj->list($j);
-return $xnj;
+return $this->xnj;
 }if(!$file&&$j!='.'&&$j!='..'&&file_exists($j))return new XNJsonFile($j);
 if($file){
 if(strpos($j,'://')>0)return new XNJsonURL($j);
@@ -4445,9 +4445,7 @@ if(!self::_view($a)&& self::_view($b))return     self::_rem1(self::abs($a),self:
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 self::_setfull($a,$b);
-$r=$a==0?$b:
-   $b==0?$a:
-   self::_add2($a,$b);
+$r=self::_add2($a,$b);
 return self::_get3($r);
 }public function _rem0($a,$b){
 $a=subsplit($a,13);
@@ -4500,7 +4498,7 @@ $s=0;
 while($e>=0){
 $t=$a[$c]*$b[$e]+$s;
 $s=floor($t/10);
-$t-=$s*10;
+$t%=10;
 $y=$t.$y;
 $e--;
 }$c--;
@@ -4691,8 +4689,7 @@ return $a;
 class XNCalc {
 // run functions
 static function calc($c){
-$c=str_replace([' ',"\n",'×','÷'],['','','*','/'],$c);
-// brackets
+$c=str_replace([' ',"\n",'×','÷',"PI","MICROTIME","TIME"],['','','*','/',pi(),microtime(true),time()],$c);
 $c=preg_replace_callback('/([0-9\)\]])([a-zA-Z\(\[])/',function($a){
 return $a[1].'*'.$a[2];
 },$c);
@@ -4700,16 +4697,43 @@ $c=preg_replace("/([^a-zA-Z0-9])(\[\]|\[\)|\(\]|\(\))/","$1",$c);
 $l='';
 while($c!=$l){
 $l=$c;
-$c=preg_replace_callback('/([^a-zA-Z0-9])\(([^\(\)]+)\)/',function($a){
-return $a[1].self::calc($a[2]);
+$c=str_replace(['++','+-','--','-+'],['+','-','+','-'],$c);
+$c=preg_replace_callback('/([^a-zA-Z0-9])\(([^\[\]]+)\)|^()\(([^\[\]]+)\)/',function($a){
+return $a[1].self::calc($a[4]);
 },$c);
 $c=preg_replace_callback('/\[([^\[\]]+)\]/',function($a){
 return floor(self::calc($a[1]));
 },$c);
-$c=preg_replace_callback('/fact\(([^\(\)])\)|([0-9]+(\.[0-9]+){0,1})\!/',function($a){
-return fact(end($a));
+$c=preg_replace_callback('/\|([^\[\]]+)\|/',function($a){
+return abs(self::calc($a[1]));
 },$c);
+$c=preg_replace_callback('/(-*\+*[0-9.]+(\.[0-9]+){0,1})\!/',function($a){
+return fact(self::calc(end($a)));
+},$c);
+$c=preg_replace_callback('/rand\(([^\(\)]+),([^\(\)]+)\)|(-*\+*[0-9.]+(\.[0-9]+){0,1})~(-*\+*[0-9.]+(\.[0-9]+){0,1})/',function($a){
+if(isset($a[3]))return rand((float)self::calc($a[3]),(float)self::calc($a[5]));
+return rand((float)self::calc($a[1]),(float)self::calc($a[2]));
+},$c);
+$c=preg_replace_callback('/([^0-9])~(-*\+*[0-9.]+(\.[0-9]+){0,1})|^()~(-*\+*[0-9.]+(\.[0-9]+){0,1})/',function($a){
+return $a[1].(~(float)$a[5]);
+},$c);
+foreach(["tan","log","ln","cos","tan","sin","round","ceil","acos","acosh","asin","asinh","atan","atan2","atanh","cosh",
+         "exp","expm1","log10","log1p","tanh","sinh","sqrt","floor","abs","fact"] as $func){
+$c=preg_replace_callback("/$func(-*\+*[0-9.]+(\.[0-9]+){0,1})/",function($a)use($func){
+return ($func)(self::calc($a[1]));
+},$c);
+$c=preg_replace_callback("/$func\(([^\(\)]+)\)/",function($a)use($func){
+return ($func)(self::calc($a[1]));
+},$c);
+}$c=preg_replace_callback('/max\((([^\(\)]+)(,([^\(\)]+))*)\)/',function($a){
+return max(...explode(',',self::calc($a[2])));
+},$c);
+$c=preg_replace_callback('/min\((([^\(\)]+)(,([^\(\)]+))*)\)/',function($a){
+return min(...explode(',',self::calc($a[2])));
+},$c);
+
 }
+if($c[0]=='+')$c=substr($c,1);
 return $c;
 }
 }
@@ -5040,53 +5064,53 @@ return $this;
 }
 // API
 function clockanalogimage($req=[],$rs=false){
-$size=ifstr($req['size'],512);
-$borderwidth=ifstr($req['borderwidth'],3);
-$bordercolor=ifstr($req['bordercolor'],'000');
-$numberspace=ifstr($req['numberspace'],76);
-$line1space=ifstr($req['line1space'],98);
-$line1length=ifstr($req['line1length'],10);
-$line1width=ifstr($req['line1width'],1);
-$line1color=ifstr($req['line1color'],'000');
-$line1type=ifstr($req['line1type'],3);
-$line2space=ifstr($req['line2space'],98);
-$line2length=ifstr($req['line2length'],10);
-$line2width=ifstr($req['line2width'],1);
-$line2color=ifstr($req['line2color'],'000');
-$line2type=ifstr($req['line2type'],3);
-$line3space=ifstr($req['line3space'],98);
-$line3length=ifstr($req['line3length'],10);
-$line3width=ifstr($req['line3width'],1);
-$line3color=ifstr($req['line3color'],'000');
-$line3type=ifstr($req['line3type'],3);
-$numbersize=ifstr($req['numbersize'],20);
-$numbertype=ifstr($req['numbertype'],1);
-$hourcolor=ifstr($req['hourcolor'],'000');
-$mincolor=ifstr($req['mincolor'],'000');
-$seccolor=ifstr($req['seccolor'],'f00');
-$hourlength=ifstr($req['hourlength'],45);
-$minlength=ifstr($req['minlength'],70);
-$seclength=ifstr($req['seclength'],77);
-$hourwidth=ifstr($req['hourwidth'],5);
-$minwidth=ifstr($req['minwidth'],5);
-$secwidth=ifstr($req['secwidth'],1);
-$hourtype=ifstr($req['hourtype'],3);
-$mintype=ifstr($req['mintype'],3);
-$sectype=ifstr($req['sectype'],3);
-$hourcenter=ifstr($req['hourcenter'],0);
-$mincenter=ifstr($req['mincenter'],5);
-$seccenter=ifstr($req['seccenter'],3);
-$colorin=ifstr($req['colorin'],'fff');
-$colorout=ifstr($req['colorout'],'fff');
-$circlecolor=ifstr($req['circlecolor'],'false');
-$circlewidth=ifstr($req['circlewidth'],3);
-$circlespace=ifstr($req['circlespace'],60);
-$circle=ifstr($circlecolor=='false','',"/hcc$circle/hcw$circlewidth/hcd$circlespace");
-$shadow=ifstr($req['shadow'],'/hwc'.$req['shadow'],'');
+$size=ifstr(@$req['size'],512);
+$borderwidth=ifstr(@$req['borderwidth'],3);
+$bordercolor=ifstr(@$req['bordercolor'],'000');
+$numberspace=ifstr(@$req['numberspace'],76);
+$line1space=ifstr(@$req['line1space'],98);
+$line1length=ifstr(@$req['line1length'],10);
+$line1width=ifstr(@$req['line1width'],1);
+$line1color=ifstr(@$req['line1color'],'000');
+$line1type=ifstr(@$req['line1type'],3);
+$line2space=ifstr(@$req['line2space'],98);
+$line2length=ifstr(@$req['line2length'],10);
+$line2width=ifstr(@$req['line2width'],1);
+$line2color=ifstr(@$req['line2color'],'000');
+$line2type=ifstr(@$req['line2type'],3);
+$line3space=ifstr(@$req['line3space'],98);
+$line3length=ifstr(@$req['line3length'],10);
+$line3width=ifstr(@$req['line3width'],1);
+$line3color=ifstr(@$req['line3color'],'000');
+$line3type=ifstr(@$req['line3type'],3);
+$numbersize=ifstr(@$req['numbersize'],20);
+$numbertype=ifstr(@$req['numbertype'],1);
+$hourcolor=ifstr(@$req['hourcolor'],'000');
+$mincolor=ifstr(@$req['mincolor'],'000');
+$seccolor=ifstr(@$req['seccolor'],'f00');
+$hourlength=ifstr(@$req['hourlength'],45);
+$minlength=ifstr(@$req['minlength'],70);
+$seclength=ifstr(@$req['seclength'],77);
+$hourwidth=ifstr(@$req['hourwidth'],5);
+$minwidth=ifstr(@$req['minwidth'],5);
+$secwidth=ifstr(@$req['secwidth'],1);
+$hourtype=ifstr(@$req['hourtype'],3);
+$mintype=ifstr(@$req['mintype'],3);
+$sectype=ifstr(@$req['sectype'],3);
+$hourcenter=ifstr(@$req['hourcenter'],0);
+$mincenter=ifstr(@$req['mincenter'],5);
+$seccenter=ifstr(@$req['seccenter'],3);
+$colorin=ifstr(@$req['colorin'],'fff');
+$colorout=ifstr(@$req['colorout'],'fff');
+$circlecolor=ifstr(@$req['circlecolor'],'false');
+$circlewidth=ifstr(@$req['circlewidth'],3);
+$circlespace=ifstr(@$req['circlespace'],60);
+$circle=ifstr($circlecolor=='false','',"/hcc".(@$circle)."/hcw$circlewidth/hcd$circlespace");
+$shadow=ifstr(@$req['shadow'],'/hwc'.(@$req['shadow']),'');
 $hide36912=ifstr(isset($req['hide3,6,9,12']),'/fav0','');
 $hidenumbers=ifstr(isset($req['hidenumbers']),'/fiv0','');
-$numbercolor=ifstr($req['numbercolor'],'000');
-$numberfont=ifstr($req['numberfont'],1);
+$numbercolor=ifstr(@$req['numbercolor'],'000');
+$numberfont=ifstr(@$req['numberfont'],1);
 $get="https://www.timeanddate.com/clocks/onlyforusebyconfiguration.php/i6554451/n246/szw$size/".
 "szh$size/hoc000/hbw$borderwidth/hfceee/cf100/hncccc/fas$numbersize/fnu$numbertype/fdi$numberspace/".
 "mqc$line1color/mql$line1length/mqw$line1width/mqd$line1space/mqs$line1type/mhc$line2color/mhl$line2length/".
@@ -5096,9 +5120,13 @@ $get="https://www.timeanddate.com/clocks/onlyforusebyconfiguration.php/i6554451/
 "hoc$bordercolor$circle$shadow$hide36912$hidenumbers/fac$numbercolor/fan$numberfont";
 if(isset($req['special']))$get="http://free.timeanddate.com/clock/i655jtc5/n246/szw$size/szh$size/hoc00f/hbw0/".
 "hfc000/cf100/hgr0/facf90/mqcfff/mql6/mqw2/mqd74/mhcfff/mhl6/mhw1/mhd74/mmcf90/mml4/mmw1/mmd74/hhcfff/hmcfff";
-$get=screenshot($get.'?'.rand(0,99999999999).rand(0,99999999999),1280,true);
+$get=screenshot($get.'?'.rand(0,999999999).rand(0,999999999),1280,true);
 $im=imagecreatefromstring($get);
 $im2=imagecrop($im,['x'=>0,'y'=>0,'width'=>$size,'height'=>$size]);
+imagefill($im2,1,1,imagecolorallocatealpha($im2,0,0,0,255));
+imagefill($im2,$size-1,$size-1,imagecolorallocatealpha($im2,0,0,0,255));
+imagefill($im2,$size-1,1,imagecolorallocatealpha($im2,0,0,0,255));
+imagefill($im2,1,$size-1,imagecolorallocatealpha($im2,0,0,0,255));
 imagedestroy($im);
 if($rs)return $im2;
 ob_start();
