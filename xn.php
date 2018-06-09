@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528486417{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528572926{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -219,53 +219,6 @@ return $t['file'];
 $t=debug_backtrace();
 $t=end($t);
 return dirname($t['file']);
-}function var_name(&$var){
-$t=debug_backtrace();
-$l=file($t[0]['file']);
-$c=$l[$t[0]['line']-1];
-preg_match('/var_name[\n ]*\([@\n ]*\$([a-zA-Z_0-9]+)[\n ]*((\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\)))*\)/',$c,$s);
-$s[0]=substr($s[0],9,-1);
-preg_match_all('/(\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\))/',$s[0],$j);
-$u=[];
-foreach($j[1] as $e){
-if($e)$u[]=["caller"=>'->',
-"type"=>"object_method",
-"value"=>substr($e,2)];
-}foreach($j[2] as $e){
-if($e)$u[]=["caller"=>"::",
-"type"=>"static_method",
-"value"=>substr($e,2)];
-}foreach($j[3] as $e){
-if($e)$u[]=["caller"=>"[]",
-"type"=>"array_index",
-"value"=>substr($e,1,-1)];
-}foreach($j[4] as $e){
-if($e)$u[]=["caller"=>"()",
-"type"=>"closure_call",
-"value"=>substr($e,1,-1)];
-}if(isset($s[1]))return ["name"=>$s[1],
-"full"=>$s[0],
-"calls"=>$u];
-new XNError("var_name","invalid variable",1);
-return false;
-}function define_name($define){
-$t=debug_backtrace();
-$l=file($t[0]['file']);
-$c=$l[$t[0]['line']-1];
-preg_match('/define_name[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\)/',$c,$s);
-if(isset($s[1]))return $s[1];
-new XNError("define_name","invalid define",1);
-return false;
-}function countin($text,$in){
-return count(explode($in,$text));
-}function function_name($func){
-$t=debug_backtrace();
-$l=file($t[0]['file']);
-$c=$l[$t[0]['line']-1];
-preg_match('/function_name[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\(/',$c,$s);
-if(isset($s[1]))return $s[1];
-new XNError("define_name","this value not is a function",1);
-return false;
 }function printsc($k=true){
 $t=debug_backtrace();
 $l=file($t[0]['file']);
@@ -279,6 +232,8 @@ echo substr($l[$p++],2);
 return eval('return '.$code.';');
 }function is_function($f){
 return (is_string($f)&&function_exists($f))||(is_object($f)&&($f instanceof Closure));
+}function is_closure($f){
+return is_object($f)&&($f instanceof Closure);
 }function is_json($json){
 $obj=@json_decode($json);
 return $obj!==false&&is_string($json)&&(is_object($obj)||is_array($obj));
@@ -303,8 +258,6 @@ $c++;}
 $arr[]=$r;
 $loc+=$space;}
 return $arr;
-}function ContentType($c){
-return header("Content-Type: $c");
 }function equal($a,$b,$c='==',$d=0){
 $ia=is_array($a)||is_object($a);
 $ib=is_array($b)||is_object($a);
@@ -2669,8 +2622,42 @@ if(!isset($u[0][0]))return false;
 return $u[0];
 }
 
+class XNTelegramCrypt {
+public function aes_calculate($msg,$auth,$to=true){
+$x=$to?0:8;
+$a=hash('sha256',$msg.substr($auth,$x,36),true);
+$b=hash('sha256',substr($auth,40+$x,36).$msg,true);
+$key=substr($a,0,8).substr($b,8,16).substr($a,24,8);
+$iv=substr($b,0,8).substr($a,8,16).substr($b,24,8);
+return [$key,$iv];
+}public function old_aes_calculate($msg,$auth,$to=true){
+$x=$to?0:8;
+$a=sha1($msg.substr($auth,$x,32),true);
+$b=sha1(substr($auth,32+$x,16).$msg.substr($auth,48+$x,16),true);
+$c=sha1(substr($auth,64+$x,32).$msg,true);
+$d=sha1($msg.substr($auth,96+$x,32),true);
+$key=substr($a,0,8).substr($b,8,12).substr($c,4,12);
+$iv=substr($a,8,12).substr($b,0,8).substr($c,16,4).substr($d,0,8);
+return [$key,$iv];
+}public function ige_encrypt($msg,$key,$iv){
+$cipher = new \phpseclib\Crypt\AES('ige');
+$cipher->setKey($key);
+$cipher->setIV($iv);
+return @$cipher->encrypt($msg);
+}public function ctr_encrypt($msg,$key,$iv){
+$cipher = new \phpseclib\Crypt\AES('ctr');
+$cipher->setKey($key);
+$cipher->setIV($iv);
+return @$cipher->encrypt($msg);
+}public function ige_decrypt($msg,$key,$iv){
+$cipher = new \phpseclib\Crypt\AES('ige');
+$cipher->setKey($key);
+$cipher->setIV($iv);
+return @$cipher->decrypt($msg);
+}
+}
 class XNTelegram {
-// Soon ...
+private $servers = [];
 }
 // Files-------------------------------
 function fvalid($file){
@@ -3153,6 +3140,103 @@ return $p===0;
 }function strsihave($str,$in){
 $p=stripos($str,$in);
 return $p===0;
+}function set_json_app(){
+header("Content-Type: application/json");
+}function set_text_app(){
+header("Content-Type: text/plan");
+}function set_html_app(){
+header("Content-Type: text/html");
+}function set_http_code($code){
+header(":",false,$code);
+}function redairect($loc){
+header("Location: $loc");
+}function ContentLength($length){
+header("Content-Length: $length");
+}function ContentType($c){
+return header("Content-Type: $c");
+}function var_info($var){
+$res=[];
+$type=gettype($var);
+switch($type){
+case "string":
+if(is_json($var)){
+$res["type"]="string";
+$res["short_type"]="str";
+$res["json"]=true;
+if($var=="{}"||$var=="[]")$res["length"]=0;
+else $res["length"]=countin($var,'","')+1;
+}else{
+$res["type"]="string";
+$res["short_type"]="str";
+$res["json"]=false;
+$res["length"]=strlen($var);
+}break;case "integer":
+$res["type"]="integer";
+$res["short_type"]="int";
+break;case "float":
+$res["type"]=$res["short_type"]="float";
+break;case "double":
+$res["type"]=$res["short_type"]="double";
+break;case "boolean":
+$res["type"]="boolean";
+$res["short_type"]="bool";
+break;case "NULL":
+$res["type"]="NULL";
+$res["short_type"]="null";
+break;case "array":
+$res["type"]=$res["short_type"]="array";
+$res["length"]=count($array);
+break;case "object":
+if(is_function($var)){
+
+}else{
+
+}break;default:
+new XNError("var_info","type invalid",1);
+return false;
+}return (object)$res;
+}function var_get($var){
+$t=debug_backtrace();
+$l=file($t[0]['file']);
+$c=$l[$t[0]['line']-1];
+if(preg_match('/var_name[\n ]*\([@\n ]*\$([a-zA-Z_0-9]+)[\n ]*((\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\)))*\)/',$c,$s)){
+$s[0]=substr($s[0],9,-1);
+preg_match_all('/(\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\))/',$s[0],$j);
+$u=[];
+foreach($j[1] as $e){
+if($e)$u[]=["caller"=>'->',
+"type"=>"object_method",
+"value"=>substr($e,2)];
+}foreach($j[2] as $e){
+if($e)$u[]=["caller"=>"::",
+"type"=>"static_method",
+"value"=>substr($e,2)];
+}foreach($j[3] as $e){
+if($e)$u[]=["caller"=>"[]",
+"type"=>"array_index",
+"value"=>substr($e,1,-1)];
+}foreach($j[4] as $e){
+if($e)$u[]=["caller"=>"()",
+"type"=>"closure_call",
+"value"=>substr($e,1,-1)];
+}if(isset($s[1]))return ["type"=>"variable",
+"short_type"=>"var",
+"name"=>$s[1],
+"full"=>$s[0],
+"calls"=>$u];
+}elseif(preg_match('/var_get[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\)/',$c,$s)){
+return ["type"=>"define",
+"short_type"=>"def",
+"name"=>$s[1]
+];
+}elseif(preg_match('/var_get[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\(/',$c,$s)){
+if(preg_match('/^[fF][uU][nN][cC][tT][iI][oO][nN]$/',$s[1]))$s[1]="function";
+return ["type"=>"function",
+"short_type"=>"closure",
+"name"=>$s[1]
+];
+}new XNError("var_get","type invalid",1);
+return false;
 }
 // Time-------------------------------------
 function xndateoption($date=1){
@@ -4689,8 +4773,13 @@ return $a;
 class XNCalc {
 // run functions
 static function calc($c){
-$c=str_replace([' ',"\n",'×','÷',"PI","MICROTIME","TIME"],['','','*','/',pi(),microtime(true),time()],$c);
-$c=preg_replace_callback('/([0-9\)\]])([a-zA-Z\(\[])/',function($a){
+$c=str_replace([' ',"\n",'×','÷','π'],['','','*','/','PI'],$c);
+$g = [3.1415926535898,1.6180339887498,9.807,2.7182818284590,microtime(true),time()];
+foreach(["PI","PHI","G","E","MICROTIME","TIME"] as $k=>$p){
+$c=preg_replace("/([a-zA-Z0-9])$p/","$1*".$g[$k],$c);
+$c=preg_replace("/$p([\(\[])/",$g[$k]."*$1",$c);
+$c=str_replace($p,$g[$k],$c);
+}$c=preg_replace_callback('/([0-9\)\]])([\(\[])/',function($a){
 return $a[1].'*'.$a[2];
 },$c);
 $c=preg_replace("/([^a-zA-Z0-9])(\[\]|\[\)|\(\]|\(\))/","$1",$c);
@@ -4731,9 +4820,85 @@ return max(...explode(',',self::calc($a[2])));
 $c=preg_replace_callback('/min\((([^\(\)]+)(,([^\(\)]+))*)\)/',function($a){
 return min(...explode(',',self::calc($a[2])));
 },$c);
-
+$k='';
+foreach(["\+","-","\*","'","\^","\*\*","%","\/","\>","\>\>","\<","\<\<","\|","\|\|","\&","\&\&"] as $nm){
+$p=$q=0;
+$c=preg_replace_callback("/(-*\+*[0-9.]+(\.[0-9]+){0,1})([a-zA-Z]*)($nm)(-*\+*[0-9.]+(\.[0-9]+){0,1})([a-zA-Z]*)/",function($a)use(&$k,&$p,&$q,$c){
+$q=strlen($a[4]);
+$p=strpos($c,$a[0])+strlen($a[1])+$q;
+if($a[7]==$a[3])switch($a[4]){
+case "+":
+return ($a[1]+$a[5]).$a[3];
+break;case "-":
+return ($a[1]-$a[5]).$a[3];
+break;case "*":
+return ($a[1]*$a[5]).$a[3];
+break;case "/":
+return ($a[1]/$a[5]).$a[3];
+break;case "%":
+return ($a[1]%$a[5]).$a[3];
+break;case "^":
+case "**":
+return ($a[1]**$a[5]).$a[3];
+break;case "'":
+return ($a[1]^$a[5]).$a[3];
+break;case ">":
+case ">>":
+return ($a[1]>>$a[5]).$a[3];
+break;case "<":
+case "<<":
+return ($a[1]<<$a[5]).$a[3];
+break;case "&":
+return ($a[1]&$a[5]).$a[3];
+break;case "|":
+return ($a[1]|$a[5]).$a[3];
+break;case "&&":
+return (int)($a[1]&&$a[5]).$a[3];
+break;case "||":
+return (int)($a[1]||$a[5]).$a[3];
+break;
+}return $a[0];
+},$c);
+$c.=$k;
+$k='';
+if($q>0)$c=substr($c,0,$p+$q).preg_replace_callback("/(-*\+*[0-9.]+(\.[0-9]+){0,1})([a-zA-Z]*)($nm)(-*\+*[0-9.]+(\.[0-9]+){0,1})([a-zA-Z]*)/",function($a)use(&$k){
+if($a[7]==$a[3])switch($a[4]){
+case "+":
+return ($a[1]+$a[5]).$a[3];
+break;case "-":
+return ($a[1]-$a[5]).$a[3];
+break;case "*":
+return ($a[1]*$a[5]).$a[3];
+break;case "/":
+return ($a[1]/$a[5]).$a[3];
+break;case "%":
+return ($a[1]%$a[5]).$a[3];
+break;case "^":
+case "**":
+return ($a[1]**$a[5]).$a[3];
+break;case "'":
+return ($a[1]^$a[5]).$a[3];
+break;case ">":
+case ">>":
+return ($a[1]>>$a[5]).$a[3];
+break;case "<":
+case "<<":
+return ($a[1]<<$a[5]).$a[3];
+break;case "&":
+return ($a[1]&$a[5]).$a[3];
+break;case "|":
+return ($a[1]|$a[5]).$a[3];
+break;case "&&":
+return (int)($a[1]&&$a[5]).$a[3];
+break;case "||":
+return (int)($a[1]||$a[5]).$a[3];
+break;
+}return $a[0];
+},substr($c,$p));
+$c.=$k;
+$k='';
 }
-if($c[0]=='+')$c=substr($c,1);
+}
 return $c;
 }
 }
