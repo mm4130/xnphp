@@ -1662,6 +1662,8 @@ $bot=self::getbot();
 $code=$bot->convertFile($code,$file,$type,"@tebrobot");
 if(!$code->ok)return $code;
 return $code->result->{$type};
+}static function getChat($chat){
+return self::getbot()->getChat($chat);
 }
 }
 
@@ -5445,6 +5447,6 @@ return ["version"=>"1.5",
 "last_use"=>substr($GLOBALS['-XN-']['lastUse'],0,-11)
 ];
 }
- 
+
 
 ?>
