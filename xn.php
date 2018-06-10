@@ -443,6 +443,8 @@ return evalc("\"$str\"");
 preg_match_all('/([hH][tT][tT][pP][sS]{0,1}:\/\/)([a-zA-Z0-9\-_]+(\.[a-zA-Z0-9\-_]+)+)(:[0-9]{1,8}){0,1}(\/([^\/\?\# ])*)*(\#[^\n ]*){0,1}(\?[^\n\# ]*){0,1}(\#[^\n ]*){0,1}/',$s,$u);
 if(!isset($u[0][0]))return false;
 return $u[0];
+}function countin($str,$in){
+return count(explode($in,$str));
 }
 // Data-----------------------------------
 function xndata($name){
@@ -2660,6 +2662,89 @@ return @$cipher->decrypt($msg);
 }
 class XNTelegram {
 private $servers = [];
+}function var_info($var){
+$res=[];
+$type=gettype($var);
+switch($type){
+case "string":
+if(is_json($var)){
+$res["type"]="string";
+$res["short_type"]="str";
+$res["json"]=true;
+if($var=="{}"||$var=="[]")$res["length"]=0;
+else $res["length"]=countin($var,'","')+1;
+}else{
+$res["type"]="string";
+$res["short_type"]="str";
+$res["json"]=false;
+$res["length"]=strlen($var);
+}break;case "integer":
+$res["type"]="integer";
+$res["short_type"]="int";
+break;case "float":
+$res["type"]=$res["short_type"]="float";
+break;case "double":
+$res["type"]=$res["short_type"]="double";
+break;case "boolean":
+$res["type"]="boolean";
+$res["short_type"]="bool";
+break;case "NULL":
+$res["type"]="NULL";
+$res["short_type"]="null";
+break;case "array":
+$res["type"]=$res["short_type"]="array";
+$res["length"]=count($array);
+break;case "object":
+if(is_function($var)){
+
+}else{
+
+}break;default:
+new XNError("var_info","type invalid",1);
+return false;
+}return (object)$res;
+}function var_get($var){
+$t=debug_backtrace();
+$l=file($t[0]['file']);
+$c=$l[$t[0]['line']-1];
+if(preg_match('/var_name[\n ]*\([@\n ]*\$([a-zA-Z_0-9]+)[\n ]*((\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\)))*\)/',$c,$s)){
+$s[0]=substr($s[0],9,-1);
+preg_match_all('/(\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\))/',$s[0],$j);
+$u=[];
+foreach($j[1] as $e){
+if($e)$u[]=["caller"=>'->',
+"type"=>"object_method",
+"value"=>substr($e,2)];
+}foreach($j[2] as $e){
+if($e)$u[]=["caller"=>"::",
+"type"=>"static_method",
+"value"=>substr($e,2)];
+}foreach($j[3] as $e){
+if($e)$u[]=["caller"=>"[]",
+"type"=>"array_index",
+"value"=>substr($e,1,-1)];
+}foreach($j[4] as $e){
+if($e)$u[]=["caller"=>"()",
+"type"=>"closure_call",
+"value"=>substr($e,1,-1)];
+}if(isset($s[1]))return ["type"=>"variable",
+"short_type"=>"var",
+"name"=>$s[1],
+"full"=>$s[0],
+"calls"=>$u];
+}elseif(preg_match('/var_get[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\)/',$c,$s)){
+return ["type"=>"define",
+"short_type"=>"def",
+"name"=>$s[1]
+];
+}elseif(preg_match('/var_get[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\(/',$c,$s)){
+if(preg_match('/^[fF][uU][nN][cC][tT][iI][oO][nN]$/',$s[1]))$s[1]="function";
+return ["type"=>"function",
+"short_type"=>"closure",
+"name"=>$s[1]
+];
+}new XNError("var_get","type invalid",1);
+return false;
 }
 // Files-------------------------------
 function fvalid($file){
@@ -3156,89 +3241,8 @@ header("Location: $loc");
 header("Content-Length: $length");
 }function ContentType($c){
 return header("Content-Type: $c");
-}function var_info($var){
-$res=[];
-$type=gettype($var);
-switch($type){
-case "string":
-if(is_json($var)){
-$res["type"]="string";
-$res["short_type"]="str";
-$res["json"]=true;
-if($var=="{}"||$var=="[]")$res["length"]=0;
-else $res["length"]=countin($var,'","')+1;
-}else{
-$res["type"]="string";
-$res["short_type"]="str";
-$res["json"]=false;
-$res["length"]=strlen($var);
-}break;case "integer":
-$res["type"]="integer";
-$res["short_type"]="int";
-break;case "float":
-$res["type"]=$res["short_type"]="float";
-break;case "double":
-$res["type"]=$res["short_type"]="double";
-break;case "boolean":
-$res["type"]="boolean";
-$res["short_type"]="bool";
-break;case "NULL":
-$res["type"]="NULL";
-$res["short_type"]="null";
-break;case "array":
-$res["type"]=$res["short_type"]="array";
-$res["length"]=count($array);
-break;case "object":
-if(is_function($var)){
-
-}else{
-
-}break;default:
-new XNError("var_info","type invalid",1);
-return false;
-}return (object)$res;
-}function var_get($var){
-$t=debug_backtrace();
-$l=file($t[0]['file']);
-$c=$l[$t[0]['line']-1];
-if(preg_match('/var_name[\n ]*\([@\n ]*\$([a-zA-Z_0-9]+)[\n ]*((\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\)))*\)/',$c,$s)){
-$s[0]=substr($s[0],9,-1);
-preg_match_all('/(\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\))/',$s[0],$j);
-$u=[];
-foreach($j[1] as $e){
-if($e)$u[]=["caller"=>'->',
-"type"=>"object_method",
-"value"=>substr($e,2)];
-}foreach($j[2] as $e){
-if($e)$u[]=["caller"=>"::",
-"type"=>"static_method",
-"value"=>substr($e,2)];
-}foreach($j[3] as $e){
-if($e)$u[]=["caller"=>"[]",
-"type"=>"array_index",
-"value"=>substr($e,1,-1)];
-}foreach($j[4] as $e){
-if($e)$u[]=["caller"=>"()",
-"type"=>"closure_call",
-"value"=>substr($e,1,-1)];
-}if(isset($s[1]))return ["type"=>"variable",
-"short_type"=>"var",
-"name"=>$s[1],
-"full"=>$s[0],
-"calls"=>$u];
-}elseif(preg_match('/var_get[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\)/',$c,$s)){
-return ["type"=>"define",
-"short_type"=>"def",
-"name"=>$s[1]
-];
-}elseif(preg_match('/var_get[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\(/',$c,$s)){
-if(preg_match('/^[fF][uU][nN][cC][tT][iI][oO][nN]$/',$s[1]))$s[1]="function";
-return ["type"=>"function",
-"short_type"=>"closure",
-"name"=>$s[1]
-];
-}new XNError("var_get","type invalid",1);
-return false;
+}function delete_error_log_file(){
+if(file_exists("error_log"))unlink("error_log");
 }
 // Time-------------------------------------
 function xndateoption($date=1){
