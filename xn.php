@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528581731{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1527666804{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -418,7 +418,7 @@ $p=0;
 foreach((array)$arr as $k=>$v){
 if($r!='[')$r.=',';
 if(is_array($v))$v=array_string($v,$js);
-if(is_numeric($k)&&$k==$p){
+if(is_numeric($k)&&$k===$p){
 $r.=json_encode($v,$js);
 $p++;
 }else $r.=json_encode($k,$js).'=>'.json_encode($v,$js);
@@ -1356,19 +1356,84 @@ $args['inline_message_id']=$args['message_id'];
 unset($args['message_id']);
 }if(isset($args['id']))$args['callback_query_id']=$args['inline_query_id']=$args['id'];
 if(isset($args['mode']))$args['parse_mode']=$args['mode'];
+if(isset($args['parse']))$args['parse_mode']=$args['parse'];
 if(isset($args['markup']))$args['reply_markup']=$args['markup'];
 if(isset($args['reply']))$args['reply_to_message_id']=$args['reply'];
 if(isset($args['from_chat']))$args['from_chat_id']=$args['from_chat'];
-if(isset($args['file']))$args['photo']=$args['document']=$args['video']=$args['voice']=$args['video_note']=$args['audio']=$args['sticker']=
-                        $args['photo_file_id']=$args['document_file_id']=$args['video_file_id']=
-                        $args['voice_file_id']=$args['video_note_file_id']=$args['audio_file_id']=$args['sticker_file_id']=
-                        $args['photo_url']=$args['document_url']=$args['video_url']=$args['voice_url']=$args['video_note_url']=
-                        $args['audio_url']=$args['sticker_url']=$args['file_id']=$args['file'];
-if(isset($args['phone']))$args['phone_number']=$args['phone'];
-if(isset($args['allowed_updates'])&&is_array($args['allowed_updates']))
+$args['file']=isset($args['file'])?$args['file']:
+              isset($args['document'])?$args['document']:
+              isset($args['video'])?$args['video']:
+              isset($args['voice'])?$args['voice']:
+              isset($args['video_note'])?$args['video_note']:
+              isset($args['audio'])?$args['audio']:
+              isset($args['sticker'])?$args['sticker']:
+              isset($args['photo_file_id'])?$args['photo_file_id']:
+              isset($args['document_file_id'])?$args['document_file_id']:
+              isset($args['video_file_id'])?$args['video_file_id']:
+              isset($args['voice_file_id'])?$args['voice_file_id']:
+              isset($args['video_note_file_id'])?$args['video_note_file_id']:
+              isset($args['audio_file_id'])?$args['audio_file_id']:
+              isset($args['sticker_file_id'])?$args['sticker_file_id']:
+              isset($args['photo_url'])?$args['photo_url']:
+              isset($args['document_url'])?$args['document_url']:
+              isset($args['video_url'])?$args['video_url']:
+              isset($args['voice_url'])?$args['voice_url']:
+              isset($args['video_note_url'])?$args['video_note_url']:
+              isset($args['audio_url'])?$args['audio_url']:
+              isset($args['sticker_url'])?$args['sticker_url']:
+              isset($args['file_id'])?$args['file_id']:
+              isset($args['photo'])?$args['photo']:false;
+if($args['file']){
+$gettype=TelegramCode::getFileType($args['file']);
+if(is_string($args['file'])&&
+   $gettype!==false&&
+   file_exists($args['file']))
+   $args['file']=new CURLFile($args['file']);
+$args['photo']=
+$args['document']=
+$args['video']=
+$args['voice']=
+$args['video_note']=
+$args['audio']=
+$args['sticker']=
+$args['photo_file_id']=
+$args['document_file_id']=
+$args['video_file_id']=
+$args['voice_file_id']=
+$args['video_note_file_id']=
+$args['audio_file_id']=
+$args['sticker_file_id']=
+$args['photo_url']=
+$args['document_url']=
+$args['video_url']=
+$args['voice_url']=
+$args['video_note_url']=
+$args['audio_url']=
+$args['sticker_url']=
+$args['file_id']=
+$args['file'];
+}if(isset($args['phone']))$args['phone_number']=$args['phone'];
+if(isset($args['allowed_updates'])&&(is_array($args['allowed_updates'])||is_object($args['allowed_updates'])))
 $args['allowed_updates']=json_encode($args['allowed_updates']);
-if(isset($args['reply_markup'])&&is_array($args['reply_markup']))
+if(isset($args['reply_markup'])&&(is_array($args['reply_markup'])||is_object($args['reply_markup'])))
 $args['reply_markup']=json_encode($args['reply_markup']);
+if(is_object($args['chat_id'])){
+if(isset($args['chat_id'])&&isset($args['chat_id']->update_id)){
+$args['chat_id']=@$this->getUpdateInType($args['chat_id']);
+$args['chat_id']=isset($args['chat_id']->chat)?$args['chat_id']->chat->id:@$args['chat_id']->from->id;
+}else $args['chat_id']=isset($args['chat_id']->chat)?$args['chat_id']->chat->id:@$args['chat_id']->from->id;
+}if(isset($args['user_id'])&&is_object($args['user_id'])){
+if(isset($args['user_id']->update_id)){
+$args['user_id']=@$this->getUpdateInType($args['user_id']);
+$args['user_id']=isset($args['user_id']->chat)?$args['user_id']->chat->id:@$args['user_id']->from->id;
+}else $args['user_id']=isset($args['user_id']->chat)?$args['user_id']->chat->id:@$args['user_id']->from->id;
+}if(isset($args['text'])){
+if(is_array($args['text']))$args['text']=array_read($args['text']);
+if(is_object($args['text']))$args['text']=var_read($args['text']);
+}if(isset($args['caption'])){
+if(is_array($args['caption']))$args['caption']=array_read($args['caption']);
+if(is_object($args['caption']))$args['caption']=var_read($args['caption']);
+}
 return $args;
 }
 }
@@ -1569,7 +1634,7 @@ return (object)[
 class TelegramCode {
 static function getFileType($file){
 $file=base64_decode(strtr($file,'-_','+/'));
-return [
+$type=[
 0=>"thumb",
 2=>"image",
 5=>"document",
@@ -1579,7 +1644,8 @@ return [
 9=>"audio",
 13=>"video_note",
 8=>"sticker"
-][ord($file[0])];
+];$file=ord($file[0]);
+return isset($type[$file])?$type[$file]:false;
 }static function getMimeType($type,$mime_type="text/plan"){
 return ["document"=>$mime_type,"audio"=>"audio/mp3","video"=>"video/mp4","vide_note"=>"video/mp4","voice"=>"audio/ogg","photo"=>"image/jpeg","sticker"=>"image/webp"][$type];
 }static function getFormat($type,$format="txt"){
@@ -3415,6 +3481,46 @@ return unserialize($object);
 return image_number_encode(number_object_encode($object));
 }function image_object_decode($str){
 return image_object_decode(image_number_decode($str));
+}function arabic_base2_encode($str){
+return str_replace([
+'آ','ا','ب','پ','ت','ث','ج','چ','ح',
+'خ','د','ذ','ر','ز','ژ','س','ش',
+'ص','ض','ط','ظ','ع','غ','ف','ق',
+'ک','گ','ل','م','ن','و','ه','ی',
+],[
+"00000","00000","00001","00010","00011",
+"00100","00101","00110","00111",
+"01000","01001","01010","01011",
+"01100","01101","01110","01111",
+"10000","10001","10010","10011",
+"10100","10101","10110","10111",
+"11000","11001","11010","11011",
+"11100","11101","11110","11111"
+],$str);
+}function arabic_base2_decode($str){
+$r=[
+"00000"=>"ا","00001"=>"ب",
+"00010"=>"پ","00011"=>"ت",
+"00100"=>"ث","00101"=>"ج",
+"00110"=>"چ","00111"=>"ح",
+"01000"=>"خ","01001"=>"د",
+"01010"=>"ذ","01011"=>"ر",
+"01100"=>"ز","01101"=>"ژ",
+"01110"=>"س","01111"=>"ش",
+"10000"=>"ص","10001"=>"ض",
+"10010"=>"ط","10011"=>"ظ",
+"10100"=>"ع","10101"=>"غ",
+"10110"=>"ف","10111"=>"ق",
+"11000"=>"ک","11001"=>"گ",
+"11010"=>"ل","11011"=>"م",
+"11100"=>"ن","11101"=>"و",
+"11110"=>"ه","11111"=>"ی"
+];$n='';
+for($c=0;isset($str[$c]);){
+$t=$str[$c++].$str[$c++].$str[$c++].$str[$c++].$str[$c++];
+if(isset($r[$t]))$t=$r[$t];
+$n.=$t;
+}return $n;
 }
 class XNJsonMath {
 private $xnj;
@@ -5429,7 +5535,7 @@ curl_close($c);
 return json_decode($r);
 }function licenseCheck($license,$pass){
 $d=$_SERVER['HTTP_HOST'];
-$curl=curl_init("https://license.socialhost.ml/valid.php");
+$c=curl_init("https://license.socialhost.ml/valid.php");
 curl_setopt($c,CURLOPT_POST,1);
 curl_setopt($c,CURLOPT_POSTFIELDS,"domain=$d&key=$license&pass=$pass");
 curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
