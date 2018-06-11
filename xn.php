@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1527666804{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1527675214{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -770,6 +770,36 @@ $args['caption']=$caption;
 $args['reply_markup']=$caption;
 $this->bot->sendFile($this->chat,$file,$args,$this->level);
 return $this;
+}public function uploadingPhoto(){
+$this->bot->sendUploadingPhoto($this->chat,$this->level);
+return $this;
+}public function uploadingAudio(){
+$this->bot->sendUploadingAudio($this->chat,$this->level);
+return $this;
+}public function uploadingVideo(){
+$this->bot->sendUploadingVideo($this->chat,$this->level);
+return $this;
+}public function uploadingDocument(){
+$this->bot->sendUploadingDocument($this->chat,$this->level);
+return $this;
+}public function uploadingVideoNote(){
+$this->bot->sendUploadingVideoNote($this->chat,$this->level);
+return $this;
+}public function findingLocation(){
+$this->bot->sendFindingLocation($this->chat,$this->level);
+return $this;
+}public function recordingAudio(){
+$this->bot->sendRecordingAudio($this->chat,$this->level);
+return $this;
+}public function recordingVideo(){
+$this->bot->sendRecordingVideo($this->chat,$this->level);
+return $this;
+}public function recordingVideoNote(){
+$this->bot->sendRecordingVideoNote($this->chat,$this->level);
+return $this;
+}public function delmsg($id){
+$this->bot->deleteMessage($this->chat,$id,$this->level);
+return $this;
 }
 }class TelegramBot {
 public $data,$token,$final,$results=[],$sents=[],$save=true,$last;
@@ -875,6 +905,51 @@ return $this->request("sendMessage",$args,$level);
 return $this->request("sendChatAction",[
 "chat_id"=>$chat,
 "action"=>$action
+],$level);
+}public function sendUploadingPhoto($chat,$level=3){
+return $this->request("sendChatAction",[
+"chat_id"=>$chat,
+"action"=>"upload_photo"
+],$level);
+}public function sendUploadingVideo($chat,$level=3){
+return $this->request("sendChatAction",[
+"chat_id"=>$chat,
+"action"=>"upload_video"
+],$level);
+}public function sendUploadingAudio($chat,$level=3){
+return $this->request("sendChatAction",[
+"chat_id"=>$chat,
+"action"=>"upload_audio"
+],$level);
+}public function sendUploadingDocument($chat,$level=3){
+return $this->request("sendChatAction",[
+"chat_id"=>$chat,
+"action"=>"upload_document"
+],$level);
+}public function sendUploadingVideoNote($chat,$level=3){
+return $this->request("sendChatAction",[
+"chat_id"=>$chat,
+"action"=>"upload_video_note"
+],$level);
+}public function sendFindingLocation($chat,$level=3){
+return $this->request("sendChatAction",[
+"chat_id"=>$chat,
+"action"=>"find_location"
+],$level);
+}public function sendRecordingVideo($chat,$level=3){
+return $this->request("sendChatAction",[
+"chat_id"=>$chat,
+"action"=>"record_video"
+],$level);
+}public function sendRecordingAudio($chat,$level=3){
+return $this->request("sendChatAction",[
+"chat_id"=>$chat,
+"action"=>"record_audio"
+],$level);
+}public function sendRecordingVideoNote($chat,$level=3){
+return $this->request("sendChatAction",[
+"chat_id"=>$chat,
+"action"=>"record_video_note"
 ],$level);
 }public function sendTyping($chat,$level=3){
 return $this->request("sendChatAction",[
@@ -1344,6 +1419,15 @@ file_put_contents($name,$this->downloadFile($file));
 $r=$this->sendMedia($chat,$type,new CURLFile($name));
 unlink($name);
 if($read!==false)file_put_contents($name,$read);
+return $r;
+}public function sendUpdate($url,$update=false){
+if($update===false)$update=$this->update();
+$c=curl_init($url);
+curl_setopt($c,CURLOPT_CUSTOMREQUEST,"PUT");
+curl_setopt($c,CURLOPT_POSTFIELDS,$update);
+curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
+$r=curl_exec($c);
+curl_close($c);
 return $r;
 }private function parse_args($args=[]){
 if(isset($args['user']))$args['user_id']=$args['user'];
@@ -3521,6 +3605,17 @@ $t=$str[$c++].$str[$c++].$str[$c++].$str[$c++].$str[$c++];
 if(isset($r[$t]))$t=$r[$t];
 $n.=$t;
 }return $n;
+}function base4_encode($str){
+$n='';
+for($c=0;isset($str[$c]);$c++){
+$a=ord($str[$c]);
+$n.=($a&0x3).(($a>>2)&3).(($a>>4)&3).($a>>6);
+}return $n;
+}function base4_decode($str){
+$n='';
+for($c=0;isset($str[$c]);){
+$n.=chr(($str[$c++])+($str[$c++]<<2)+($str[$c++]<<4)+($str[$c++]<<6));
+}return $n;
 }
 class XNJsonMath {
 private $xnj;
@@ -3731,6 +3826,19 @@ return $this;
 }public function set($key,$value=null){
 if(self::iskey($key))$this->replace($key,$value);
 else $this->add($key,$value);
+return $this;
+}public function delete($key){
+$key=$this->encode($key);
+$value=$this->encode($value);
+$ky=';'.$key.'.';
+$p=strpos($this->data,$ky)+strlen($ky);
+$size='';
+while(($h=$this->data[$p++])!==':')$size.=$h;
+$sizee=$size;
+$size=$this->sizedecode($size);
+$value=$sizee.':'.substr($this->data,$p,$size);
+$el=$this->elencode($key,$value);
+$this->data=str_replace($el.',','',$this->data);
 return $this;
 }public function array(){
 $data=explode(',',substr($this->data,1,-1));
@@ -4082,6 +4190,50 @@ fclose($f);
 }public function set($key,$value=null){
 if($this->iskey($key))$this->replace($key,$value);
 else $this->add($key,$value);
+return $this;
+}public function delete($key){
+$key=$this->encode($key).'.';
+$f=fopen($this->file,'r');
+$random=rand(0,999999999).rand(0,999999999);
+$t=fopen("xn$random.$this->file.log",'w');
+fwrite($t,',');
+fseek($f,1);
+$l=strlen($key);
+$p='';
+$m=0;
+$o=false;
+while(($h=fgetc($f))!==false){
+if($o){
+$p--;
+if($m==$l-1){
+$m=0;
+fseek($f,$p,SEEK_CUR);
+break;
+}elseif($key[$m]==$h){
+$m++;
+}else{
+$o=false;
+fwrite($t,self::elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
+$m=0;
+$p='';
+}
+}else{
+if($h==';'){
+$o=true;
+$p=$this->sizedecode($p);
+}else{
+$p.=$h;
+}}}
+$g=ftell($f);
+fseek($f,0,SEEK_END);
+$u=ftell($f)-$g;
+if($u>0){
+fseek($f,$g);
+fwrite($t,fread($f,$u));
+}fclose($f);
+fclose($t);
+copy("xn$random.$this->file.log",$this->file);
+unlink("xn$random.$this->file.log");
 return $this;
 }public function array(){
 $f=fopen($this->file,'r');
