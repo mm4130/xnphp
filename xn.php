@@ -244,7 +244,7 @@ while($leng>0){
 $r=$r.$str[rand(0,$c)];
 $leng--;}
 return $r;
-}function split($str,$count=1,$space=1){
+}function xnsplit($str,$count=1,$space=1){
 $arr=[];
 $length=strlen($str);
 $str=str_split($str);
