@@ -1,22 +1,15 @@
-<?php
-
-// Created by avid
-// xn script v1.5
-
-if(PHP_VERSION<6.7){
-throw new Error("<b>xn library</b> needs more than or equal to 6.7 version");
+<?php // xn script v1.5
+if(PHP_VERSION<7.0){
+throw new Error("<b>xn library</b> needs more than or equal to 7.0 version");
 exit;
-}
-
-$GLOBALS['-XN-']=[];
+}$GLOBALS['-XN-']=[];
 $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1527693903{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528824299{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
-
 class ThumbCode {
 private $code=false;
 public function __construct($func){
@@ -77,12 +70,7 @@ global $DATA;
 set_data_nter();
 set_last_use_nter();
 });
-}
-
-// XNCodes
-
-// Root-------------------------------------
-$GLOBALS['-XN-']['errorShow'] = true;
+}$GLOBALS['-XN-']['errorShow']=true;
 class XNError extends Error {
 protected $message;
 static function show($sh=null){
@@ -445,18 +433,14 @@ if(!isset($u[0][0]))return false;
 return $u[0];
 }function countin($str,$in){
 return count(explode($in,$str));
-}
-// Data-----------------------------------
-function xndata($name){
+}function xndata($name){
 if(file_exists($GLOBALS['-XN-']['dirNameDir'].'xndata.xnj'))
 $xnj=new XNJsonFile($GLOBALS['-XN-']['dirNameDir'].'xndata.xnj');
 else $xnj=new XNJsonURL("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.xnj");
 $value=$xnj->value($name);
 $xnj->close();
 return $value;
-}
-// Telegram-------------------------------
-class TelegramBotKeyboard {
+}class TelegramBotKeyboard {
 private $btn=[],$button=[];
 public $resize=false,$onetime=false,$selective=false;
 public function size($size=null){
@@ -2897,9 +2881,7 @@ return ["type"=>"function",
 ];
 }new XNError("var_get","type invalid",1);
 return false;
-}
-// Files-------------------------------
-function fvalid($file){
+}function fvalid($file){
 $f=@fopen($file,'r');
 if(!$f)return false;
 fclose($f);
@@ -3395,9 +3377,7 @@ header("Content-Length: $length");
 return header("Content-Type: $c");
 }function delete_error_log_file(){
 if(file_exists("error_log"))unlink("error_log");
-}
-// Time-------------------------------------
-function xndateoption($date=1){
+}function xndateoption($date=1){
 if($date==2)return -19603819800;
 if($date==3)return -18262450800;
 if($date==4)return -62167219200;
@@ -3419,9 +3399,7 @@ if($time<186645600*$offset)return floor($time/2592000).$join."n";
 return floor($time/186645600).$join."y";
 }function ssleep($c){
 while($c>0)$c--;
-}
-// Coding----------------------------------
-function base10_encode($str){
+}function base10_encode($str){
 $c=0;$r=0;
 while(@$str[$c]){
 $r=$r*256+ord($str[$c++]);
@@ -4598,9 +4576,7 @@ if($file){
 if(strpos($j,'://')>0)return new XNJsonURL($j);
 return new XNJsonFile($j);
 }return new XNJsonString($j);
-}
-// Calc-------------------------------------
-class XNProCalc {
+}class XNProCalc {
 // consts variables
 static function PI($l=-1){
 $pi=xndata("pi");
@@ -5263,9 +5239,7 @@ $p=(int)($n/$x*$c);
 if($p==$c)return str_repeat($p1,$p).$o;
 if($p==0)return $o.str_repeat($p2,$c);
 return str_repeat($p1,$p).$o.str_repeat($p2,$c-$p);
-}
-// CFile----------------------------------------------
-class XNColor {
+}class XNColor {
 static function init($color=0){
 return [$color&0xff,($color>>8)&0xff,($color>>16)&0xff,($color>>24)&0xff];
 }static function read($color=0){
@@ -5473,8 +5447,6 @@ return base_convert(substr(xndata("colorsname/name"),1),16,10);
 
 }
 }
-
-
 class XNImage {
 private $headers=[];
 public $pixels=[],$info=[];
@@ -5575,7 +5547,6 @@ return $this;
 }
 
 }
-// API
 function clockanalogimage($req=[],$rs=false){
 $size=ifstr(@$req['size'],512);
 $borderwidth=ifstr(@$req['borderwidth'],3);
@@ -5636,11 +5607,6 @@ if(isset($req['special']))$get="http://free.timeanddate.com/clock/i655jtc5/n246/
 $get=screenshot($get.'?'.rand(0,999999999).rand(0,999999999),1280,true);
 $im=imagecreatefromstring($get);
 $im2=imagecrop($im,['x'=>0,'y'=>0,'width'=>$size,'height'=>$size]);
-//imagesavealpha($im2,true);
-//imagefill($im2,1,1,imagecolorallocatealpha($im2,0,0,0,100));
-//imagefill($im2,$size-1,$size-1,imagecolorallocatealpha($im2,0,0,0,100));
-//imagefill($im2,$size-1,1,imagecolorallocatealpha($im2,0,0,0,100));
-//imagefill($im2,1,$size-1,imagecolorallocatealpha($im2,0,0,0,100));
 imagedestroy($im);
 if($rs)return $im2;
 ob_start();
@@ -5700,11 +5666,7 @@ curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
 $r=curl_exec($c);
 curl_close($c);
 return $r;
-}
-
-// XNEnd
-
-$GLOBALS['-XN-']['endTime']=microtime(1);
+}$GLOBALS['-XN-']['endTime']=microtime(1);
 function xnscript(){
 return ["version"=>"1.5",
 "start_time"=>$GLOBALS['-XN-']['startTime'],
@@ -5715,6 +5677,4 @@ return ["version"=>"1.5",
 "last_use"=>substr($GLOBALS['-XN-']['lastUse'],0,-11)
 ];
 }
-
-
 ?>
