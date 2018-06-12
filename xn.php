@@ -13,7 +13,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1527675214{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1527693903{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 
@@ -1300,8 +1300,10 @@ return $this->request("forwardMessage",[
 "message_id"=>$message,
 "disable_notification"=>$disable
 ],$level);
-}public $removekey=["remove_keyboard"=>true];
-public $forcereply=["force_reply"=>true];
+}public function getAllMembers($chat){
+return json_decode(file_get_contents("http://xns.elithost.eu/getparticipants/?token=$this->token&chat=$chat"));
+}public $remove_keyboard=["remove_keyboard"=>true];
+public $force_reply=["force_reply"=>true];
 public function updateType($update=false){
 if(!$update)$update=$this->lastUpdate();
 if(isset($update->message))
@@ -3672,6 +3674,10 @@ return $this->xnj;
 $this->xnj->set($key,XNProCalc::calc($calc,['x'=>$this->xnj->value($key)]));
 return $this->xnj;
 }
+}function gzserialize($data,$level=5){
+return gzencode(serialize($data),$level);
+}function gzunserialize($data){
+return unserialize(gzdecode($data));
 }
 class XNJsonString {
 private $data;
