@@ -9,7 +9,7 @@ $bot->save = true;
 
 $datafile = "data.xnj";
 if(!file_exists($datafile)){
-  $xnj = new XNJsonFile($datafile)
+  $xnj = new XNJsonFile($datafile);
   $xnj->set("code",1);
 }else{
   $xnj = new XNJsonFile($datafile);
@@ -25,7 +25,7 @@ if(isset($update->message)){
     $bot->sendMessage($chat,"Hello dear!\nWelcom.");
   }elseif(strpos($text,"/start ") === 0){
     $start = substr($text,7);
-    if(!$xnj->iskey("msg-$start"){
+    if(!$xnj->iskey("msg-$start")){
       $bot->sendTyping($chat);
       $bot->sendMessage($chat,"message not Found!");
     }else{
