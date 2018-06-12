@@ -8,6 +8,7 @@
 
 namespace xn\Telegram;
 
+// $bot->keyboard
 class TelegramBotKeyboard {
   private $btn    = [],
           $button = [];
@@ -114,6 +115,7 @@ class TelegramBotKeyboard {
   }
 }
 
+// $bot->inlineKeyboard
 class TelegramBotInlineKeyboard {
   private $btn    = [],
           $button = [];
@@ -231,58 +233,158 @@ class TelegramBotInlineKeyboard {
   }
 }
 
+// $bot->queryResult
 class TelegramBotQueryResult {
-  public $get;
-  public function add($type,$id,$title,$input,$args=[]){
-    $args["type"]=$type;
-    $args["id"]=$id;
-    $args["title"]=$title;
-    $args["input_message_content"]=$input;
-    $this->get[]=$args;
+  /* get result array
+   * use :
+   
+   $bot->queryResult->get;
+   */
+  public $get = [];
+  
+  /* add a result
+   * params : String type, // result type. for example "article"
+              Double query_id,
+              String title,
+              Array input,
+              Array args // optional args
+   * use :
+   
+   $bot->queryResult->add( String , Double , String , Array , Array );
+   */
+  public function add($type, $id, $title, $input, $args = []) {
+    $args["type"]                  = $type;
+    $args["id"]                    = $id;
+    $args["title"]                 = $title;
+    $args["input_message_content"] = $input;
+    $this->get[]                   = $args;
     return $this;
   }
-  public function inputMessage($text,$parse=false,$preview=false){
-    $args=["message_text"=>$text];
-    if($parse)$args["parse_mode"]=$parse;
-    if($preview)$args["disable_web_page_preview"]=$preview;
+  /* create message input
+   * params : String text,
+              String parse_mode = none,
+              Boolean preview = false
+   * use :
+   
+   $bot->queryResult->inputMessage( String , String , Boolean );
+   */
+  public function inputMessage($text, $parse = false, $preview = false) {
+    $args = ["message_text" => $text];
+    if($parse)   $args["parse_mode"]               = $parse;
+    if($preview) $args["disable_web_page_preview"] = $preview;
     return $args;
   }
-  public function inputLocation($latitude,$longitude,$live=false){
-$args=["latitude"=>$latitude,"longitude"=>$longitude];
-if($live)$args['live_period']=$live;
-return $args;
-}public function inputVenue($latitude,$longitude,$title,$address,$id=false){
-$args=["latitude"=>$latitude,"longitude"=>$longitude,"title"=>$title,"address"=>$address];
-if($id)$args["foursquare_id"]=$id;
-return $args;
+  /* create location input
+   * params : Integer latitude,
+              Integer longitude,
+              Integer live_period
+   * use :
+   
+   $bot->queryResult->inputLocation( Integer , Integer , Integer );
+   */
+  public function inputLocation($latitude, $longitude, $live = false) {
+    $args = ["latitude" => $latitude, "longitude" => $longitude];
+    if($live) $args['live_period'] = $live;
+    return $args;
+  }
+  /* create venue input
+   * params : Integer latitude,
+              Integer longitude,
+              String title,
+              String address,
+              Integer id = false
+   * use :
+   
+   $bot->queryResult->inputVenue( Integer , Integer , String , Integer );
+   */
+  public function inputVenue($latitude, $longitude, $title, $address, $id = false) {
+    $args = ["latitude" => $latitude, "longitude" => $longitude, "title" => $title, "address" => $address];
+    if($id) $args["foursquare_id"] = $id;
+    return $args;
+  }
+   /* get result array and reset
+   * use :
+   
+   $bot->queryResult->get();
+   */
+  public function get(){
+    $get=$this->get;
+    $this->get=[];
+    return $get;
+  }
+  /* reset query result
+   * use :
+   
+   $bot->queryResult->reset();
+   */
+  public function reset(){
+    $this->get=[];
+  }
 }
-}class TelegramBotButtonSave {
-private $btns=[],$btn=[];
-public function get($name,$json=true){
-if($json)return @$this->btn[$name];
-return @$this->btns[$name];
-}public function add($name,$btn){
-if(is_array($btn))$btns=json_encode($btn);
-elseif(!is_json($btn))return false;
-else $btn=json_decode($btns=$btn);
-if(!isset($btns['inline_keyboard'])||
-   !isset($btns['keyboard'])||
-   !isset($btns['force_reply'])||
-   !isset($btns['remove_keyboard']))
-   return false;
-$this->btns=$btns;
-$this->btn=$btn;
-return $this;
-}public function delete($name){
-if(isset($this->btn[$name])){
-unset($this->btn[$name]);
-unset($this->btns[$name]);
-}return $this;
-}public function reset(){
-$this->btn=[];
-$this->btns=[];
+
+// save buttons list for easy use
+// $bot->menu
+class TelegramBotButtonSave {
+  private $btns = [],
+          $btn  = [];
+  
+ /* get a menu
+  * params : String name,
+             Boolean json = true
+  * use :
+  
+  $bot->menu->get( String , Boolean );
+  */
+  public function get($name, $json = true) {
+    if($json) return @$this->btn[$name];
+    return @$this->btns[$name];
+  }
+  /* add a menu
+   * params : String name,
+              Array|Json keyboard
+   * use :
+   
+   $bot->menu->add( String , Array|Json );
+   */
+  public function add($name, $btn) {
+    if(is_array($btn)) $btns = json_encode($btn);
+    elseif(!is_json($btn)) return false;
+    else $btn = json_decode($btns = $btn);
+    if(!isset($btns['inline_keyboard']) ||
+       !isset($btns['keyboard'])        ||
+       !isset($btns['force_reply'])     ||
+       !isset($btns['remove_keyboard']))
+       return false;
+    $this->btns=$btns;
+    $this->btn=$btn;
+    return $this;
+  }
+  /* delete menu
+   * params : String name
+   * use :
+   
+   $bot->menu->delete( String );
+   */
+  public function delete($name) {
+    if(isset($this->btn[$name])) {
+      unset($this->btn [$name]);
+      unset($this->btns[$name]);
+    }
+    return $this;
+  }
+  /* delete all menus
+   * use :
+   
+   $bot->menu->reset();
+   */
+  public function reset() {
+    $this->btn  = [];
+    $this->btns = [];
+  }
 }
-}class TelegramBotSends {
+
+// $bot->send
+class TelegramBotSends {
 private $bot;
 public $chat,$level;
 public function chat($chat){
