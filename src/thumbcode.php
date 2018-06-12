@@ -13,21 +13,21 @@
 namespace xn;
 
 class ThumbCode {
-  private $code=false;
-  public function __construct($func){
-    $this->code=$func;
+  private $code = false;
+  public function __construct($func) {
+    $this->code = $func;
   }
-  public function __destruct(){
+  public function __destruct() {
     if($this->code) ($this->code)();
   }
   public function close(){
-    $this->code=false;
+    $this->code = false;
   }
-  public function clone(){
+  public function clone() {
     return new ThumbCode($this->code);
   }
   }
-function thumbCode($func){
+function thumbCode($func) {
   return new ThumbCode($func);
 }
 ?>
