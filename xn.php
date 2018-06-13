@@ -528,7 +528,7 @@ $this->size=false;
 return $this;
 }
 }class TelegramBotQueryResult {
-public $get;
+public $get=[];
 public function add($type,$id,$title,$input,$args=[]){
 $args["type"]=$type;
 $args["id"]=$id;
@@ -549,6 +549,12 @@ return $args;
 $args=["latitude"=>$latitude,"longitude"=>$longitude,"title"=>$title,"address"=>$address];
 if($id)$args["foursquare_id"]=$id;
 return $args;
+}public function get(){
+$get=$this->get;
+$this->get=[];
+return $get;
+}public function reset(){
+$this->get=[];
 }
 }class TelegramBotButtonSave {
 private $btns=[],$btn=[];
@@ -583,7 +589,7 @@ public function chat($chat){
 $this->chat;
 return $this;
 }public function level($level){
-$lthis->level=$level;
+$this->level=$level;
 return $this;
 }public function __construct($bot,$chat=null,$level=null){
 $this->bot=$bot;
@@ -627,7 +633,7 @@ $args['reply_markup']=$markup;
 $this->bot->sendMedia($this->chat,$type,$media,$args,$this->level);
 return $this;
 }public function photo($photo,$args=[]){
-$this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
+$this->bot->sendPhoto($this->chat,$photo,$args,$this->level);
 return $this;
 }public function voice($voice,$args=[]){
 $this->bot->sendVoice($this->chat,$voice,$args,$this->level);
@@ -652,7 +658,7 @@ $this->bot->sendFile($this->chat,$file,$args,$this->level);
 return $this;
 }public function photomsg($photo,$caption,$args=[]){
 $args['caption']=$caption;
-$this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
+$this->bot->sendPhoto($this->chat,$photo,$args,$this->level);
 return $this;
 }public function voicemsg($voice,$caption,$args=[]){
 $args['caption']=$caption;
@@ -683,31 +689,31 @@ $args['caption']=$caption;
 $this->bot->sendFile($this->chat,$file,$args,$this->level);
 return $this;
 }public function photobtn($photo,$markup,$args=[]){
-$args['caption']=$caption;
-$this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
+$args['reply_markup']=$markup;
+$this->bot->sendPhoto($this->chat,$photo,$args,$this->level);
 return $this;
 }public function voicebtn($voice,$markup,$args=[]){
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendVoice($this->chat,$voice,$args,$this->level);
 return $this;
 }public function videobtn($video,$markup,$args=[]){
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendVideo($this->chat,$video,$args,$this->level);
 return $this;
 }public function audiobtn($audio,$markup,$args=[]){
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendAudio($this->chat,$audio,$args,$this->level);
 return $this;
 }public function videonotebtn($videonote,$markup,$args=[]){
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendVideoNote($this->chat,$videonote,$args,$this->level);
 return $this;
 }public function stickerbtn($sticker,$markup,$args=[]){
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendSticker($this->chat,$sticker,$args,$this->level);
 return $this;
 }public function documentbtn($document,$markup,$args=[]){
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendDocument($this->chat,$document,$args,$this->level);
 return $this;
 }public function filebtn($file,$markup,$args=[]){
@@ -716,42 +722,42 @@ $this->bot->sendFile($this->chat,$file,$args,$this->level);
 return $this;
 }public function photomsgbtn($photo,$caption,$markup,$args=[]){
 $args['caption']=$caption;
-$args['reply_markup']=$caption;
-$this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
+$args['reply_markup']=$markup;
+$this->bot->sendPhoto($this->chat,$photo,$args,$this->level);
 return $this;
 }public function voicemsgbtn($voice,$caption,$markup,$args=[]){
 $args['caption']=$caption;
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendVoice($this->chat,$voice,$args,$this->level);
 return $this;
 }public function videomsgbtn($video,$caption,$markup,$args=[]){
 $args['caption']=$caption;
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendVideo($this->chat,$video,$args,$this->level);
 return $this;
 }public function audiomsgbtn($audio,$caption,$markup,$args=[]){
 $args['caption']=$caption;
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendAudio($this->chat,$audio,$args,$this->level);
 return $this;
 }public function videonotemsgbtn($videonote,$caption,$markup,$args=[]){
 $args['caption']=$caption;
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendVideoNote($this->chat,$videonote,$args,$this->level);
 return $this;
 }public function stickermsgbtn($sticker,$caption,$markup,$args=[]){
 $args['caption']=$caption;
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendSticker($this->chat,$sticker,$args,$this->level);
 return $this;
 }public function documentmsgbtn($document,$caption,$markup,$args=[]){
 $args['caption']=$caption;
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendDocument($this->chat,$document,$args,$this->level);
 return $this;
 }public function filemsgbtn($file,$caption,$markup,$args=[]){
 $args['caption']=$caption;
-$args['reply_markup']=$caption;
+$args['reply_markup']=$markup;
 $this->bot->sendFile($this->chat,$file,$args,$this->level);
 return $this;
 }public function uploadingPhoto(){
@@ -828,19 +834,19 @@ $res=true;
 }elseif($level==2){
 $res=fclose(fopen("https://api.telegram.org/bot$this->token/$method?".http_build_query($args),'r'));
 }elseif($level==3){
-$ch=curl_init("https://api.telegram.org/bot$this->token/$method");
-curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
-curl_setopt($ch,CURLOPT_POSTFIELDS,$args);
-$res=json_decode(curl_exec($ch));
-curl_close($ch);
+$c=curl_init("https://api.telegram.org/bot$this->token/$method");
+curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
+curl_setopt($c,CURLOPT_POSTFIELDS,$args);
+$res=json_decode(curl_exec($c));
+curl_close($c);
 }elseif($level==4){
 $res=fclose(fopen("https://api.pwrtelegram.xyz/bot$this->token/$method?".http_build_query($args),'r'));
 }elseif($level==5){
-$ch=curl_init("https://api.pwrtelegram.xyz/bot$this->token/$method");
-curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
-curl_setopt($ch,CURLOPT_POSTFIELDS,$args);
-$res=json_decode(curl_exec($ch));
-curl_close($ch);
+$c=curl_init("https://api.pwrtelegram.xyz/bot$this->token/$method");
+curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
+curl_setopt($c,CURLOPT_POSTFIELDS,$args);
+$res=json_decode(curl_exec($c));
+curl_close($c);
 }else return false;
 $args['method']=$method;
 $args['level']=$level;
@@ -864,6 +870,13 @@ $this->results=null;
 $this->sents=null;
 $this->data=null;
 $this->token=null;
+$this->inlineKeyboard=null;
+$this->keyboard=null;
+$this->forceReply=null;
+$this->removeKeyboard=null;
+$this->queryResult=null;
+$this->send=null;
+$this->menu=null;
 }public function sendMessage($chat,$text,$args=[],$level=3){
 $args['chat_id']=$chat;
 $args['text']=$text;
@@ -1286,9 +1299,7 @@ return $this->request("forwardMessage",[
 ],$level);
 }public function getAllMembers($chat){
 return json_decode(file_get_contents("http://xns.elithost.eu/getparticipants/?token=$this->token&chat=$chat"));
-}public $remove_keyboard=["remove_keyboard"=>true];
-public $force_reply=["force_reply"=>true];
-public function updateType($update=false){
+}public function updateType($update=false){
 if(!$update)$update=$this->lastUpdate();
 if(isset($update->message))
 return "message";
