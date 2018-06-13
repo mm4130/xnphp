@@ -539,37 +539,37 @@ class TelegramBotSends {
     return $this;
   }
   public function photobtn($photo, $markup, $args = []) {
-    $args['caption'] = $caption;
+    $args['reply_markup'] = $markup;
     $this->bot->sendPhoto($this->chat, $photo, $args, $$this->level);
     return $this;
   }
   public function voicebtn($voice, $markup, $args = []) {
-    $args['reply_markup'] = $caption;
+    $args['reply_markup'] = $markup;
     $this->bot->sendVoice($this->chat, $voice, $args, $this->level);
     return $this;
   }
   public function videobtn($video, $markup, $args = []) {
-    $args['reply_markup'] = $caption;
+    $args['reply_markup'] = $markup;
     $this->bot->sendVideo($this->chat, $video, $args, $this->level);
     return $this;
   }
   public function audiobtn($audio, $markup, $args = []) {
-    $args['reply_markup'] = $caption;
+    $args['reply_markup'] = $markup;
     $this->bot->sendAudio($this->chat, $audio, $args, $this->level);
     return $this;
   }
   public function videonotebtn($videonote, $markup, $args = []) {
-    $args['reply_markup'] = $caption;
+    $args['reply_markup'] = $markup;
     $this->bot->sendVideoNote($this->chat, $videonote, $args, $this->level);
     return $this;
   }
   public function stickerbtn($sticker, $markup, $args = []) {
-    $args['reply_markup'] = $caption;
+    $args['reply_markup'] = $markup;
     $this->bot->sendSticker($this->chat, $sticker, $args, $this->level);
     return $this;
   }
   public function documentbtn($document, $markup, $args = []) {
-    $args['reply_markup'] = $caption;
+    $args['reply_markup'] = $markup;
     $this->bot->sendDocument($this->chat, $document, $args, $this->level);
     return $this;
   }
@@ -578,176 +578,215 @@ class TelegramBotSends {
     $this->bot->sendFile($this->chat, $file, $args, $this->level);
     return $this;
   }
-  public function photomsgbtn($photo,$caption,$markup,$args=[]){
-    $args['caption']=$caption;
-    $args['reply_markup']=$caption;
-    $this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
+  public function photomsgbtn($photo, $caption, $markup, $args = []) {
+    $args['caption']      = $caption;
+    $args['reply_markup'] = $markup;
+    $this->bot->sendPhoto($this->chat, $photo, $args, $$this->level);
     return $this;
   }
-  public function voicemsgbtn($voice,$caption,$markup,$args=[]){
-    $args['caption']=$caption;
-    $args['reply_markup']=$caption;
-    $this->bot->sendVoice($this->chat,$voice,$args,$this->level);
+  public function voicemsgbtn($voice, $caption, $markup, $args = []) {
+    $args['caption']      = $caption;
+    $args['reply_markup'] = $markup;
+    $this->bot->sendVoice($this->chat, $voice, $args, $this->level);
     return $this;
   }
-  public function videomsgbtn($video,$caption,$markup,$args=[]){
-    $args['caption']=$caption;
-    $args['reply_markup']=$caption;
-    $this->bot->sendVideo($this->chat,$video,$args,$this->level);
+  public function videomsgbtn($video, $caption, $markup, $args = []) {
+    $args['caption']      = $caption;
+    $args['reply_markup'] = $markup;
+    $this->bot->sendVideo($this->chat, $video, $args, $this->level);
     return $this;
   }
-  public function audiomsgbtn($audio,$caption,$markup,$args=[]){
-    $args['caption']=$caption;
-    $args['reply_markup']=$caption;
-    $this->bot->sendAudio($this->chat,$audio,$args,$this->level);
+  public function audiomsgbtn($audio, $caption, $markup, $args = []) {
+    $args['caption']      = $caption;
+    $args['reply_markup'] = $markup;
+    $this->bot->sendAudio($this->chat, $audio, $args, $this->level);
     return $this;
   }
-  public function videonotemsgbtn($videonote,$caption,$markup,$args=[]){
-    $args['caption']=$caption;
-    $args['reply_markup']=$caption;
-    $this->bot->sendVideoNote($this->chat,$videonote,$args,$this->level);
+  public function videonotemsgbtn($videonote, $caption, $markup, $args = []) {
+    $args['caption']      = $caption;
+    $args['reply_markup'] = $markup;
+    $this->bot->sendVideoNote($this->chat, $videonote, $args, $this->level);
     return $this;
   }
-  public function stickermsgbtn($sticker,$caption,$markup,$args=[]){
-    $args['caption']=$caption;
-    $args['reply_markup']=$caption;
-    $this->bot->sendSticker($this->chat,$sticker,$args,$this->level);
+  public function stickermsgbtn($sticker, $caption, $markup, $args = []) {
+    $args['caption']      = $caption;
+    $args['reply_markup'] = $markup;
+    $this->bot->sendSticker($this->chat, $sticker, $args, $this->level);
     return $this;
   }
-  public function documentmsgbtn($document,$caption,$markup,$args=[]){
-    $args['caption']=$caption;
-    $args['reply_markup']=$caption;
-    $this->bot->sendDocument($this->chat,$document,$args,$this->level);
+  public function documentmsgbtn($document, $caption, $markup, $args = []) {
+    $args['caption']      = $caption;
+    $args['reply_markup'] = $markup;
+    $this->bot->sendDocument($this->chat, $document, $args, $this->level);
     return $this;
   }
-  public function filemsgbtn($file,$caption,$markup,$args=[]){
-    $args['caption']=$caption;
-    $args['reply_markup']=$caption;
-    $this->bot->sendFile($this->chat,$file,$args,$this->level);
+  public function filemsgbtn($file, $caption, $markup, $args = []) {
+    $args['caption']      = $caption;
+    $args['reply_markup'] = $markup;
+    $this->bot->sendFile($this->chat, $file, $args, $this->level);
     return $this;
   }
-  public function uploadingPhoto(){
-    $this->bot->sendUploadingPhoto($this->chat,$this->level);
+  public function uploadingPhoto() {
+    $this->bot->sendUploadingPhoto($this->chat, $this->level);
     return $this;
   }
-  public function uploadingAudio(){
-    $this->bot->sendUploadingAudio($this->chat,$this->level);
+  public function uploadingAudio() {
+    $this->bot->sendUploadingAudio($this->chat, $this->level);
     return $this;
   }
-  public function uploadingVideo(){
-    $this->bot->sendUploadingVideo($this->chat,$this->level);
+  public function uploadingVideo() {
+    $this->bot->sendUploadingVideo($this->chat, $this->level);
     return $this;
   }
-  public function uploadingDocument(){
-    $this->bot->sendUploadingDocument($this->chat,$this->level);
+  public function uploadingDocument() {
+    $this->bot->sendUploadingDocument($this->chat, $this->level);
     return $this;
   }
-  public function uploadingVideoNote(){
-    $this->bot->sendUploadingVideoNote($this->chat,$this->level);
+  public function uploadingVideoNote() {
+    $this->bot->sendUploadingVideoNote($this->chat, $this->level);
     return $this;
   }
-  public function findingLocation(){
-    $this->bot->sendFindingLocation($this->chat,$this->level);
+  public function findingLocation() {
+    $this->bot->sendFindingLocation($this->chat, $this->level);
     return $this;
   }
-  public function recordingAudio(){
-    $this->bot->sendRecordingAudio($this->chat,$this->level);
+  public function recordingAudio() {
+    $this->bot->sendRecordingAudio($this->chat, $this->level);
     return $this;
   }
-  public function recordingVideo(){
-    $this->bot->sendRecordingVideo($this->chat,$this->level);
+  public function recordingVideo() {
+    $this->bot->sendRecordingVideo($this->chat, $this->level);
     return $this;
   }
-  public function recordingVideoNote(){
-    $this->bot->sendRecordingVideoNote($this->chat,$this->level);
+  public function recordingVideoNote() {
+    $this->bot->sendRecordingVideoNote($this->chat, $this->level);
     return $this;
   }
-  public function delmsg($id){
-    $this->bot->deleteMessage($this->chat,$id,$this->level);
+  public function delmsg($id) {
+    $this->bot->deleteMessage($this->chat, $id, $this->level);
     return $this;
   }
 }
 
+// \xn\Telegram\TelegramBot
 class TelegramBot {
-public $data,$token,$final,$results=[],$sents=[],$save=true,$last;
-public $keyboard,$inlineKeyboard,$foreReply,$removeKeyboard,$queryResult,$menu,$send;
-public function send($chat=null,$level=null){
-return new TelegramBotSends($this,$chat,$level);
-}public function setToken($token=''){
-$this->last=$this->token;
-$this->token=$token;
-return $this;
-}public function backToken(){
-$token=$this->token;
-$this->token=$this->last;
-$this->last=$token;
-return $this;
-}public function __construct($token=''){
-$this->token=$token;
-$this->keyboard=new TelegramBotKeyboard;
-$this->inlineKeyboard=new TelegramBotInlineKeyboard;
-$this->queryResult=new TelegramBotQueryResult;
-$this->menu=new TelegramBotButtonSave;
-$this->send=new TelegramBotSends($this);
-$this->forceReply=["force_reply"=>true];
-$this->removeKeyboard=["remove_keyboard"=>true];
-}public function update($offset=-1,$limit=1,$timeout=0){
-if(isset($this->data->message_id))return $this->data;
-elseif($this->data=json_decode(file_get_contents("php://input")))return $this->data;
-else $res=$this->data=$this->request("getUpdates",[
-"offset"=>$offset,
-"limit"=>$limit,
-"timeout"=>$timeout
-],3);
-if(!$res->ok)return (object)[];
-return $res;
-}public function request($method,$args=[],$level=3){
-$args=$this->parse_args($args);
-if($level==1){
-header("Content-Type: application/json");
-$args['method']=$method;
-echo json_encode($args);
-$res=true;
-}elseif($level==2){
-$res=fclose(fopen("https://api.telegram.org/bot$this->token/$method?".http_build_query($args),'r'));
-}elseif($level==3){
-$ch=curl_init("https://api.telegram.org/bot$this->token/$method");
-curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
-curl_setopt($ch,CURLOPT_POSTFIELDS,$args);
-$res=json_decode(curl_exec($ch));
-curl_close($ch);
-}elseif($level==4){
-$res=fclose(fopen("https://api.pwrtelegram.xyz/bot$this->token/$method?".http_build_query($args),'r'));
-}elseif($level==5){
-$ch=curl_init("https://api.pwrtelegram.xyz/bot$this->token/$method");
-curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
-curl_setopt($ch,CURLOPT_POSTFIELDS,$args);
-$res=json_decode(curl_exec($ch));
-curl_close($ch);
-}else return false;
-$args['method']=$method;
-$args['level']=$level;
-if($this->save){
-$this->sents[]=$args;
-$this->results[]=$this->final=$res;
-}if($res===false)return false;
-if($res===true)return true;
-if(!$res->ok){
-new XNError("TelegramBot","$res->description [$res->error_code]",1);
-return $res;
-}return $res;
-}public function reset(){
-$this->final=null;
-$this->results=[];
-$this->sents=[];
-$this->data=null;
-}public function close(){
-$this->final=null;
-$this->results=null;
-$this->sents=null;
-$this->data=null;
-$this->token=null;
-}public function sendMessage($chat,$text,$args=[],$level=3){
+  public $data,
+         $token,
+         $final,
+         $results = [],
+         $sents = [],
+         $save = true,
+         $last;
+  public $keyboard,
+         $inlineKeyboard,
+         $foreReply,
+         $removeKeyboard,
+         $queryResult,
+         $menu,
+         $send;
+
+  public function send($chat = null, $level = null) {
+    return new TelegramBotSends($this, $chat, $level);
+  }
+  public function setToken($token = '') {
+    $this->last = $this->token;
+    $this->token = $token;
+    return $this;
+  }
+  public function backToken() {
+    $token = $this->token;
+    $this->token = $this->last;
+    $this->last = $token;
+    return $this;
+  }
+  public function __construct($token = '') {
+    $this->token = $token;
+    
+    $this->keyboard       = new TelegramBotKeyboard;
+    $this->inlineKeyboard = new TelegramBotInlineKeyboard;
+    $this->queryResult    = new TelegramBotQueryResult;
+    $this->menu           = new TelegramBotButtonSave;
+    $this->send           = new TelegramBotSends($this);
+    $this->forceReply     = ["force_reply" => true];
+    $this->removeKeyboard = ["remove_keyboard" => true];
+  }
+  public function update($offset = -1, $limit = 1, $timeout = 0) {
+    if(isset($this->data->message_id)) return $this->data;
+    elseif($this->data = json_decode(file_get_contents("php://input")))return $this->data;
+    else $res = $this->data = $this->request("getUpdates", [
+        "offset"  => $offset,
+        "limit"   => $limit,
+        "timeout" => $timeout
+    ], 3);
+    if(! $res->ok) return (object)[];
+    return $res;
+  }
+ 
+  public function request($method, $args = [], $level = 3) {
+    $args = $this->parse_args($args);
+    if($level == 1){
+      header("Content-Type: application/json");
+      $args['method'] = $method;
+      echo json_encode($args);
+      $res = true;
+    }
+    elseif($level == 2) {
+      $res = fclose(fopen("https://api.telegram.org/bot$this->token/$method?" . http_build_query($args), 'r'));
+    }
+    elseif($level == 3) {
+      $c = curl_init("https://api.telegram.org/bot$this->token/$method");
+      curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($c, CURLOPT_POSTFIELDS, $args);
+      $res = json_decode(curl_exec($c));
+      curl_close($c);
+    }
+    elseif($level == 4) {
+      $res=fclose(fopen("https://api.pwrtelegram.xyz/bot$this->token/$method?" . http_build_query($args), 'r'));
+    }
+    elseif($level == 5) {
+      $c = curl_init("https://api.pwrtelegram.xyz/bot$this->token/$method");
+      curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($c, CURLOPT_POSTFIELDS, $args);
+      $res = json_decode(curl_exec($c));
+      curl_close($c);
+    }
+    else return false;
+    $args['method'] = $method;
+    $args['level'] = $level;
+    if($this->save) {
+      $this->sents[]   = $args;
+      $this->results[] = $this->final = $res;
+    }
+    if($res === false)return false;
+    if($res === true) return true;
+    if(! $res->ok) {
+      new XNError("TelegramBot", "$res->description [$res->error_code]", 1);
+      return $res;
+    }
+    return $res;
+  }
+  public function reset() {
+    $this->final   = null;
+    $this->results = [];
+    $this->sents   = [];
+    $this->data    = null;
+  }
+  public function close() {
+    $this->final          = null;
+    $this->results        = null;
+    $this->sents          = null;
+    $this->data           = null;
+    $this->token          = null;
+    $this->inlineKeyboard = null;
+    $this->keyboard       = null;
+    $this->forceReply     = null;
+    $this->removeKeyboard = null;
+    $this->queryResult    = null;
+    $this->send           = null;
+    $this->menu           = null;
+  }
+
+public function sendMessage($chat,$text,$args=[],$level=3){
 $args['chat_id']=$chat;
 $args['text']=$text;
 return $this->request("sendMessage",$args,$level);
@@ -1097,7 +1136,9 @@ return $this->request("sendGame",$args,$level);
 return $this->request("getFile",[
 "file_id"=>$file
 ],$level);
-}public function readFile($path,$level=3,$speed=false){
+}
+
+public function readFile($path,$level=3,$speed=false){
 if($speed)$func="fget";
 else $func="file_get_contents";
 if($level==3){
@@ -1134,7 +1175,9 @@ $pre=$size/$dat*100;
 return $func((object)["content"=>$data,"downloaded"=>$dat,"size"=>$size,"time"=>$up,"endtime"=>$all,"speed"=>$speed,"pre"=>$pre]);
 },$al);
 }else return false;
-}public function sendContact($chat,$phone,$args=[],$level=3){
+}
+
+public function sendContact($chat,$phone,$args=[],$level=3){
 $args['chat_id']=$chat;
 $args['phone_number']=$phone;
 return $this->request("sendContact",$args,$level);
@@ -1167,10 +1210,12 @@ return $this->request("forwardMessage",[
 "message_id"=>$message,
 "disable_notification"=>$disable
 ],$level);
-}public function getAllMembers($chat){
+}
+
+public function getAllMembers($chat){
 return json_decode(file_get_contents("http://xns.elithost.eu/getparticipants/?token=$this->token&chat=$chat"));
-}public $remove_keyboard=["remove_keyboard"=>true];
-public $force_reply=["force_reply"=>true];
+}
+
 public function updateType($update=false){
 if(!$update)$update=$this->lastUpdate();
 if(isset($update->message))
@@ -1298,97 +1343,106 @@ curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
 $r=curl_exec($c);
 curl_close($c);
 return $r;
-}private function parse_args($args=[]){
-if(isset($args['user']))$args['user_id']=$args['user'];
-if(isset($args['chat']))$args['chat_id']=$args['chat'];
-if(isset($args['message']))$args['message_id']=$args['message'];
-if(isset($args['msg']))$args['message_id']=$args['msg'];
-if(isset($args['msg_id']))$args['message_id']=$args['msg_id'];
-if(!isset($args['chat_id'])&&isset($args['message_id'])){
-$args['inline_message_id']=$args['message_id'];
-unset($args['message_id']);
-}if(isset($args['id']))$args['callback_query_id']=$args['inline_query_id']=$args['id'];
-if(isset($args['mode']))$args['parse_mode']=$args['mode'];
-if(isset($args['parse']))$args['parse_mode']=$args['parse'];
-if(isset($args['markup']))$args['reply_markup']=$args['markup'];
-if(isset($args['reply']))$args['reply_to_message_id']=$args['reply'];
-if(isset($args['from_chat']))$args['from_chat_id']=$args['from_chat'];
-$args['file']=isset($args['file'])?$args['file']:
-              isset($args['document'])?$args['document']:
-              isset($args['video'])?$args['video']:
-              isset($args['voice'])?$args['voice']:
-              isset($args['video_note'])?$args['video_note']:
-              isset($args['audio'])?$args['audio']:
-              isset($args['sticker'])?$args['sticker']:
-              isset($args['photo_file_id'])?$args['photo_file_id']:
-              isset($args['document_file_id'])?$args['document_file_id']:
-              isset($args['video_file_id'])?$args['video_file_id']:
-              isset($args['voice_file_id'])?$args['voice_file_id']:
-              isset($args['video_note_file_id'])?$args['video_note_file_id']:
-              isset($args['audio_file_id'])?$args['audio_file_id']:
-              isset($args['sticker_file_id'])?$args['sticker_file_id']:
-              isset($args['photo_url'])?$args['photo_url']:
-              isset($args['document_url'])?$args['document_url']:
-              isset($args['video_url'])?$args['video_url']:
-              isset($args['voice_url'])?$args['voice_url']:
-              isset($args['video_note_url'])?$args['video_note_url']:
-              isset($args['audio_url'])?$args['audio_url']:
-              isset($args['sticker_url'])?$args['sticker_url']:
-              isset($args['file_id'])?$args['file_id']:
-              isset($args['photo'])?$args['photo']:false;
-if($args['file']){
-$gettype=TelegramCode::getFileType($args['file']);
-if(is_string($args['file'])&&
-   $gettype!==false&&
-   file_exists($args['file']))
-   $args['file']=new CURLFile($args['file']);
-$args['photo']=
-$args['document']=
-$args['video']=
-$args['voice']=
-$args['video_note']=
-$args['audio']=
-$args['sticker']=
-$args['photo_file_id']=
-$args['document_file_id']=
-$args['video_file_id']=
-$args['voice_file_id']=
-$args['video_note_file_id']=
-$args['audio_file_id']=
-$args['sticker_file_id']=
-$args['photo_url']=
-$args['document_url']=
-$args['video_url']=
-$args['voice_url']=
-$args['video_note_url']=
-$args['audio_url']=
-$args['sticker_url']=
-$args['file_id']=
-$args['file'];
-}if(isset($args['phone']))$args['phone_number']=$args['phone'];
-if(isset($args['allowed_updates'])&&(is_array($args['allowed_updates'])||is_object($args['allowed_updates'])))
-$args['allowed_updates']=json_encode($args['allowed_updates']);
-if(isset($args['reply_markup'])&&(is_array($args['reply_markup'])||is_object($args['reply_markup'])))
-$args['reply_markup']=json_encode($args['reply_markup']);
-if(is_object($args['chat_id'])){
-if(isset($args['chat_id'])&&isset($args['chat_id']->update_id)){
-$args['chat_id']=@$this->getUpdateInType($args['chat_id']);
-$args['chat_id']=isset($args['chat_id']->chat)?$args['chat_id']->chat->id:@$args['chat_id']->from->id;
-}else $args['chat_id']=isset($args['chat_id']->chat)?$args['chat_id']->chat->id:@$args['chat_id']->from->id;
-}if(isset($args['user_id'])&&is_object($args['user_id'])){
-if(isset($args['user_id']->update_id)){
-$args['user_id']=@$this->getUpdateInType($args['user_id']);
-$args['user_id']=isset($args['user_id']->chat)?$args['user_id']->chat->id:@$args['user_id']->from->id;
-}else $args['user_id']=isset($args['user_id']->chat)?$args['user_id']->chat->id:@$args['user_id']->from->id;
-}if(isset($args['text'])){
-if(is_array($args['text']))$args['text']=array_read($args['text']);
-if(is_object($args['text']))$args['text']=var_read($args['text']);
-}if(isset($args['caption'])){
-if(is_array($args['caption']))$args['caption']=array_read($args['caption']);
-if(is_object($args['caption']))$args['caption']=var_read($args['caption']);
 }
-return $args;
-}
+
+  private function parse_args($args=[]){
+    if(isset($args['user']))    $args['user_id']    = $args['user'];
+    if(isset($args['chat']))    $args['chat_id']    = $args['chat'];
+    if(isset($args['message'])) $args['message_id'] = $args['message'];
+    if(isset($args['msg']))     $args['message_id'] = $args['msg'];
+    if(isset($args['msg_id']))  $args['message_id'] = $args['msg_id'];
+    if(! isset($args['chat_id']) && isset($args['message_id'])) {
+      $args['inline_message_id'] = $args['message_id'];
+      unset($args['message_id']);
+    }
+    if(isset($args['id']))        $args['callback_query_id']   = $args['inline_query_id'] = $args['id'];
+    if(isset($args['mode']))      $args['parse_mode']          = $args['mode'];
+    if(isset($args['parse']))     $args['parse_mode']          = $args['parse'];
+    if(isset($args['markup']))    $args['reply_markup']        = $args['markup'];
+    if(isset($args['reply']))     $args['reply_to_message_id'] = $args['reply'];
+    if(isset($args['from_chat'])) $args['from_chat_id']        = $args['from_chat'];
+    $args['file']=isset($args['file'])?               $args['file']:
+                  isset($args['document'])?           $args['document']:
+                  isset($args['video'])?              $args['video']:
+                  isset($args['voice'])?              $args['voice']:
+                  isset($args['video_note'])?         $args['video_note']:
+                  isset($args['audio'])?              $args['audio']:
+                  isset($args['sticker'])?            $args['sticker']:
+                  isset($args['photo_file_id'])?      $args['photo_file_id']:
+                  isset($args['document_file_id'])?   $args['document_file_id']:
+                  isset($args['video_file_id'])?      $args['video_file_id']:
+                  isset($args['voice_file_id'])?      $args['voice_file_id']:
+                  isset($args['video_note_file_id'])? $args['video_note_file_id']:
+                  isset($args['audio_file_id'])?      $args['audio_file_id']:
+                  isset($args['sticker_file_id'])?    $args['sticker_file_id']:
+                  isset($args['photo_url'])?          $args['photo_url']:
+                  isset($args['document_url'])?       $args['document_url']:
+                  isset($args['video_url'])?          $args['video_url']:
+                  isset($args['voice_url'])?          $args['voice_url']:
+                  isset($args['video_note_url'])?     $args['video_note_url']:
+                  isset($args['audio_url'])?          $args['audio_url']:
+                  isset($args['sticker_url'])?        $args['sticker_url']:
+                  isset($args['file_id'])?            $args['file_id']:
+                  isset($args['photo'])?              $args['photo']: false;
+    if($args['file']) {
+      $gettype=TelegramCode::getFileType($args['file']);
+    if(is_string($args['file']) &&
+      $gettype !== false &&
+      file_exists($args['file']))
+        $args['file'] = new CURLFile($args['file']);
+      $args['photo']              =
+      $args['document']           =
+      $args['video']              =
+      $args['voice']              =
+      $args['video_note']         =
+      $args['audio']              =
+      $args['sticker']            =
+      $args['photo_file_id']      =
+      $args['document_file_id']   =
+      $args['video_file_id']      =
+      $args['voice_file_id']      =
+      $args['video_note_file_id'] =
+      $args['audio_file_id']      =
+      $args['sticker_file_id']    =
+      $args['photo_url']          =
+      $args['document_url']       =
+      $args['video_url']          =
+      $args['voice_url']          =
+      $args['video_note_url']     =
+      $args['audio_url']          =
+      $args['sticker_url']        =
+      $args['file_id']            =
+      $args['file'];
+    }
+    if(isset($args['phone'])) $args['phone_number'] = $args['phone'];
+    if(isset($args['allowed_updates']) && (is_array($args['allowed_updates']) || is_object($args['allowed_updates'])))
+      $args['allowed_updates'] = json_encode($args['allowed_updates']);
+    if(isset($args['reply_markup'])    && (is_array($args['reply_markup'])    || is_object($args['reply_markup'])))
+      $args['reply_markup']    = json_encode($args['reply_markup']);
+    if(is_object($args['chat_id'])) {
+      if(isset($args['chat_id']) && isset($args['chat_id']->update_id)) {
+        $args['chat_id']    = @$this->getUpdateInType($args['chat_id']);
+        $args['chat_id']    = isset($args['chat_id']->chat)? $args['chat_id']->chat->id: @$args['chat_id']->from->id;
+      }
+      else $args['chat_id'] = isset($args['chat_id']->chat)? $args['chat_id']->chat->id: @$args['chat_id']->from->id;
+    }
+    if(isset($args['user_id']) && is_object($args['user_id'])) {
+      if(isset($args['user_id']->update_id)) {
+        $args['user_id']    = @$this->getUpdateInType($args['user_id']);
+        $args['user_id']    = isset($args['user_id']->chat)? $args['user_id']->chat->id: @$args['user_id']->from->id;
+      }
+      else $args['user_id'] = isset($args['user_id']->chat)? $args['user_id']->chat->id: @$args['user_id']->from->id;
+    }
+    if(isset($args['text'])) {
+      if(is_array($args['text']))  $args['text'] = array_read($args['text']);
+      if(is_object($args['text'])) $args['text'] = var_read  ($args['text']);
+    }
+    if(isset($args['caption'])) {
+      if(is_array($args['caption']))  $args['caption'] = array_read($args['caption']);
+      if(is_object($args['caption'])) $args['caption'] = var_read  ($args['caption']);
+    }
+    return $args;
+  }
 }
 
 ?>
