@@ -383,217 +383,292 @@ class TelegramBotButtonSave {
   }
 }
 
-// $bot->send
+/* fast sending
+ $bot->send
+ * params : Double chat_id
+            Integer level
+ 
+ * set chat :
+ $bot->send->chat( chat );
+ 
+ * set level :
+ $bot->send->level( level );
+ 
+ * set All :
+ ($bot->send)( chat , level );
+ 
+ * build private :
+ $bot->send( chat , level );
+ */
 class TelegramBotSends {
-private $bot;
-public $chat,$level;
-public function chat($chat){
-$this->chat;
-return $this;
-}public function level($level){
-$lthis->level=$level;
-return $this;
-}public function __construct($bot,$chat=null,$level=null){
-$this->bot=$bot;
-$this->chat=$chat;
-$this->level=$level;
-}public function __wakeup($chat=null,$level=null){
-if($chat&&$level){
-$this->chat=$chat;
-$this->level=$level;
-}elseif($chat){
-if($chat<100)$this->level=$chat;
-else $this->chat=$chat;
-}return $this;
-}public function action($action){
-$this->bot->sendAction($this->chat,$action,$this->level);
-return $this;
-}public function typing(){
-$this->bot->sendAction($this->chat,"typing",$this->level);
-return $this;
-}public function msg($text,$args=[]){
-$this->bot->sendMessage($this->chat,$text,$args,$this->level);
-return $this;
-}public function btnmsg($text,$btn,$args=[]){
-$args['reply_markup']=$btn;
-$this->bot->sendMessage($this->chat,$text,$args,$this->level);
-return $this;
-}public function media($type,$media,$args=[]){
-$this->bot->sendMedia($this->chat,$type,$media,$args,$this->level);
-return $this;
-}public function mediamsg($type,$media,$caption,$args=[]){
-$args['caption']=$caption;
-$this->bot->sendMedia($this->chat,$type,$media,$args,$this->level);
-return $this;
-}public function mediabtn($type,$media,$markup,$args=[]){
-$args['reply_markup']=$markup;
-$this->bot->sendMedia($this->chat,$type,$media,$args,$this->level);
-return $this;
-}public function mediamsgbtn($type,$media,$caption,$markup,$args=[]){
-$args['caption']=$caption;
-$args['reply_markup']=$markup;
-$this->bot->sendMedia($this->chat,$type,$media,$args,$this->level);
-return $this;
-}public function photo($photo,$args=[]){
-$this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
-return $this;
-}public function voice($voice,$args=[]){
-$this->bot->sendVoice($this->chat,$voice,$args,$this->level);
-return $this;
-}public function video($video,$args=[]){
-$this->bot->sendVideo($this->chat,$video,$args,$this->level);
-return $this;
-}public function audio($audio,$args=[]){
-$this->bot->sendAudio($this->chat,$audio,$args,$this->level);
-return $this;
-}public function videonote($videonote,$args=[]){
-$this->bot->sendVideoNote($this->chat,$videonote,$args,$this->level);
-return $this;
-}public function sticker($sticker,$args=[]){
-$this->bot->sendSticker($this->chat,$sticker,$args,$this->level);
-return $this;
-}public function document($document,$args=[]){
-$this->bot->sendDocument($this->chat,$document,$args,$this->level);
-return $this;
-}public function file($file,$args=[]){
-$this->bot->sendFile($this->chat,$file,$args,$this->level);
-return $this;
-}public function photomsg($photo,$caption,$args=[]){
-$args['caption']=$caption;
-$this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
-return $this;
-}public function voicemsg($voice,$caption,$args=[]){
-$args['caption']=$caption;
-$this->bot->sendVoice($this->chat,$voice,$args,$this->level);
-return $this;
-}public function videomsg($video,$caption,$args=[]){
-$args['caption']=$caption;
-$this->bot->sendVideo($this->chat,$video,$args,$this->level);
-return $this;
-}public function audiomsg($audio,$caption,$args=[]){
-$args['caption']=$caption;
-$this->bot->sendAudio($this->chat,$audio,$args,$this->level);
-return $this;
-}public function videonotemsg($videonote,$caption,$args=[]){
-$args['caption']=$caption;
-$this->bot->sendVideoNote($this->chat,$videonote,$args,$this->level);
-return $this;
-}public function stickermsg($sticker,$caption,$args=[]){
-$args['caption']=$caption;
-$this->bot->sendSticker($this->chat,$sticker,$args,$this->level);
-return $this;
-}public function documentmsg($document,$caption,$args=[]){
-$args['caption']=$caption;
-$this->bot->sendDocument($this->chat,$document,$args,$this->level);
-return $this;
-}public function filemsg($file,$caption,$args=[]){
-$args['caption']=$caption;
-$this->bot->sendFile($this->chat,$file,$args,$this->level);
-return $this;
-}public function photobtn($photo,$markup,$args=[]){
-$args['caption']=$caption;
-$this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
-return $this;
-}public function voicebtn($voice,$markup,$args=[]){
-$args['reply_markup']=$caption;
-$this->bot->sendVoice($this->chat,$voice,$args,$this->level);
-return $this;
-}public function videobtn($video,$markup,$args=[]){
-$args['reply_markup']=$caption;
-$this->bot->sendVideo($this->chat,$video,$args,$this->level);
-return $this;
-}public function audiobtn($audio,$markup,$args=[]){
-$args['reply_markup']=$caption;
-$this->bot->sendAudio($this->chat,$audio,$args,$this->level);
-return $this;
-}public function videonotebtn($videonote,$markup,$args=[]){
-$args['reply_markup']=$caption;
-$this->bot->sendVideoNote($this->chat,$videonote,$args,$this->level);
-return $this;
-}public function stickerbtn($sticker,$markup,$args=[]){
-$args['reply_markup']=$caption;
-$this->bot->sendSticker($this->chat,$sticker,$args,$this->level);
-return $this;
-}public function documentbtn($document,$markup,$args=[]){
-$args['reply_markup']=$caption;
-$this->bot->sendDocument($this->chat,$document,$args,$this->level);
-return $this;
-}public function filebtn($file,$markup,$args=[]){
-$args['reply_markup']=$markup;
-$this->bot->sendFile($this->chat,$file,$args,$this->level);
-return $this;
-}public function photomsgbtn($photo,$caption,$markup,$args=[]){
-$args['caption']=$caption;
-$args['reply_markup']=$caption;
-$this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
-return $this;
-}public function voicemsgbtn($voice,$caption,$markup,$args=[]){
-$args['caption']=$caption;
-$args['reply_markup']=$caption;
-$this->bot->sendVoice($this->chat,$voice,$args,$this->level);
-return $this;
-}public function videomsgbtn($video,$caption,$markup,$args=[]){
-$args['caption']=$caption;
-$args['reply_markup']=$caption;
-$this->bot->sendVideo($this->chat,$video,$args,$this->level);
-return $this;
-}public function audiomsgbtn($audio,$caption,$markup,$args=[]){
-$args['caption']=$caption;
-$args['reply_markup']=$caption;
-$this->bot->sendAudio($this->chat,$audio,$args,$this->level);
-return $this;
-}public function videonotemsgbtn($videonote,$caption,$markup,$args=[]){
-$args['caption']=$caption;
-$args['reply_markup']=$caption;
-$this->bot->sendVideoNote($this->chat,$videonote,$args,$this->level);
-return $this;
-}public function stickermsgbtn($sticker,$caption,$markup,$args=[]){
-$args['caption']=$caption;
-$args['reply_markup']=$caption;
-$this->bot->sendSticker($this->chat,$sticker,$args,$this->level);
-return $this;
-}public function documentmsgbtn($document,$caption,$markup,$args=[]){
-$args['caption']=$caption;
-$args['reply_markup']=$caption;
-$this->bot->sendDocument($this->chat,$document,$args,$this->level);
-return $this;
-}public function filemsgbtn($file,$caption,$markup,$args=[]){
-$args['caption']=$caption;
-$args['reply_markup']=$caption;
-$this->bot->sendFile($this->chat,$file,$args,$this->level);
-return $this;
-}public function uploadingPhoto(){
-$this->bot->sendUploadingPhoto($this->chat,$this->level);
-return $this;
-}public function uploadingAudio(){
-$this->bot->sendUploadingAudio($this->chat,$this->level);
-return $this;
-}public function uploadingVideo(){
-$this->bot->sendUploadingVideo($this->chat,$this->level);
-return $this;
-}public function uploadingDocument(){
-$this->bot->sendUploadingDocument($this->chat,$this->level);
-return $this;
-}public function uploadingVideoNote(){
-$this->bot->sendUploadingVideoNote($this->chat,$this->level);
-return $this;
-}public function findingLocation(){
-$this->bot->sendFindingLocation($this->chat,$this->level);
-return $this;
-}public function recordingAudio(){
-$this->bot->sendRecordingAudio($this->chat,$this->level);
-return $this;
-}public function recordingVideo(){
-$this->bot->sendRecordingVideo($this->chat,$this->level);
-return $this;
-}public function recordingVideoNote(){
-$this->bot->sendRecordingVideoNote($this->chat,$this->level);
-return $this;
-}public function delmsg($id){
-$this->bot->deleteMessage($this->chat,$id,$this->level);
-return $this;
+  private $bot;
+  public $chat,
+         $level;
+  
+  public function chat($chat) {
+    $this->chat;
+    return $this;
+  }
+  public function level($level) {
+    $this->level = $level;
+    return $this;
+  }
+  public function __construct($bot, $chat = null, $level = null) {
+    $this->bot   = $bot;
+    $this->chat  = $chat;
+    $this->level = $level;
+  }
+  public function __wakeup($chat = null, $level = null) {
+    if($chat && $level) {
+      $this->chat  = $chat;
+      $this->level = $level;
+    }
+    elseif($chat) {
+      if($chat < 100)$this->level = $chat;
+      else           $this->chat  = $chat;
+    }
+    return $this;
+  }
+  public function action($action) {
+    $this->bot->sendAction($this->chat, $action, $this->level);
+    return $this;
+  }
+  public function typing() {
+    $this->bot->sendAction($this->chat, "typing", $this->level);
+    return $this;
+  }
+  public function msg($text, $args = []) {
+    $this->bot->sendMessage($this->chat, $text, $args, $this->level);
+    return $this;
+  }
+  public function btnmsg($text, $btn, $args = []) {
+    $args['reply_markup'] = $btn;
+    $this->bot->sendMessage($this->chat, $text, $args, $this->level);
+    return $this;
+  }
+  public function media($type, $media, $args = []) {
+    $this->bot->sendMedia($this->chat, $type, $media, $args, $this->level);
+    return $this;
+  }
+  public function mediamsg($type, $media, $caption, $args = []) {
+    $args['caption'] = $caption;
+    $this->bot->sendMedia($this->chat, $type, $media, $args, $this->level);
+    return $this;
+  }
+  public function mediabtn($type, $media, $markup, $args = []) {
+    $args['reply_markup'] = $markup;
+    $this->bot->sendMedia($this->chat, $type, $media, $args, $this->level);
+    return $this;
+  }
+  public function mediamsgbtn($type, $media, $caption, $markup, $args = []) {
+    $args['caption']      = $caption;
+    $args['reply_markup'] = $markup;
+    $this->bot->sendMedia($this->chat, $type, $media, $args, $this->level);
+    return $this;
+  }
+  public function photo($photo, $args = []) {
+    $this->bot->sendPhoto($this->chat, $photo, $args, $this->level);
+    return $this;
+  }
+  public function voice($voice, $args = []) {
+    $this->bot->sendVoice($this->chat, $voice, $args, $this->level);
+    return $this;
+  }
+  public function video($video, $args = []) {
+    $this->bot->sendVideo($this->chat, $video, $args, $this->level);
+    return $this;
+  }
+  public function audio($audio, $args = []) {
+    $this->bot->sendAudio($this->chat, $audio, $args, $this->level);
+    return $this;
+  }
+  public function videonote($videonote, $args = []) {
+    $this->bot->sendVideoNote($this->chat, $videonote, $args, $this->level);
+    return $this;
+  }
+  public function sticker($sticker, $args = []) {
+    $this->bot->sendSticker($this->chat, $sticker, $args, $this->level);
+    return $this;
+  }
+  public function document($document, $args = []) {
+    $this->bot->sendDocument($this->chat, $document, $args, $this->level);
+    return $this;
+  }
+  public function file($file, $args = []) {
+    $this->bot->sendFile($this->chat, $file, $args, $this->level);
+    return $this;
+  }
+  public function photomsg($photo, $caption, $args = []) {
+    $args['caption'] = $caption;
+    $this->bot->sendPhoto($this->chat, $photo, $args, $this->level);
+    return $this;
+  }
+  public function voicemsg($voice, $caption,$args = []) {
+    $args['caption'] = $caption;
+    $this->bot->sendVoice($this->chat, $voice, $args, $this->level);
+    return $this;
+  }
+  public function videomsg($video, $caption, $args = []) {
+    $args['caption'] = $caption;
+    $this->bot->sendVideo($this->chat, $video, $args, $this->level);
+    return $this;
+  }
+  public function audiomsg($audio, $caption, $args = []) {
+    $args['caption'] = $caption;
+    $this->bot->sendAudio($this->chat, $audio, $args, $this->level);
+    return $this;
+  }
+  public function videonotemsg($videonote, $caption, $args=[]) {
+    $args['caption'] = $caption;
+    $this->bot->sendVideoNote($this->chat, $videonote, $args, $this->level);
+    return $this;
+  }
+  public function stickermsg($sticker, $caption, $args=[]) {
+    $args['caption'] = $caption;
+    $this->bot->sendSticker($this->chat, $sticker, $args, $this->level);
+    return $this;
+  }
+  public function documentmsg($document, $caption, $args=[]) {
+    $args['caption'] = $caption;
+    $this->bot->sendDocument($this->chat, $document, $args, $this->level);
+    return $this;
+  }
+  public function filemsg($file, $caption, $args = []) {
+    $args['caption'] = $caption;
+    $this->bot->sendFile($this->chat, $file, $args, $this->level);
+    return $this;
+  }
+  public function photobtn($photo, $markup, $args = []) {
+    $args['caption'] = $caption;
+    $this->bot->sendPhoto($this->chat, $photo, $args, $$this->level);
+    return $this;
+  }
+  public function voicebtn($voice, $markup, $args = []) {
+    $args['reply_markup'] = $caption;
+    $this->bot->sendVoice($this->chat, $voice, $args, $this->level);
+    return $this;
+  }
+  public function videobtn($video, $markup, $args = []) {
+    $args['reply_markup'] = $caption;
+    $this->bot->sendVideo($this->chat, $video, $args, $this->level);
+    return $this;
+  }
+  public function audiobtn($audio, $markup, $args = []) {
+    $args['reply_markup'] = $caption;
+    $this->bot->sendAudio($this->chat, $audio, $args, $this->level);
+    return $this;
+  }
+  public function videonotebtn($videonote, $markup, $args = []) {
+    $args['reply_markup'] = $caption;
+    $this->bot->sendVideoNote($this->chat, $videonote, $args, $this->level);
+    return $this;
+  }
+  public function stickerbtn($sticker, $markup, $args = []) {
+    $args['reply_markup'] = $caption;
+    $this->bot->sendSticker($this->chat, $sticker, $args, $this->level);
+    return $this;
+  }
+  public function documentbtn($document, $markup, $args = []) {
+    $args['reply_markup'] = $caption;
+    $this->bot->sendDocument($this->chat, $document, $args, $this->level);
+    return $this;
+  }
+  public function filebtn($file, $markup, $args=[]) {
+    $args['reply_markup'] = $markup;
+    $this->bot->sendFile($this->chat, $file, $args, $this->level);
+    return $this;
+  }
+  public function photomsgbtn($photo,$caption,$markup,$args=[]){
+    $args['caption']=$caption;
+    $args['reply_markup']=$caption;
+    $this->bot->sendPhoto($this->chat,$photo,$args,$$this->level);
+    return $this;
+  }
+  public function voicemsgbtn($voice,$caption,$markup,$args=[]){
+    $args['caption']=$caption;
+    $args['reply_markup']=$caption;
+    $this->bot->sendVoice($this->chat,$voice,$args,$this->level);
+    return $this;
+  }
+  public function videomsgbtn($video,$caption,$markup,$args=[]){
+    $args['caption']=$caption;
+    $args['reply_markup']=$caption;
+    $this->bot->sendVideo($this->chat,$video,$args,$this->level);
+    return $this;
+  }
+  public function audiomsgbtn($audio,$caption,$markup,$args=[]){
+    $args['caption']=$caption;
+    $args['reply_markup']=$caption;
+    $this->bot->sendAudio($this->chat,$audio,$args,$this->level);
+    return $this;
+  }
+  public function videonotemsgbtn($videonote,$caption,$markup,$args=[]){
+    $args['caption']=$caption;
+    $args['reply_markup']=$caption;
+    $this->bot->sendVideoNote($this->chat,$videonote,$args,$this->level);
+    return $this;
+  }
+  public function stickermsgbtn($sticker,$caption,$markup,$args=[]){
+    $args['caption']=$caption;
+    $args['reply_markup']=$caption;
+    $this->bot->sendSticker($this->chat,$sticker,$args,$this->level);
+    return $this;
+  }
+  public function documentmsgbtn($document,$caption,$markup,$args=[]){
+    $args['caption']=$caption;
+    $args['reply_markup']=$caption;
+    $this->bot->sendDocument($this->chat,$document,$args,$this->level);
+    return $this;
+  }
+  public function filemsgbtn($file,$caption,$markup,$args=[]){
+    $args['caption']=$caption;
+    $args['reply_markup']=$caption;
+    $this->bot->sendFile($this->chat,$file,$args,$this->level);
+    return $this;
+  }
+  public function uploadingPhoto(){
+    $this->bot->sendUploadingPhoto($this->chat,$this->level);
+    return $this;
+  }
+  public function uploadingAudio(){
+    $this->bot->sendUploadingAudio($this->chat,$this->level);
+    return $this;
+  }
+  public function uploadingVideo(){
+    $this->bot->sendUploadingVideo($this->chat,$this->level);
+    return $this;
+  }
+  public function uploadingDocument(){
+    $this->bot->sendUploadingDocument($this->chat,$this->level);
+    return $this;
+  }
+  public function uploadingVideoNote(){
+    $this->bot->sendUploadingVideoNote($this->chat,$this->level);
+    return $this;
+  }
+  public function findingLocation(){
+    $this->bot->sendFindingLocation($this->chat,$this->level);
+    return $this;
+  }
+  public function recordingAudio(){
+    $this->bot->sendRecordingAudio($this->chat,$this->level);
+    return $this;
+  }
+  public function recordingVideo(){
+    $this->bot->sendRecordingVideo($this->chat,$this->level);
+    return $this;
+  }
+  public function recordingVideoNote(){
+    $this->bot->sendRecordingVideoNote($this->chat,$this->level);
+    return $this;
+  }
+  public function delmsg($id){
+    $this->bot->deleteMessage($this->chat,$id,$this->level);
+    return $this;
+  }
 }
-}class TelegramBot {
+
+class TelegramBot {
 public $data,$token,$final,$results=[],$sents=[],$save=true,$last;
 public $keyboard,$inlineKeyboard,$foreReply,$removeKeyboard,$queryResult,$menu,$send;
 public function send($chat=null,$level=null){
