@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528824299{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528980379{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -3444,13 +3444,15 @@ return rtrim(strtr(base64_encode($data),'+/','-_'),'=');
 return base64_decode(str_pad(strtr($data,'-_','+/'),strlen($data)%4,'=',STR_PAD_RIGHT));
 }function baseconvert($text,$from,$to=false){
 $text=(string)$text;
-$fromel=mb_subsplit($from);
+if(!is_array($from))$fromel=mb_subsplit($from);
+else $fromel=$from;
 $frome=[];
 foreach($fromel as $key=>$value){
 $frome[$value]=$key;
 }unset($fromel);
 $fromc=count($frome);
-$toe=mb_subsplit($to);
+if(!is_array($to))$toe=mb_subsplit($to);
+else $toe=$to;
 $toc=count($toe);
 $texte=array_reverse(mb_subsplit($text));
 $textc=count($texte);
