@@ -8,7 +8,7 @@
    $var = xn\thumbCode(function(){
      //codes...
    });
-*/
+ */
 
 namespace xn;
 
@@ -20,13 +20,16 @@ class ThumbCode {
   public function __destruct() {
     if($this->code) ($this->code)();
   }
+  // stop code
   public function close(){
     $this->code = false;
   }
+  // clone ThumbCode Object
   public function clone() {
     return new ThumbCode($this->code);
   }
-  }
+}
+// You can use the function to execute it as well
 function thumbCode($func) {
   return new ThumbCode($func);
 }
