@@ -721,13 +721,29 @@ class TelegramBotSends {
   }
 }
 
-// \xn\Telegram\TelegramBot
+/* TelegramBot for APIs bot
+ * params : String token = ""
+ * use :
+ 
+ $bot = new xn\Telegram\TelegramBot( String );
+ */
 class TelegramBot {
   public $data,
+      // $bot->token : get token
          $token,
+      // $final : last returned from request
          $final,
+      // $results : all resturns from requests
          $results = [],
+      // $sents : all requests method and args
          $sents = [],
+      /* $save
+       * If it is empty, less memory is consumed and $results ,$sents ,$data methods disabled
+       * use :
+       
+         $bot->save = false; // inactive
+         $bot->save = true ; // active
+       */
          $save = true,
          $last;
   public $keyboard,
@@ -737,15 +753,18 @@ class TelegramBot {
          $queryResult,
          $menu,
          $send;
-
+  
+  // require send object
   public function send($chat = null, $level = null) {
     return new TelegramBotSends($this, $chat, $level);
   }
+  // set token (and save last token)
   public function setToken($token = '') {
     $this->last = $this->token;
     $this->token = $token;
     return $this;
   }
+  // back last token to defult token
   public function backToken() {
     $token = $this->token;
     $this->token = $this->last;
@@ -763,6 +782,21 @@ class TelegramBot {
     $this->forceReply     = ["force_reply" => true];
     $this->removeKeyboard = ["remove_keyboard" => true];
   }
+  /* give update(s)
+   * webhook :
+     * return : Object of webhook Updates
+     * use :
+     
+     $bot->update();
+   * get Updates :
+     * params : Integer offset = -1,
+                Integer limit = 1,
+                Integer timeout = 0
+     * return : Array of Result of getUpdates
+     * use :
+     
+     $bot->update( Integer , Integer , Integer );
+   */
   public function update($offset = -1, $limit = 1, $timeout = 0) {
     if(isset($this->data->message_id)) return $this->data;
     elseif($this->data = json_decode(file_get_contents("php://input")))return $this->data;
@@ -771,10 +805,23 @@ class TelegramBot {
         "limit"   => $limit,
         "timeout" => $timeout
     ], 3);
-    if(! $res->ok) return (object)[];
-    return $res;
+    return (object)$res;
   }
- 
+  
+  /* request to telegram APIs
+   * params : String method,
+              Array args = [],
+              Integer level = 3
+   * levels for (All) requests :
+     1 : very fast & just last request & limited for webhook / not returning
+     2 : fast / not returning
+     3 : normal / object returning
+     4 : PWRTelegram / fast / not returning
+     5 : PWRTelegram / normal / object returning
+   * use :
+   
+   $bot->request( String , Array , Level );
+   */
   public function request($method, $args = [], $level = 3) {
     $args = $this->parse_args($args);
     if($level == 1){
@@ -818,12 +865,14 @@ class TelegramBot {
     }
     return $res;
   }
+  // reset history for requests
   public function reset() {
     $this->final   = null;
     $this->results = [];
     $this->sents   = [];
     $this->data    = null;
   }
+  // ending the work
   public function close() {
     $this->final          = null;
     $this->results        = null;
@@ -839,357 +888,471 @@ class TelegramBot {
     $this->menu           = null;
   }
 
-public function sendMessage($chat,$text,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['text']=$text;
-return $this->request("sendMessage",$args,$level);
-}public function sendMessages($chat,$text,$args=[],$level=3){
-$args['chat_id']=$chat;
-$texts=subsplit($text,4096);
-foreach($texts as $text){
-$args['text']=$text;
-$this->request("sendMessage",$args,$level);
-}return $this;
-}public function sendMessageRemoveKeyboard($chat,$text,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['text']=$text;
-$args['reply_markup']=json_encode(["remove_keyboard"=>true]);
-return $this->request("sendMessage",$args,$level);
-}public function sendMessageForceReply($chat,$text,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['text']=$text;
-$args['reply_markup']=json_encode(['force_reply'=>true]);
-return $this->request("sendMessage",$args,$level);
-}public function sendAction($chat,$action,$level=3){
-return $this->request("sendChatAction",[
-"chat_id"=>$chat,
-"action"=>$action
-],$level);
-}public function sendUploadingPhoto($chat,$level=3){
-return $this->request("sendChatAction",[
-"chat_id"=>$chat,
-"action"=>"upload_photo"
-],$level);
-}public function sendUploadingVideo($chat,$level=3){
-return $this->request("sendChatAction",[
-"chat_id"=>$chat,
-"action"=>"upload_video"
-],$level);
-}public function sendUploadingAudio($chat,$level=3){
-return $this->request("sendChatAction",[
-"chat_id"=>$chat,
-"action"=>"upload_audio"
-],$level);
-}public function sendUploadingDocument($chat,$level=3){
-return $this->request("sendChatAction",[
-"chat_id"=>$chat,
-"action"=>"upload_document"
-],$level);
-}public function sendUploadingVideoNote($chat,$level=3){
-return $this->request("sendChatAction",[
-"chat_id"=>$chat,
-"action"=>"upload_video_note"
-],$level);
-}public function sendFindingLocation($chat,$level=3){
-return $this->request("sendChatAction",[
-"chat_id"=>$chat,
-"action"=>"find_location"
-],$level);
-}public function sendRecordingVideo($chat,$level=3){
-return $this->request("sendChatAction",[
-"chat_id"=>$chat,
-"action"=>"record_video"
-],$level);
-}public function sendRecordingAudio($chat,$level=3){
-return $this->request("sendChatAction",[
-"chat_id"=>$chat,
-"action"=>"record_audio"
-],$level);
-}public function sendRecordingVideoNote($chat,$level=3){
-return $this->request("sendChatAction",[
-"chat_id"=>$chat,
-"action"=>"record_video_note"
-],$level);
-}public function sendTyping($chat,$level=3){
-return $this->request("sendChatAction",[
-"chat_id"=>$chat,
-"action"=>"typing"
-],$level);
-}public function setWebhook($url='',$args=[],$level=3){
-$args['url']=$url?$url:'';
-return $this->request("setWebhook",$args,$level);
-}public function deleteWebhook($level=3){
-return $this->request("setWebhook",[],$level);
-}public function getChat($chat,$level=3){
-return $this->request("getChat",[
-"chat_id"=>$chat
-],$level);
-}public function getMembersCount($chat,$level=3){
-return $this->request("getChatMembersCount",[
-"chat_id"=>$chat
-],$level);
-}public function getMember($chat,$user,$level=3){
-return $this->request("getChatMember",[
-"chat_id"=>$chat,
-"user_id"=>$user
-],$level);
-}public function getProfile($user,$level=3){
-$args['user_id']=$user;
-$args['chat_id']=$user;
-return $this->request("getUserProfilePhotos",$args,$level);
-}public function banMember($chat,$user,$time=false,$level=3){
-$args=[
-"chat_id"=>$chat,
-"user_id"=>$user
-];
-if($time)$args['until_date']=$time;
-return $this->request("kickChatMember",$args,$level);
-}public function unbanMember($chat,$user,$level=3){
-return $this->request("unbanChatMember",[
-"chat_id"=>$chat,
-"user_id"=>$user
-],$level);
-}public function kickMember($chat,$user,$level=3){
-return [$this->banMember($chat,$user,$level),$this->unbanMember($chat,$user,$level)];
-}public function getMe($level=3){
-return $this->request("getMe",[],$level);
-}public function getWebhook($level=3){
-return $this->request("getWebhookInfo",[],$level);
-}public function restrictMember($chat,$user,$args,$time=false,$level=3){
-foreach($args as $key=>$val)$args["can_$key"]=$val;
-$args['chat_id']=$chat;
-$args['user_id']=$user;
-if($time)$args['until_date']=$time;
-return $this->request("restrictChatMember",$args,$level);
-}public function promoteMember($chat,$user,$args=[],$level=3){
-foreach($args as $key=>$val)$args["can_$key"]=$val;
-$args['chat_id']=$chat;
-$args['user_id']=$user;
-return $this->request("promoteChatMember",$args,$level);
-}public function exportInviteLink($chat,$level=3){
-$this->request("exportChatInviteLink",[
-"chat_id"=>$chat
-],$level);
-}public function setChatPhoto($chat,$photo,$level=3){
-return $this->request("setChatPhoto",[
-"chat_id"=>$chat,
-"photo"=>$photo
-],$level);
-}public function deleteChatPhoto($chat,$level=3){
-return $this->request("deleteChatPhoto",[
-"chat_id"=>$chat
-],$level);
-}public function setTitle($chat,$title,$level=3){
-return $this->request("setChatTitle",[
-"chat_id"=>$chat,
-"title"=>$title
-],$level);
-}public function setDescription($chat,$description,$level=3){
-return $this->request("setChatDescription",[
-"chat_id"=>$chat,
-"description"=>$description
-],$level);
-}public function pinMessage($chat,$message,$disable=false,$level=3){
-return $this->request("pinChatMessage",[
-"chat_id"=>$chat,
-"message_id"=>$message,
-"disable_notification"=>$disable
-],$level);
-}public function unpinMessage($chat,$level=3){
-return $this->request("unpinChatMessage",[
-"chat_id"=>$chat
-],$level);
-}public function leaveChat($chat,$level=3){
-return $this->request("leaveChat",[
-"chat_id"=>$chat
-],$level);
-}public function getAdmins($chat,$level=3){
-return $this->request("getChatAdministrators",[
-"chat_id"=>$chat
-],$level);
-}public function setChatStickerSet($chat,$sticker,$level=3){
-return $this->request("setChatStickerSet",[
-"chat_id"=>$chat,
-"sticker_set_name"=>$sticker
-],$level);
-}public function deleteChatStickerSet($chat,$level=3){
-return $this->request("deleteChatStickerSet",[
-"chat_id"=>$chat
-],$level);
-}public function answerCallback($id,$text,$args=[],$level=3){
-$args['callback_query_id']=$id;
-$args['text']=$text;
-return $this->request("answerCallbackQuery",$args,$level);
-}public function editText($text,$args=[],$level=3){
-$args['text']=$text;
-return $this->request("editMessageText",$args,$level);
-}public function editMessageText($chat,$msg,$text,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['message_id']=$msg;
-$args['text']=$text;
-return $this->request("editMessageText",$args,$level);
-}public function editInlineText($msg,$text,$args=[],$level=3){
-$args['inline_message_id']=$msg;
-$args['text']=$text;
-return $this->request("editMessageText",$args,$level);
-}public function editCaption($caption,$args=[],$level=3){
-$args['caption']=$caption;
-return $this->request("editMessageCaption",$args,$level);
-}public function editMessageCaption($chat,$msg,$caption,$args=[],$level=3){
-$args['chat_id']=$chat;
-$arsg['message_id']=$msg;
-$args['caption']=$caption;
-return $this->request("editMessageCaption",$args,$level);
-}public function editInlineCaption($msg,$caption,$args=[],$level=3){
-$arsg['inline_message_id']=$msg;
-$args['caption']=$caption;
-return $this->request("editMessageCaption",$args,$level);
-}public function editReplyMarkup($reply_makup,$args=[],$level=3){
-$args['reply_markup']=$reply_markup;
-return $this->request("editMessageReplyMarkup",$args,$level);
-}public function editMessageReplyMarkup($chat,$msg,$reply_makup,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['message_id']=$msg;
-$args['reply_markup']=$reply_markup;
-return $this->request("editMessageReplyMarkup",$args,$level);
-}public function editInlineReplyMarkup($msg,$reply_makup,$args=[],$level=3){
-$args['inline_message_id']=$msg;
-$args['reply_markup']=$reply_markup;
-return $this->request("editMessageReplyMarkup",$args,$level);
-}public function editInlineKeyboard($reply_makup,$args=[],$level=3){
-$args['reply_markup']=["inline_keyboard"=>$reply_markup];
-return $this->request("editMessageReplyMarkup",$args,$level);
-}public function editMessageInlineKeyboard($chat,$msg,$reply_makup,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['message_id']=$msg;
-$args['reply_markup']=["inline_keyboard"=>$reply_markup];
-return $this->request("editMessageReplyMarkup",$args,$level);
-}public function editInlineInlineKeyboard($msg,$reply_makup,$args=[],$level=3){
-$args['inline_message_id']=$msg;
-$args['reply_markup']=["inline_keyboard"=>$reply_markup];
-return $this->request("editMessageReplyMarkup",$args,$level);
-}public function deleteMessage($chat,$message,$level=3){
-return $this->request("deleteMessage",[
-"chat_id"=>$chat,
-"message_id"=>$message
-],$level);
-}public function deleteMessages($chat,$messages,$level=3){
-if($level>5){
-$level-=5;
-$from=min(...$messages);
-$to=max(...$messages);
-for(;$from<=$to;$from++)
-$this->request("deleteMessage",[
-"chat_id"=>$chat,
-"message_id"=>$from
-],$level);
-}else{
-foreach($messages as $message)
-$this->request("deleteMessage",[
-"chat_id"=>$chat,
-"message_id"=>$message
-],$level);
-}
-}public function sendMedia($chat,$type,$file,$args=[],$level=3){
-$type=strtolower($type);
-if($type=="videonote")$type="video_note";
-$args['chat_id']=$chat;
-$args[$type]=$file;
-return $this->request("send".str_replace('_','',$type),$args,$level);
-}public function sendFile($chat,$file,$args=[],$level=3){
-$type=TelegramCode::getFileType($file);
-if(!$type)return false;
-$args['chat_id']=$chat;
-$args[$type]=$file;
-return $this->request("send".str_replace('_','',$type),$args,$level);
-}public function getStickerSet($name,$level=3){
-return $this->request("getStickerSet",[
-"name"=>$name
-],$level);
-}public function sendDocument($chat,$file,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['document']=$file;
-return $this->request("sendDocument",$args,$level);
-}public function sendPhoto($chat,$file,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['photo']=$file;
-return $this->request("sendPhoto",$args,$level);
-}public function sendVideo($chat,$file,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['video']=$file;
-return $this->request("sendVideo",$args,$level);
-}public function sendAudio($chat,$file,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['audio']=$file;
-return $this->request("sendAudio",$args,$level);
-}public function sendVoice($chat,$file,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['voice']=$file;
-return $this->request("sendVoice",$args,$level);
-}public function sendSticker($chat,$file,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['sticker']=$file;
-return $this->request("sendSticker",$args,$level);
-}public function sendVideoNote($chat,$file,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['video_note']=$file;
-return $this->request("sendVideoNote",$args,$level);
-}public function uploadStickerFile($user,$file,$level=3){
-return $this->request("uploadStickerFile",[
-"user_id"=>$user,
-"png_sticker"=>$file
-],$level);
-}public function createNewStickerSet($user,$name,$title,$args=[],$level=3){
-$args['user_id']=$user;
-$args['name']=$name;
-$args['title']=$title;
-return $this->request("createNewStickerSet",$args,$level);
-}public function addStickerToSet($user,$name,$args=[],$level=3){
-$args['user_id']=$user;
-$args['name']=$name;
-return $this->request("addStickerToSet",$args,$level);
-}public function setStickerPositionInSet($sticker,$position,$level=3){
-return $this->request("setStickerPositionInSet",[
-"sticker"=>$sticker,
-"position"=>$position
-],$level);
-}public function deleteStickerFromSet($sticker,$level=3){
-return $this->request("deleteStickerFromSet",[
-"sticker"=>$sticker
-],$level);
-}public function answerInline($id,$results,$args=[],$switch=[],$level=3){
-$args['inline_query_id']=$id;
-$args['results']=is_array($results)?json_encode($results):$results;
-if($switch['text'])$args['switch_pm_text']=$switch['text'];
-if($switch['parameter'])$args['switch_pm_parameter']=$switch['parameter'];
-return $this->request("answerInlineQuery",$args,$level);
-}public function answerPreCheckout($id,$ok=true,$level=3){
-if($ok===true)$args=[
-"pre_checkout_query_id"=>$id,
-"ok"=>true
-];
-else $args=[
-"pre_checkout_query_id"=>$id,
-"ok"=>false,
-"error_message"=>$ok
-];
-return $this->request("answerPreCheckoutQuery",$args,$level);
-}public function setGameScore($user,$score,$args=[],$level=3){
-$args['user_id']=$user;
-$args['score']=$score;
-return $this->request("setGameScore",$args,$level);
-}public function getGameHighScores($user,$args=[],$level=3){
-$args['user_id']=$user;
-return $this->request("getGameHighScores",$args,$level);
-}public function sendGame($chat,$name,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['name']=$name;
-return $this->request("sendGame",$args,$level);
-}public function getFile($file,$level=3){
-return $this->request("getFile",[
-"file_id"=>$file
-],$level);
-}
+  public function sendMessage($chat, $text, $args = [], $level = 3) {
+    $args['chat_id'] = $chat;
+    $args['text'] = $text;
+    return $this->request("sendMessage", $args, $level);
+  }
+  public function sendMessages($chat, $text, $args = [], $level = 3) {
+    $args['chat_id'] = $chat;
+    $texts = subsplit($text, 4096);
+    foreach($texts as $text) {
+      $args['text'] = $text;
+      $this->request("sendMessage", $args, $level);
+    }
+    return $this;
+  }
+  public function sendMessageRemoveKeyboard($chat, $text, $args = [],$level = 3) {
+    $args['chat_id'] = $chat;
+    $args['text'] = $text;
+    $args['reply_markup'] = json_encode(["remove_keyboard" => true]);
+    return $this->request("sendMessage", $args, $level);
+  }
+  public function sendMessageForceReply($chat, $text, $args = [], $level = 3) {
+    $args['chat_id'] = $chat;
+    $args['text'] = $text;
+    $args['reply_markup'] = json_encode(['force_reply' => true]);
+    return $this->request("sendMessage", $args, $level);
+  }
+  public function sendAction($chat, $action, $level = 3) {
+    return $this->request("sendChatAction", [
+      "chat_id" => $chat,
+      "action"  => $action
+    ], $level);
+  }
+  public function sendUploadingPhoto($chat, $level = 3) {
+    return $this->request("sendChatAction", [
+      "chat_id" => $chat,
+      "action"  => "upload_photo"
+    ], $level);
+  }
+  public function sendUploadingVideo($chat, $level = 3) {
+    return $this->request("sendChatAction", [
+      "chat_id" => $chat,
+      "action"  => "upload_video"
+    ], $level);
+  }
+  public function sendUploadingAudio($chat, $level = 3) {
+    return $this->request("sendChatAction", [
+      "chat_id" => $chat,
+      "action"  => "upload_audio"
+    ], $level);
+  }
+  public function sendUploadingDocument($chat, $level = 3) {
+    return $this->request("sendChatAction", [
+      "chat_id" => $chat,
+      "action"  => "upload_document"
+    ], $level);
+  }
+  public function sendUploadingVideoNote($chat, $level = 3) {
+    return $this->request("sendChatAction", [
+      "chat_id" => $chat,
+      "action"  => "upload_video_note"
+    ], $level);
+  }
+  public function sendFindingLocation($chat, $level = 3) {
+    return $this->request("sendChatAction", [
+       "chat_id" => $chat,
+       "action"  => "find_location"
+    ], $level);
+  }
+  public function sendRecordingVideo($chat, $level = 3) {
+    return $this->request("sendChatAction", [
+      "chat_id" => $chat,
+      "action"  => "record_video"
+    ], $level);
+  }
+  public function sendRecordingAudio($chat, $level = 3) {
+     return $this->request("sendChatAction", [
+       "chat_id" => $chat,
+       "action"  => "record_audio"
+    ], $level);
+  }
+  public function sendRecordingVideoNote($chat, $level = 3) {
+    return $this->request("sendChatAction", [
+      "chat_id" => $chat,
+      "action" => "record_video_note"
+    ], $level);
+  }
+  public function sendTyping($chat, $level = 3) {
+    return $this->request("sendChatAction", [
+      "chat_id" => $chat,
+      "action"  => "typing"
+    ], $level);
+  }
+  public function setWebhook($url = '', $args = [], $level = 3) {
+    $args['url'] = $url? $url: '';
+    return $this->request("setWebhook", $args, $level);
+  }
+  public function deleteWebhook($level = 3) {
+    return $this->request("setWebhook", [], $level);
+  }
+  public function getChat($chat,$level = 3) {
+    return $this->request("getChat", [
+      "chat_id" => $chat
+    ], $level);
+  }
+  public function getMembersCount($chat, $level = 3) {
+    return $this->request("getChatMembersCount", [
+      "chat_id" => $chat
+    ], $level);
+  }
+  public function getMember($chat, $user, $level = 3) {
+    return $this->request("getChatMember", [
+      "chat_id" => $chat,
+      "user_id" => $user
+    ], $level);
+  }
+  public function getProfile($user, $level = 3) {
+    $args['user_id'] = $user;
+    $args['chat_id'] = $user;
+    return $this->request("getUserProfilePhotos", $args, $level);
+  }
+  public function banMember($chat, $user, $time = false, $level = 3) {
+    $args = [
+      "chat_id" => $chat,
+      "user_id" => $user
+    ];
+    if($time) $args['until_date'] = $time;
+    return $this->request("kickChatMember", $args, $level);
+  }
+  public function unbanMember($chat, $user, $level = 3) {
+    return $this->request("unbanChatMember", [
+      "chat_id" => $chat,
+      "user_id" => $user
+    ], $level);
+  }
+  public function kickMember($chat, $user, $level = 3) {
+    return [$this->banMember($chat, $user, $level), $this->unbanMember($chat,$user,$level)];
+  }
+  public function getMe($level = 3) {
+    return $this->request("getMe", [], $level);
+  }
+  public function getWebhook($level = 3) {
+    return $this->request("getWebhookInfo", [], $level);
+  }
+  public function restrictMember($chat,$user,$args,$time=false,$level=3){
+    foreach($args as $key=>$val)$args["can_$key"]=$val;
+    $args['chat_id']=$chat;
+    $args['user_id']=$user;
+    if($time)$args['until_date']=$time;
+    return $this->request("restrictChatMember",$args,$level);
+  }
+  public function promoteMember($chat,$user,$args=[],$level=3){
+    foreach($args as $key=>$val)$args["can_$key"]=$val;
+    $args['chat_id']=$chat;
+    $args['user_id']=$user;
+    return $this->request("promoteChatMember",$args,$level);
+  }
+  public function exportInviteLink($chat,$level=3){
+    $this->request("exportChatInviteLink",[
+      "chat_id"=>$chat
+    ],$level);
+  }
+  public function setChatPhoto($chat,$photo,$level=3){
+    return $this->request("setChatPhoto",[
+      "chat_id"=>$chat,
+      "photo"=>$photo
+    ],$level);
+  }
+  public function deleteChatPhoto($chat,$level=3){
+    return $this->request("deleteChatPhoto",[
+      "chat_id"=>$chat
+    ],$level);
+  }
+  public function setTitle($chat,$title,$level=3){
+    return $this->request("setChatTitle",[
+      "chat_id"=>$chat,
+      "title"=>$title
+    ],$level);
+  }
+  public function setDescription($chat,$description,$level=3){
+    return $this->request("setChatDescription",[
+      "chat_id"=>$chat,
+      "description"=>$description
+    ],$level);
+  }
+  public function pinMessage($chat,$message,$disable=false,$level=3){
+    return $this->request("pinChatMessage",[
+      "chat_id"=>$chat,
+      "message_id"=>$message,
+      "disable_notification"=>$disable
+    ],$level);
+  }
+  public function unpinMessage($chat,$level=3){
+    return $this->request("unpinChatMessage",[
+      "chat_id"=>$chat
+    ],$level);
+  }
+  public function leaveChat($chat,$level=3){
+    return $this->request("leaveChat",[
+      "chat_id"=>$chat
+    ],$level);
+  }
+  public function getAdmins($chat,$level=3){
+    return $this->request("getChatAdministrators",[
+      "chat_id"=>$chat
+    ],$level);
+  }
+  public function setChatStickerSet($chat,$sticker,$level=3){
+    return $this->request("setChatStickerSet",[
+      "chat_id"=>$chat,
+      "sticker_set_name"=>$sticker
+    ],$level);
+  }
+  public function deleteChatStickerSet($chat,$level=3){
+    return $this->request("deleteChatStickerSet",[
+      "chat_id"=>$chat
+    ],$level);
+  }
+  public function answerCallback($id,$text,$args=[],$level=3){
+    $args['callback_query_id']=$id;
+    $args['text']=$text;
+    return $this->request("answerCallbackQuery",$args,$level);
+  }
+  public function editText($text,$args=[],$level=3){
+    $args['text']=$text;
+    return $this->request("editMessageText",$args,$level);
+  }
+  public function editMessageText($chat,$msg,$text,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['message_id']=$msg;
+    $args['text']=$text;
+    return $this->request("editMessageText",$args,$level);
+  }
+  public function editInlineText($msg,$text,$args=[],$level=3){
+    $args['inline_message_id']=$msg;
+    $args['text']=$text;
+    return $this->request("editMessageText",$args,$level);
+  }
+  public function editCaption($caption,$args=[],$level=3){
+    $args['caption']=$caption;
+    return $this->request("editMessageCaption",$args,$level);
+  }
+  public function editMessageCaption($chat,$msg,$caption,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $arsg['message_id']=$msg;
+    $args['caption']=$caption;
+    return $this->request("editMessageCaption",$args,$level);
+  }
+  public function editInlineCaption($msg,$caption,$args=[],$level=3){
+    $arsg['inline_message_id']=$msg;
+    $args['caption']=$caption;
+    return $this->request("editMessageCaption",$args,$level);
+  }
+  public function editReplyMarkup($reply_makup,$args=[],$level=3){
+    $args['reply_markup']=$reply_markup;
+    return $this->request("editMessageReplyMarkup",$args,$level);
+  }
+  public function editMessageReplyMarkup($chat,$msg,$reply_makup,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['message_id']=$msg;
+    $args['reply_markup']=$reply_markup;
+    return $this->request("editMessageReplyMarkup",$args,$level);
+  }
+  public function editInlineReplyMarkup($msg,$reply_makup,$args=[],$level=3){
+    $args['inline_message_id']=$msg;
+    $args['reply_markup']=$reply_markup;
+    return $this->request("editMessageReplyMarkup",$args,$level);
+  }
+  public function editInlineKeyboard($reply_makup,$args=[],$level=3){
+    $args['reply_markup']=["inline_keyboard"=>$reply_markup];
+    return $this->request("editMessageReplyMarkup",$args,$level);
+  }
+  public function editMessageInlineKeyboard($chat,$msg,$reply_makup,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['message_id']=$msg;
+    $args['reply_markup']=["inline_keyboard"=>$reply_markup];
+    return $this->request("editMessageReplyMarkup",$args,$level);
+  }
+  public function editInlineInlineKeyboard($msg,$reply_makup,$args=[],$level=3){
+    $args['inline_message_id']=$msg;
+    $args['reply_markup']=["inline_keyboard"=>$reply_markup];
+    return $this->request("editMessageReplyMarkup",$args,$level);
+  }
+  public function deleteMessage($chat,$message,$level=3){
+    return $this->request("deleteMessage",[
+      "chat_id"=>$chat,
+      "message_id"=>$message
+    ],$level);
+  }
+  public function deleteMessages($chat,$messages,$level=3){
+    if($level>5){
+      $level-=5;
+      $from=min(...$messages);
+      $to=max(...$messages);
+      for(;$from<=$to;$from++)
+        $this->request("deleteMessage",[
+          "chat_id"=>$chat,
+          "message_id"=>$from
+        ],$level);
+    }else{
+      foreach($messages as $message)
+        $this->request("deleteMessage",[
+          "chat_id"=>$chat,
+          "message_id"=>$message
+        ],$level);
+    }
+  }
+  public function sendMedia($chat,$type,$file,$args=[],$level=3){
+    $type=strtolower($type);
+    if($type=="videonote")$type="video_note";
+    $args['chat_id']=$chat;
+    $args[$type]=$file;
+    return $this->request("send".str_replace('_','',$type),$args,$level);
+  }
+  public function sendFile($chat,$file,$args=[],$level=3){
+    $type=TelegramCode::getFileType($file);
+    if(!$type)return false;
+    $args['chat_id']=$chat;
+    $args[$type]=$file;
+    return $this->request("send".str_replace('_','',$type),$args,$level);
+  }
+  public function getStickerSet($name,$level=3){
+    return $this->request("getStickerSet",[
+      "name"=>$name
+    ],$level);
+  }
+  public function sendDocument($chat,$file,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['document']=$file;
+    return $this->request("sendDocument",$args,$level);
+  }
+  public function sendPhoto($chat,$file,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['photo']=$file;
+    return $this->request("sendPhoto",$args,$level);
+  }
+  public function sendVideo($chat,$file,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['video']=$file;
+    return $this->request("sendVideo",$args,$level);
+  }
+  public function sendAudio($chat,$file,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['audio']=$file;
+    return $this->request("sendAudio",$args,$level);
+  }
+  public function sendVoice($chat,$file,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['voice']=$file;
+    return $this->request("sendVoice",$args,$level);
+  }
+  public function sendSticker($chat,$file,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['sticker']=$file;
+    return $this->request("sendSticker",$args,$level);
+  }
+  public function sendVideoNote($chat,$file,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['video_note']=$file;
+    return $this->request("sendVideoNote",$args,$level);
+  }
+  public function uploadStickerFile($user,$file,$level=3){
+    return $this->request("uploadStickerFile",[
+      "user_id"=>$user,
+      "png_sticker"=>$file
+    ],$level);
+  }
+  public function createNewStickerSet($user,$name,$title,$args=[],$level=3){
+    $args['user_id']=$user;
+    $args['name']=$name;
+    $args['title']=$title;
+    return $this->request("createNewStickerSet",$args,$level);
+  }
+  public function addStickerToSet($user,$name,$args=[],$level=3){
+    $args['user_id']=$user;
+    $args['name']=$name;
+    return $this->request("addStickerToSet",$args,$level);
+  }
+  public function setStickerPositionInSet($sticker,$position,$level=3){
+    return $this->request("setStickerPositionInSet",[
+      "sticker"=>$sticker,
+      "position"=>$position
+    ],$level);
+  }
+  public function deleteStickerFromSet($sticker,$level=3){
+    return $this->request("deleteStickerFromSet",[
+      "sticker"=>$sticker
+    ],$level);
+  }
+  public function answerInline($id,$results,$args=[],$switch=[],$level=3){
+    $args['inline_query_id']=$id;
+    $args['results']=is_array($results)?json_encode($results):$results;
+    if($switch['text'])$args['switch_pm_text']=$switch['text'];
+    if($switch['parameter'])$args['switch_pm_parameter']=$switch['parameter'];
+    return $this->request("answerInlineQuery",$args,$level);
+  }
+  public function answerPreCheckout($id,$ok=true,$level=3){
+    if($ok===true)$args=[
+        "pre_checkout_query_id"=>$id,
+        "ok"=>true
+      ];
+    else $args=[
+        "pre_checkout_query_id"=>$id,
+        "ok"=>false,
+        "error_message"=>$ok
+      ];
+    return $this->request("answerPreCheckoutQuery",$args,$level);
+  }
+  public function setGameScore($user,$score,$args=[],$level=3){
+    $args['user_id']=$user;
+    $args['score']=$score;
+    return $this->request("setGameScore",$args,$level);
+  }
+  public function getGameHighScores($user,$args=[],$level=3){
+    $args['user_id']=$user;
+    return $this->request("getGameHighScores",$args,$level);
+  }
+  public function sendGame($chat,$name,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['name']=$name;
+    return $this->request("sendGame",$args,$level);
+  }
+  public function getFile($file,$level=3){
+    return $this->request("getFile",[
+       "file_id"=>$file
+    ],$level);
+  }
+  public function sendContact($chat,$phone,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['phone_number']=$phone;
+    return $this->request("sendContact",$args,$level);
+  }
+  public function sendVenue($chat,$latitude,$longitude,$title,$address,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['latitude']=$latitude;
+    $args['longitude']=$longitude;
+    $args['title']=$title;
+    $args['address']=$address;
+    return $this->request("sendVenue",$args,$level);
+  }
+  public function stopMessageLiveLocation($args,$level=3){
+    return $this->request("stopMessageLiveLocation",$args,$level);
+  }
+  public function editMessageLiveLocation($latitude,$longitude,$args=[],$level=3){
+   $args['latitude']=$latitude;
+   $args['longitude']=$longitude;
+   return $this->request("editMessageLiveLocation",$args,$level);
+  }
+  public function sendLocation($chat,$latitude,$longitude,$args=[],$level=3){
+   $args['chat_id']=$chat;
+   $args['longitude']=$longitude;
+   $this->request("sendLocation",$args,$level);
+  }
+  public function sendMediaGroup($chat,$media,$args=[],$level=3){
+    $args['chat_id']=$chat;
+    $args['media']=json_encode($media);
+    return $this->request("sendMediaGroup",$args,$level);
+  }
+  public function forwardMessage($chat,$from,$message,$disable=false,$level=3){
+    return $this->request("forwardMessage",[
+      "chat_id"=>$chat,
+      "from_chat_id"=>$from,
+      "message_id"=>$message,
+      "disable_notification"=>$disable
+    ],$level);
+  }
 
 public function readFile($path,$level=3,$speed=false){
 if($speed)$func="fget";
@@ -1230,44 +1393,15 @@ return $func((object)["content"=>$data,"downloaded"=>$dat,"size"=>$size,"time"=>
 }else return false;
 }
 
-public function sendContact($chat,$phone,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['phone_number']=$phone;
-return $this->request("sendContact",$args,$level);
-}public function sendVenue($chat,$latitude,$longitude,$title,$address,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['latitude']=$latitude;
-$args['longitude']=$longitude;
-$args['title']=$title;
-$args['address']=$address;
-return $this->request("sendVenue",$args,$level);
-}public function stopMessageLiveLocation($args,$level=3){
-return $this->request("stopMessageLiveLocation",$args,$level);
-}public function editMessageLiveLocation($latitude,$longitude,$args=[],$level=3){
-$args['latitude']=$latitude;
-$args['longitude']=$longitude;
-return $this->request("editMessageLiveLocation",$args,$level);
-}public function sendLocation($chat,$latitude,$longitude,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['latitude']=$latitude;
-$args['longitude']=$longitude;
-$this->request("sendLocation",$args,$level);
-}public function sendMediaGroup($chat,$media,$args=[],$level=3){
-$args['chat_id']=$chat;
-$args['media']=json_encode($media);
-return $this->request("sendMediaGroup",$args,$level);
-}public function forwardMessage($chat,$from,$message,$disable=false,$level=3){
-return $this->request("forwardMessage",[
-"chat_id"=>$chat,
-"from_chat_id"=>$from,
-"message_id"=>$message,
-"disable_notification"=>$disable
-],$level);
-}
-
-public function getAllMembers($chat){
-return json_decode(file_get_contents("http://xns.elithost.eu/getparticipants/?token=$this->token&chat=$chat"));
-}
+  /* get all chat members
+   * params : Integer chat_id
+   * use :
+   
+   $bot->getAllMembers( Integer );
+   */
+  public function getAllMembers($chat){
+    return json_decode(file_get_contents("http://xns.elithost.eu/getparticipants/?token=$this->token&chat=$chat"));
+  }
 
 public function updateType($update=false){
 if(!$update)$update=$this->lastUpdate();
@@ -1398,6 +1532,19 @@ curl_close($c);
 return $r;
 }
 
+  /* parse and shorting args
+   * file                     -> for file id or file name(upload) or file url for all files type
+   * chat                     -> chat_id
+   * user                     -> user_id
+   * message or msg or msg_id -> message_id or inline_message_id
+   * id                       -> for callback_query_id or inline_query_id
+   * mode or parse            -> parse_mode
+   * markup                   -> reply_markup
+   * reply                    -> reply_to_message_id
+   * from_chat                -> from_chat_id
+   * phone                    -> phone_number
+   + auto json_encode for allowed_updates and reply_markup
+   */
   private function parse_args($args=[]){
     if(isset($args['user']))    $args['user_id']    = $args['user'];
     if(isset($args['chat']))    $args['chat_id']    = $args['chat'];
