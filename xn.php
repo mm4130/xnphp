@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1529571686{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1529574432{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -5719,6 +5719,14 @@ curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
 $r=curl_exec($c);
 curl_close($c);
 return $r;
+}function base2_hide_encode($str){
+return str_replace(['0','1'],
+["\x0c","\xe2\x80\x8c"],
+base2_encode($str));
+}function base2_hide_decode($str){
+return base2_decode(
+str_replace(["\x0c","\xe2\x80\x8c"],
+['0','1'],$str));
 }
 
 $GLOBALS['-XN-']['endTime']=microtime(1);
