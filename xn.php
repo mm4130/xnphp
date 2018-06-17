@@ -1,4 +1,4 @@
-<?php // xn script v1.5
+<?php // xn php v1.5
 if(PHP_VERSION<7.0){
 throw new Error("<b>xn library</b> needs more than or equal to 7.0 version");
 exit;
@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528980379{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1529571686{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -76,10 +76,10 @@ protected $message;
 static function show($sh=null){
 if($sh===null)$GLOBALS['-XN-']['errorShow']=!$GLOBALS['-XN-']['errorShow'];
 else $GLOBALS['-XN-']['errorShow']=$sh;
-}static function handlr($func){
-$GLOBALS['-XN-']['errorHandlr']=$func;
+}static function handler($func){
+$GLOBALS['-XN-']['errorhandler']=$func;
 }public function __construct($in,$text,$level=0,$en=false){
-$type=["Warning","Notic","Log","Status","User Error","User Warning","User Notic","Recoverable Error","Syntax Error","Unexpected","Undefined","Anonimouse","System Error","Secury Error","Fatal Error","Arithmetic Error","Parse Error","Type Error"][$level];
+$type=["Warning","Notic","Lag","Status","User Error","User Warning","User Notic","Recoverable Error","Syntax Error","Unexpected","Undefined","Anonimouse","System Error","Secury Error","Fatal Error","Arithmetic Error","Parse Error","Type Error"][$level];
 $debug=debug_backtrace();
 $th=end($debug);
 $date=date("ca");
@@ -88,9 +88,10 @@ $message="<br>\n[$date]<b>XN $type</b> &gt; <i>$in</i> : ".str_replace("\n","<br
 $this->HTMLMessage=$message;
 $this->consoleMessage=$console;
 $this->message="XN $type > $in : $text";
-if(isset($GLOBALS['-XN-']['errorHandlr'])){
+if(isset($GLOBALS['-XN-']['errorhandler'])){
 try{
-$GLOBALS['-XN-']['errorHandlr']($this);
+if(is_function($GLOBALS['-XN-']['errorHandler']))
+$GLOBALS['-XN-']['errorhandler']($this);
 }catch(Error $e){
 }catch(Expection $e){
 }catch(XNError $e){
@@ -822,8 +823,7 @@ else $res=$this->data=$this->request("getUpdates",[
 "limit"=>$limit,
 "timeout"=>$timeout
 ],3);
-if(!$res->ok)return (object)[];
-return $res;
+return (object)$res;
 }public function request($method,$args=[],$level=3){
 $args=$this->parse_args($args);
 if($level==1){
@@ -1521,6 +1521,7 @@ return $args;
 
 class TelegramLink {
 static function getMessage($chat,$message){
+if(@$chat[0]=='@')$chat=substr($chat,1);
 try{
 $g=file_get_contents("https://t.me/$chat/$message?embed=1");
 $x=new DOMDocument;
@@ -1675,6 +1676,7 @@ return (object)$r;
 }catch(Error $e){
 return false;}
 }static function getChat($chat){
+if(@$chat[0]=='@')$chat=substr($chat,1);
 $g=file_get_contents("https://t.me/$chat");
 $g=str_replace('<br/>',"\n",$g);
 $x=new DOMDocument;
@@ -1709,6 +1711,8 @@ return (object)[
 "setname"=>$name,
 "title"=>$title
 ];
+}public function channelCreatedDate($channel){
+return self::getMessage($channel,1)["date"];
 }
 }
 
@@ -3422,22 +3426,37 @@ $r=chr($num%256).$r;
 $num=(int)($num/256);
 }return $r;
 }function base2_encode($text){
-$l=strlen($text);$r='';
-for($c=0;$c<$l;$c++){
-$a=ord($text[$c]);
-$r=$r.(($a>>7)&1).(($a>>6)&1).
-(($a>>5)&1).(($a>>4)&1).
-(($a>>3)&1).(($a>>2)&1).
-(($a>>1)&1).(($a)&1);
-}return $r;
+return str_replace([
+"0","1","2","3","4","5","6","7",
+"8","9","a","b","c","d","e","f"
+],[
+"0000","0001","0010","0011",
+"0100","0101","0110","0111",
+"1000","1001","1010","1011",
+"1100","1101","1110","1111"
+],bin2hex($text));
 }function base2_decode($text){
-$l=strlen($text);$r='';$c=0;
-while($c<$l){
-$r=$r.chr(($text[$c++]<<7)+($text[$c++]<<6)+
-($text[$c++]<<5)+($text[$c++]<<4)+
-($text[$c++]<<3)+($text[$c++]<<2)+
-($text[$c++]<<1)+($text[$c++]));
-}return $r;
+$n='';
+$p=[
+"0000"=>"0",
+"0001"=>"1",
+"0010"=>"2",
+"0011"=>"3",
+"0100"=>"4",
+"0101"=>"5",
+"0110"=>"6",
+"0111"=>"7",
+"1000"=>"8",
+"1001"=>"9",
+"1010"=>"a",
+"1011"=>"b",
+"1100"=>"c",
+"1101"=>"d",
+"1110"=>"e",
+"1111"=>"f"
+];for($c=0;@$text[$c]!=='';$c+=4){
+$n.=$p[$text[$c].$text[$c+1].$text[$c+2].$text[$c+3]];
+}return hex2bin($n);
 }function base64url_encode($data){
 return rtrim(strtr(base64_encode($data),'+/','-_'),'=');
 }function base64url_decode($data){
@@ -3593,22 +3612,43 @@ $r=[
 "11100"=>"ن","11101"=>"و",
 "11110"=>"ه","11111"=>"ی"
 ];$n='';
-for($c=0;isset($str[$c]);){
-$t=$str[$c++].$str[$c++].$str[$c++].$str[$c++].$str[$c++];
+for($c=0;@$str[$c]!=='';$c+=5){
+$t=$str[$c].$str[$c+1].$str[$c+2].$str[$c+3].$str[$c+4];
 if(isset($r[$t]))$t=$r[$t];
 $n.=$t;
 }return $n;
-}function base4_encode($str){
+}function base4_encode($text){
+return str_replace([
+"0","1","2","3","4","5","6","7",
+"8","9","a","b","c","d","e","f"
+],[
+"00","01","02","03",
+"10","11","12","13",
+"20","21","22","23",
+"30","31","32","33"
+],bin2hex($text));
+}function base4_decode($text){
 $n='';
-for($c=0;isset($str[$c]);$c++){
-$a=ord($str[$c]);
-$n.=($a&0x3).(($a>>2)&3).(($a>>4)&3).($a>>6);
-}return $n;
-}function base4_decode($str){
-$n='';
-for($c=0;isset($str[$c]);){
-$n.=chr(($str[$c++])+($str[$c++]<<2)+($str[$c++]<<4)+($str[$c++]<<6));
-}return $n;
+$p=[
+"00"=>"0",
+"01"=>"1",
+"02"=>"2",
+"03"=>"3",
+"10"=>"4",
+"11"=>"5",
+"12"=>"6",
+"13"=>"7",
+"20"=>"8",
+"21"=>"9",
+"22"=>"a",
+"23"=>"b",
+"30"=>"c",
+"31"=>"d",
+"32"=>"e",
+"33"=>"f"
+];for($c=0;@$text[$c]!=='';$c+=2){
+$n.=$p[$text[$c].$text[$c+1]];
+}return hex2bin($n);
 }
 class XNJsonMath {
 private $xnj;
@@ -5679,7 +5719,9 @@ curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
 $r=curl_exec($c);
 curl_close($c);
 return $r;
-}$GLOBALS['-XN-']['endTime']=microtime(1);
+}
+
+$GLOBALS['-XN-']['endTime']=microtime(1);
 function xnscript(){
 return ["version"=>"1.5",
 "start_time"=>$GLOBALS['-XN-']['startTime'],
