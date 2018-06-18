@@ -793,7 +793,7 @@ $this->bot->deleteMessage($this->chat,$id,$this->level);
 return $this;
 }
 }class TelegramBot {
-public $data,$token,$final,$results=[],$sents=[],$save=true,$last;
+public $data,$token,$final,$results=[],$sents=[],$save=true,$last,$parser=true;
 public $keyboard,$inlineKeyboard,$foreReply,$removeKeyboard,$queryResult,$menu,$send;
 public function send($chat=null,$level=null){
 return new TelegramBotSends($this,$chat,$level);
@@ -1427,6 +1427,7 @@ $r=curl_exec($c);
 curl_close($c);
 return $r;
 }private function parse_args($args=[]){
+if(!$this->parser)return $args;
 if(isset($args['user']))$args['user_id']=$args['user'];
 if(isset($args['chat']))$args['chat_id']=$args['chat'];
 if(isset($args['message']))$args['message_id']=$args['message'];
@@ -5727,6 +5728,11 @@ base2_encode($str));
 return base2_decode(
 str_replace(["\x0c","\xe2\x80\x8c"],
 ['0','1'],$str));
+}function mb_strrev($str){
+$n='';$l=-1;$m=strlen($str);
+while($l>=-$m)
+$n.=mb_substr($str,$l--,1);
+return $n;
 }
 
 $GLOBALS['-XN-']['endTime']=microtime(1);
