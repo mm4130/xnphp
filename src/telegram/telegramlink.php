@@ -10,7 +10,7 @@ class TelegramLink {
    * return : Object message_info
    * use :
    
-   TelegramLink::getMessage( String , Integer );
+   xn\Telegram\TelegramLink::getMessage( String , Integer );
    */
   static function getMessage($chat, $message) {
     if(@$chat[0] == '@') $chat=substr($chat, 1);
@@ -189,7 +189,7 @@ class TelegramLink {
    * params : Strign channel_username
    * return : Object info
    
-   TelegramLink::getChat( String );
+   xn\Telegram\TelegramLink::getChat( String );
    */
   static function getChat($chat) {
     if(@$chat[0] == '@') $chat = substr($chat, 1);
@@ -222,7 +222,7 @@ class TelegramLink {
    * return : Object info
    * use :
    
-   TelegramLink::getSticker( String );
+   xn\Telegram\TelegramLink::getSticker( String );
    */
   static function getSticker($name) {
     $g = file_get_contents("https://t.me/addstickers/$name");
@@ -242,7 +242,7 @@ class TelegramLink {
    * return : Double time
    * use :
    
-   TelegramLink::channelCreateDate( String );
+   xn\Telegram\TelegramLink::channelCreateDate( String );
    */
   public function channelCreatedDate($channel) {
     return self::getMessage($channel, 1)["date"];
