@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1529650870{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1529651222{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -5725,15 +5725,18 @@ $z[]=$l=native_single($x);
 return $z;
 }class XNClosure {
 protected $closure;
-public function __construct($paramwhye73gra87wg7rihwtg6r97agw4iug,...$parswhye73gra87wg7rihwtg6r97agw4iug){
-if(is_closure($paramwhye73gra87wg7rihwtg6r97agw4iug)&&count($parswhye73gra87wg7rihwtg6r97agw4iug)>0)
+public function __construct($paramwhye73gra87wg7rihwtg6r97agw4iug=false,...$parswhye73gra87wg7rihwtg6r97agw4iug){
+if(!$paramwhye73gra87wg7rihwtg6r97agw4iug)$this->closure=function(){};
+elseif(is_closure($paramwhye73gra87wg7rihwtg6r97agw4iug)&&count($parswhye73gra87wg7rihwtg6r97agw4iug)>0)
 $this->closure=function(...$pwhye73gra87wg7rihwtg6r97agw4iug)use($paramwhye73gra87wg7rihwtg6r97agw4iug,$parswhye73gra87wg7rihwtg6r97agw4iug){
 $rwhye73gra87wg7rihwtg6r97agw4iug=[$paramwhye73gra87wg7rihwtg6r97agw4iug(...$pwhye73gra87wg7rihwtg6r97agw4iug)];
 foreach($parswhye73gra87wg7rihwtg6r97agw4iug as $parwhye73gra87wg7rihwtg6r97agw4iug)$rwhye73gra87wg7rihwtg6r97agw4iug[]=$parwhye73gra87wg7rihwtg6r97agw4iug(...$pwhye73gra87wg7rihwtg6r97agw4iug);
 return $rwhye73gra87wg7rihwtg6r97agw4iug;
-};
-elseif(is_closure($paramwhye73gra87wg7rihwtg6r97agw4iug))$this->closure=$paramwhye73gra87wg7rihwtg6r97agw4iug;
-elseif(is_string($paramwhye73gra87wg7rihwtg6r97agw4iug)||
+};elseif(is_closure($paramwhye73gra87wg7rihwtg6r97agw4iug))$this->closure=$paramwhye73gra87wg7rihwtg6r97agw4iug;
+elseif(is_string($paramwhye73gra87wg7rihwtg6r97agw4iug)&&file_exists($paramwhye73gra87wg7rihwtg6r97agw4iug))
+$this->closure=function(...$pwhye73gra87wg7rihwtg6r97agw4iug)use($paramwhye73gra87wg7rihwtg6r97agw4iug){
+return ($paramwhye73gra87wg7rihwtg6r97agw4iug)(...$pwhye73gra87wg7rihwtg6r97agw4iug);
+};elseif(is_string($paramwhye73gra87wg7rihwtg6r97agw4iug)||
        is_int($paramwhye73gra87wg7rihwtg6r97agw4iug)||
        is_bool($paramwhye73gra87wg7rihwtg6r97agw4iug)||
        (is_object($paramwhye73gra87wg7rihwtg6r97agw4iug)&&!method_exists($paramwhye73gra87wg7rihwtg6r97agw4iug,"__invoke"))||
@@ -5767,6 +5770,19 @@ return ($this->closure)(...$p);
 $closure=$this->closure;
 if($p)$this->__construct($p);
 return $closure;
+}public function call(...$p){
+return ($this->closure)(...$p);
+}public function callArray($p){
+if(!is_array($p))return ($this->closure)($p);
+return ($this->closure)(...$p);
+}public function whileCall($c,...$p){
+while($c-->0)($this->closure)(...$p);
+}public function whileCallArray($c,$p){
+while($c-->0)$this->callArray($p);
+}public function __clone(){
+return new XNClosure($this->closure);
+}public function clone(){
+return new XNClosure($this->closure);
 }
 }function XNClosure(...$param){
 return new XNClosure(...$param);
