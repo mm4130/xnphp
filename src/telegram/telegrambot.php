@@ -738,14 +738,22 @@ class TelegramBot {
       // $sents : all requests method and args
          $sents = [],
       /* $save
-       * If it is empty, less memory is consumed and $results ,$sents ,$data methods disabled
+       * If it is False, less memory is consumed and $results ,$sents ,$data methods disabled
        * use :
        
          $bot->save = false; // inactive
          $bot->save = true ; // active
        */
          $save = true,
-         $last;
+         $last,
+      /* $parser
+       * If it is True, parsing args is working
+       * use :
+       
+         $bot->last = false; // inactive
+         $bot->last = true ; // active
+       */
+         $parser = true;
   public $keyboard,
          $inlineKeyboard,
          $foreReply,
@@ -1443,6 +1451,17 @@ class TelegramBot {
     ], $level);
   }
 
+  /* download file by file_path
+   * params : String file_path,
+              Integer level = 3,
+                      3 : Telegram
+                      5 : PWRTelegram
+              Boolean speed = false
+   * use :
+   
+     $file_path = $bot->getFile($file_id)->result->file_path;
+     $file_contents = $bot->readFile($file_path);
+   */
   public function readFile($path, $level = 3, $speed = false) {
     if($speed) $func = "fget";
     else $func = "file_get_contents";
@@ -1452,9 +1471,38 @@ class TelegramBot {
       return ($func) ("https://api.pwrtelegram.xyz/file/bot$this->token/$path");
     }else return false;
   }
+  /* auto download file_id
+   * params : String file_id,
+              Integer level = 3
+                      3 : Telegram
+                      5 : PWRTelegram
+   * use :
+   
+   $bot->downloadFile( Strign , Level );
+   */
   public function downloadFile($file, $level = 3) {
     return $this->readFile($this->getFile($file, 3)->result->file_path, $level);
   }
+  /* downloadFileProgress
+   * params : String file_id,
+              Object(Closure) action(input params),
+              Integer offset_download, // for example run for any 20kb(20480000) downloading
+              Integer level = 3
+                      3 : Telegram
+                      5 : PWRTelegram
+   * input params : Object data {
+                      String data, // downloaded data
+                      Integer downloaded, // downloaded size (b)
+                      Integer size, // file size (b)
+                      Double time, // time spent for download
+                      Double endtime, // time remaining download
+                      Double speed, // download every second (b/s)
+                      Double pre // downloaded percentage
+                    }
+   * use :
+     
+     $bot->downloadFileProgress( String , Object(Closure) , Integer , Integer );
+   */
   public function downloadFileProgress($file, $func, $al, $level = 3) {
     $file=$this->request("getFile", [
       "file_id" => $file
@@ -1508,6 +1556,17 @@ class TelegramBot {
     return json_decode(file_get_contents("http://xns.elithost.eu/getparticipants/?token=$this->token&chat=$chat"));
   }
 
+  /* type for upadate :
+     message
+     callback_query
+     chosen_inline_result
+     inline_query
+     chanel_post
+     edited_channel_post
+     shipping_query
+     pre_checkout_query
+     unknow_update
+   */
   public function updateType($update=false){
     if(! $update) $update = $this->lastUpdate();
     if(isset($update->message))
@@ -1530,9 +1589,22 @@ class TelegramBot {
       return "pre_checkout_query";
     return "unknow_update";
   }
+  /* update in type
+   $bot->update()->{$bot->updateType()} === $bot->getUpdateInType()
+   */
   public function getUpdateInType($update=false){
     return ($update? $update: $this->lastUpdate())->{$this->updateType()};
   }
+  /* read updates ( by getUpdates method )
+   * you can use this for server (not need ip)
+   * params : Object(Closure) updates_action(update),
+              Integer while   = 0, // 0 = INF
+              Integer limit   = 1, // 0 = INF
+              Integer timeout = 0  // 0 = INF
+   * use :
+   
+     $bot->readUpdates( Object(Closure) , Integer , Integer , Integer );
+   */
   public function readUpdates($func, $while = 0, $limit = 1, $timeout = 0) {
     if($while == 0) $while = -1;
     $offset = 0;
@@ -1551,18 +1623,21 @@ class TelegramBot {
       }
     }
   }
+  // update is in filter updates -> exit;
   public function filterUpdates($filter = [], $func = false) {
     if(in_array($this->updateType(), $filter)) {
       if($func)$func($this->data);
       exit();
     }
   }
+  // update not is in unfilter updates -> exit;
   public function unfilterUpdates($filter = [], $func = false) {
     if(!in_array($this->updateType(), $filter)) {
       if($func)$func($this->data);
       exit();
     }
   }
+  // seach user&chat in update
   public function getUser($update = false) {
     $update = $this->getUpdateInType($update);
     if(! isset($update->chat)) return (object)[
@@ -1574,35 +1649,41 @@ class TelegramBot {
       "from" => $update->from
     ];
   }
+  // search date in update
   public function getDate($update = false) {
     $update = $this->getUpdateInType($update);
     if(isset($update->date)) return $update->date;
     return false;
   }
+  // search data in update
   public function getData($update = false) {
     $update = $this->getUpdateInType($update);
     if(isset($update->text))  return $update->text;
     if(isset($update->query)) return $update->query;
     return false;
   }
+  // search chat_id and equal to your input
   public function isChat($user, $update = false) {
     $chat = $this->getUser($update)->chat->id;
     if(is_array($user) && in_array($chat, $user)) return true;
     elseif($user == $chat)return true;
     return false;
   }
+  // return last Update
   public function lastUpdate() {
     $update = $this->update();
     if(isset($update->update_id))return $update;
     elseif(isset($update->result[0]->update_id)) return $update->result[0];
     else return [];
   }
+  // return all Updates
   public function getUpdates() {
     $update = $this->update(0, 999999999999, 0);
     if(isset($update->update_id)) return [$update];
     elseif($update->result[0]->update_id) return $update->result;
     else return [];
   }
+  // return lastUpdateId
   public function lastUpdateId($update = false){
     if(! $update) $update = $this->update(-1, 1, 0);
     if($update->result[0]->update_id)
@@ -1611,6 +1692,16 @@ class TelegramBot {
       return $update->update_id;
     else return 0;
   }
+  /* search file in message and return file type :
+     photo
+     voice
+     audio
+     video
+     sticker
+     document
+     videonote
+     false // message not have file
+   */
   public function fileType($message = false) {
     if(!     $message && isset($this->lastUpdate()->message)) $message = $this->lastUpdate()->message;
     elseif(! $message)               return false;
@@ -1623,6 +1714,9 @@ class TelegramBot {
     if( isset($message->video_note)) return "videonote";
     return false;
   }
+  /* search file and return file Object
+     false -> message not have file
+   */
   public function fileInfo($message = false) {
     if(!     $message && isset($this->lastUpdate()->message))$message = $this->lastUpdate()->message;
     elseif(! $message)              return false;
@@ -1635,12 +1729,32 @@ class TelegramBot {
     if(isset($message->video_note)) return $message->video_note;
     return false;
   }
+  // return exists file in message
   public function isFile($message = false) {
     if(!     $message && isset($this->lastUpdate()->message))$message = $this->lastUpdate()->message;
     elseif(! $message)       return false;
     if(      $message->text) return false;
     return true;
   }
+  /* convert file (type and name)
+   * params : String file_id,
+              String file_type,
+                     document
+                     photo
+                     video
+                     video_note|videonote
+                     voice
+                     audio
+                     sticker
+              String file_name
+              String chat_id, // thumb or destination
+              Integer level = 3
+                      3 : Telegram
+                      5 : PWRTelegram
+   * use :
+   
+   $bot->convertFile( String , String , String , String , Level );
+   */
   public function convertFile($file, $type, $name, $chat, $level = 3) {
     if(file_exists($name)) $read = file_get_contents($name);
     else $read = false;
@@ -1650,6 +1764,13 @@ class TelegramBot {
     if($read !== false) file_put_contents($name, $read);
     return $r;
   }
+  /* send updates to more Scripts ( Webhook Webservice )
+   * params : String url, // script address
+              Object update
+   * use :
+   
+   $bot->sendUpdate( String , Update );
+   */
   public function sendUpdate($url, $update = false) {
     if($update === false) $update = $this->update();
     $c = curl_init($url);
@@ -1675,6 +1796,7 @@ class TelegramBot {
    + auto json_encode for allowed_updates and reply_markup
    */
   private function parse_args($args=[]){
+    if(! $this->parser) return $args;
     if(isset($args['user']))    $args['user_id']    = $args['user'];
     if(isset($args['chat']))    $args['chat_id']    = $args['chat'];
     if(isset($args['message'])) $args['message_id'] = $args['message'];
