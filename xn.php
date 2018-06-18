@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1529574432{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1529650870{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -219,6 +219,8 @@ echo substr($l[$p++],2);
 }
 }function evalc($code){
 return eval('return '.$code.';');
+}function evald($code){
+return eval($code);
 }function is_function($f){
 return (is_string($f)&&function_exists($f))||(is_object($f)&&($f instanceof Closure));
 }function is_closure($f){
@@ -596,7 +598,7 @@ return $this;
 $this->bot=$bot;
 $this->chat=$chat;
 $this->level=$level;
-}public function __wakeup($chat=null,$level=null){
+}public function __invoke($chat=null,$level=null){
 if($chat&&$level){
 $this->chat=$chat;
 $this->level=$level;
@@ -2814,47 +2816,6 @@ return @$cipher->decrypt($msg);
 }
 class XNTelegram {
 private $servers = [];
-}function var_info($var){
-$res=[];
-$type=gettype($var);
-switch($type){
-case "string":
-if(is_json($var)){
-$res["type"]="string";
-$res["short_type"]="str";
-$res["json"]=true;
-if($var=="{}"||$var=="[]")$res["length"]=0;
-else $res["length"]=countin($var,'","')+1;
-}else{
-$res["type"]="string";
-$res["short_type"]="str";
-$res["json"]=false;
-$res["length"]=strlen($var);
-}break;case "integer":
-$res["type"]="integer";
-$res["short_type"]="int";
-break;case "float":
-$res["type"]=$res["short_type"]="float";
-break;case "double":
-$res["type"]=$res["short_type"]="double";
-break;case "boolean":
-$res["type"]="boolean";
-$res["short_type"]="bool";
-break;case "NULL":
-$res["type"]="NULL";
-$res["short_type"]="null";
-break;case "array":
-$res["type"]=$res["short_type"]="array";
-$res["length"]=count($array);
-break;case "object":
-if(is_function($var)){
-
-}else{
-
-}break;default:
-new XNError("var_info","type invalid",1);
-return false;
-}return (object)$res;
 }function var_get($var){
 $t=debug_backtrace();
 $l=file($t[0]['file']);
@@ -5729,10 +5690,88 @@ return base2_decode(
 str_replace(["\x0c","\xe2\x80\x8c"],
 ['0','1'],$str));
 }function mb_strrev($str){
-$n='';$l=-1;$m=strlen($str);
+$n='';$l=-1;$m=mb_strlen($str);
 while($l>=-$m)
 $n.=mb_substr($str,$l--,1);
 return $n;
+}function native_single($x){
+if($x<0)return -native_single(-$x);
+if($x==0||$x==1)return $x;
+if($x%2==0)return 2;
+$y=floor(sqrt($x));
+for($c=3;$c<=$y;$c+=2)
+if($x%$c==0)return $c;
+return $x;
+}
+function all_natives($x){
+if($x<0)return all_natives(-$x);
+$r=[];
+if($x==0||$x==1)return [$x];
+$r[]=1;
+if($x%2==0)$r[]=2;
+$y=floor(sqrt($x));
+for($c=3;$c<=$y;$c+=2)
+if($x%$c==0){
+$r[]=$c;
+$r[]=$x/$c;
+}if($x%2==0&&!in_array($x/2,$r))$r[]=$x/2;
+$r[]=$x;
+return $r;
+}
+function native_tree($x){
+$z=[$l=native_single($x)];
+while(($x/=$l)>1)
+$z[]=$l=native_single($x);
+return $z;
+}class XNClosure {
+protected $closure;
+public function __construct($paramwhye73gra87wg7rihwtg6r97agw4iug,...$parswhye73gra87wg7rihwtg6r97agw4iug){
+if(is_closure($paramwhye73gra87wg7rihwtg6r97agw4iug)&&count($parswhye73gra87wg7rihwtg6r97agw4iug)>0)
+$this->closure=function(...$pwhye73gra87wg7rihwtg6r97agw4iug)use($paramwhye73gra87wg7rihwtg6r97agw4iug,$parswhye73gra87wg7rihwtg6r97agw4iug){
+$rwhye73gra87wg7rihwtg6r97agw4iug=[$paramwhye73gra87wg7rihwtg6r97agw4iug(...$pwhye73gra87wg7rihwtg6r97agw4iug)];
+foreach($parswhye73gra87wg7rihwtg6r97agw4iug as $parwhye73gra87wg7rihwtg6r97agw4iug)$rwhye73gra87wg7rihwtg6r97agw4iug[]=$parwhye73gra87wg7rihwtg6r97agw4iug(...$pwhye73gra87wg7rihwtg6r97agw4iug);
+return $rwhye73gra87wg7rihwtg6r97agw4iug;
+};
+elseif(is_closure($paramwhye73gra87wg7rihwtg6r97agw4iug))$this->closure=$paramwhye73gra87wg7rihwtg6r97agw4iug;
+elseif(is_string($paramwhye73gra87wg7rihwtg6r97agw4iug)||
+       is_int($paramwhye73gra87wg7rihwtg6r97agw4iug)||
+       is_bool($paramwhye73gra87wg7rihwtg6r97agw4iug)||
+       (is_object($paramwhye73gra87wg7rihwtg6r97agw4iug)&&!method_exists($paramwhye73gra87wg7rihwtg6r97agw4iug,"__invoke"))||
+       (is_array($paramwhye73gra87wg7rihwtg6r97agw4iug)&&!isset($paramwhye73gra87wg7rihwtg6r97agw4iug['code'])&&!isset($paramwhye73gra87wg7rihwtg6r97agw4iug['file'])))
+$this->closure=function()use($paramwhye73gra87wg7rihwtg6r97agw4iug){return $paramwhye73gra87wg7rihwtg6r97agw4iug;};
+elseif(is_object($paramwhye73gra87wg7rihwtg6r97agw4iug))$this->closure=function()use($paramwhye73gra87wg7rihwtg6r97agw4iug){return $paramwhye73gra87wg7rihwtg6r97agw4iug();};
+elseif(is_array($paramwhye73gra87wg7rihwtg6r97agw4iug)){
+$uwhye73gra87wg7rihwtg6r97agw4iug=$pwhye73gra87wg7rihwtg6r97agw4iug='';
+if(isset($paramwhye73gra87wg7rihwtg6r97agw4iug['parameter'])&&count($paramwhye73gra87wg7rihwtg6r97agw4iug['parameter'])>0)
+$pwhye73gra87wg7rihwtg6r97agw4iug="$".implode(',$',$paramwhye73gra87wg7rihwtg6r97agw4iug['parameter']);
+if(isset($paramwhye73gra87wg7rihwtg6r97agw4iug['usage'])&&count($paramwhye73gra87wg7rihwtg6r97agw4iug['usage'])>0){
+foreach($paramwhye73gra87wg7rihwtg6r97agw4iug['usage'] as $keywhye73gra87wg7rihwtg6r97agw4iug=>$valwhye73gra87wg7rihwtg6r97agw4iug){
+$uwhye73gra87wg7rihwtg6r97agw4iug.=",&$$keywhye73gra87wg7rihwtg6r97agw4iug";
+${$keywhye73gra87wg7rihwtg6r97agw4iug}=$valwhye73gra87wg7rihwtg6r97agw4iug;
+}$uwhye73gra87wg7rihwtg6r97agw4iug=substr($uwhye73gra87wg7rihwtg6r97agw4iug,1);
+}if(!isset($paramwhye73gra87wg7rihwtg6r97agw4iug['code']))$paramwhye73gra87wg7rihwtg6r97agw4iug['code']='';
+if(isset($paramwhye73gra87wg7rihwtg6r97agw4iug['file']))$paramwhye73gra87wg7rihwtg6r97agw4iug['code'].=fget($paramwhye73gra87wg7rihwtg6r97agw4iug['file']);
+$funcwhye73gra87wg7rihwtg6r97agw4iug="function($pwhye73gra87wg7rihwtg6r97agw4iug)";
+if($uwhye73gra87wg7rihwtg6r97agw4iug)$funcwhye73gra87wg7rihwtg6r97agw4iug.="use($uwhye73gra87wg7rihwtg6r97agw4iug)";
+$funcwhye73gra87wg7rihwtg6r97agw4iug.="{
+".$paramwhye73gra87wg7rihwtg6r97agw4iug['code']."
+}";
+var_dump("$funcwhye73gra87wg7rihwtg6r97agw4iug");
+$this->closure=eval("return $funcwhye73gra87wg7rihwtg6r97agw4iug;");
+}
+}public function __toString(){
+return array_read(($this->closure)(null));
+}public function __invoke(...$p){
+return ($this->closure)(...$p);
+}public function closure($p=false){
+$closure=$this->closure;
+if($p)$this->__construct($p);
+return $closure;
+}
+}function XNClosure(...$param){
+return new XNClosure(...$param);
+}function XNFunction(...$param){
+return new XNClosure(...$param);
 }
 
 $GLOBALS['-XN-']['endTime']=microtime(1);
