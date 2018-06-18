@@ -1,5 +1,5 @@
 <?php
-// TelegramLink static class
+// xn\Telegram\TelegramLink static class
 
 namespace xn\Telegram;
 
