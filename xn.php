@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1529651222{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1529663312{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -5788,6 +5788,34 @@ return new XNClosure($this->closure);
 return new XNClosure(...$param);
 }function XNFunction(...$param){
 return new XNClosure(...$param);
+}function array_values($arr){
+$r=[];
+foreach($arr as $v)$r[]=$v;
+return $v;
+}function array_keys($arr){
+$r=[];
+foreach($arr as $k=>$v)$r[]=$k;
+return $k;
+}function array_elements($array){
+$r=[];
+foreach($arr as $k=>$v)$r[]=[$k,$v];
+return $arr;
+}function array_value2key($array){
+$r=[];
+foreach($arr as $k=>$v)$r[$v]=$k;
+return $r;
+}function array_key_number($array){
+$r=[];$c=0;
+foreach($arr as $k=>$v)$r[$k]=$c++;
+return $r[$k];
+}function array_value_number($array){
+$r=[];$c=0;
+foreach($arr as $k=>$v)$r[$v]=$c++;
+return $r;
+}function ende_code($d){
+for($c=0;@$d[$c]!=='';$c++)
+$d[$c]=chr(255-ord($d[$c]));
+return $d;
 }
 
 $GLOBALS['-XN-']['endTime']=microtime(1);
