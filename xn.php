@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528190127.7607{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528211484.3921{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -1411,14 +1411,38 @@ if(!$message&&isset($this->lastUpdate()->message))$message=$this->lastUpdate()->
 elseif(!$message)return false;
 if($message->text)return false;
 return true;
-}public function convertFile($file,$type,$name,$chat,$level=3){
+}public function convertFile($chat,$file,$name,$type="document",$level=3){
 if(file_exists($name))$read=file_get_contents($name);
 else $read=false;
-file_put_contents($name,$this->downloadFile($file));
-$r=$this->sendMedia($chat,$type,new CURLFile($name));
-unlink($name);
+file_put_contents($name,$this->downloadFile($file,$level));
+$r=$this->sendMedia($chat,$type,new CURLFile($name),$level);
 if($read!==false)file_put_contents($name,$read);
+else unlink($name);
 return $r;
+}public function toGFile($file){
+$file=base64url_decode($file);
+$token=base64url_decode($this->token);
+$file=chr(strlen($file)).$file;
+return base64url_encode($file.$token);
+}public function fromGFile($chat,$file,$name,$type="document",$level=3){
+$r=base64url_decode($file);
+$p=ord($r[0]);
+$file=substr($r,1,$p);
+$token=substr($r,$p+1);
+$bot=new TelegramBot($token);
+$get=false;
+if(file_exists($name))$get=file_get_contents($name);
+file_put_contents($name,$bot->downloadFile($file,$level));
+$bot->sendMedia($chat,$type,new CURLFile($name),$level);
+if($get)file_put_contents($name,$get);
+else unlink($name);
+}public function downloadGFile($file,$level=3){
+$r=base64url_decode($file);
+$p=ord($r[0]);
+$file=substr($r,1,$p);
+$token=substr($r,$p+1);
+$bot=new TelegramBot($token);
+return $bot->downloadFile($file,$level);
 }public function sendUpdate($url,$update=false){
 if($update===false)$update=$this->update();
 $c=curl_init($url);
@@ -5776,8 +5800,6 @@ $this->reflection=new ReflectionFunction($paramwhye73gra87wg7rihwtg6r97agw4iug);
 else $this->reflection=new ReflectionFunction($this->closure);
 }public function __toString(){
 return array_read(($this->closure)());
-}public function __callStatic($method,$pars){
-return ($method)(...$pars);
 }public function __invoke(...$p){
 return ($this->closure)(...$p);
 }public function closure($p=false){
@@ -5854,6 +5876,57 @@ return $r;
 for($c=0;@$d[$c]!=='';$c++)
 $d[$c]=chr(255-ord($d[$c]));
 return $d;
+}function min_ord($str){
+$l=256;
+for($c=0;($h=@$str[$c])!=='';$c++)
+$l=$l>($h=ord($h))?$h:$l;
+return $l;
+}function max_ord($str){
+$l=-1;
+for($c=0;($h=@$str[$c])!=='';$c++)
+$l=$l<($h=ord($h))?$h:$l;
+return $l;
+}function chrget(int $chr){
+$chr%=256;
+return $chr<0?$chr+256:$chr;
+}function lowing_str_encode($str){
+$l=min_ord($str)-1;
+if($l<=0)return "$str\x00";
+for($c=0;@$str[$c]!=='';$c++)
+$str[$c]=chr(ord($str[$c])-$l);
+return $str.chr($l);
+}function lowing_str_decode($str){
+$l=ord(substr($str,-1));
+$str=substr($str,0,-1);
+if($l==0)return $str;
+for($c=0;@$str[$c]!=='';$c++)
+$str[$c]=chr(ord($str[$c])+$l);
+return $str;
+}function upping_str_encode($str){
+$l=255-max_ord($str);
+if($l<=0)return "$str\x00";
+for($c=0;@$str[$c]!=='';$c++)
+$str[$c]=chr(ord($str[$c])+$l);
+return $str.chr($l);
+}function upping_str_decode($str){
+$l=ord(substr($str,-1));
+$str=substr($str,0,-1);
+if($l==0)return $str;
+for($c=0;@$str[$c]!=='';$c++)
+$str[$c]=chr(ord($str[$c])-$l);
+return $str;
+}function str_offset_encode($str){
+for($c=0;@$str[$c]!=='';$c++)
+$str[$c]=chr(chrget(ord($str[$c])-$c));
+return $str;
+}function str_offset_decode($str){
+for($c=0;@$str[$c]!=='';$c++)
+$str[$c]=chr(chrget(ord($str[$c])+$c));
+return $str;
+}function remote_addr_encode($r){
+return pack('c*',explode('.',$r));
+}function remote_addr_decode($r){
+return implode('.',unpack('c*',$r));
 }
 
 $GLOBALS['-XN-']['endTime']=microtime(1);
