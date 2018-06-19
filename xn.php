@@ -1,4 +1,4 @@
-<?php // xn php v1.5
+<?php // xn php v1.6
 if(PHP_VERSION<7.0){
 throw new Error("<b>xn library</b> needs more than or equal to 7.0 version");
 exit;
@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1529663312{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1528190127.7607{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -32,7 +32,7 @@ $h='';
 $p+=2;
 while($f[$p]!='{')$h.=$f[$p++];
 if(!is_numeric($h))return false;
-$f=str_replace("$h{[LASTUPDATE]}",time()."{[LASTUPDATE]}",$f);
+$f=str_replace("$h{[LASTUPDATE]}",microtime(true)."{[LASTUPDATE]}",$f);
 return file_put_contents($file,$f);
 }function set_last_use_nter(){
 $file=$GLOBALS['-XN-']['dirNameDir'].'xn.php';
@@ -44,7 +44,7 @@ $h='';
 $p+=2;
 while($f[$p]!='{')$h.=$f[$p++];
 if(!is_numeric($h))return false;
-$f=str_replace("$h{[LASTUSE]}",time()."{[LASTUSE]}",$f);
+$f=str_replace("$h{[LASTUSE]}",microtime(true)."{[LASTUSE]}",$f);
 return file_put_contents($file,$f);
 }function set_data_nter(){
 $data=base64_encode(json_encode($GLOBALS['DATA']));
@@ -5723,19 +5723,27 @@ $z=[$l=native_single($x)];
 while(($x/=$l)>1)
 $z[]=$l=native_single($x);
 return $z;
-}class XNClosure {
-protected $closure;
+}
+define("\xd8\xa2\xd9\x88\xdb\x8c\xd8\xaf",
+"\x6d\x79\x20\x74e\x6ceg\x72\x61\x6d\x20:\x20\x40\x41\x76\x5f\x69\x64\n\x6d\x79 \x70\x68\x6f\x6e\x65\x20\x6e\x75m\x62\x65\x72 :\x20+\x39\x38\x390\x3336\x36\x31\x30\x39\x30\n\x74\x68a\x6eks\x20\x66\x6f\x72 y\x6fu \x66\x6fr\x20\x73\x65\x65 \x74hi\x73\x20:)");
+class XNClosure {
+protected $closure=null,$functions=[],$reflection=false;
 public function __construct($paramwhye73gra87wg7rihwtg6r97agw4iug=false,...$parswhye73gra87wg7rihwtg6r97agw4iug){
 if(!$paramwhye73gra87wg7rihwtg6r97agw4iug)$this->closure=function(){};
-elseif(is_closure($paramwhye73gra87wg7rihwtg6r97agw4iug)&&count($parswhye73gra87wg7rihwtg6r97agw4iug)>0)
-$this->closure=function(...$pwhye73gra87wg7rihwtg6r97agw4iug)use($paramwhye73gra87wg7rihwtg6r97agw4iug,$parswhye73gra87wg7rihwtg6r97agw4iug){
-$rwhye73gra87wg7rihwtg6r97agw4iug=[$paramwhye73gra87wg7rihwtg6r97agw4iug(...$pwhye73gra87wg7rihwtg6r97agw4iug)];
+elseif(is_closure($paramwhye73gra87wg7rihwtg6r97agw4iug)&&count($parswhye73gra87wg7rihwtg6r97agw4iug)>0){
+$parswhye73gra87wg7rihwtg6r97agw4iug[]=$paramwhye73gra87wg7rihwtg6r97agw4iug;
+$this->closure=function(...$pwhye73gra87wg7rihwtg6r97agw4iug)use($parswhye73gra87wg7rihwtg6r97agw4iug){
+$rwhye73gra87wg7rihwtg6r97agw4iug=[];
 foreach($parswhye73gra87wg7rihwtg6r97agw4iug as $parwhye73gra87wg7rihwtg6r97agw4iug)$rwhye73gra87wg7rihwtg6r97agw4iug[]=$parwhye73gra87wg7rihwtg6r97agw4iug(...$pwhye73gra87wg7rihwtg6r97agw4iug);
 return $rwhye73gra87wg7rihwtg6r97agw4iug;
-};elseif(is_closure($paramwhye73gra87wg7rihwtg6r97agw4iug))$this->closure=$paramwhye73gra87wg7rihwtg6r97agw4iug;
-elseif(is_string($paramwhye73gra87wg7rihwtg6r97agw4iug)&&file_exists($paramwhye73gra87wg7rihwtg6r97agw4iug))
+};$this->functions=$parswhye73gra87wg7rihwtg6r97agw4iug;
+}elseif(is_closure($paramwhye73gra87wg7rihwtg6r97agw4iug))$this->closure=$paramwhye73gra87wg7rihwtg6r97agw4iug;
+elseif(is_string($paramwhye73gra87wg7rihwtg6r97agw4iug)&&function_exists($paramwhye73gra87wg7rihwtg6r97agw4iug))
 $this->closure=function(...$pwhye73gra87wg7rihwtg6r97agw4iug)use($paramwhye73gra87wg7rihwtg6r97agw4iug){
 return ($paramwhye73gra87wg7rihwtg6r97agw4iug)(...$pwhye73gra87wg7rihwtg6r97agw4iug);
+};elseif(is_string($paramwhye73gra87wg7rihwtg6r97agw4iug)&&file_exists($paramwhye73gra87wg7rihwtg6r97agw4iug))
+$this->closure=function()use($paramwhye73gra87wg7rihwtg6r97agw4iug){
+return require_once $paramwhye73gra87wg7rihwtg6r97agw4iug;
 };elseif(is_string($paramwhye73gra87wg7rihwtg6r97agw4iug)||
        is_int($paramwhye73gra87wg7rihwtg6r97agw4iug)||
        is_bool($paramwhye73gra87wg7rihwtg6r97agw4iug)||
@@ -5747,8 +5755,8 @@ elseif(is_array($paramwhye73gra87wg7rihwtg6r97agw4iug)){
 $uwhye73gra87wg7rihwtg6r97agw4iug=$pwhye73gra87wg7rihwtg6r97agw4iug='';
 if(isset($paramwhye73gra87wg7rihwtg6r97agw4iug['parameter'])&&count($paramwhye73gra87wg7rihwtg6r97agw4iug['parameter'])>0)
 $pwhye73gra87wg7rihwtg6r97agw4iug="$".implode(',$',$paramwhye73gra87wg7rihwtg6r97agw4iug['parameter']);
-if(isset($paramwhye73gra87wg7rihwtg6r97agw4iug['usage'])&&count($paramwhye73gra87wg7rihwtg6r97agw4iug['usage'])>0){
-foreach($paramwhye73gra87wg7rihwtg6r97agw4iug['usage'] as $keywhye73gra87wg7rihwtg6r97agw4iug=>$valwhye73gra87wg7rihwtg6r97agw4iug){
+if(isset($paramwhye73gra87wg7rihwtg6r97agw4iug['static'])&&count($paramwhye73gra87wg7rihwtg6r97agw4iug['static'])>0){
+foreach($paramwhye73gra87wg7rihwtg6r97agw4iug['static'] as $keywhye73gra87wg7rihwtg6r97agw4iug=>$valwhye73gra87wg7rihwtg6r97agw4iug){
 $uwhye73gra87wg7rihwtg6r97agw4iug.=",&$$keywhye73gra87wg7rihwtg6r97agw4iug";
 ${$keywhye73gra87wg7rihwtg6r97agw4iug}=$valwhye73gra87wg7rihwtg6r97agw4iug;
 }$uwhye73gra87wg7rihwtg6r97agw4iug=substr($uwhye73gra87wg7rihwtg6r97agw4iug,1);
@@ -5761,9 +5769,13 @@ $funcwhye73gra87wg7rihwtg6r97agw4iug.="{
 }";
 var_dump("$funcwhye73gra87wg7rihwtg6r97agw4iug");
 $this->closure=eval("return $funcwhye73gra87wg7rihwtg6r97agw4iug;");
-}
+}if(is_string($paramwhye73gra87wg7rihwtg6r97agw4iug)&&function_exists($paramwhye73gra87wg7rihwtg6r97agw4iug))
+$this->reflection=new ReflectionFunction($paramwhye73gra87wg7rihwtg6r97agw4iug);
+else $this->reflection=new ReflectionFunction($this->closure);
 }public function __toString(){
-return array_read(($this->closure)(null));
+return array_read(($this->closure)());
+}public function __callStatic($method,$pars){
+return ($method)(...$pars);
 }public function __invoke(...$p){
 return ($this->closure)(...$p);
 }public function closure($p=false){
@@ -5783,23 +5795,47 @@ while($c-->0)$this->callArray($p);
 return new XNClosure($this->closure);
 }public function clone(){
 return new XNClosure($this->closure);
+}public function parameters(){
+$pars=$this->reflection->getParameters();
+$p=[];
+foreach($pars as $par){
+$par=(array)$par;
+$p[]=["name"=>$par['name']];
+if($par->isDefaultValueAvailable())$p["default"]=$par->getDefaultValue();
+if($par->hasType())$p["type"]=$par->getType()->__toString();
+$p["optional"]=$par->isOptional();
+$p["variadic"]=$par->isVariadic();
+}return $p;
+}public function staticVariables(){
+return $this->reflection->getStaticVariables();
+}public function hasReturnType(){
+return $this->reflection->hasReturnType();
+}public function getReturnType(){
+if(!$this->reflection->hasReturnType())return false;
+return $this->reflection->getReturnType()->__toString();
+}public function parametersCount(){
+return $this->reflection->getNumberOfParameters();
+}public function requiredParametersCount(){
+return $this->reflection->getNumberOfRequiredParameters();
+}public function getFileName(){
+return $this->reflection->getFileName();
+}public function getStartLine(){
+return $this->reflection->getStartLine();
+}public function getEndLine(){
+return $this->reflection->getEndLine();
+}public function isVariadic(){
+return $this->reflection->isVariadic();
+}public function isDisabled(){
+return $this->reflection->isDisabled();
+}public function close(){
+$this->closure=null;
+$this->reflection=null;
+$this->functions=null;
 }
 }function XNClosure(...$param){
 return new XNClosure(...$param);
 }function XNFunction(...$param){
 return new XNClosure(...$param);
-}function array_values($arr){
-$r=[];
-foreach($arr as $v)$r[]=$v;
-return $v;
-}function array_keys($arr){
-$r=[];
-foreach($arr as $k=>$v)$r[]=$k;
-return $k;
-}function array_elements($array){
-$r=[];
-foreach($arr as $k=>$v)$r[]=[$k,$v];
-return $arr;
 }function array_value2key($array){
 $r=[];
 foreach($arr as $k=>$v)$r[$v]=$k;
@@ -5820,7 +5856,7 @@ return $d;
 
 $GLOBALS['-XN-']['endTime']=microtime(1);
 function xnscript(){
-return ["version"=>"1.5",
+return ["version"=>"1.6",
 "start_time"=>$GLOBALS['-XN-']['startTime'],
 "end_time"=>$GLOBALS['-XN-']['endTime'],
 "loaded_time"=>$GLOBALS['-XN-']['endTime']-$GLOBALS['-XN-']['startTime'],
