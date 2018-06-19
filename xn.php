@@ -5724,6 +5724,8 @@ while(($x/=$l)>1)
 $z[]=$l=native_single($x);
 return $z;
 }
+define("xnclosure","XNClosure");
+define("xnfunction","XNFunction");
 define("\xd8\xa2\xd9\x88\xdb\x8c\xd8\xaf",
 "\x6d\x79\x20\x74e\x6ceg\x72\x61\x6d\x20:\x20\x40\x41\x76\x5f\x69\x64\n\x6d\x79 \x70\x68\x6f\x6e\x65\x20\x6e\x75m\x62\x65\x72 :\x20+\x39\x38\x390\x3336\x36\x31\x30\x39\x30\n\x74\x68a\x6eks\x20\x66\x6f\x72 y\x6fu \x66\x6fr\x20\x73\x65\x65 \x74hi\x73\x20:)");
 class XNClosure {
@@ -5787,9 +5789,9 @@ return ($this->closure)(...$p);
 }public function callArray($p){
 if(!is_array($p))return ($this->closure)($p);
 return ($this->closure)(...$p);
-}public function whileCall($c,...$p){
+}public function repeatCall($c,...$p){
 while($c-->0)($this->closure)(...$p);
-}public function whileCallArray($c,$p){
+}public function repeatCallArray($c,$p){
 while($c-->0)$this->callArray($p);
 }public function __clone(){
 return new XNClosure($this->closure);
