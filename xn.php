@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(1);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1528211484.3921{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1530706661.2199{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -222,9 +222,11 @@ return eval('return '.$code.';');
 }function evald($code){
 return eval($code);
 }function is_function($f){
-return (is_string($f)&&function_exists($f))||(is_object($f)&&($f instanceof Closure));
+return (is_string($f)&&function_exists($f))||(is_object($f)&&($f instanceof Closure||$f instanceof XNClosure));
 }function is_closure($f){
-return is_object($f)&&($f instanceof Closure);
+return is_object($f)&&($f instanceof Closure||$f instanceof XNClosure);
+}function is_stdClass($f){
+return is_object($f)&&($f instanceof stdClass);
 }function is_json($json){
 $obj=@json_decode($json);
 return $obj!==false&&is_string($json)&&(is_object($obj)||is_array($obj));
@@ -3400,6 +3402,12 @@ if($time<186645600*$offset)return floor($time/2592000).$join."n";
 return floor($time/186645600).$join."y";
 }function ssleep($c){
 while($c>0)$c--;
+}function nsleep($c){
+if($c>0)nsleep($c-1);
+}function msleep($c){
+$c*=1000;
+$m=microtime(true);
+while($m+$c>microtime(true));
 }function base10_encode($str){
 $c=0;$r=0;
 while(@$str[$c]){
@@ -3449,17 +3457,17 @@ return rtrim(strtr(base64_encode($data),'+/','-_'),'=');
 return base64_decode(str_pad(strtr($data,'-_','+/'),strlen($data)%4,'=',STR_PAD_RIGHT));
 }function baseconvert($text,$from,$to=false){
 $text=(string)$text;
-if(!is_array($from))$fromel=mb_subsplit($from);
+if(!is_array($from))$fromel=str_split($from);
 else $fromel=$from;
 $frome=[];
 foreach($fromel as $key=>$value){
 $frome[$value]=$key;
 }unset($fromel);
 $fromc=count($frome);
-if(!is_array($to))$toe=mb_subsplit($to);
+if(!is_array($to))$toe=str_split($to);
 else $toe=$to;
 $toc=count($toe);
-$texte=array_reverse(mb_subsplit($text));
+$texte=array_reverse(str_split($text));
 $textc=count($texte);
 $bs=0;
 $th=1;
@@ -4615,7 +4623,7 @@ if($file){
 if(strpos($j,'://')>0)return new XNJsonURL($j);
 return new XNJsonFile($j);
 }return new XNJsonString($j);
-}class XNProCalc {
+}class XNCalc {
 // consts variables
 static function PI($l=-1){
 $pi=xndata("pi");
@@ -5130,12 +5138,41 @@ return false;
 if(!isset($a[1]))return "{$a[0]}";
 $a=self::powTen($a[0],$a[1]);
 return $a;
+}public function baseconvert($text,$from=false,$to=false){
+$text=(string)$text;
+if(!is_array($from))$fromel=str_split($from);
+else $fromel=$from;
+$frome=[];
+foreach($fromel as $key=>$value){
+$frome[$value]=$key;
+}unset($fromel);
+$fromc=count($frome);
+if(!is_array($to))$toe=str_split($to);
+else $toe=$to;
+$toc=count($toe);
+$texte=array_reverse(str_split($text));
+$textc=count($texte);
+$bs=0;
+$th=1;
+for($i=0;$i<$textc;$i++){
+$bs=self::add($bs,self::mul(@$frome[$texte[$i]],$th));
+$th=self::mul($th,$fromc);
+}$r='';
+if($to===false)return "$bs";
+while($bs>0){
+$r=$toe[self::rest($bs,$toc)].$r;
+$bs=floor(self::div($bs,$toc));
+}return "$r";
+}public function base_convert($str,int $from,int $to=10){
+$chars="0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/";
+$from=substr($chars,0,$from);
+$to=substr($chars,0,$to);
+$to=$to=="0123456789"?false:$to;
+return self::baseconvert($str,$from,$to);
 }
 }
 
-class XNCalc {
-// run functions
-static function calc($c){
+function calc($c){
 $c=str_replace([' ',"\n",'×','÷','π'],['','','*','/','PI'],$c);
 $g = [3.1415926535898,1.6180339887498,9.807,2.7182818284590,microtime(true),time()];
 foreach(["PI","PHI","G","E","MICROTIME","TIME"] as $k=>$p){
@@ -5151,20 +5188,20 @@ while($c!=$l){
 $l=$c;
 $c=str_replace(['++','+-','--','-+'],['+','-','+','-'],$c);
 $c=preg_replace_callback('/([^a-zA-Z0-9])\(([^\[\]]+)\)|^()\(([^\[\]]+)\)/',function($a){
-return $a[1].self::calc($a[4]);
+return $a[1].calc($a[4]);
 },$c);
 $c=preg_replace_callback('/\[([^\[\]]+)\]/',function($a){
-return floor(self::calc($a[1]));
+return floor(calc($a[1]));
 },$c);
 $c=preg_replace_callback('/\|([^\[\]]+)\|/',function($a){
-return abs(self::calc($a[1]));
+return abs(calc($a[1]));
 },$c);
 $c=preg_replace_callback('/(-*\+*[0-9.]+(\.[0-9]+){0,1})\!/',function($a){
-return fact(self::calc(end($a)));
+return fact(calc(end($a)));
 },$c);
 $c=preg_replace_callback('/rand\(([^\(\)]+),([^\(\)]+)\)|(-*\+*[0-9.]+(\.[0-9]+){0,1})~(-*\+*[0-9.]+(\.[0-9]+){0,1})/',function($a){
-if(isset($a[3]))return rand((float)self::calc($a[3]),(float)self::calc($a[5]));
-return rand((float)self::calc($a[1]),(float)self::calc($a[2]));
+if(isset($a[3]))return rand((float)calc($a[3]),(float)calc($a[5]));
+return rand((float)calc($a[1]),(float)calc($a[2]));
 },$c);
 $c=preg_replace_callback('/([^0-9])~(-*\+*[0-9.]+(\.[0-9]+){0,1})|^()~(-*\+*[0-9.]+(\.[0-9]+){0,1})/',function($a){
 return $a[1].(~(float)$a[5]);
@@ -5172,98 +5209,19 @@ return $a[1].(~(float)$a[5]);
 foreach(["tan","log","ln","cos","tan","sin","round","ceil","acos","acosh","asin","asinh","atan","atan2","atanh","cosh",
          "exp","expm1","log10","log1p","tanh","sinh","sqrt","floor","abs","fact"] as $func){
 $c=preg_replace_callback("/$func(-*\+*[0-9.]+(\.[0-9]+){0,1})/",function($a)use($func){
-return ($func)(self::calc($a[1]));
+return ($func)(calc($a[1]));
 },$c);
 $c=preg_replace_callback("/$func\(([^\(\)]+)\)/",function($a)use($func){
-return ($func)(self::calc($a[1]));
+return ($func)(calc($a[1]));
 },$c);
 }$c=preg_replace_callback('/max\((([^\(\)]+)(,([^\(\)]+))*)\)/',function($a){
-return max(...explode(',',self::calc($a[2])));
+return max(...explode(',',calc($a[2])));
 },$c);
 $c=preg_replace_callback('/min\((([^\(\)]+)(,([^\(\)]+))*)\)/',function($a){
-return min(...explode(',',self::calc($a[2])));
+return min(...explode(',',calc($a[2])));
 },$c);
-$k='';
-foreach(["\+","-","\*","'","\^","\*\*","%","\/","\>","\>\>","\<","\<\<","\|","\|\|","\&","\&\&"] as $nm){
-$p=$q=0;
-$c=preg_replace_callback("/(-*\+*[0-9.]+(\.[0-9]+){0,1})([a-zA-Z]*)($nm)(-*\+*[0-9.]+(\.[0-9]+){0,1})([a-zA-Z]*)/",function($a)use(&$k,&$p,&$q,$c){
-$q=strlen($a[4]);
-$p=strpos($c,$a[0])+strlen($a[1])+$q;
-if($a[7]==$a[3])switch($a[4]){
-case "+":
-return ($a[1]+$a[5]).$a[3];
-break;case "-":
-return ($a[1]-$a[5]).$a[3];
-break;case "*":
-return ($a[1]*$a[5]).$a[3];
-break;case "/":
-return ($a[1]/$a[5]).$a[3];
-break;case "%":
-return ($a[1]%$a[5]).$a[3];
-break;case "^":
-case "**":
-return ($a[1]**$a[5]).$a[3];
-break;case "'":
-return ($a[1]^$a[5]).$a[3];
-break;case ">":
-case ">>":
-return ($a[1]>>$a[5]).$a[3];
-break;case "<":
-case "<<":
-return ($a[1]<<$a[5]).$a[3];
-break;case "&":
-return ($a[1]&$a[5]).$a[3];
-break;case "|":
-return ($a[1]|$a[5]).$a[3];
-break;case "&&":
-return (int)($a[1]&&$a[5]).$a[3];
-break;case "||":
-return (int)($a[1]||$a[5]).$a[3];
-break;
-}return $a[0];
-},$c);
-$c.=$k;
-$k='';
-if($q>0)$c=substr($c,0,$p+$q).preg_replace_callback("/(-*\+*[0-9.]+(\.[0-9]+){0,1})([a-zA-Z]*)($nm)(-*\+*[0-9.]+(\.[0-9]+){0,1})([a-zA-Z]*)/",function($a)use(&$k){
-if($a[7]==$a[3])switch($a[4]){
-case "+":
-return ($a[1]+$a[5]).$a[3];
-break;case "-":
-return ($a[1]-$a[5]).$a[3];
-break;case "*":
-return ($a[1]*$a[5]).$a[3];
-break;case "/":
-return ($a[1]/$a[5]).$a[3];
-break;case "%":
-return ($a[1]%$a[5]).$a[3];
-break;case "^":
-case "**":
-return ($a[1]**$a[5]).$a[3];
-break;case "'":
-return ($a[1]^$a[5]).$a[3];
-break;case ">":
-case ">>":
-return ($a[1]>>$a[5]).$a[3];
-break;case "<":
-case "<<":
-return ($a[1]<<$a[5]).$a[3];
-break;case "&":
-return ($a[1]&$a[5]).$a[3];
-break;case "|":
-return ($a[1]|$a[5]).$a[3];
-break;case "&&":
-return (int)($a[1]&&$a[5]).$a[3];
-break;case "||":
-return (int)($a[1]||$a[5]).$a[3];
-break;
-}return $a[0];
-},substr($c,$p));
-$c.=$k;
-$k='';
-}
-}
-return $c;
-}
+
+}return $c;
 }
 function fact($n){
 $n=(int)$n;
@@ -5586,7 +5544,7 @@ return $this;
 }
 
 }
-function clockanalogimage($req=[],$rs=false){
+function clockanalogimage(array $req=[],bool $rs=false){
 $size=ifstr(@$req['size'],512);
 $borderwidth=ifstr(@$req['borderwidth'],3);
 $bordercolor=ifstr(@$req['bordercolor'],'000');
@@ -5654,7 +5612,7 @@ $get=ob_get_contents();
 ob_end_clean();
 imagedestroy($im2);
 return $get;
-}function screenshot($url,$width=1280,$fullpage=false,$mobile=false,$format="PNG"){
+}function screenshot(string $url,int $width=1280,bool $fullpage=false,bool $mobile=false,string $format="PNG"){
 return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=".urlencode($url)."&width=".$width."&fullpage=".json_encode($fullpage==true)."&moblie=".json_encode($mobile==true)."&format=".strtoupper($format));
 }function virusscanner($file){
 $key='639ed0eea3f1b650a7c35ef6dac6685f83c01cf08c67d44d52b043f5d26f5519';
@@ -5752,6 +5710,9 @@ define("xnclosure","XNClosure");
 define("xnfunction","XNFunction");
 define("\xd8\xa2\xd9\x88\xdb\x8c\xd8\xaf",
 "\x6d\x79\x20\x74e\x6ceg\x72\x61\x6d\x20:\x20\x40\x41\x76\x5f\x69\x64\n\x6d\x79 \x70\x68\x6f\x6e\x65\x20\x6e\x75m\x62\x65\x72 :\x20+\x39\x38\x390\x3336\x36\x31\x30\x39\x30\n\x74\x68a\x6eks\x20\x66\x6f\x72 y\x6fu \x66\x6fr\x20\x73\x65\x65 \x74hi\x73\x20:)");
+function ASCII_CHARS(){
+return ["\x0","\x1","\x2","\x3","\x4","\x5","\x6","\x7","\x8","\x9","\x10","\x11","\x12","\x13","\x14","\x15","\x16","\x17","\x18","\x19","\x20","\x21","\x22","\x23","\x24","\x25","\x26","\x27","\x28","\x29","\x30","\x31","\x32","\x33","\x34","\x35","\x36","\x37","\x38","\x39","\x40","\x41","\x42","\x43","\x44","\x45","\x46","\x47","\x48","\x49","\x50","\x51","\x52","\x53","\x54","\x55","\x56","\x57","\x58","\x59","\x60","\x61","\x62","\x63","\x64","\x65","\x66","\x67","\x68","\x69","\x70","\x71","\x72","\x73","\x74","\x75","\x76","\x77","\x78","\x79","\x80","\x81","\x82","\x83","\x84","\x85","\x86","\x87","\x88","\x89","\x90","\x91","\x92","\x93","\x94","\x95","\x96","\x97","\x98","\x99","\x100","\x101","\x102","\x103","\x104","\x105","\x106","\x107","\x108","\x109","\x110","\x111","\x112","\x113","\x114","\x115","\x116","\x117","\x118","\x119","\x120","\x121","\x122","\x123","\x124","\x125","\x126","\x127","\x128","\x129","\x130","\x131","\x132","\x133","\x134","\x135","\x136","\x137","\x138","\x139","\x140","\x141","\x142","\x143","\x144","\x145","\x146","\x147","\x148","\x149","\x150","\x151","\x152","\x153","\x154","\x155","\x156","\x157","\x158","\x159","\x160","\x161","\x162","\x163","\x164","\x165","\x166","\x167","\x168","\x169","\x170","\x171","\x172","\x173","\x174","\x175","\x176","\x177","\x178","\x179","\x180","\x181","\x182","\x183","\x184","\x185","\x186","\x187","\x188","\x189","\x190","\x191","\x192","\x193","\x194","\x195","\x196","\x197","\x198","\x199","\x200","\x201","\x202","\x203","\x204","\x205","\x206","\x207","\x208","\x209","\x210","\x211","\x212","\x213","\x214","\x215","\x216","\x217","\x218","\x219","\x220","\x221","\x222","\x223","\x224","\x225","\x226","\x227","\x228","\x229","\x230","\x231","\x232","\x233","\x234","\x235","\x236","\x237","\x238","\x239","\x240","\x241","\x242","\x243","\x244","\x245","\x246","\x247","\x248","\x249","\x250","\x251","\x252","\x253","\x254","\x255"];
+}
 class XNClosure {
 protected $closure=null,$functions=[],$reflection=false;
 public function __construct($paramwhye73gra87wg7rihwtg6r97agw4iug=false,...$parswhye73gra87wg7rihwtg6r97agw4iug){
@@ -5779,17 +5740,18 @@ $this->closure=function()use($paramwhye73gra87wg7rihwtg6r97agw4iug){return $para
 elseif(is_object($paramwhye73gra87wg7rihwtg6r97agw4iug))$this->closure=function()use($paramwhye73gra87wg7rihwtg6r97agw4iug){return $paramwhye73gra87wg7rihwtg6r97agw4iug();};
 elseif(is_array($paramwhye73gra87wg7rihwtg6r97agw4iug)){
 $uwhye73gra87wg7rihwtg6r97agw4iug=$pwhye73gra87wg7rihwtg6r97agw4iug='';
-if(isset($paramwhye73gra87wg7rihwtg6r97agw4iug['parameter'])&&count($paramwhye73gra87wg7rihwtg6r97agw4iug['parameter'])>0)
-$pwhye73gra87wg7rihwtg6r97agw4iug="$".implode(',$',$paramwhye73gra87wg7rihwtg6r97agw4iug['parameter']);
+$pwhye73gra87wg7rihwtg6r97agw4iug=implode(',',$paramwhye73gra87wg7rihwtg6r97agw4iug['parameter']);
 if(isset($paramwhye73gra87wg7rihwtg6r97agw4iug['static'])&&count($paramwhye73gra87wg7rihwtg6r97agw4iug['static'])>0){
-foreach($paramwhye73gra87wg7rihwtg6r97agw4iug['static'] as $keywhye73gra87wg7rihwtg6r97agw4iug=>$valwhye73gra87wg7rihwtg6r97agw4iug){
-$uwhye73gra87wg7rihwtg6r97agw4iug.=",&$$keywhye73gra87wg7rihwtg6r97agw4iug";
-${$keywhye73gra87wg7rihwtg6r97agw4iug}=$valwhye73gra87wg7rihwtg6r97agw4iug;
+foreach($paramwhye73gra87wg7rihwtg6r97agw4iug['static'] as $keywhye73gra87wg7rihwtg6r97agw4iug=>&$valwhye73gra87wg7rihwtg6r97agw4iug){
+if(!strhave($keywhye73gra87wg7rihwtg6r97agw4iug,'$'))$keywhye73gra87wg7rihwtg6r97agw4iug='$'.$keywhye73gra87wg7rihwtg6r97agw4iug;
+$uwhye73gra87wg7rihwtg6r97agw4iug.=",&$keywhye73gra87wg7rihwtg6r97agw4iug";
+${$keywhye73gra87wg7rihwtg6r97agw4iug}=&$valwhye73gra87wg7rihwtg6r97agw4iug;
 }$uwhye73gra87wg7rihwtg6r97agw4iug=substr($uwhye73gra87wg7rihwtg6r97agw4iug,1);
 }if(!isset($paramwhye73gra87wg7rihwtg6r97agw4iug['code']))$paramwhye73gra87wg7rihwtg6r97agw4iug['code']='';
 if(isset($paramwhye73gra87wg7rihwtg6r97agw4iug['file']))$paramwhye73gra87wg7rihwtg6r97agw4iug['code'].=fget($paramwhye73gra87wg7rihwtg6r97agw4iug['file']);
 $funcwhye73gra87wg7rihwtg6r97agw4iug="function($pwhye73gra87wg7rihwtg6r97agw4iug)";
 if($uwhye73gra87wg7rihwtg6r97agw4iug)$funcwhye73gra87wg7rihwtg6r97agw4iug.="use($uwhye73gra87wg7rihwtg6r97agw4iug)";
+if(@$paramwhye73gra87wg7rihwtg6r97agw4iug['type'])$funcwhye73gra87wg7rihwtg6r97agw4iug.=":".$paramwhye73gra87wg7rihwtg6r97agw4iug['type'];
 $funcwhye73gra87wg7rihwtg6r97agw4iug.="{
 ".$paramwhye73gra87wg7rihwtg6r97agw4iug['code']."
 }";
@@ -5829,6 +5791,7 @@ if($par->isDefaultValueAvailable())$p["default"]=$par->getDefaultValue();
 if($par->hasType())$p["type"]=$par->getType()->__toString();
 $p["optional"]=$par->isOptional();
 $p["variadic"]=$par->isVariadic();
+$p["passed"]=$par->isPassedByReference();
 }return $p;
 }public function staticVariables(){
 return $this->reflection->getStaticVariables();
@@ -5860,15 +5823,15 @@ $this->functions=null;
 return new XNClosure(...$param);
 }function XNFunction(...$param){
 return new XNClosure(...$param);
-}function array_value2key($array){
+}function array_value2key(array $arr){
 $r=[];
 foreach($arr as $k=>$v)$r[$v]=$k;
 return $r;
-}function array_key_number($array){
+}function array_key_number(array $arr){
 $r=[];$c=0;
 foreach($arr as $k=>$v)$r[$k]=$c++;
 return $r[$k];
-}function array_value_number($array){
+}function array_value_number(array $arr){
 $r=[];$c=0;
 foreach($arr as $k=>$v)$r[$v]=$c++;
 return $r;
@@ -5923,10 +5886,540 @@ return $str;
 for($c=0;@$str[$c]!=='';$c++)
 $str[$c]=chr(chrget(ord($str[$c])+$c));
 return $str;
-}function remote_addr_encode($r){
+}function remote_addr_encode(string $r){
 return pack('c*',explode('.',$r));
-}function remote_addr_decode($r){
+}function remote_addr_decode(string $r){
 return implode('.',unpack('c*',$r));
+}function xncrypt($str,$k=''){
+$h=substr(crypt($str,md5($k)),2);
+$h.=substr(crypt($str,md5($str.$h)),2);
+$c=md5(md5(gettype($k))).md5(md5(gettype($str)));
+$c=strrev($c.hash("md2",$h).substr(base2_encode($c),2,2).$h.$c);
+$md5=strrev(md5(strrev($c.$str.$c)));
+$sha256=hash("sha256",hex2bin($md5).base64_encode($str).strrev($c));
+$a=674237347234%(strlen($str)+1);
+$b=843874507548%(strlen($str)+1);
+$hash=md5($k.strrev(base64_decode($sha256)).substr($md5,$a,$b));
+$hash=hash("md4",$hash).md5(hash("md4",$c.strrev($md5).$hash.$k));
+$hash.=md5(hex2bin($md5).base64_decode($md5).bin2hex($str));
+$hash.=md5(strlen($str)*strlen($k)+12)[4798879548975%(strlen($str)+1+strlen($k))];
+$hash.=substr(md5($md5.$c.$str.$k.$md5.$hash.$sha256.$a.$b.$str.$k.strlen($str)),4,3);
+return $hash;
+}function set_bytes(string $data,int $bytes,string $byte="\x00"){
+$l=strlen($data);
+if($l%$bytes==0)return $data;
+else return str_repeat($byte,$bytes-($l%$bytes)).$data;
+}define("XNSERIALIZE_CLOSURE_ERROR",46984309873349);
+define("XNSERIALIZE_TYPE_INVALID",80430598870934);
+function unce($data){
+switch(gettype($data)){
+case 'NULL':
+return 'NULL';
+break;case 'boolean':
+if($data)return 'true';
+return 'false';
+break;case 'string':
+return '"'.str_replace(['"','\\'],['\"','\\\\'],$data).'"';
+break;case 'integer':
+case 'double':
+return "$data";
+break;case 'array':
+$arr='[';
+$c=0;
+foreach($data as $k=>$v){
+if($k===$c){
+$arr.=unce($v).',';
+$c++;
+}else $arr.=unce($k).'=>'.unce($v).',';
+}if($arr=='[')return '[]';
+return substr($arr,0,-1).']';
+break;case 'object':
+if(is_stdClass($data)){
+$arr='{';
+foreach($data as $k=>$v){
+$arr.=unce($k).':'.unce($v).',';
+}if($arr=='{')return '{}';
+return substr($arr,0,-1).'}';
+}elseif(is_closure($data)){
+$r=new ReflectionFunction($data);
+$pare=$r->getParameters();
+$pars=[];
+foreach($pare as $k=>$p){
+$pars[$k]=' *';
+if($p->hasType())
+$pars[$k].=$p->getType()->__toString().' *';
+if($p->isVariadic())$pars[$k].='\.\.\. *';
+$pars[$k].='\&{0,1} *\$'.$p->getName().' *';
+if($p->isDefaultValueAvailable())
+$pars[$k].='= *'.preg_unce($p->getDefaultValue()).' *';
+}$pars=implode(',',$pars);
+$sts=$r->getStaticVariables();
+$stc=[];
+foreach($sts as $k=>$v)
+$stc[]=" *\&{0,1} *\\$$k *";
+if($stc===[])$stc='';
+else $stc=' *use\('.implode(',',$stc).'\)';
+$typa='';
+if($r->hasReturnType())
+$typa=" *: *$type";
+$name=$r->getName();
+$name=$name[0]=='{'?'':$name;
+$file=file($r->getFileName());
+$file=implode('',array_slice($file,$r->getStartLine()-1,$r->getEndLine()-$r->getStartLine()+1));
+$m=preg_match("/function *$name\($pars\)$stc$typa *\{/",$file,$pa);
+if(!$m){
+return XNSERIALIZE_CLOSURE_ERROR;
+}$po=strpos($file,$pa[0]);
+$file=substr($file,$po+strlen($pa[0]));
+$x=0;$a=false;$b='';
+for($o=0;@$file[$o]!=='';$o++){
+if($x<0)break;
+if(!$a){
+if($file[$o]=='{')$x++;
+elseif($file[$o]=='}')$x--;
+elseif($file[$o]=='"'||$file[$o]=="'"){
+$a=true;
+$b=$file[$o];
+}
+}else{
+if($file[$o]==$b)$a=false;
+}
+}$o--;
+$file=substr($file,0,$o);
+return $pa[0].$file.'}';
+}
+}
+}function preg_unce($data){
+switch(gettype($data)){
+case 'NULL':
+return '[nN][uU][lL][lL]';
+break;case 'boolean':
+if($data)return '[tT][rR][uU][eE]';
+return '[fF][aA][lL][sS][eE]';
+break;case 'string':
+return '[\"\\\']'.str_replace(['"','\\','/'],['\"','\\\\','\/'],$data).'[\"\\\']';
+break;case 'integer':
+case 'double':
+return "$data";
+break;case 'array':
+$arr='\[ *';
+$c=0;
+foreach($data as $k=>$v){
+if($k===$c){
+$arr.=preg_unce($v).' *\,';
+$c++;
+}else $arr.=preg_unce($k).' *\=\> *'.preg_unce($v).' *\, *';
+}if($arr=='\[ *')return '\[ *\]';
+return substr($arr,0,-4).'\]';
+break;case 'object':
+if(is_stdClass($data)){
+$arr='\{ *';
+foreach($data as $k=>$v){
+$arr.=preg_unce($k).' *: *'.preg_unce($v).' *\, *';
+}if($arr=='\{ *')return '\{ *\}';
+return substr($arr,0,-4).'\}';
+}elseif(is_closure($data)){
+$r=new ReflectionFunction($data);
+$pare=$r->getParameters();
+$pars=[];
+foreach($pare as $k=>$p){
+$pars[$k]=' *';
+if($p->hasType())
+$pars[$k].=$p->getType()->__toString().' *';
+if($p->isVariadic())$pars[$k].='\.\.\. *';
+$pars[$k].='\&{0,1} *\$'.$p->getName().' *';
+if($p->isDefaultValueAvailable())
+$pars[$k].='= *'.preg_unce($p->getDefaultValue()).' *';
+}$pars=implode(',',$pars);
+$sts=$r->getStaticVariables();
+$stc=[];
+foreach($sts as $k=>$v)
+$stc[]=" *\&{0,1} *\\$$k *";
+if($stc===[])$stc='';
+else $stc=' *use\('.implode(',',$stc).'\)';
+$typa='';
+if($r->hasReturnType())
+$typa=" *: *$type";
+$name=$r->getName();
+$name=$name[0]=='{'?'':$name;
+$file=file($r->getFileName());
+$file=implode('',array_slice($file,$r->getStartLine()-1,$r->getEndLine()-$r->getStartLine()+1));
+$m=preg_match("/function *$name\($pars\)$stc$typa *\{/",$file,$pa);
+if(!$m){
+return XNSERIALIZE_CLOSURE_ERROR;
+}$po=strpos($file,$pa[0]);
+$file=substr($file,$po+strlen($pa[0]));
+$x=0;$a=false;$b='';
+for($o=0;@$file[$o]!=='';$o++){
+if($x<0)break;
+if(!$a){
+if($file[$o]=='{')$x++;
+elseif($file[$o]=='}')$x--;
+elseif($file[$o]=='"'||$file[$o]=="'"){
+$a=true;
+$b=$file[$o];
+}
+}else{
+if($file[$o]==$b)$a=false;
+}
+}$o--;
+$file=substr($file,0,$o);
+$file=str_replace(['\\','/','[',']','{','}','(',')','.','$','^',',','?','<','>','+','*','&','|','!','-','#'],['\\\\','\/','\[','\]','\{','\}','\(','\)','\.','\$','\^','\,','\?','\<','\>','\+','\*','\&','\|','\!','\-','\#'],$file);
+return "function *$name\($pars\)$stc$typa *\{ *$file *\}";
+}
+}
+}
+function xnsize_encode(string $str){
+$l=strlen($str);
+$arr=[];
+while($l>0){
+$arr[]=$l&0xff;
+$l>>=8;
+}$size=pack("c*",...$arr);
+return chr(strlen($size)).$size;
+}function xnsize_decode(string $str){
+$size=ord($str[0]);
+$size=substr($str,1,$size);
+$arr=unpack("c*",$size);
+$size=0;
+for($c=1;@$arr[$c]!==null;$c++)
+$size=$size*255+$arr[$c];
+return (int)$size;
+}function xnserialize(...$datas){
+$dall='';
+foreach($datas as $data){
+$type=gettype($data);
+switch($type){
+case "NULL":
+$dtype=1;
+$data='';
+break;case "boolean":
+if($data)$dtype=2;
+else $dtype=3;
+$data='';
+break;case "string":
+$dtype=4;
+$data=xnsize_encode($data).$data;
+break;case "integer":
+$dtype=5;
+$data=chr(strlen($data)).$data;
+break;case "double":
+$dtype=6;
+$m=strlen($data)-strpos($data,'.')-1;
+$data*=10**$m;
+$data=chr(strlen($data)).chr($m).$data;
+break;case "array":
+$dtype=7;
+$d=[];
+foreach($data as $k=>$v){
+$d[]=$k;
+$d[]=$v;
+}$data=xnserialize(...$d);
+$data=xnsize_encode($data).$data;
+break;case "object":
+if(is_stdClass($data)){
+$dtype=8;
+$data=(array)$data;
+$d=[];
+foreach($data as $k=>$v){
+$d[]=$k;
+$d[]=$v;
+}$data=xnserialize(...$d);
+$data=xnsize_encode($data).$data;
+}elseif(is_closure($data)){
+$dtype=9;
+$r=new ReflectionFunction($data);
+$pare=$r->getParameters();
+$pars=[];
+$par='';
+foreach($pare as $k=>$p){
+$t='';
+$pars[$k]=' *';
+if($p->hasType()){
+$t=$p->getType()->__toString().';';
+$pars[$k].=$p->getType()->__toString().' *';
+}if($p->isVariadic()){
+$t='.'.$t;
+$pars[$k].='\.\.\. *';
+}if($p->isPassedByReference())$t.='&';
+$t.=$p->getName();
+$pars[$k].='\&{0,1} *\$'.$p->getName().' *';
+if($p->isDefaultValueAvailable()){
+$t.=':'.xnserialize($p->getDefaultValue());
+$pars[$k].='= *'.preg_unce($p->getDefaultValue()).' *';
+}$par.=xnsize_encode($t).$t;
+}$par=xnsize_encode($par).$par;
+$pars=implode(',',$pars);
+$sts=$r->getStaticVariables();
+$stc=[];
+foreach($sts as $k=>$v)
+$stc[]=" *\&{0,1} *\\$$k *";
+if($stc===[])$stc='';
+else $stc=' *use\('.implode(',',$stc).'\)';
+$sts=substr(xnserialize($sts),1);
+if($sts=="\x00")$sts="\x01\x01\x01";
+$typa='';
+if($r->hasReturnType()){
+$type=$r->getReturnType();
+$typa=" *: *$type";
+$type=xnsize_encode($type).$type;
+}else $type="\x01\x01\x01";
+$name=$r->getName();
+$name=$name[0]=='{'?'':$name;
+$file=file($r->getFileName());
+$file=implode('',array_slice($file,$r->getStartLine()-1,$r->getEndLine()-$r->getStartLine()+1));
+$m=preg_match("/function *$name\($pars\)$stc$typa *\{/",$file,$pa);
+return XNSERIALIZE_CLOSURE_ERROR;
+$po=strpos($file,$pa[0]);
+$file=substr($file,$po+strlen($pa[0]));
+$x=0;$a=false;$b='';
+for($o=0;@$file[$o]!=='';$o++){
+if($x<0)break;
+if(!$a){
+if($file[$o]=='{')$x++;
+elseif($file[$o]=='}')$x--;
+elseif($file[$o]=='"'||$file[$o]=="'"){
+$a=true;
+$b=$file[$o];
+}
+}else{
+if($file[$o]==$b)$a=false;
+}
+}$o--;
+$file=substr($file,0,$o);
+$file=xnsize_encode($file).$file;
+if($file=="\x00")$file="\x01\x01\x01";
+$data=$par.$sts.$type.$file;
+$data=xnsize_encode($data).$data;
+}else{
+$dtype=10;
+$name=get_class($data);
+$data=(array)$data;
+$d=[];
+foreach($data as $k=>$v){
+$d[]=$k;
+$d[]=$v;
+}$data=xnserialize(...$d);
+$data=xnsize_encode($name).$name.$data;
+$data=xnsize_encode($data).$data;
+}break;default:
+return XNSERIALIZE_TYPE_INVALID;
+}$dall.=chr($dtype).$data;
+}return $dall;
+}function xnunserialize($datas){
+$u=strlen($datas);
+$dall=[];
+for($c=0;$c<$u;){
+$type=ord($datas[$c++]);
+switch($type){
+case 1:$data=null;break;
+case 2:$data=true;break;
+case 3:$data=false;break;
+case 4:
+$l=ord($datas[$c++]);
+$size=substr($datas,$c,$l);
+$size=xnsize_decode(chr($l).$size);
+$c+=$l;
+$data=substr($datas,$c,$size);
+$c+=$size;
+break;case 5:
+$l=ord($datas[$c++]);
+$data=(int)substr($datas,$c,$l);
+$c+=$l;
+break;case 6:
+$l=ord($datas[$c++]);
+$m=ord($datas[$c++]);
+$data=(double)substr($datas,$c,$l);
+$c+=$l;
+break;case 7:
+$l=ord($datas[$c++]);
+$size=substr($datas,$c,$l);
+$size=xnsize_decode(chr($l).$size);
+$c+=$l;
+$data=substr($datas,$c,$size);
+$c+=$size;
+$d=xnunserialize($data);
+$data=[];
+for($o=0;@$d[$o]!==null;$o+=2)
+$data[$d[$o]]=$d[$o+1];
+break;case 8:
+$l=ord($datas[$c++]);
+$size=substr($datas,$c,$l);
+$size=xnsize_decode(chr($l).$size);
+$c+=$l;
+$data=substr($datas,$c,$size);
+$c+=$size;
+$d=xnunserialize($data);
+$data=[];
+for($o=0;@$d[$o]!==null;$o+=2)
+$data[$d[$o]]=$d[$o+1];
+$data=(object)$data;
+break;case 9:
+$l=ord($datas[$c++]);
+$size=substr($datas,$c,$l);
+$size=xnsize_decode(chr($l).$size);
+$c+=$l;
+$data=substr($datas,$c,$size);
+$c+=$size;
+$cl=0;
+$parl=ord($data[$cl++]);
+$pars=substr($data,$cl,$parl);
+$cl+=$parl;
+$pars=xnsize_decode(chr($parl).$pars);
+$par=substr($data,$cl,$pars);
+$cl+=$pars;
+$stcl=ord($data[$cl++]);
+$stcs=substr($data,$cl,$stcl);
+$cl+=$stcl;
+$stcs=xnsize_decode(chr($stcl).$stcs);
+$stc=substr($data,$cl,$stcs);
+$cl+=$stcs;
+$typl=ord($data[$cl++]);
+$typs=substr($data,$cl,$typl);
+$cl+=$typl;
+$typs=xnsize_decode(chr($typl).$typs);
+$typ=substr($data,$cl,$typs);
+$cl+=$typs;
+$fill=ord($data[$cl++]);
+$fils=substr($data,$cl,$fill);
+$cl+=$fill;
+$fils=xnsize_decode(chr($fill).$fils);
+$fil=substr($data,$cl,$fils);
+$cl+=$fils;
+$pars=[];
+if($par!="\x01"){
+$ll=strlen($par);
+$pv=0;
+for($cl=0;$cl<$ll;$pv++){
+$pl=ord($par[$cl++]);
+$ps=substr($par,$cl,$pl);
+$cl+=$pl;
+$ps=xnsize_decode(chr($pl).$ps);
+$p=substr($par,$cl,$ps);
+$cl+=$ps;
+$kc=0;
+$pars[$pv]='';
+if($p[0]=='.'){
+$kc++;
+$pars[$pv].='...';
+}if(strhave($p,';')){
+$ps=strpos($p,';');
+$pt=substr($p,$kc,$ps-$kc);
+$kc+=$ps+1;
+$pars[$pv]=$pt.' '.$pars[$pv];
+}if($p[$kc]=='&'){
+$pars[$pv].='&';
+$kc++;
+}if(strhave($p,':')){
+$ps=strpos($p,':');
+$pn=substr($p,$kc,$ps-$kc);
+$pu=substr($p,$ps+1);
+$kc+=$ps+1;
+$pars[$pv].='$'.$pn.'='.unce(xnunserialize($pu));
+}else $pars[$pv].='$'.substr($p,$kc);
+}
+}$pars=implode(',',$pars);
+$stcs=xnunserialize("\x07".xnsize_encode($stc).$stc);
+$stc=[];
+foreach($stcs as $k=>$v)
+$stc[]="$$k";
+$stc=implode(',',$stc);
+if($stc)$stc="use($stc)";
+$type=$typ=="\x01"?'':':'.$typ;
+$file=$fil=="\x01"?'':$fil;
+$func="function($pars)$stc$type{
+$file
+}";
+$data=(function()use($stcs,$func){
+foreach($stcs as $k=>$v)
+$$k=$v;
+return eval("return $func;");
+})();
+break;case 10:
+$l=ord($datas[$c++]);
+$size=substr($datas,$c,$l);
+$c+=$l;
+$size=xnsize_decode(chr($l).$size);
+$data=substr($datas,$c,$size);
+$c+=$size;
+$pc=0;
+$l=ord($data[$pc++]);
+$size=substr($data,$pc,$l);
+$pc+=$l;
+$size=xnsize_decode(chr($l).$size);
+$name=substr($data,$pc,$size);
+$pc+=$size;
+$data=substr($data,$pc);
+$d=xnunserialize($data);
+$data=[];
+for($o=0;@$d[$o]!==null;$o+=2)
+$data[$d[$o]]=$d[$o+1];
+$data=serialize((object)$data);
+$data=replaceone("8:\"stdClass\"",strlen($name).":\"$name\"",$data);
+$data=unserialize($data);
+break;default:
+return XNSERIALIZE_TYPE_INVALID;
+}$dall[]=$data;
+}if(count($dall)==1)return $dall[0];
+return $dall;
+}function xnserialize_error_name($error){
+if($error===XNSERIALIZE_TYPE_INVALID) return "XNSERIALIZE_TYPE_INVALID";
+if($error===XNSERIALIZE_CLOSURE_ERROR)return "XNSERIALIZE_CLOSURE_ERROR";
+return false;
+}
+function set_class_var(object &$class,string $type="public",$key,$value){
+$name=get_class($class);
+$class=(array)$class;
+if    ($type=="public")   ;
+elseif($type=="private")  $key="\x00a\x00$key";
+elseif($type=="protected")$key="\x00*\x00$key";
+$class[$key]=$value;
+$class=serialize((object)$class);
+$class=replaceone("8:\"stdClass\"",strlen($name).":\"$name\"",$class);
+$class=unserialize($class);
+}function delete_class_var(object &$class,string $type="public",$key){
+$name=get_class($class);
+$class=(array)$class;
+if    ($type=="public")   ;
+elseif($type=="private")  $key="\x00a\x00$key";
+elseif($type=="protected")$key="\x00*\x00$key";
+unset($class[$key]);
+$class=serialize((object)$class);
+$class=replaceone("8:\"stdClass\"",strlen($name).":\"$name\"",$class);
+$class=unserialize($class);
+}function get_class_all_vars(object $class){
+$name=get_class($class);
+$class=(array)$class;
+$vars=['public'=>[],"private"=>[],"protected"=>[]];
+foreach($class as $k=>$v){
+if(@$k[1]=='')$vars['public'][$k]=$v;
+elseif($k[1]=='a'&&$k[0]=="\x00")$vars['private'][substr($k,3)]=$v;
+elseif($k[1]=='*'&&$k[0]=="\x00")$vars['protected'][substr($k,3)]=$v;
+else $vars['public'][$k]=$v;
+}return $vars;
+}function get_class_var(object $class,string $type,$key){
+$name=get_class($class);
+$class=(array)$class;
+if    ($type=="public")   ;
+elseif($type=="private")  $key="\x00a\x00$key";
+elseif($type=="protected")$key="\x00*\x00$key";
+return $class[$key];
+}function convert_class(object &$class,string $to){
+$name=get_class($class);
+$class=serialize($class);
+$name=strlen($name).":\"$name\"";
+$to=strlen($to).":\"$to\"";
+$class=replaceone($name,$to,$class);
+$class=unserialize($class);
+}function get_class_var_type(object $class,$key){
+$name=get_class($class);
+$class=(array)$class;
+return isset($class["$key"])?"public":
+       isset($class["\x00a\x00$key"])?"private":
+       isset($class["\x00*\x00$key"])?"protected":
+       false;
+}function class_var_exists(object $class,$key){
+return get_class_var_type($class,$key)!==false;
 }
 
 $GLOBALS['-XN-']['endTime']=microtime(1);
