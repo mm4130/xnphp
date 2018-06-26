@@ -1,13 +1,13 @@
-<?php // xn php v1.6
+<?php // xn php v1.7
 if(PHP_VERSION<7.0){
 throw new Error("<b>xn library</b> needs more than or equal to 7.0 version");
 exit;
 }$GLOBALS['-XN-']=[];
-$GLOBALS['-XN-']['startTime']=microtime(1);
+$GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1530706661.2199{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="0{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -72,7 +72,7 @@ set_last_use_nter();
 });
 }$GLOBALS['-XN-']['errorShow']=true;
 class XNError extends Error {
-protected $message;
+protected $message,$from;
 static function show($sh=null){
 if($sh===null)$GLOBALS['-XN-']['errorShow']=!$GLOBALS['-XN-']['errorShow'];
 else $GLOBALS['-XN-']['errorShow']=$sh;
@@ -80,6 +80,7 @@ else $GLOBALS['-XN-']['errorShow']=$sh;
 $GLOBALS['-XN-']['errorhandler']=$func;
 }public function __construct($in,$text,$level=0,$en=false){
 $type=["Warning","Notic","Lag","Status","User Error","User Warning","User Notic","Recoverable Error","Syntax Error","Unexpected","Undefined","Anonimouse","System Error","Secury Error","Fatal Error","Arithmetic Error","Parse Error","Type Error"][$level];
+$this->from=$in;
 $debug=debug_backtrace();
 $th=end($debug);
 $date=date("ca");
@@ -101,6 +102,8 @@ if($GLOBALS['-XN-']['errorShow']&&is_string($GLOBALS['-XN-']['errorShow']))fadd(
 if($en)exit;
 }public function __toString(){
 return $this->message;
+}public function getFrom(){
+return $this->from;
 }
 }function subsplit($str,$num=1,$rms=false){
 $arr=[];
@@ -235,7 +238,7 @@ if(is_string($str))$str=str_split($str);
 $r='';$c=count($str)-1;
 while($leng>0){
 $r=$r.$str[rand(0,$c)];
-$leng--;}
+--$leng;}
 return $r;
 }function xnsplit($str,$count=1,$space=1){
 $arr=[];
@@ -247,7 +250,7 @@ $c=0;
 $r='';
 while($c<$count){
 $r=$r.$str[$loc+$c];
-$c++;}
+++$c;}
 $arr[]=$r;
 $loc+=$space;}
 return $arr;
@@ -262,11 +265,11 @@ if($c[0]=='-'||$c[0]=='+'||$c[0]=='*'||$c[0]=='/'||$c[0]=='~'){
 if($ia){
 if($c[0]=='-')foreach($a as &$x){
 $t=gettype($x);
-$x--;
+--$x;
 settype($x,$t);
 }elseif($c[0]=='+')foreach($a as &$x){
 $t=gettype($x);
-$x++;
+++$x;
 settype($x,$t);
 }elseif($c[0]=='*')foreach($a as &$x){
 $t=gettype($x);
@@ -283,8 +286,8 @@ settype($x,$t);
 }
 }else{
 $t=gettype($a);
-if($c[0]=='-')$a--;
-if($c[0]=='+')$a++;
+if($c[0]=='-')--$a;
+if($c[0]=='+')++$a;
 if($c[0]=='*')$a*=$a;
 if($c[0]=='/')$a=1/$a;
 if($c[0]=='~')$a=~$a;
@@ -298,7 +301,7 @@ $c=substr($c,0,-1);
 }elseif($c[$l]=='-'){
 $z2=false;
 $c=substr($c,0,-1);
-}$l--;
+}--$l;
 if(!isset($c[$l]));
 elseif($c[$l]=='+'){
 $z1=true;
@@ -306,7 +309,7 @@ $c=substr($c,0,-1);
 }elseif($c[$l]=='-'){
 $z1=false;
 $c=substr($c,0,-1);
-}$l--;
+}--$l;
 if(!isset($c[$l]));
 elseif($c[$l]=='/'){
 $c=substr($c,0,-1);
@@ -413,7 +416,7 @@ if($r!='[')$r.=',';
 if(is_array($v))$v=array_string($v,$js);
 if(is_numeric($k)&&$k===$p){
 $r.=json_encode($v,$js);
-$p++;
+++$p;
 }else $r.=json_encode($k,$js).'=>'.json_encode($v,$js);
 }$r.=']';
 return $r;
@@ -424,7 +427,7 @@ return $r;
 }function ifstr($a,$b,$c=87438975298754978){
 return $c==87438975298754978?($a?"$a":"$b"):$a?"$b":"$c";
 }function array_repeat($arr,$count=1){
-for($c=0;$c<$count;$c++){
+for($c=0;$c<$count;++$c){
 foreach($arr as $v)$arr[]=$v;
 }return $arr;
 }function array_settype($type,$arr){
@@ -1120,7 +1123,7 @@ if($level>5){
 $level-=5;
 $from=min(...$messages);
 $to=max(...$messages);
-for(;$from<=$to;$from++)
+for(;$from<=$to;++$from)
 $this->request("deleteMessage",[
 "chat_id"=>$chat,
 "message_id"=>$from
@@ -1338,7 +1341,7 @@ else return;
 foreach($updates->result as $update){
 $offset=$update->update_id+1;
 if($func($update))return true;
-}$while--;}}
+}--$while;}}
 }public function filterUpdates($filter=[],$func=false){
 if(in_array($this->updateType(),$filter)){
 if($func)$func($this->data);exit();
@@ -1996,7 +1999,7 @@ $updates=$this->getUpdates($offset,$limit,$timeout)['result'];
 foreach($updates as $update){
 $offset=$update->update_id+1;
 if($func($update))return true;
-}$while--;}
+}--$while;}
 }public function installStickerSet($stickerset,$archived=false,$level=2){
 return $this->messagesRequest("installStickerSet",[
 "stickerset"=>$stickerset,
@@ -2130,7 +2133,7 @@ return $this->messagesRequest("getGameHighScores",[
 }public function getAppUpdate($level=2){
 return $this->helpRequest("getAppUpdate",[],$level);
 }public function getChats($id,$level=2){
-return $this->messagesRequest("getAppUpdate",[
+return $this->messagesRequest("getChats",[
 "id"=>$id
 ],$level);
 }public function getUsers($id,$level=2){
@@ -2960,11 +2963,10 @@ return filetype($file);
 }function fdir($file){
 return dirname($file);
 }function fname($file){
-$file=explode('/',$file);
-return end($file);
+return XNString::end($file,DIRECTORY_SEPARATOR);
 }function fformat($file){
-$file=explode('.',$file);
-return end($file);
+$f=XNString::end($file,'.');
+return strhave($f,DIRECTORY_SEPARATOR)?false:$f;
 }function dirdel($dir){
 $s=dirscan($dir);
 foreach($s as $f){
@@ -2973,9 +2975,9 @@ else unlink("$dir/$f");
 }return rmdir($dir);
 }function dirscan($dir){
 $s=scandir($dir);
-if($s[0]=='..')unset($s[0]);
-if($s[1]=='.')unset($s[1]);
-if($s[0]=='.')unset($s[0]);
+if(@$s[0]=='..')unset($s[0]);
+if(@$s[1]=='.')unset($s[1]);
+if(@$s[0]=='.')unset($s[0]);
 return $s;
 }function dircopy($from,$to){
 $s=dirscan($dir);
@@ -3031,10 +3033,10 @@ if($from)fseek($f,$from);
 $s='';$m=0;$o=0;
 while(($c=fgetc($f))!==false&&$s!=$str){
 if($str[$m]==$c){
-$m++;$s="$s$c";
+++$m;$s="$s$c";
 }else{
 $s='';$m=0;
-}$o++;
+}++$o;
 }fclose($f);
 if($s==$str)return $o-1;
 return false;
@@ -3050,10 +3052,10 @@ if($from)fseek($f,$from);
 $s='';$m=0;$o=0;
 while(($c=mb_fgetc($f))&&$s!=$str){
 if($str[$m]==$c){
-$m++;$s="$s$c";
+++$m;$s="$s$c";
 }else{
 $s='';$m=0;
-}$o++;
+}++$o;
 }fclose($f);
 if($s==$str)return $o-1;
 return false;
@@ -3067,7 +3069,7 @@ if($s==$str){
 $r[]=$k;
 $s='';$m=0;$k='';
 }if($str[$m]==$c){
-$m++;$s="$s$c";
+++$m;$s="$s$c";
 }else{
 $k="$k$s$c";
 $s='';$m=0;
@@ -3085,7 +3087,7 @@ fseek($f,$from);
 $r='';
 while(($c=fgetc($f))!==false&&$to!=0){
 $r.=$c;
-$to--;
+--$to;
 }fclose($r);
 return $r;
 }function mb_fsubget($file,$from=0,$to=false){
@@ -3096,7 +3098,7 @@ fseek($f,$from);
 $r='';
 while(($c=mb_fgetc($f))&&$to!=0){
 $r.=$c;
-$to--;
+--$to;
 }fclose($r);
 return $r;
 }function fcopy($from,$to){
@@ -3113,7 +3115,7 @@ if($s==$str){
 fwrite($d,$to);
 $s='';$m=0;
 }if($str[$m]==$c){
-$m++;$s="$s$c";
+++$m;$s="$s$c";
 }else{
 fwrite($d,"$s$c");
 $s='';$m=0;
@@ -3147,14 +3149,14 @@ if($dir=='/')$dir='';
 foreach($s as $file){
 if($file=='.'||$file=='..');
 if(filetype("$dir/$file")=="dir"){
-$dircount++;
+++$dircount;
 $size+=filesize("$dir/$file");
 $i=dirfilesinfo("$dir/$file");
 $size+=$i->size;
 $foldercount+=$i->folder;
 $filecount+=$i->file;
 }else{
-$filecount++;
+++$filecount;
 $size+=filesize("$dir/$file");
 }
 }return (object)["size"=>$size,"folder"=>$foldercount,"file"=>$filecount];
@@ -3315,7 +3317,7 @@ fwrite($t,$r);
 $r='';
 $c.=fread($f,3);
 $c=strrev($c);
-for($o=0;$o<4;$o++){
+for($o=0;$o<4;++$o){
 $r.=["X"=>"00","N"=>"00","x"=>"10","n"=>"01"," "=>"11"][$c[$o]];
 }$r=base2_decode($r);
 $l=$r;
@@ -3401,7 +3403,7 @@ if($time<2592000*$offset)return floor($time/86400).$join."d";
 if($time<186645600*$offset)return floor($time/2592000).$join."n";
 return floor($time/186645600).$join."y";
 }function ssleep($c){
-while($c>0)$c--;
+while($c>0)--$c;
 }function nsleep($c){
 if($c>0)nsleep($c-1);
 }function msleep($c){
@@ -3448,8 +3450,8 @@ $p=[
 "1101"=>"d",
 "1110"=>"e",
 "1111"=>"f"
-];for($c=0;@$text[$c]!=='';$c+=4){
-$n.=$p[$text[$c].$text[$c+1].$text[$c+2].$text[$c+3]];
+];for($c=0;isset($text[$c]);){
+$n.=$p[$text[$c++].$text[$c++].$text[$c++].$text[$c++]];
 }return hex2bin($n);
 }function base64url_encode($data){
 return rtrim(strtr(base64_encode($data),'+/','-_'),'=');
@@ -3471,7 +3473,7 @@ $texte=array_reverse(str_split($text));
 $textc=count($texte);
 $bs=0;
 $th=1;
-for($i=0;$i<$textc;$i++){
+for($i=0;$i<$textc;++$i){
 $bs=$bs+@$frome[$texte[$i]]*$th;
 $th=$th*$fromc;
 }$r='';
@@ -3503,9 +3505,9 @@ $im=imagecreatetruecolor($width,$height);
 $x=0;$y=0;
 foreach($string as $pixel){
 imagesetpixel($im,$x,$y,$pixel+1);
-$y++;
+++$y;
 if($y>=$height){
-$y=0;$x++;
+$y=0;++$x;
 }}
 ob_start();
 imagepng($im);
@@ -3527,8 +3529,8 @@ if($col>0){
 if(strlen($col)<7&&imagecolorat($im,$x,$y+1)>0)
 $col=str_repeat('0',7-strlen($col)).$col;
 $r.=$col;
-}$y++;}
-$x++;}
+}++$y;}
+++$x;}
 return $r;
 }function image_string_encode($str){
 return image_number_encode(number_string_encode($str));
@@ -3606,7 +3608,7 @@ $r=[
 "11100"=>"ن","11101"=>"و",
 "11110"=>"ه","11111"=>"ی"
 ];$n='';
-for($c=0;@$str[$c]!=='';$c+=5){
+for($c=0;isset($str[$c]);$c+=5){
 $t=$str[$c].$str[$c+1].$str[$c+2].$str[$c+3].$str[$c+4];
 if(isset($r[$t]))$t=$r[$t];
 $n.=$t;
@@ -3640,7 +3642,7 @@ $p=[
 "31"=>"d",
 "32"=>"e",
 "33"=>"f"
-];for($c=0;@$text[$c]!=='';$c+=2){
+];for($c=0;isset($text[$c]);$c+=2){
 $n.=$p[$text[$c].$text[$c+1]];
 }return hex2bin($n);
 }
@@ -3988,10 +3990,10 @@ $o=1;
 $s='';
 while(($h=fgetc($f))!==false){
 if($o==2){
-$p--;
+--$p;
 if($m==$l-1)break;
 if($value[$m]==$h){
-$m++;
+++$m;
 }else{
 $m=0;
 fseek($f,$p,SEEK_CUR);
@@ -4000,7 +4002,7 @@ $p='';
 $s='';
 }
 }elseif($o==3){
-$p--;
+--$p;
 if($h==':'){
 $o=2;
 $p-=($s=$this->sizedecode($s))+1;
@@ -4030,10 +4032,10 @@ $m=0;
 $o=false;
 while(($h=fgetc($f))!==false){
 if($o){
-$p--;
+--$p;
 if($m==$l-1)break;
 if($key[$m]==$h){
-$m++;
+++$m;
 }else{
 $m=0;
 $o=false;
@@ -4062,7 +4064,7 @@ $s='';
 $keys=[];
 while(($h=fgetc($f))!==false){
 if($o==2){
-$p--;
+--$p;
 if($m==$l-1){
 $m=0;
 $o=1;
@@ -4070,7 +4072,7 @@ $p='';
 $s='';
 $keys[]=$this->decode($key);
 }elseif($value[$m]==$h){
-$m++;
+++$m;
 }else{
 $m=0;
 @fseek($f,$p,SEEK_CUR);
@@ -4105,10 +4107,10 @@ $m=0;
 $o=false;
 while(($h=fgetc($f))!==false){
 if($o){
-$p--;
+--$p;
 if($m==$l-1)break;
 if($key[$m]==$h){
-$m++;
+++$m;
 }else{
 $m=0;
 $o=false;
@@ -4135,10 +4137,10 @@ $o=1;
 $s='';
 while(($h=fgetc($f))!==false){
 if($o==2){
-$p--;
+--$p;
 if($m==$l-1)break;
 if($value[$m]==$h){
-$m++;
+++$m;
 }else{
 $m=0;
 fseek($f,$p,SEEK_CUR);
@@ -4180,14 +4182,14 @@ $m=0;
 $o=false;
 while(($h=fgetc($f))!==false){
 if($o){
-$p--;
+--$p;
 if($m==$l-1){
 $m=0;
 fwrite($t,$this->elencode(substr($key,0,-1),substr($value,0,-1)));
 fseek($f,$p,SEEK_CUR);
 break;
 }elseif($key[$m]==$h){
-$m++;
+++$m;
 }else{
 $o=false;
 fwrite($t,self::elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
@@ -4235,13 +4237,13 @@ $m=0;
 $o=false;
 while(($h=fgetc($f))!==false){
 if($o){
-$p--;
+--$p;
 if($m==$l-1){
 $m=0;
 fseek($f,$p,SEEK_CUR);
 break;
 }elseif($key[$m]==$h){
-$m++;
+++$m;
 }else{
 $o=false;
 fwrite($t,self::elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
@@ -4292,7 +4294,7 @@ while(($h=fgetc($f))!==false){
 if($h==';'){
 $p=$this->sizedecode($p);
 fseek($f,$p+1,SEEK_CUR);
-$c++;
+++$c;
 $p='';
 }else{
 $p.=$h;
@@ -4401,10 +4403,10 @@ $o=1;
 $s='';
 while(($h=fgetc($f))!==false){
 if($o==2){
-$p--;
+--$p;
 if($m==$l-1)break;
 if($value[$m]==$h){
-$m++;
+++$m;
 }else{
 $m=0;
 fread($f,$p);
@@ -4413,7 +4415,7 @@ $p='';
 $s='';
 }
 }elseif($o==3){
-$p--;
+--$p;
 if($h==':'){
 $o=2;
 $p-=($s=$this->sizedecode($s))+1;
@@ -4441,10 +4443,10 @@ $m=0;
 $o=false;
 while(($h=fgetc($f))!==false){
 if($o){
-$p--;
+--$p;
 if($m==$l-1)break;
 if($key[$m]==$h){
-$m++;
+++$m;
 }else{
 $m=0;
 $o=false;
@@ -4473,7 +4475,7 @@ $s='';
 $keys=[];
 while(($h=fgetc($f))!==false){
 if($o==2){
-$p--;
+--$p;
 if($m==$l-1){
 $m=0;
 $o=1;
@@ -4481,7 +4483,7 @@ $p='';
 $s='';
 $keys[]=$this->decode($key);
 }elseif($value[$m]==$h){
-$m++;
+++$m;
 }else{
 $m=0;
 @fread($f,$p);
@@ -4516,10 +4518,10 @@ $m=0;
 $o=false;
 while(($h=fgetc($f))!==false){
 if($o){
-$p--;
+--$p;
 if($m==$l-1)break;
 if($key[$m]==$h){
-$m++;
+++$m;
 }else{
 $m=0;
 $o=false;
@@ -4546,10 +4548,10 @@ $o=1;
 $s='';
 while(($h=fgetc($f))!==false){
 if($o==2){
-$p--;
+--$p;
 if($m==$l-1)break;
 if($value[$m]==$h){
-$m++;
+++$m;
 }else{
 $m=0;
 fread($f,$p);
@@ -4602,7 +4604,7 @@ while(($h=fgetc($f))!==false){
 if($h==';'){
 $p=$this->sizedecode($p);
 fread($f,$p+1);
-$c++;
+++$c;
 $p='';
 }else{
 $p.=$h;
@@ -4623,553 +4625,6 @@ if($file){
 if(strpos($j,'://')>0)return new XNJsonURL($j);
 return new XNJsonFile($j);
 }return new XNJsonString($j);
-}class XNCalc {
-// consts variables
-static function PI($l=-1){
-$pi=xndata("pi");
-if($l<0)return $pi;
-if($l==0)return substr($pi,1);
-return substr($pi,0,$l+2);
-}static function PHI($l=-1){
-$phi=xndata("phi");
-if($l<0)return $phi;
-if($l==0)return substr($phi,1);
-return substr($phi,0,$l+2);
-}
-// system functions
-static function _check($a){
-if(!is_numeric($a)){
-if(strlen($a)>20)$a=substr($a,0,12).'...'.substr($a,-5);
-new XNError("XNProCalc","invalid number \"$a\".");
-return false;
-}return true;
-}static function _view($a){
-if($a[0]=='-')return true;
-return false;
-}static function abs($a){
-if($a[0]=='-'||$a[0]=='+')return substr($a,1);
-return $a;
-}static function _change($a){
-if($a==0)return '0';
-if($a[0]=='-')return substr($a,1);
-if($a[0]=='+')return '-'.substr($a,1);
-return '-'.$a;
-}static function _get0($a){
-$c=0;$k=0;
-while(@$a[$c++]==='0')$k++;
-return substr($a,$k);
-}static function _get1($a){
-$c=strlen($a)-1;$k=0;
-while(@$a[$c--]==='0')$k++;
-return substr($a,0,strlen($a)-$k);
-}static function _get2($a){
-$a=self::_mo($a);
-$a[1]=isset($a[1])?$a[1]:'0';
-$a[0]=self::_get0($a[0]);
-$a[1]=self::_get1($a[1]);
-if($a[0]&&$a[1])return "{$a[0]}.{$a[1]}";
-if($a[1])return "0.{$a[1]}";
-if($a[0])return "{$a[0]}";
-return "0";
-}static function _get3($a){
-if(self::_view($a))return '-'.self::_get2(self::abs($a));
-return self::_get2(self::abs($a));
-}static function _get($a){
-if(!self::_check($a))return false;
-return self::_get3($a);
-}static function _set0($a,$b){
-$l=strlen($b)-strlen($a);
-if($l<=0)return $a;
-else return str_repeat('0',$l).$a;
-}static function _set1($a,$b){
-$l=strlen($b)-strlen($a);
-if($l<=0)return $a;
-else return $a.str_repeat('0',$l);
-}static function _set2($a,$b){
-$a=self::_mo($a);
-$b=self::_mo($b);
-if(!isset($a[1])&&isset($b[1])){
-$a[1]='0';
-}if(isset($a[1]))$a[1]=self::_set1($a[1],@$b[1]);
-$a[0]=self::_set0($a[0],$b[0]);
-if(!isset($a[1]))return "{$a[0]}";
-return "{$a[0]}.{$a[1]}";
-}static function _set3($a,$b){
-if( self::_view($a)&& self::_view($b))return '-'.self::_set2(self::abs($a),self::abs($b));
-if(!self::_view($a)&& self::_view($b))return     self::_set2(self::abs($a),self::abs($b));
-if( self::_view($a)&&!self::_view($b))return '-'.self::_set2(self::abs($a),self::abs($b));
-                                      return     self::_set2(self::abs($a),self::abs($b));
-}static function _set($a,$b){
-if(!self::_check($a))return false;
-if(!self::_check($b))return false;
-return self::_set3($a,$b);
-}static function _full($a,$b){
-if(!self::_check($a))return false;
-if(!self::_check($b))return false;
-return self::_set(self::_get($a),self::_get($b));
-}static function _setfull(&$a,&$b){
-if(!self::_check($a))return false;
-if(!self::_check($b))return false;
-$a=self::_get($a);
-$b=self::_get($b);
-$a=self::_set($a,$b);
-$b=self::_set($b,$a);
-}static function _mo($a){
-return explode('.',$a);
-}static function _lm($a){
-return strpos($a,'.');
-}static function _im($a){
-$p=self::_lm($a);
-return $p!==false&&$p!=-1;
-}static function _nm($a){
-return str_replace('.','',$a);
-}static function _st($a,$b){
-if(!isset($a[$b])||$b==0)return $a;
-return substr_replace($a,'.',$b,0);
-}static function _iz($a){
-$a=$a[strlen($a)-1];
-return $a=='0'||$a=='2'||$a=='4'||$a=='6'||$a=='8';
-}static function _if($a){
-$a=$a[strlen($a)-1];
-return $a=='1'||$a=='3'||$a=='5'||$a=='7'||$a=='9';
-}static function _so($a,$b){
-$l=strlen($a)%$b;
-if($l==0)return $a;
-else return str_repeat('0',$b-$l).$a;
-}static function _pl($a){
-$l='0';
-while($a!=$l){
-$l=$a;
-$a=str_replace(['--','-+','+-','++'],['+','-','-','+'],$a);
-}return $a;
-}
-// retry calc functions
-static function _powTen0($a,$b){
-$p=self::_lm($a);
-$i=$p===false||$p==-1;
-$a=self::_nm($a);
-$l=strlen($a);
-if($i)$s=strlen($a)+$b;
-else $s=$p+$b;
-if($s==$l)return $a;
-if($s>$l)return $a.str_repeat('0',$s-$l);
-if($s==0)return "0.$a";
-if($s<0)return "0.".str_repeat('0',abs($s)).$a;
-return substr_replace($a,".",$s,0);
-}static function _powTen1($a,$b){
-if(self::_view($a))return '-'.self::_powTen0(self::abs($a),$b);
-return self::_powTen0(self::abs($a),$b);
-}static function powTen($a,$b){
-if(!self::_check($a))return false;
-if(!self::_check($b))return false;
-return self::_get(self::_powTen1($a,$b));
-}static function _mulTwo0($a){
-$a=subsplit($a,13);
-$c=count($a)-1;
-while($c>=0){
-$a[$c]*=2;
-$k=0;
-while(@$a[$c-$k]>9999999999999){
-$a[$c-$k-1]+=1;
-$a[$c-$k]-=10000000000000;
-$k++;
-}$a[$c]=self::_so($a[$c],13);
-$c--;
-}return implode('',$a);
-}static function _mulTwo1($a){
-$a=self::_mo($a);
-$a[0]=self::_so($a[0],13);
-$a[0]=self::_mulTwo0("0000000000000{$a[0]}");
-if(isset($a[1])){
-$l=strlen($a[1]);
-$a[1]=self::_so($a[1],13);
-$a[1]=self::_mulTwo0("0000000000000{$a[1]}");
-$a[2]=substr($a[1],0,-$l);
-$a[1]=substr($a[1],-$l);
-if($a[2]>0)$a[0]=self::_add0("0000000000000{$a[0]}","0000000000000".str_repeat('0',strlen($a[0])-1).'1');
-return "{$a[0]}.{$a[1]}";
-}return $a[0];
-}static function _mulTwo2($a){
-if(self::_view($a))return '-'.self::_mulTwo1(self::abs($a));
-return self::_mulTwo1(self::abs($a));
-}static function mulTwo($a){
-if(!self::_check($a))return false;
-return self::_get3(self::_mulTwo2(self::_get3($a)));
-}static function _divTwo0($a){
-$s='';
-$c=0;
-$k=false;
-while(isset($a[$c])){
-$h=substr($a,$c,14);
-$b=floor($h/2);
-$b=$k?$b+50000000000000:$b;
-$s.=self::_so($b,14);
-if($h%2==1)$k=true;
-$c+=14;
-}if($k)$s.='5';
-return $s;
-}static function _divTwo1($a){
-$p=self::_lm($a);
-$a=self::_nm($a);
-if($p===false||$p==-1)$p=strlen($a);
-$l=strlen($a);
-$a=self::_so($a,14);
-$p+=strlen($a)-$l;
-$a=self::_divTwo0($a);
-return self::_st($a,$p);
-}static function _divTwo2($a){
-if(self::_view($a))return '-'.self::_divTwo1(self::abs($a));
-return self::_divTwo1(self::abs($a));
-}static function divTwo($a){
-return self::_get(self::_divTwo2(self::_get($a)));
-}static function _powTwo0($a){
-$a=subsplit($a,1);
-$x=false;
-$c=$d=count($a)-1;
-$k=0;
-while($c>=0){
-$y='';
-$e=$d;
-$s=0;
-while($e>=0){
-$t=$a[$c]*$a[$e]+$s;
-$s=floor($t/10);
-$t-=$s*10;
-$y=$t.$y;
-$e--;
-}$c--;
-$t=$s.$y.($k?str_repeat('0',$k):'');
-$x=$x?self::add($x,$t):$t;
-$k++;
-}return $x;
-}static function _powTwo1($a){
-$p=self::_lm($a);
-if(!$p)return self::_powTwo0($a);
-$p=strlen($a)-$p-1;
-$p*=2;
-$a=self::_nm($a);
-$a='0'.self::_powTwo0($a);
-return self::_st($a,strlen($a)-$p);
-}static function _powTwo2($a){
-return self::_powTwo1(self::abs($a));
-}static function powTwo($a){
-if(!self::_check($a))return false;
-return self::_get3(self::_powTwo2(self::_get3($a)));
-}
-// set functions
-static function floor($a){
-if(!self::_check($a))return false;
-return explode('.',"$a")[0];
-}static function ceil($a){
-if(!self::_check($a))return false;
-$a=explode('.',"$a");
-return isset($a[1])?self::add($a[0],'1'):$a[0];
-}static function round($a){
-if(!self::_check($a))return false;
-$a=explode('.',"$a");
-return isset($a[1])&&$a[1][0]>=5?self::add($a[0],'1'):$a[0];
-}
-// calc functions
-static function _add0($a,$b){
-$a=subsplit("0000000000000$a",13);
-$b=subsplit("0000000000000$b",13);
-$c=count($a)-1;
-while($c>=0){
-$a[$c]+=$b[$c];
-$k=0;
-while(isset($a[$c-$k])&&$a[$c-$k]>9999999999999){
-$a[$c-$k-1]+=1;
-$a[$c-$k]-=10000000000000;
-$k++;
-}$a[$c]=self::_so($a[$c],13);
-$c--;
-}return implode('',$a);
-}static function _add1($a,$b){
-$o=self::_lm($a);
-$p=$o+(13-(strlen($a)-1)%13);
-$a=self::_so(self::_nm($a),13);
-$b=self::_so(self::_nm($b),13);
-if($o!==false&&$o!==-1)return self::_st(self::_add0($a,$b),$p);
-return self::_add0($a,$b);
-}static function _add2($a,$b){
-if( self::_view($a)&& self::_view($b))return '-'.self::_add1(self::abs($a),self::abs($b));
-if( self::_view($a)&&!self::_view($b))return     self::_rem1(self::abs($b),self::abs($a));
-if(!self::_view($a)&& self::_view($b))return     self::_rem1(self::abs($a),self::abs($b));
-                                      return     self::_add1(self::abs($a),self::abs($b));
-}static function add($a,$b){
-if(!self::_check($a))return false;
-if(!self::_check($b))return false;
-self::_setfull($a,$b);
-$r=self::_add2($a,$b);
-return self::_get3($r);
-}public function _rem0($a,$b){
-$a=subsplit($a,13);
-$b=subsplit($b,13);
-$c=count($a)-1;
-while($c>=0){
-$a[$c]-=$b[$c];
-$k=0;
-while(isset($a[$c-$k])&&$a[$c-$k]<0){
-$a[$c-$k-1]-=1;
-$a[$c-$k]+=10000000000000;
-$k++;
-}$a[$c]=self::_so($a[$c],13);
-$c--;
-}return implode('',$a);
-}static function _rem1($a,$b){
-$o=self::_lm($a);
-$p=$o+(13-(strlen($a)-1)%13);
-$a=self::_so(self::_nm($a),13);
-$b=self::_so(self::_nm($b),13);
-if($o!==false&&$o!==-1)return self::_st(self::_add0($a,$b),$p);
-return self::_rem0($a,$b);
-}static function _rem2($a,$b){
-if( self::_view($a)&& self::_view($b))return '-'.self::_rem1(self::abs($a),self::abs($b));
-if( self::_view($a)&&!self::_view($b))return '-'.self::_add1(self::abs($a),self::abs($b));
-if(!self::_view($a)&& self::_view($b))return     self::_add1(self::abs($a),self::abs($b));
-                                      return     self::_rem1(self::abs($a),self::abs($b));
-}static function _rem3($a,$b){
-if($a<$b){
-return '-'.self::_rem2($b,$a);
-}return self::_rem2($a,$b);
-}static function rem($a,$b){
-if(!self::_check($a))return false;
-if(!self::_check($b))return false;
-self::_setfull($a,$b);
-$r=$a==0?self::_change($b):
-   $b==0?$a:
-   self::_rem3($a,$b);
-return self::_pl(self::_get3($r));
-}static function _mul0($a,$b){
-$a=subsplit($a,1);
-$b=subsplit($b,1);
-$x=false;
-$c=$d=count($a)-1;
-$k=0;
-while($c>=0){
-$y='';
-$e=$d;
-$s=0;
-while($e>=0){
-$t=$a[$c]*$b[$e]+$s;
-$s=floor($t/10);
-$t%=10;
-$y=$t.$y;
-$e--;
-}$c--;
-$t=$s.$y.($k?str_repeat('0',$k):'');
-$x=$x?self::add($x,$t):$t;
-$k++;
-}return $x;
-}static function _mul1($a,$b){
-$ap=self::_lm($a);
-$bp=self::_lm($b);
-if(!$ap)return self::_mul0($a,$b);
-$ap=strlen($a)-$ap-1;
-$bp=strlen($b)-$bp-1;
-$p=$ap+$bp;
-$a=self::_nm($a);
-$b=self::_nm($b);
-$a='0'.self::_mul0($a,$b);
-return self::_st($a,strlen($a)-$p);
-}static function _mul2($a,$b){
-if( self::_view($a)&& self::_view($b))return     self::_mul1(self::abs($a),self::abs($b));
-if(!self::_view($a)&& self::_view($b))return '-'.self::_mul1(self::abs($a),self::abs($b));
-if( self::_view($a)&&!self::_view($b))return '-'.self::_mul1(self::abs($a),self::abs($b));
-                                      return     self::_mul1(self::abs($a),self::abs($b));
-}static function mul($a,$b){
-if(!self::_check($a))return false;
-if(!self::_check($b))return false;
-self::_setfull($a,$b);
-$r=$b==0?0:
-   $b==1?$a:
-   $b==2?self::mulTwo($a):
-   $a==2?self::mulTwo($b):
-   $a==0?0:
-   $a==1?$b:
-   self::_mul2($a,$b);
-return self::_get3($r);
-}static function _rand0($a){
-$rand="0.";
-$b=floor($a/9);
-for($c=0;$c<$b;$c++){
-$rand.=self::_so(rand(0,999999999),9);
-}if($a%9==0)return $rand;
-return $rand.self::_so(rand(0,str_repeat('9',$a%9)),$a%9);
-}static function _rand1($a,$b){
-$c=self::rem($a,$b);
-$d=self::_rand0(strlen($a));
-return self::add(self::floor(self::mul(self::add($c,'1'),$d)),$b);
-}static function _rand2($a,$b){
-$p=self::_lm($a);
-if(!$p)return self::_rand1($a,$b);
-$p=strlen($a)-$p-1;
-$a=self::_nm($a);
-$b=self::_nm($b);
-$a='0'.self::_rand1($a,$b);
-return self::_st($a,strlen($a)-$p);
-}static function _rand3($b,$a){
-if($a>$b)return self::_rand2($a,$b);
-return self::_rand2($b,$a);
-}static function _rand4($a,$b){
-if(self::_view($a)&&self::_view($b))return '-'.self::_rand3(self::abs($a),self::abs($b));
-if(!self::_view($a)&& self::_view($b)){
-return self::_change(self::rem(self::_rand3('0',self::add(self::abs($a),self::abs($b))),$a));
-}if(self::_view($a)&&!self::_view($b)){
-return self::_change(self::rem(self::_rand3('0',self::add(self::abs($a),self::abs($b))),$b));
-}return self::_rand3(self::abs($a),self::abs($b));
-}static function rand($a,$b){
-if(!self::_check($a))return false;
-if(!self::_check($b))return false;
-self::_setfull($a,$b);
-$r=$a==$b?$a:
-   self::_rand4($a,$b);
-return self::_get($r);
-}static function _div0($a,$b){
-if($b>$a)return 0;
-if(($c=self::mulTwo($b))>$a)return 1;
-if(self::mul($b,'3')>$a)return 2;
-if(($c=self::mulTwo($c))>$a)return 3;
-if(self::mul($b,'5')>$a)return 4;
-if(self::mul($b,'6')>$a)return 5;
-if(self::mul($b,'7')>$a)return 6;
-if(self::mulTwo($c)>$a)return 7;
-if(self::mul($b,'9')>$a)return 8;
-                        return 9;
-}static function _div1($a,$b,$o=0){
-$a=subsplit($a,1);
-$p=$r=$i=$d='0';
-$c=count($a);
-while($i<$c){
-$d.=$a[$i];
-if($d>=$b){
-$p=self::_div0($d,$b);
-$d=self::rem($d,self::mul($p,$b));
-$r.=$p;
-}else $r.='0';
-$i++;
-}if($d==0||$o<=0)return $r;
-$r.='.';
-while($d>0&&$o>0){
-$d.='0';
-if($d>=$b){
-$p=self::_div0($d,$b);
-$d=self::rem($d,self::mul($p,$b));
-$r.=$p;
-}else $r.='0';
-$o--;
-}return $r;
-}static function _div2($a,$b,$c=0){
-$a=self::_nm($a);
-$b=self::_nm($b);
-if($c<0)$c=0;
-return self::_div1($a,$b,$c);
-}static function _div3($a,$b,$c=0){
-if( self::_view($a)&& self::_view($b))return     self::_div2(self::abs($a),self::abs($b),$c);
-if( self::_view($a)&&!self::_view($b))return '-'.self::_div2(self::abs($a),self::abs($b),$c);
-if(!self::_view($a)&& self::_view($b))return '-'.self::_div2(self::abs($a),self::abs($b),$c);
-                                      return     self::_div2(self::abs($a),self::abs($b),$c);
-}static function div($a,$b,$c=0){
-if(!self::_check($a))return false;
-if(!self::_check($b))return false;
-self::_setfull($a,$b);
-if($b==0){
-new XNError("XNProCalc","not can div by Ziro");
-return false;
-}$r=$a==0?0:
-    $a==$b?1:
-    $b==1?$a:
-    self::_div3($a,$b,$c);
-return self::_get2($r);
-}static function _rest0($a,$b){
-$a=subsplit($a,1);
-$p=$r=$i=$d='0';
-$c=count($a);
-while($i<$c){
-$d.=$a[$i];
-if($d>=$b){
-$p=self::_div0($d,$b);
-$d=self::rem($d,self::mul($p,$b));
-$r.=$p;
-}else $r.='0';
-$i++;
-}return $d;
-}static function _rest1($a,$b){
-$a=self::_nm($a);
-$b=self::_nm($b);
-return self::_rest0($a,$b);
-}static function _rest2($a,$b){
-if(self::_view($a))return '-'.self::_rest1(self::abs($a),self::abs($b));
-                   return     self::_rest1(self::abs($a),self::abs($b));
-}static function rest($a,$b){
-if(!self::_check($a))return false;
-if(!self::_check($b))return false;
-self::_setfull($a,$b);
-if($b==0){
-new XNError("XNProCalc","not can div by Ziro");
-return false;
-}$r=$a==0?0:
-    $b==1?0:
-    $a==$b?0:
-    self::_rest2($a,$b);
-return self::_get($r);
-}static function fact($a){
-if(!self::_check($a))return false;
-$r='1';
-while($a>0){
-$r=self::mul($r,$a);
-$a=self::rem($a,'1');
-}return $r;
-}
-// run functions
-static function fromNumberString($a='0'){
-if(!self::_check($a))return false;
-return $a*1;
-}static function toNumberString($a=0){
-if("$a"=="INF"){
-if(strlen($a)>20)$a=substr($a,0,12).'...'.substr($a,-5);
-new XNError("XNProCalc","this number is NAN");
-return false;
-}if("$a"=="NAN"){
-if(strlen($a)>20)$a=substr($a,0,12).'...'.substr($a,-5);
-new XNError("XNProCalc","this number is NAN");
-return false;
-}$a=explode('E',$a);
-if(!isset($a[1]))return "{$a[0]}";
-$a=self::powTen($a[0],$a[1]);
-return $a;
-}public function baseconvert($text,$from=false,$to=false){
-$text=(string)$text;
-if(!is_array($from))$fromel=str_split($from);
-else $fromel=$from;
-$frome=[];
-foreach($fromel as $key=>$value){
-$frome[$value]=$key;
-}unset($fromel);
-$fromc=count($frome);
-if(!is_array($to))$toe=str_split($to);
-else $toe=$to;
-$toc=count($toe);
-$texte=array_reverse(str_split($text));
-$textc=count($texte);
-$bs=0;
-$th=1;
-for($i=0;$i<$textc;$i++){
-$bs=self::add($bs,self::mul(@$frome[$texte[$i]],$th));
-$th=self::mul($th,$fromc);
-}$r='';
-if($to===false)return "$bs";
-while($bs>0){
-$r=$toe[self::rest($bs,$toc)].$r;
-$bs=floor(self::div($bs,$toc));
-}return "$r";
-}public function base_convert($str,int $from,int $to=10){
-$chars="0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/";
-$from=substr($chars,0,$from);
-$to=substr($chars,0,$to);
-$to=$to=="0123456789"?false:$to;
-return self::baseconvert($str,$from,$to);
-}
 }
 
 function calc($c){
@@ -5253,7 +4708,7 @@ if($r===null){
 $l=strlen($a);
 if($l%2==1&&$l!=3){
 $a=substr($a,1);
-$l--;
+--$l;
 }if($l==3)$a=$a[0].$a[0].$a[1].$a[1].$a[2].$a[2];
 elseif($l==4)$a=$a[0].$a[0].$a[1].$a[1].$a[2].$a[2].$a[3].$a[3];
 elseif($l!=6&&$l!=8){
@@ -5533,9 +4988,9 @@ $pixels=zlib_decode($pixels);
 $pos=0;
 $x=-1;$y=0;
 while(@$pixels[$pos+3]){
-$x++;
+++$x;
 if($x+1>$this->info['width']){
-$x=0;$y++;
+$x=0;++$y;
 }$this->pixels[$y][$x]=base10_encode(substr($pixels,$pos,4));
 $pos+=4;
 }
@@ -5770,12 +5225,12 @@ if($p)$this->__construct($p);
 return $closure;
 }public function call(...$p){
 return ($this->closure)(...$p);
-}public function callArray($p){
-if(!is_array($p))return ($this->closure)($p);
+}public function callArray(array $p){
+if(!is_array($p))return ($this->closure)(...$p);
 return ($this->closure)(...$p);
-}public function repeatCall($c,...$p){
+}public function repeatCall(int $c,...$p){
 while($c-->0)($this->closure)(...$p);
-}public function repeatCallArray($c,$p){
+}public function repeatCallArray(int $c,array $p){
 while($c-->0)$this->callArray($p);
 }public function __clone(){
 return new XNClosure($this->closure);
@@ -5836,56 +5291,59 @@ $r=[];$c=0;
 foreach($arr as $k=>$v)$r[$v]=$c++;
 return $r;
 }function ende_code($d){
-for($c=0;@$d[$c]!=='';$c++)
+for($c=0;isset($d[$c]);++$c)
 $d[$c]=chr(255-ord($d[$c]));
 return $d;
-}function min_ord($str){
-$l=256;
-for($c=0;($h=@$str[$c])!=='';$c++)
-$l=$l>($h=ord($h))?$h:$l;
-return $l;
-}function max_ord($str){
-$l=-1;
-for($c=0;($h=@$str[$c])!=='';$c++)
-$l=$l<($h=ord($h))?$h:$l;
-return $l;
 }function chrget(int $chr){
 $chr%=256;
 return $chr<0?$chr+256:$chr;
-}function lowing_str_encode($str){
-$l=min_ord($str)-1;
+}function lowing_str_encode(string $str){
+$l=XNString::min($str)-1;
 if($l<=0)return "$str\x00";
-for($c=0;@$str[$c]!=='';$c++)
+for($c=0;isset($str[$c]);++$c)
 $str[$c]=chr(ord($str[$c])-$l);
 return $str.chr($l);
-}function lowing_str_decode($str){
+}function lowing_str_decode(string $str){
 $l=ord(substr($str,-1));
 $str=substr($str,0,-1);
 if($l==0)return $str;
-for($c=0;@$str[$c]!=='';$c++)
+for($c=0;isset($str[$c]);++$c)
 $str[$c]=chr(ord($str[$c])+$l);
 return $str;
-}function upping_str_encode($str){
-$l=255-max_ord($str);
+}function upping_str_encode(string $str){
+$l=255-XNString::max($str);
 if($l<=0)return "$str\x00";
-for($c=0;@$str[$c]!=='';$c++)
+for($c=0;isset($str[$c]);++$c)
 $str[$c]=chr(ord($str[$c])+$l);
 return $str.chr($l);
-}function upping_str_decode($str){
+}function upping_str_decode(string $str){
 $l=ord(substr($str,-1));
 $str=substr($str,0,-1);
 if($l==0)return $str;
-for($c=0;@$str[$c]!=='';$c++)
+for($c=0;isset($str[$c]);++$c)
 $str[$c]=chr(ord($str[$c])-$l);
 return $str;
-}function str_offset_encode($str){
-for($c=0;@$str[$c]!=='';$c++)
-$str[$c]=chr(chrget(ord($str[$c])-$c));
+}function str_offset(string $str,string $algo="x+y"){
+for($c=0;isset($str[$c]);++$c)
+$str[$c]=chr(chrget((int)eval("return ".str_replace(['x','y'],[ord($str[$c]),$c],$algo).";")));
 return $str;
-}function str_offset_decode($str){
-for($c=0;@$str[$c]!=='';$c++)
-$str[$c]=chr(chrget(ord($str[$c])+$c));
+}function str_roffset(string $str,string $algo="x+y"){
+$l=strlen($str);
+for($c=0;isset($str[$c]);++$c)
+$str[$c]=chr(chrget((int)eval("return ".str_replace(['x','y'],[ord($str[$c]),$l-$c],$algo).";")));
 return $str;
+}function str_foffset(string $str,string $algo="x+y"){
+return str_roffset(str_offset($str,$algo),$algo);
+}function str_koffset_encode(string $str,string $key="\x01"){
+$algo='x';
+for($c=0;isset($key[$c]);++$c)
+$algo.='+'.ord($key[$c]).'*y';
+return str_foffset($str,$algo);
+}function str_koffset_decode(string $str,string $key="\x01"){
+$algo='x';
+for($c=0;isset($key[$c]);++$c)
+$algo.='-'.ord($key[$c]).'*y';
+return str_foffset($str,$algo);
 }function remote_addr_encode(string $r){
 return pack('c*',explode('.',$r));
 }function remote_addr_decode(string $r){
@@ -5929,7 +5387,7 @@ $c=0;
 foreach($data as $k=>$v){
 if($k===$c){
 $arr.=unce($v).',';
-$c++;
+++$c;
 }else $arr.=unce($k).'=>'.unce($v).',';
 }if($arr=='[')return '[]';
 return substr($arr,0,-1).']';
@@ -5972,11 +5430,11 @@ return XNSERIALIZE_CLOSURE_ERROR;
 }$po=strpos($file,$pa[0]);
 $file=substr($file,$po+strlen($pa[0]));
 $x=0;$a=false;$b='';
-for($o=0;@$file[$o]!=='';$o++){
+for($o=0;isset($file[$o]);++$o){
 if($x<0)break;
 if(!$a){
-if($file[$o]=='{')$x++;
-elseif($file[$o]=='}')$x--;
+if($file[$o]=='{')++$x;
+elseif($file[$o]=='}')--$x;
 elseif($file[$o]=='"'||$file[$o]=="'"){
 $a=true;
 $b=$file[$o];
@@ -5984,7 +5442,7 @@ $b=$file[$o];
 }else{
 if($file[$o]==$b)$a=false;
 }
-}$o--;
+}--$o;
 $file=substr($file,0,$o);
 return $pa[0].$file.'}';
 }
@@ -6007,7 +5465,7 @@ $c=0;
 foreach($data as $k=>$v){
 if($k===$c){
 $arr.=preg_unce($v).' *\,';
-$c++;
+++$c;
 }else $arr.=preg_unce($k).' *\=\> *'.preg_unce($v).' *\, *';
 }if($arr=='\[ *')return '\[ *\]';
 return substr($arr,0,-4).'\]';
@@ -6050,11 +5508,11 @@ return XNSERIALIZE_CLOSURE_ERROR;
 }$po=strpos($file,$pa[0]);
 $file=substr($file,$po+strlen($pa[0]));
 $x=0;$a=false;$b='';
-for($o=0;@$file[$o]!=='';$o++){
+for($o=0;isset($file[$o]);++$o){
 if($x<0)break;
 if(!$a){
-if($file[$o]=='{')$x++;
-elseif($file[$o]=='}')$x--;
+if($file[$o]=='{')++$x;
+elseif($file[$o]=='}')--$x;
 elseif($file[$o]=='"'||$file[$o]=="'"){
 $a=true;
 $b=$file[$o];
@@ -6062,7 +5520,7 @@ $b=$file[$o];
 }else{
 if($file[$o]==$b)$a=false;
 }
-}$o--;
+}--$o;
 $file=substr($file,0,$o);
 $file=str_replace(['\\','/','[',']','{','}','(',')','.','$','^',',','?','<','>','+','*','&','|','!','-','#'],['\\\\','\/','\[','\]','\{','\}','\(','\)','\.','\$','\^','\,','\?','\<','\>','\+','\*','\&','\|','\!','\-','\#'],$file);
 return "function *$name\($pars\)$stc$typa *\{ *$file *\}";
@@ -6082,7 +5540,7 @@ $size=ord($str[0]);
 $size=substr($str,1,$size);
 $arr=unpack("c*",$size);
 $size=0;
-for($c=1;@$arr[$c]!==null;$c++)
+for($c=1;isset($arr[$c]);++$c)
 $size=$size*255+$arr[$c];
 return (int)$size;
 }function xnserialize(...$datas){
@@ -6173,11 +5631,11 @@ return XNSERIALIZE_CLOSURE_ERROR;
 $po=strpos($file,$pa[0]);
 $file=substr($file,$po+strlen($pa[0]));
 $x=0;$a=false;$b='';
-for($o=0;@$file[$o]!=='';$o++){
+for($o=0;isset($file[$o]);++$o){
 if($x<0)break;
 if(!$a){
-if($file[$o]=='{')$x++;
-elseif($file[$o]=='}')$x--;
+if($file[$o]=='{')++$x;
+elseif($file[$o]=='}')--$x;
 elseif($file[$o]=='"'||$file[$o]=="'"){
 $a=true;
 $b=$file[$o];
@@ -6185,7 +5643,7 @@ $b=$file[$o];
 }else{
 if($file[$o]==$b)$a=false;
 }
-}$o--;
+}--$o;
 $file=substr($file,0,$o);
 $file=xnsize_encode($file).$file;
 if($file=="\x00")$file="\x01\x01\x01";
@@ -6240,7 +5698,7 @@ $data=substr($datas,$c,$size);
 $c+=$size;
 $d=xnunserialize($data);
 $data=[];
-for($o=0;@$d[$o]!==null;$o+=2)
+for($o=0;isset($d[$o]);$o+=2)
 $data[$d[$o]]=$d[$o+1];
 break;case 8:
 $l=ord($datas[$c++]);
@@ -6251,7 +5709,7 @@ $data=substr($datas,$c,$size);
 $c+=$size;
 $d=xnunserialize($data);
 $data=[];
-for($o=0;@$d[$o]!==null;$o+=2)
+for($o=0;isset($d[$o]);$o+=2)
 $data[$d[$o]]=$d[$o+1];
 $data=(object)$data;
 break;case 9:
@@ -6290,7 +5748,7 @@ $pars=[];
 if($par!="\x01"){
 $ll=strlen($par);
 $pv=0;
-for($cl=0;$cl<$ll;$pv++){
+for($cl=0;$cl<$ll;++$pv){
 $pl=ord($par[$cl++]);
 $ps=substr($par,$cl,$pl);
 $cl+=$pl;
@@ -6300,7 +5758,7 @@ $cl+=$ps;
 $kc=0;
 $pars[$pv]='';
 if($p[0]=='.'){
-$kc++;
+++$kc;
 $pars[$pv].='...';
 }if(strhave($p,';')){
 $ps=strpos($p,';');
@@ -6309,7 +5767,7 @@ $kc+=$ps+1;
 $pars[$pv]=$pt.' '.$pars[$pv];
 }if($p[$kc]=='&'){
 $pars[$pv].='&';
-$kc++;
+++$kc;
 }if(strhave($p,':')){
 $ps=strpos($p,':');
 $pn=substr($p,$kc,$ps-$kc);
@@ -6352,7 +5810,7 @@ $pc+=$size;
 $data=substr($data,$pc);
 $d=xnunserialize($data);
 $data=[];
-for($o=0;@$d[$o]!==null;$o+=2)
+for($o=0;isset($d[$o]);$o+=2)
 $data[$d[$o]]=$d[$o+1];
 $data=serialize((object)$data);
 $data=replaceone("8:\"stdClass\"",strlen($name).":\"$name\"",$data);
@@ -6420,11 +5878,771 @@ return isset($class["$key"])?"public":
        false;
 }function class_var_exists(object $class,$key){
 return get_class_var_type($class,$key)!==false;
+}class Memory {
+public static function usage(){
+return memory_get_usage();
+}public static function free(&$give){
+unset($give);
+}
+}class XNNumber {
+// consts variables
+static function PI($l=-1){
+$pi=xndata("pi");
+if($l<0)return $pi;
+if($l==0)return substr($pi,1);
+return substr($pi,0,$l+2);
+}static function PHI($l=-1){
+$phi=xndata("phi");
+if($l<0)return $phi;
+if($l==0)return substr($phi,1);
+return substr($phi,0,$l+2);
+}
+// system functions
+static function _check($a){
+if(!is_numeric($a)){
+if(strlen($a)>20)$a=substr($a,0,12).'...'.substr($a,-5);
+new XNError("XNNumber","invalid number \"$a\".");
+return false;
+}return true;
+}static function _view($a){
+if($a[0]=='-')return true;
+return false;
+}static function abs($a){
+if($a[0]=='-'||$a[0]=='+')return substr($a,1);
+return $a;
+}static function _change($a){
+if($a==0)return '0';
+if($a[0]=='-')return substr($a,1);
+if($a[0]=='+')return '-'.substr($a,1);
+return '-'.$a;
+}static function _get0($a){
+$a=ltrim($a,'0');
+return $a?$a:'0';
+}static function _get1($a){
+$a=rtrim($a,'0');
+return $a?$a:'0';
+}static function _get2($a){
+$a=self::_mo($a);
+$a[1]=isset($a[1])?$a[1]:'0';
+$a[0]=self::_get0($a[0]);
+$a[1]=self::_get1($a[1]);
+if($a[0]&&$a[1])return "{$a[0]}.{$a[1]}";
+if($a[1])return "0.{$a[1]}";
+if($a[0])return "{$a[0]}";
+return "0";
+}static function _get3($a){
+if(self::_view($a))return '-'.self::_get2(self::abs($a));
+return self::_get2(self::abs($a));
+}static function _get($a){
+if(!self::_check($a))return false;
+return self::_get3($a);
+}static function _set0($a,$b){
+$l=strlen($b)-strlen($a);
+if($l<=0)return $a;
+else return str_repeat('0',$l).$a;
+}static function _set1($a,$b){
+$l=strlen($b)-strlen($a);
+if($l<=0)return $a;
+else return $a.str_repeat('0',$l);
+}static function _set2($a,$b){
+$a=self::_mo($a);
+$b=self::_mo($b);
+if(!isset($a[1])&&isset($b[1])){
+$a[1]='0';
+}if(isset($a[1]))$a[1]=self::_set1($a[1],@$b[1]);
+$a[0]=self::_set0($a[0],$b[0]);
+if(!isset($a[1]))return "{$a[0]}";
+return "{$a[0]}.{$a[1]}";
+}static function _set3($a,$b){
+if( self::_view($a)&& self::_view($b))return '-'.self::_set2(self::abs($a),self::abs($b));
+if(!self::_view($a)&& self::_view($b))return     self::_set2(self::abs($a),self::abs($b));
+if( self::_view($a)&&!self::_view($b))return '-'.self::_set2(self::abs($a),self::abs($b));
+                                      return     self::_set2(self::abs($a),self::abs($b));
+}static function _set($a,$b){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+return self::_set3($a,$b);
+}static function _full($a,$b){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+return self::_set(self::_get($a),self::_get($b));
+}static function _setfull(&$a,&$b){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+$a=self::_get($a);
+$b=self::_get($b);
+$a=self::_set($a,$b);
+$b=self::_set($b,$a);
+}static function _mo($a){
+return explode('.',$a);
+}static function _lm($a){
+return strpos($a,'.');
+}static function _im($a){
+$p=self::_lm($a);
+return $p!==false&&$p!=-1;
+}static function _nm($a){
+return str_replace('.','',$a);
+}static function _st($a,$b){
+if(!isset($a[$b])||$b==0)return $a;
+return substr_replace($a,'.',$b,0);
+}static function _iz($a){
+$a=$a[strlen($a)-1];
+return $a=='0'||$a=='2'||$a=='4'||$a=='6'||$a=='8';
+}static function _if($a){
+$a=$a[strlen($a)-1];
+return $a=='1'||$a=='3'||$a=='5'||$a=='7'||$a=='9';
+}static function _so($a,$b){
+$l=strlen($a)%$b;
+if($l==0)return $a;
+else return str_repeat('0',$b-$l).$a;
+}static function _pl($a){
+$l='0';
+while($a!=$l){
+$l=$a;
+$a=str_replace(['--','-+','+-','++'],['+','-','-','+'],$a);
+}return $a;
+}
+// retry calc functions
+static function _powTen0($a,$b){
+$p=self::_lm($a);
+$i=$p===false||$p==-1;
+$a=self::_nm($a);
+$l=strlen($a);
+if($i)$s=strlen($a)+$b;
+else $s=$p+$b;
+if($s==$l)return $a;
+if($s>$l)return $a.str_repeat('0',$s-$l);
+if($s==0)return "0.$a";
+if($s<0)return "0.".str_repeat('0',abs($s)).$a;
+return substr_replace($a,".",$s,0);
+}static function _powTen1($a,$b){
+if(self::_view($a))return '-'.self::_powTen0(self::abs($a),$b);
+return self::_powTen0(self::abs($a),$b);
+}static function powTen($a,$b){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+return self::_get(self::_powTen1($a,$b));
+}static function _mulTwo0($a){
+$a=subsplit($a,13);
+$c=count($a)-1;
+while($c>=0){
+$a[$c]*=2;
+$k=0;
+while(@$a[$c-$k]>9999999999999){
+$a[$c-$k-1]+=1;
+$a[$c-$k]-=10000000000000;
+++$k;
+}$a[$c]=self::_so($a[$c],13);
+--$c;
+}return implode('',$a);
+}static function _mulTwo1($a){
+$a=self::_mo($a);
+$a[0]=self::_so($a[0],13);
+$a[0]=self::_mulTwo0("0000000000000{$a[0]}");
+if(isset($a[1])){
+$l=strlen($a[1]);
+$a[1]=self::_so($a[1],13);
+$a[1]=self::_mulTwo0("0000000000000{$a[1]}");
+$a[2]=substr($a[1],0,-$l);
+$a[1]=substr($a[1],-$l);
+if($a[2]>0)$a[0]=self::_add0("0000000000000{$a[0]}","0000000000000".str_repeat('0',strlen($a[0])-1).'1');
+return "{$a[0]}.{$a[1]}";
+}return $a[0];
+}static function _mulTwo2($a){
+if(self::_view($a))return '-'.self::_mulTwo1(self::abs($a));
+return self::_mulTwo1(self::abs($a));
+}static function mulTwo($a){
+if(!self::_check($a))return false;
+return self::_get3(self::_mulTwo2(self::_get3($a)));
+}static function _divTwo0($a){
+$s='';
+$c=0;
+$k=false;
+while(isset($a[$c])){
+$h=substr($a,$c,14);
+$b=floor($h/2);
+$b=$k?$b+50000000000000:$b;
+$s.=self::_so($b,14);
+if($h%2==1)$k=true;
+$c+=14;
+}if($k)$s.='5';
+return $s;
+}static function _divTwo1($a){
+$p=self::_lm($a);
+$a=self::_nm($a);
+if($p===false||$p==-1)$p=strlen($a);
+$l=strlen($a);
+$a=self::_so($a,14);
+$p+=strlen($a)-$l;
+$a=self::_divTwo0($a);
+return self::_st($a,$p);
+}static function _divTwo2($a){
+if(self::_view($a))return '-'.self::_divTwo1(self::abs($a));
+return self::_divTwo1(self::abs($a));
+}static function divTwo($a){
+return self::_get(self::_divTwo2(self::_get($a)));
+}static function _powTwo0($a){
+$a=subsplit($a,1);
+$x=false;
+$c=$d=count($a)-1;
+$k=0;
+while($c>=0){
+$y='';
+$e=$d;
+$s=0;
+while($e>=0){
+$t=$a[$c]*$a[$e]+$s;
+$s=floor($t/10);
+$t-=$s*10;
+$y=$t.$y;
+--$e;
+}--$c;
+$t=$s.$y.($k?str_repeat('0',$k):'');
+$x=$x?self::add($x,$t):$t;
+++$k;
+}return $x;
+}static function _powTwo1($a){
+$p=self::_lm($a);
+if(!$p)return self::_powTwo0($a);
+$p=strlen($a)-$p-1;
+$p*=2;
+$a=self::_nm($a);
+$a='0'.self::_powTwo0($a);
+return self::_st($a,strlen($a)-$p);
+}static function _powTwo2($a){
+return self::_powTwo1(self::abs($a));
+}static function powTwo($a){
+if(!self::_check($a))return false;
+return self::_get3(self::_powTwo2(self::_get3($a)));
+}
+// set functions
+static function floor($a){
+if(!self::_check($a))return false;
+return explode('.',"$a")[0];
+}static function ceil($a){
+if(!self::_check($a))return false;
+$a=explode('.',"$a");
+return isset($a[1])?self::add($a[0],'1'):$a[0];
+}static function round($a){
+if(!self::_check($a))return false;
+$a=explode('.',"$a");
+return isset($a[1])&&$a[1][0]>=5?self::add($a[0],'1'):$a[0];
+}
+// calc functions
+static function _add0($a,$b){
+$a=subsplit("0000000000000$a",13);
+$b=subsplit("0000000000000$b",13);
+$c=count($a)-1;
+while($c>=0){
+$a[$c]+=$b[$c];
+$k=0;
+while(isset($a[$c-$k])&&$a[$c-$k]>9999999999999){
+$a[$c-$k-1]+=1;
+$a[$c-$k]-=10000000000000;
+++$k;
+}$a[$c]=self::_so($a[$c],13);
+--$c;
+}return implode('',$a);
+}static function _add1($a,$b){
+$o=self::_lm($a);
+$p=$o+(13-(strlen($a)-1)%13);
+$a=self::_so(self::_nm($a),13);
+$b=self::_so(self::_nm($b),13);
+if($o!==false&&$o!==-1)return self::_st(self::_add0($a,$b),$p);
+return self::_add0($a,$b);
+}static function _add2($a,$b){
+if( self::_view($a)&& self::_view($b))return '-'.self::_add1(self::abs($a),self::abs($b));
+if( self::_view($a)&&!self::_view($b))return     self::_rem1(self::abs($b),self::abs($a));
+if(!self::_view($a)&& self::_view($b))return     self::_rem1(self::abs($a),self::abs($b));
+                                      return     self::_add1(self::abs($a),self::abs($b));
+}static function add($a,$b){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+self::_setfull($a,$b);
+$r=self::_add2($a,$b);
+return self::_get3($r);
+}public function _rem0($a,$b){
+$a=subsplit($a,13);
+$b=subsplit($b,13);
+$c=count($a)-1;
+while($c>=0){
+$a[$c]-=$b[$c];
+$k=0;
+while(isset($a[$c-$k])&&$a[$c-$k]<0){
+$a[$c-$k-1]-=1;
+$a[$c-$k]+=10000000000000;
+++$k;
+}$a[$c]=self::_so($a[$c],13);
+--$c;
+}return implode('',$a);
+}static function _rem1($a,$b){
+$o=self::_lm($a);
+$p=$o+(13-(strlen($a)-1)%13);
+$a=self::_so(self::_nm($a),13);
+$b=self::_so(self::_nm($b),13);
+if($o!==false&&$o!==-1)return self::_st(self::_add0($a,$b),$p);
+return self::_rem0($a,$b);
+}static function _rem2($a,$b){
+if( self::_view($a)&& self::_view($b))return '-'.self::_rem1(self::abs($a),self::abs($b));
+if( self::_view($a)&&!self::_view($b))return '-'.self::_add1(self::abs($a),self::abs($b));
+if(!self::_view($a)&& self::_view($b))return     self::_add1(self::abs($a),self::abs($b));
+                                      return     self::_rem1(self::abs($a),self::abs($b));
+}static function _rem3($a,$b){
+if($a<$b){
+return '-'.self::_rem2($b,$a);
+}return self::_rem2($a,$b);
+}static function rem($a,$b){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+self::_setfull($a,$b);
+$r=$a==0?self::_change($b):
+   $b==0?$a:
+   self::_rem3($a,$b);
+return self::_pl(self::_get3($r));
+}static function _mul0($a,$b){
+$a=subsplit($a,1);
+$b=subsplit($b,1);
+$x=false;
+$c=$d=count($a)-1;
+$k=0;
+while($c>=0){
+$y='';
+$e=$d;
+$s=0;
+while($e>=0){
+$t=$a[$c]*$b[$e]+$s;
+$s=floor($t/10);
+$t%=10;
+$y=$t.$y;
+--$e;
+}--$c;
+$t=$s.$y.($k?str_repeat('0',$k):'');
+$x=$x?self::add($x,$t):$t;
+++$k;
+}return $x;
+}static function _mul1($a,$b){
+$ap=self::_lm($a);
+$bp=self::_lm($b);
+if(!$ap)return self::_mul0($a,$b);
+$ap=strlen($a)-$ap-1;
+$bp=strlen($b)-$bp-1;
+$p=$ap+$bp;
+$a=self::_nm($a);
+$b=self::_nm($b);
+$a='0'.self::_mul0($a,$b);
+return self::_st($a,strlen($a)-$p);
+}static function _mul2($a,$b){
+if( self::_view($a)&& self::_view($b))return     self::_mul1(self::abs($a),self::abs($b));
+if(!self::_view($a)&& self::_view($b))return '-'.self::_mul1(self::abs($a),self::abs($b));
+if( self::_view($a)&&!self::_view($b))return '-'.self::_mul1(self::abs($a),self::abs($b));
+                                      return     self::_mul1(self::abs($a),self::abs($b));
+}static function mul($a,$b){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+self::_setfull($a,$b);
+$r=$b==0?0:
+   $b==1?$a:
+   $b==2?self::mulTwo($a):
+   $a==2?self::mulTwo($b):
+   $a==0?0:
+   $a==1?$b:
+   self::_mul2($a,$b);
+return self::_get3($r);
+}static function _rand0($a){
+$rand="0.";
+$b=floor($a/9);
+for($c=0;$c<$b;++$c){
+$rand.=self::_so(rand(0,999999999),9);
+}if($a%9==0)return $rand;
+return $rand.self::_so(rand(0,str_repeat('9',$a%9)),$a%9);
+}static function _rand1($a,$b){
+$c=self::rem($a,$b);
+$d=self::_rand0(strlen($a));
+return self::add(self::floor(self::mul(self::add($c,'1'),$d)),$b);
+}static function _rand2($a,$b){
+$p=self::_lm($a);
+if(!$p)return self::_rand1($a,$b);
+$p=strlen($a)-$p-1;
+$a=self::_nm($a);
+$b=self::_nm($b);
+$a='0'.self::_rand1($a,$b);
+return self::_st($a,strlen($a)-$p);
+}static function _rand3($b,$a){
+if($a>$b)return self::_rand2($a,$b);
+return self::_rand2($b,$a);
+}static function _rand4($a,$b){
+if(self::_view($a)&&self::_view($b))return '-'.self::_rand3(self::abs($a),self::abs($b));
+if(!self::_view($a)&& self::_view($b)){
+return self::_change(self::rem(self::_rand3('0',self::add(self::abs($a),self::abs($b))),$a));
+}if(self::_view($a)&&!self::_view($b)){
+return self::_change(self::rem(self::_rand3('0',self::add(self::abs($a),self::abs($b))),$b));
+}return self::_rand3(self::abs($a),self::abs($b));
+}static function rand($a,$b){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+self::_setfull($a,$b);
+$r=$a==$b?$a:
+   self::_rand4($a,$b);
+return self::_get($r);
+}static function _div0($a,$b){
+if($b>$a)return 0;
+if(($c=self::mulTwo($b))>$a)return 1;
+if(self::mul($b,'3')>$a)return 2;
+if(($c=self::mulTwo($c))>$a)return 3;
+if(self::mul($b,'5')>$a)return 4;
+if(self::mul($b,'6')>$a)return 5;
+if(self::mul($b,'7')>$a)return 6;
+if(self::mulTwo($c)>$a)return 7;
+if(self::mul($b,'9')>$a)return 8;
+                        return 9;
+}static function _div1($a,$b,$o=0){
+$a=subsplit($a,1);
+$p=$r=$i=$d='0';
+$c=count($a);
+while($i<$c){
+$d.=$a[$i];
+if($d>=$b){
+$p=self::_div0($d,$b);
+$d=self::rem($d,self::mul($p,$b));
+$r.=$p;
+}else $r.='0';
+++$i;
+}if($d==0||$o<=0)return $r;
+$r.='.';
+while($d>0&&$o>0){
+$d.='0';
+if($d>=$b){
+$p=self::_div0($d,$b);
+$d=self::rem($d,self::mul($p,$b));
+$r.=$p;
+}else $r.='0';
+--$o;
+}return $r;
+}static function _div2($a,$b,$c=0){
+$a=self::_nm($a);
+$b=self::_nm($b);
+if($c<0)$c=0;
+return self::_div1($a,$b,$c);
+}static function _div3($a,$b,$c=0){
+if( self::_view($a)&& self::_view($b))return     self::_div2(self::abs($a),self::abs($b),$c);
+if( self::_view($a)&&!self::_view($b))return '-'.self::_div2(self::abs($a),self::abs($b),$c);
+if(!self::_view($a)&& self::_view($b))return '-'.self::_div2(self::abs($a),self::abs($b),$c);
+                                      return     self::_div2(self::abs($a),self::abs($b),$c);
+}static function div($a,$b,$c=0){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+self::_setfull($a,$b);
+if($b==0){
+new XNError("XNProCalc","not can div by Ziro");
+return false;
+}$r=$a==0?0:
+    $a==$b?1:
+    $b==1?$a:
+    self::_div3($a,$b,$c);
+return self::_get2($r);
+}static function _rest0($a,$b){
+$a=subsplit($a,1);
+$p=$r=$i=$d='0';
+$c=count($a);
+while($i<$c){
+$d.=$a[$i];
+if($d>=$b){
+$p=self::_div0($d,$b);
+$d=self::rem($d,self::mul($p,$b));
+$r.=$p;
+}else $r.='0';
+++$i;
+}return $d;
+}static function _rest1($a,$b){
+$a=self::_nm($a);
+$b=self::_nm($b);
+return self::_rest0($a,$b);
+}static function _rest2($a,$b){
+if(self::_view($a))return '-'.self::_rest1(self::abs($a),self::abs($b));
+                   return     self::_rest1(self::abs($a),self::abs($b));
+}static function rest($a,$b){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+self::_setfull($a,$b);
+if($b==0){
+new XNError("XNProCalc","not can div by Ziro");
+return false;
+}$r=$a==0?0:
+    $b==1?0:
+    $a==$b?0:
+    self::_rest2($a,$b);
+return self::_get($r);
+}static function fact($a){
+if(!self::_check($a))return false;
+$r='1';
+while($a>0){
+$r=self::mul($r,$a);
+$a=self::rem($a,'1');
+}return $r;
+}
+// convertor functions
+static function toNumber($a='0'){
+if(!self::_check($a))return false;
+return $a*1;
+}static function toXNNumber($a=0){
+if($a==NAN||$a==INF){
+if(strlen($a)>20)$a=substr($a,0,12).'...'.substr($a,-5);
+new XNError("XNNumber","the '$a' not is a number");
+return false;
+}$a=explode('E',$a);
+if(!isset($a[1]))return "{$a[0]}";
+$a=self::powTen($a[0],$a[1]);
+return $a;
+}
+// parser functions
+public function baseconvert($text,$from=false,$to=false){
+$text=(string)$text;
+if(!is_array($from))$fromel=str_split($from);
+else $fromel=$from;
+$frome=[];
+foreach($fromel as $key=>$value){
+$frome[$value]=$key;
+}unset($fromel);
+$fromc=count($frome);
+if(!is_array($to))$toe=str_split($to);
+else $toe=$to;
+$toc=count($toe);
+$texte=array_reverse(str_split($text));
+$textc=count($texte);
+$bs=0;
+$th=1;
+for($i=0;$i<$textc;++$i){
+$bs=self::add($bs,self::mul(@$frome[$texte[$i]],$th));
+$th=self::mul($th,$fromc);
+}$r='';
+if($to===false)return "$bs";
+while($bs>0){
+$r=$toe[self::rest($bs,$toc)].$r;
+$bs=floor(self::div($bs,$toc));
+}return "$r";
+}public function base_convert($str,int $from,int $to=10){
+$chars="0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/";
+$from=substr($chars,0,$from);
+$to=substr($chars,0,$to);
+$to=$to=="0123456789"?false:$to;
+return self::baseconvert($str,$from,$to);
+}
+}
+class XNBinary {
+// system functions
+public static function _check($a){
+if(!is_numeric($a)||
+   strhave($a,'2')||
+   strhave($a,'3')||
+   strhave($a,'4')||
+   strhave($a,'5')||
+   strhave($a,'6')||
+   strhave($a,'7')||
+   strhave($a,'8')||
+   strhave($a,'9')
+){
+if(strlen($a)>20)$a=substr($a,0,12).'...'.substr($a,-5);
+new XNError("XNBinary","invalid binary \"$a\".");
+return false;
+}return true;
+}public static function _set($a,$b){
+if(!self::_check($a))return false;
+if(!self::_check($b))return false;
+$l=strlen($b)-strlen($a);
+if($l<=0)return $a;
+else return str_repeat('0',$l).$a;
+}public static function _setall(&$a,&$b){
+$a=self::_set($a,$b);
+if($a===false)return false;
+$b=self::_set($b,$a);
+if($b===false)return false;
+return true;
+}public function _get($a){
+if(!self::_check($a))return false;
+$a=ltrim($a,'0');
+return $a?$a:'0';
+}public function _setfull(&$a,&$b){
+$a=self::_get($a);
+if($a===false)return false;
+$b=self::_get($b);
+if($b===false)return false;
+self::_setall($a,$b);
+return true;
+}public function _getfull(&$a){
+$a=self::_get($a);
+if($a===false)return false;
+return true;
+}
+// parser functions
+
+// calc functions
+public static function xor($a,$b){
+if(!self::_setfull($a,$b))return false;
+$l=strlen($a);
+for($c=0;$c<$l;++$c)
+$a[$c].=$a[$c]==$b[$c]?'1':'0';
+return $a;
+}public static function add($a,$b){
+if(!self::_setfull($a,$b))return false;
+if($a==0)return $b;
+if($b==0)return $a;
+$a="0$a";
+$b="0$b";
+$l=strlen($a);
+for($c=0;$c<$l;++$c){
+$a[$c]=$a[$c]+$b[$c];
+$w=0;
+while($a[$c-$w]==2){
+$a[$c-$w-1]=$a[$c-$w-1]+1;
+$a[$c-$w]=0;
+++$w;
+}
+}if($a[0]=='0')$a=substr($a,1);
+return self::_get($a);
+}public static function rem($a,$b){
+if(!self::_setfull($a,$b))return false;
+if($b>$a)var_move($a,$b);
+if($b==0)return $a;
+if($a==$b)return 0;
+$l=strlen($a);
+$a=str_split($a);
+for($c=0;$c<$l;++$c){
+$a[$c]=$a[$c]-$b[$c];
+$w=0;
+while($a[$c-$w]==-1){
+$k=1;
+while($a[$c-$w-$k]==0){
+$a[$c-$w-$k]=1;
+++$k;
+}$a[$c-$w-$k]=0;
+$a[$c-$w]=1;
+++$w;
+}
+}return self::_get(implode('',$a));
+}public static function mul($a,$b){
+$g=str_repeat('0',strlen($a)+strlen($b));
+if(!self::_setfull($a,$b))return false;
+if($a==0||$b==0)return '0';
+$l=strlen($a);
+for($x=0;$x<$l;++$x){
+$r='';
+for($y=0;$y<$l;++$y)
+$r.=$a[$x]*$b[$y];
+if($x>0)$r.=str_repeat('0',$x);
+$g=self::add($g,$r);
+}return self::_get($g);
+}public static function div($a,$b){
+if(!self::_getfull($a))return false;
+if(!self::_getfull($b))return true;
+if($b>$a)var_move($a,$b);
+return strlen($a)-strlen($b);
+}public static function rshift($a,$shift=1){
+if(!self::_getfull($a))return false;
+if($shift==0)return $a;
+return substr($a,-$shift);
+}public static function lshift($a,$shift=1){
+if(!self::_getfull($a))return false;
+if($shift==0)return $a;
+return $a.str_repeat('0',$shift);
+}
+// convertors
+public function toInt($a){
+return (int)base_convert($a,2,10);
+}public function toNumber($a){
+return XNNumber::base_convert($a,2,10);
+}public function toString($a){
+return base2_decode(set_bytes($a,8));
+}
+}
+class XNStringPosition {
+public $string='',$position=0,$length=0;
+public function __cosntruct(string $str,int $from=0,int $length=-1){
+$this->string=$str;
+$this->position=$from;
+$this->length=$length>-1?$length:strlen($str);
+}public function current(){
+return $this->string[$this->position];
+}public function next(){
+return $this->string[++$this->position];
+}public function prev(){
+return $this->string[--$this->position];
+}public function end(){
+return $this->string[$this->position=$this->length-1];
+}public function start(){
+return $this->string[$this->position=0];
+}public function go(int $to){
+return $this->string[$this->position=$to];
+}
+}class XNString {
+// parser functions
+public static function lshift(string $str,int $shift=1){
+$l=strlen($str);
+$shift=$shift<0?1:$shift%$l;
+return substr($str,$shift,$l-1).substr($str,0,$shift);
+}public static function rshift(string $str,int $shift=1){
+$l=strlen($str);
+$shift=$shift<0?1:$shift%$l;
+return substr($str,$l-$shift,$l-1).substr($str,0,$l-$shift);
+}public static function usedchars(string $str){
+return array_unique(str_split($str));
+}public static function max(...$chars){
+if(isset($chars[0][1]))$chars=str_split($chars[0]);
+elseif(is_array(@$chars[0]))$chars=$chars[0];
+$chars=array_unique($chars);
+$l=-1;
+for($c=0;isset($chars[$c]);++$c)
+if(($h=ord($chars[$c]))>$l)$l=$h;
+return $l;
+}public static function min(...$chars){
+if(isset($chars[0][1]))$chars=str_split($chars[0]);
+elseif(is_array(@$chars[0]))$chars=$chars[0];
+$chars=array_unique($chars);
+$l=256;
+for($c=0;isset($chars[$c]);++$c)
+if(($h=ord($chars[$c]))<$l)$l=$h;
+return $l;
+}public static function end(string $str,string $im){
+return substr($str,strrpos($str,$im)+1);
+}public static function start(string $str,string $im){
+return substr($str,0,strpos($str,$im));
+}public static function noend(string $str,string $im){
+return substr($str,0,strrpos($str,$im));
+}public static function nostart(string $str,string $im){
+return substr($str,strpos($str,$im)+1);
+}public static function char(string $str,int $x){
+return @$str[$x];
+}public static function islength(string $str,int $x){
+return isset($str[$x-1]);
+}public static function position(string $str,int $from=0){
+return new XNStringPosition($str,$from);
+}public static function endchar(string $str){
+return $str[strlen($str)-1];
+}public static function startby(string $str,string $by){
+return strpos($str,$by)===0;
+}public static function endby(string $str,string $by){
+return strrpos($str,$by)===strlen($str)-strlen($by);
+}public static function startiby(string $str,string $by){
+return stripos($str,$by)===0;
+}public static function endiby(string $str,string $by){
+return strripos($str,$by)===strlen($str)-strlen($by);
+}
+// calc functions
+public static function xor(string $a,string $b){
+return XNBinary::toString(XNBinary::xor(base2_encode($a),base2_encode($b)));
+}public static function add(string $a,string $b){
+return XNBinary::toString(XNBinary::add(base2_encode($a),base2_encode($b)));
+}public static function rem(string $a,string $b){
+return XNBinary::toString(XNBinary::rem(base2_encode($a),base2_encode($b)));
+}public static function mul(string $a,string $b){
+return XNBinary::toString(XNBinary::mul(base2_encode($a),base2_encode($b)));
+}public static function div(string $a,string $b){
+return XNBinary::toString(XNBinary::div(base2_encode($a),base2_encode($b)));
+}
 }
 
-$GLOBALS['-XN-']['endTime']=microtime(1);
+$GLOBALS['-XN-']['endTime']=microtime(true);
 function xnscript(){
-return ["version"=>"1.6",
+return ["version"=>"1.7",
 "start_time"=>$GLOBALS['-XN-']['startTime'],
 "end_time"=>$GLOBALS['-XN-']['endTime'],
 "loaded_time"=>$GLOBALS['-XN-']['endTime']-$GLOBALS['-XN-']['startTime'],
