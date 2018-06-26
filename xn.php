@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="0{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1530005027.4786{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -224,6 +224,10 @@ echo substr($l[$p++],2);
 return eval('return '.$code.';');
 }function evald($code){
 return eval($code);
+}function evaln($namespace,$code){
+return xneval("<?php\nnamespace $namespace;\n$code");
+}function evalp($code){
+return xneval("<?php\n$code");
 }function is_function($f){
 return (is_string($f)&&function_exists($f))||(is_object($f)&&($f instanceof Closure||$f instanceof XNClosure));
 }function is_closure($f){
@@ -434,7 +438,7 @@ foreach($arr as $v)$arr[]=$v;
 foreach($arr as &$v)settype($v,$type);
 return $arr;
 }function evals($str){
-return evalc("\"$str\"");
+return eval("return \"$str\";");
 }function findurls($s){
 preg_match_all('/([hH][tT][tT][pP][sS]{0,1}:\/\/)([a-zA-Z0-9\-_]+(\.[a-zA-Z0-9\-_]+)+)(:[0-9]{1,8}){0,1}(\/([^\/\?\# ])*)*(\#[^\n ]*){0,1}(\?[^\n\# ]*){0,1}(\#[^\n ]*){0,1}/',$s,$u);
 if(!isset($u[0][0]))return false;
