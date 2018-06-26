@@ -31,14 +31,20 @@ require_once $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR .
 require_once $GLOBALS['-XN-']['dirNameDir'] . "coding" . DIRECTORY_SEPARATOR . "index.php";
 // \xn\File
 require_once $GLOBALS['-XN-']['dirNameDir'] . "files" . DIRECTORY_SEPARATOR . "index.php";
-// \xn\Calc
-require_once $GLOBALS['-XN-']['dirNameDir'] . "calc" . DIRECTORY_SEPARATOR . "index.php";
 // \xn\API
 require_once $GLOBALS['-XN-']['dirNameDir'] . "api" . DIRECTORY_SEPARATOR . "index.php";
 // \xn\CF
 require_once $GLOBALS['-XN-']['dirNameDir'] . "cfile" . DIRECTORY_SEPARATOR . "index.php";
 // \xn\Time
 require_once $GLOBALS['-XN-']['dirNameDir'] . "time.php";
+// \xn\variables
+require_once $GLOBALS['-XN-']['dirNameDir'] . "variables.php";
+// \xn\String
+require_once $GLOBALS['-XN-']['dirNameDir'] . "xnstring.php";
+// \xn\Binary
+require_once $GLOBALS['-XN-']['dirNameDir'] . "xnbinary.php";
+// \xn\Number
+require_once $GLOBALS['-XN-']['dirNameDir'] . "xnnumber.php";
 
 $GLOBALS['-XN-']['endTime'] = microtime(1);
 
