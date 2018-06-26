@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1530005027.4786{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1530011473.9403{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -1004,12 +1004,12 @@ return [$this->banMember($chat,$user,$level),$this->unbanMember($chat,$user,$lev
 return $this->request("getMe",[],$level);
 }public function getWebhook($level=3){
 return $this->request("getWebhookInfo",[],$level);
-}public function restrictMember($chat,$user,$args,$time=false,$level=3){
+}public function resrictMember($chat,$user,$args,$time=false,$level=3){
 foreach($args as $key=>$val)$args["can_$key"]=$val;
 $args['chat_id']=$chat;
 $args['user_id']=$user;
 if($time)$args['until_date']=$time;
-return $this->request("restrictChatMember",$args,$level);
+return $this->request("resrictChatMember",$args,$level);
 }public function promoteMember($chat,$user,$args=[],$level=3){
 foreach($args as $key=>$val)$args["can_$key"]=$val;
 $args['chat_id']=$chat;
@@ -2308,8 +2308,8 @@ $args['offset']=$oggset;
 $args['limit']=$limit;
 $args['hash']=$hash;
 return $this->contactsRequest("getTopPeers",$args,$level);
-}public function getNearestDc($level=2){
-return $this->helpRequest("getNearestDc",[],$level);
+}public function getNearesDc($level=2){
+return $this->helpRequest("getNearesDc",[],$level);
 }public function getStatuses($level=2){
 return $this->contactsRequest("getStatuses",[],$level);
 }public function getNotifySettings($peer,$level=2){
@@ -4689,6 +4689,8 @@ if($n>=171)return INF;
 while($n>0){
 $r*=$n--;
 }return $r;
+}function gcd($a,$b){
+return $b?gcd($b,$a%$b):$a;
 }function strprogress($p1,$p2,$c,$x,$n,$o=''){
 if($n>$x)var_move($x,$n);
 $p=(int)($n/$x*$c);
@@ -5883,12 +5885,13 @@ return isset($class["$key"])?"public":
 }function class_var_exists(object $class,$key){
 return get_class_var_type($class,$key)!==false;
 }class Memory {
-public static function usage(){
+static function usage(){
 return memory_get_usage();
-}public static function free(&$give){
+}static function free(&$give){
 unset($give);
 }
-}class XNNumber {
+}
+class XNNumber {
 // consts variables
 static function PI($l=-1){
 $pi=xndata("pi");
@@ -5900,6 +5903,10 @@ $phi=xndata("phi");
 if($l<0)return $phi;
 if($l==0)return substr($phi,1);
 return substr($phi,0,$l+2);
+}
+// validator
+static function is_number($a){
+return is_numeric($a);
 }
 // system functions
 static function _check($a){
@@ -6344,7 +6351,7 @@ return false;
     $b==1?$a:
     self::_div3($a,$b,$c);
 return self::_get2($r);
-}static function _rest0($a,$b){
+}static function _res0($a,$b){
 $a=subsplit($a,1);
 $p=$r=$i=$d='0';
 $c=count($a);
@@ -6357,14 +6364,14 @@ $r.=$p;
 }else $r.='0';
 ++$i;
 }return $d;
-}static function _rest1($a,$b){
+}static function _res1($a,$b){
 $a=self::_nm($a);
 $b=self::_nm($b);
-return self::_rest0($a,$b);
-}static function _rest2($a,$b){
-if(self::_view($a))return '-'.self::_rest1(self::abs($a),self::abs($b));
-                   return     self::_rest1(self::abs($a),self::abs($b));
-}static function rest($a,$b){
+return self::_res0($a,$b);
+}static function _res2($a,$b){
+if(self::_view($a))return '-'.self::_res1(self::abs($a),self::abs($b));
+                   return     self::_res1(self::abs($a),self::abs($b));
+}static function res($a,$b){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 self::_setfull($a,$b);
@@ -6374,15 +6381,19 @@ return false;
 }$r=$a==0?0:
     $b==1?0:
     $a==$b?0:
-    self::_rest2($a,$b);
+    self::_res2($a,$b);
 return self::_get($r);
-}static function fact($a){
+}
+// algo functions
+static function fact($a){
 if(!self::_check($a))return false;
 $r='1';
 while($a>0){
 $r=self::mul($r,$a);
 $a=self::rem($a,'1');
 }return $r;
+}static function gcd($a,$b){
+return $b?self::gcd($b,self::res($a,$b)):$a;
 }
 // convertor functions
 static function toNumber($a='0'){
@@ -6421,7 +6432,7 @@ $th=self::mul($th,$fromc);
 }$r='';
 if($to===false)return "$bs";
 while($bs>0){
-$r=$toe[self::rest($bs,$toc)].$r;
+$r=$toe[self::res($bs,$toc)].$r;
 $bs=floor(self::div($bs,$toc));
 }return "$r";
 }public function base_convert($str,int $from,int $to=10){
@@ -6433,29 +6444,24 @@ return self::baseconvert($str,$from,$to);
 }
 }
 class XNBinary {
+// validator
+static function is_binary($a){
+return preg_match('/^[01]+$/',$a);
+}
 // system functions
-public static function _check($a){
-if(!is_numeric($a)||
-   strhave($a,'2')||
-   strhave($a,'3')||
-   strhave($a,'4')||
-   strhave($a,'5')||
-   strhave($a,'6')||
-   strhave($a,'7')||
-   strhave($a,'8')||
-   strhave($a,'9')
-){
+static function _check($a){
+if(!self::is_binary($a)){
 if(strlen($a)>20)$a=substr($a,0,12).'...'.substr($a,-5);
 new XNError("XNBinary","invalid binary \"$a\".");
 return false;
 }return true;
-}public static function _set($a,$b){
+}static function _set($a,$b){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 $l=strlen($b)-strlen($a);
 if($l<=0)return $a;
 else return str_repeat('0',$l).$a;
-}public static function _setall(&$a,&$b){
+}static function _setall(&$a,&$b){
 $a=self::_set($a,$b);
 if($a===false)return false;
 $b=self::_set($b,$a);
@@ -6480,13 +6486,13 @@ return true;
 // parser functions
 
 // calc functions
-public static function xor($a,$b){
+static function xor($a,$b){
 if(!self::_setfull($a,$b))return false;
 $l=strlen($a);
 for($c=0;$c<$l;++$c)
 $a[$c].=$a[$c]==$b[$c]?'1':'0';
 return $a;
-}public static function add($a,$b){
+}static function add($a,$b){
 if(!self::_setfull($a,$b))return false;
 if($a==0)return $b;
 if($b==0)return $a;
@@ -6503,7 +6509,7 @@ $a[$c-$w]=0;
 }
 }if($a[0]=='0')$a=substr($a,1);
 return self::_get($a);
-}public static function rem($a,$b){
+}static function rem($a,$b){
 if(!self::_setfull($a,$b))return false;
 if($b>$a)var_move($a,$b);
 if($b==0)return $a;
@@ -6523,7 +6529,7 @@ $a[$c-$w]=1;
 ++$w;
 }
 }return self::_get(implode('',$a));
-}public static function mul($a,$b){
+}static function mul($a,$b){
 $g=str_repeat('0',strlen($a)+strlen($b));
 if(!self::_setfull($a,$b))return false;
 if($a==0||$b==0)return '0';
@@ -6535,16 +6541,16 @@ $r.=$a[$x]*$b[$y];
 if($x>0)$r.=str_repeat('0',$x);
 $g=self::add($g,$r);
 }return self::_get($g);
-}public static function div($a,$b){
+}static function div($a,$b){
 if(!self::_getfull($a))return false;
 if(!self::_getfull($b))return true;
 if($b>$a)var_move($a,$b);
 return strlen($a)-strlen($b);
-}public static function rshift($a,$shift=1){
+}static function rshift($a,$shift=1){
 if(!self::_getfull($a))return false;
 if($shift==0)return $a;
 return substr($a,-$shift);
-}public static function lshift($a,$shift=1){
+}static function lshift($a,$shift=1){
 if(!self::_getfull($a))return false;
 if($shift==0)return $a;
 return $a.str_repeat('0',$shift);
@@ -6560,10 +6566,10 @@ return base2_decode(set_bytes($a,8));
 }
 class XNStringPosition {
 public $string='',$position=0,$length=0;
-public function __cosntruct(string $str,int $from=0,int $length=-1){
+public function __construct(string $str,int $from=0){
 $this->string=$str;
 $this->position=$from;
-$this->length=$length>-1?$length:strlen($str);
+$this->length=strlen($str);
 }public function current(){
 return $this->string[$this->position];
 }public function next(){
@@ -6571,25 +6577,60 @@ return $this->string[++$this->position];
 }public function prev(){
 return $this->string[--$this->position];
 }public function end(){
-return $this->string[$this->position=$this->length-1];
+$this->string[$this->position=$this->length-1];
 }public function start(){
 return $this->string[$this->position=0];
 }public function go(int $to){
 return $this->string[$this->position=$to];
+}public function set(string $c){
+$this->string[$this->position]=$c[0];
+}
+}class XNStringBinaryPosition {
+public $binary='',$position=0,$length=0,$size=0;
+public function __construct(string $str,int $size,int $from=0){
+$this->binary=base2_encode($str);
+$this->position=$from;
+$this->length=strlen($str)*8;
+$this->size=$size;
+}public function get(){
+$this->binary=set_bytes($this->binary,8,'0');
+$length=$this->length%8;
+$length=$length?8-$length:0;
+$this->length+=$length;
+return base2_decode($this->binary);
+}public function __toString(){
+return $this->get();
+}public function current(){
+return base_convert(substr($this->binary,$this->position,$this->size),2,10);
+}public function next(){
+return base_convert(substr($this->binary,$this->position+=$this->size,$this->size),2,10);
+}public function prev(){
+return base_convert(substr($this->binary,$this->position-=$this->size,$this->size),2,10);
+}public function end(){
+$this->position=$this->length-1;
+}public function start(){
+return base_convert(substr($this->binary,$this->position=0,$this->size),2,10);
+}public function go(int $to){
+return base_convert(substr($this->binary,$this->position=$to,$this->size),2,10);
+}public function set(string $c){
+$c=set_bytes($c,$this->size,'0');
+$this->binary=substr_replace($this->binary,$c,$this->position,$this->size);
+}public function getBlocksCount(){
+return ceil($this->length/$this->size);
 }
 }class XNString {
 // parser functions
-public static function lshift(string $str,int $shift=1){
+static function lshift(string $str,int $shift=1){
 $l=strlen($str);
 $shift=$shift<0?1:$shift%$l;
 return substr($str,$shift,$l-1).substr($str,0,$shift);
-}public static function rshift(string $str,int $shift=1){
+}static function rshift(string $str,int $shift=1){
 $l=strlen($str);
 $shift=$shift<0?1:$shift%$l;
 return substr($str,$l-$shift,$l-1).substr($str,0,$l-$shift);
-}public static function usedchars(string $str){
+}static function usedchars(string $str){
 return array_unique(str_split($str));
-}public static function max(...$chars){
+}static function max(...$chars){
 if(isset($chars[0][1]))$chars=str_split($chars[0]);
 elseif(is_array(@$chars[0]))$chars=$chars[0];
 $chars=array_unique($chars);
@@ -6597,7 +6638,7 @@ $l=-1;
 for($c=0;isset($chars[$c]);++$c)
 if(($h=ord($chars[$c]))>$l)$l=$h;
 return $l;
-}public static function min(...$chars){
+}static function min(...$chars){
 if(isset($chars[0][1]))$chars=str_split($chars[0]);
 elseif(is_array(@$chars[0]))$chars=$chars[0];
 $chars=array_unique($chars);
@@ -6605,41 +6646,43 @@ $l=256;
 for($c=0;isset($chars[$c]);++$c)
 if(($h=ord($chars[$c]))<$l)$l=$h;
 return $l;
-}public static function end(string $str,string $im){
+}static function end(string $str,string $im){
 return substr($str,strrpos($str,$im)+1);
-}public static function start(string $str,string $im){
+}static function start(string $str,string $im){
 return substr($str,0,strpos($str,$im));
-}public static function noend(string $str,string $im){
+}static function noend(string $str,string $im){
 return substr($str,0,strrpos($str,$im));
-}public static function nostart(string $str,string $im){
+}static function nostart(string $str,string $im){
 return substr($str,strpos($str,$im)+1);
-}public static function char(string $str,int $x){
+}static function char(string $str,int $x){
 return @$str[$x];
-}public static function islength(string $str,int $x){
+}static function islength(string $str,int $x){
 return isset($str[$x-1]);
-}public static function position(string $str,int $from=0){
+}static function position(string $str,int $from=0){
 return new XNStringPosition($str,$from);
-}public static function endchar(string $str){
+}static function binaryPosition(string $str,int $size=8,int $from=0){
+return new XNStringBinaryPosition($str,$size,$from);
+}static function endchar(string $str){
 return $str[strlen($str)-1];
-}public static function startby(string $str,string $by){
+}static function startby(string $str,string $by){
 return strpos($str,$by)===0;
-}public static function endby(string $str,string $by){
+}static function endby(string $str,string $by){
 return strrpos($str,$by)===strlen($str)-strlen($by);
-}public static function startiby(string $str,string $by){
+}static function startiby(string $str,string $by){
 return stripos($str,$by)===0;
-}public static function endiby(string $str,string $by){
+}static function endiby(string $str,string $by){
 return strripos($str,$by)===strlen($str)-strlen($by);
 }
 // calc functions
-public static function xor(string $a,string $b){
+static function xor(string $a,string $b){
 return XNBinary::toString(XNBinary::xor(base2_encode($a),base2_encode($b)));
-}public static function add(string $a,string $b){
+}static function add(string $a,string $b){
 return XNBinary::toString(XNBinary::add(base2_encode($a),base2_encode($b)));
-}public static function rem(string $a,string $b){
+}static function rem(string $a,string $b){
 return XNBinary::toString(XNBinary::rem(base2_encode($a),base2_encode($b)));
-}public static function mul(string $a,string $b){
+}static function mul(string $a,string $b){
 return XNBinary::toString(XNBinary::mul(base2_encode($a),base2_encode($b)));
-}public static function div(string $a,string $b){
+}static function div(string $a,string $b){
 return XNBinary::toString(XNBinary::div(base2_encode($a),base2_encode($b)));
 }
 }
