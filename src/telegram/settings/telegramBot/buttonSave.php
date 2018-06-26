@@ -2,6 +2,8 @@
 
 namespace xn\Telegram\Settings\TelegramBot;
 
+use xn;
+
 // save buttons list for easy use
 // $bot->menu
 class buttonSave {
@@ -28,7 +30,7 @@ class buttonSave {
    */
   public function add($name, $btn) {
     if(is_array($btn)) $btns = json_encode($btn);
-    elseif(!is_json($btn)) return false;
+    elseif(!xn\variables\is_json($btn)) return false;
     else $btn = json_decode($btns = $btn);
     if(!isset($btns['inline_keyboard']) ||
        !isset($btns['keyboard'])        ||
