@@ -8,6 +8,8 @@
 
 namespace xn\Telegram;
 
+use xn;
+
 require_once $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "button.php";
 require_once $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "inlineButton.php";
 require_once $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "queryResult.php";
