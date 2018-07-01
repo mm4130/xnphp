@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1530230473.069{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1530427405.5848{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -73,10 +73,10 @@ set_last_use_nter();
 }$GLOBALS['-XN-']['errorShow']=true;
 class XNError extends Error {
 protected $message,$from;
-static function show($sh=null){
+public static function show($sh=null){
 if($sh===null)$GLOBALS['-XN-']['errorShow']=!$GLOBALS['-XN-']['errorShow'];
 else $GLOBALS['-XN-']['errorShow']=$sh;
-}static function handler($func){
+}public static function handler($func){
 $GLOBALS['-XN-']['errorhandler']=$func;
 }public function __construct($in,$text,$level=0,$en=false){
 $type=["Warning","Notic","Lag","Status","User Error","User Warning","User Notic","Recoverable Error","Syntax Error","Unexpected","Undefined","Anonimouse","System Error","Secury Error","Fatal Error","Arithmetic Error","Parse Error","Type Error"][$level];
@@ -97,7 +97,7 @@ $GLOBALS['-XN-']['errorhandler']($this);
 }catch(Expection $e){
 }catch(XNError $e){
 }}
-if($GLOBALS['-XN-']['errorShow'])echo $message;
+if($GLOBALS['-XN-']['errorShow'])print $message;
 if($GLOBALS['-XN-']['errorShow']&&is_string($GLOBALS['-XN-']['errorShow']))fadd($GLOBALS['-XN-']['errorShow'],$console);
 if($en)exit;
 }public function __toString(){
@@ -216,9 +216,9 @@ $t=debug_backtrace();
 $l=file($t[0]['file']);
 $p=$t[0]['line'];
 if($k)while(isset($l[$p][1])&&$l[$p][0].$l[$p][1]=='#>'){
-echo evalc(substr($l[$p++],2));
+print evalc(substr($l[$p++],2));
 }else while(isset($l[$p][1])&&$l[$p][0].$l[$p][1]=='#>'){
-echo substr($l[$p++],2);
+print substr($l[$p++],2);
 }
 }function evalc($code){
 return eval('return '.$code.';');
@@ -237,6 +237,8 @@ return is_object($f)&&($f instanceof stdClass);
 }function is_json($json){
 $obj=@json_decode($json);
 return $obj!==false&&is_string($json)&&(is_object($obj)||is_array($obj));
+}function is_xnjson($xnjson){
+return $xnjson instanceof XNJsonString||$xnjson instanceof XNJsonFile||$xnjson instanceof XNJsonURL;
 }function random($str,$leng=1){
 if(is_string($str))$str=str_split($str);
 $r='';$c=count($str)-1;
@@ -858,7 +860,7 @@ $args=$this->parse_args($args);
 if($level==1){
 header("Content-Type: application/json");
 $args['method']=$method;
-echo json_encode($args);
+print json_encode($args);
 $res=true;
 }elseif($level==2){
 $res=fclose(fopen("https://api.telegram.org/bot$this->token/$method?".http_build_query($args),'r'));
@@ -1609,7 +1611,7 @@ return $args;
 }
 
 class TelegramLink {
-static function getMessage($chat,$message){
+public static function getMessage($chat,$message){
 if(@$chat[0]=='@')$chat=substr($chat,1);
 try{
 $g=file_get_contents("https://t.me/$chat/$message?embed=1");
@@ -1764,7 +1766,7 @@ if($service)$r['service_message']=true;
 return (object)$r;
 }catch(Error $e){
 return false;}
-}static function getChat($chat){
+}public static function getChat($chat){
 if(@$chat[0]=='@')$chat=substr($chat,1);
 $g=file_get_contents("https://t.me/$chat");
 $g=str_replace('<br/>',"\n",$g);
@@ -1786,9 +1788,9 @@ if($photo)$r['photo']=$photo;
 if($description)$r['description']=$description;
 if($members>0)$r['members']=$members*1;
 return (object)$r;
-}static function getJoinChat($code){
+}public static function getJoinChat($code){
 return self::getChat("joinchat/$code");
-}static function getSticker($name){
+}public static function getSticker($name){
 $g=file_get_contents("https://t.me/addstickers/$name");
 $x=new DOMDocument;
 $x->loadHTML($g);
@@ -1806,7 +1808,7 @@ return self::getMessage($channel,1)["date"];
 }
 
 class TelegramCode {
-static function getFileType($file){
+public static function getFileType($file){
 $file=base64_decode(strtr($file,'-_','+/'));
 $type=[
 0=>"thumb",
@@ -1820,14 +1822,14 @@ $type=[
 8=>"sticker"
 ];$file=ord($file[0]);
 return isset($type[$file])?$type[$file]:false;
-}static function getMimeType($type,$mime_type="text/plan"){
+}public static function getMimeType($type,$mime_type="text/plan"){
 return ["document"=>$mime_type,"audio"=>"audio/mp3","video"=>"video/mp4","vide_note"=>"video/mp4","voice"=>"audio/ogg","photo"=>"image/jpeg","sticker"=>"image/webp"][$type];
-}static function getFormat($type,$format="txt"){
+}public static function getFormat($type,$format="txt"){
 return ["document"=>$format,"audio"=>"mp3","video"=>"mp4","vide_note"=>"mp4","voice"=>"ogg","photo"=>"jpg","sticker"=>"webp"][$type];
-}static function getJoinChat($code){
+}public static function getJoinChat($code){
 $code=base64_decode(strtr($code,'-_','+/'));
 return base_convert(bin2hex(substr($code,4,4)),16,10);
-}static function faketoken_random(){
+}public static function faketoken_random(){
 $tokens=xndata("faketoken/random");
 return $tokens[array_rand($tokens)];
 }
@@ -1836,7 +1838,7 @@ return $tokens[array_rand($tokens)];
 class TelegramUploder {
 private static function getbot(){
 return new TelegramBot("348695851:AAE5GyQ7NVgxq9i1UToQQXBydGiNVD06rpo");
-}static function upload($content){
+}public static function upload($content){
 $bot=self::getbot();
 $codes='';
 $contents=subsplit($content,5242880);
@@ -1856,14 +1858,14 @@ $file=new CURLFile("xn$random.log");
 $code=$bot->sendDocument("@tebrobot",$file)->result->document->file_id;
 unset($save);
 return $code;
-}static function download($code){
+}public static function download($code){
 $bot=self::getbot();
 $codes=$bot->downloadFile($code);
 $codes=explode('.',$codes);
 foreach($codes as &$code){
 $code=$bot->downloadFile($code);
 }return implode('',$codes);
-}static function uploadFile($file){
+}public static function uploadFile($file){
 $bot=self::getbot();
 $codes='';
 $f=@fopen($file,'r');
@@ -1887,7 +1889,7 @@ $code=$bot->sendDocument("@tebrobot",$file)->result->document->file_id;
 fclose($f);
 unset($save);
 return $code;
-}static function downloadFile($code,$file){
+}public static function downloadFile($code,$file){
 $bot=self::getbot();
 $f=@fopen($file,'w');
 if(!$f){
@@ -1899,12 +1901,12 @@ foreach($codes as $code){
 $code=$bot->downloadFile($code);
 fwrite($f,$code);
 }return fclose($f);
-}static function convert($code,$type,$name){
+}public static function convert($code,$type,$name){
 $bot=self::getbot();
 $code=$bot->convertFile($code,$file,$type,"@tebrobot");
 if(!$code->ok)return $code;
 return $code->result->{$type};
-}static function getChat($chat){
+}public static function getChat($chat){
 return self::getbot()->getChat($chat);
 }
 }
@@ -3515,6 +3517,8 @@ return rtrim(strtr(base64_encode($data),'+/','-_'),'=');
 }function base64url_decode($data){
 return base64_decode(str_pad(strtr($data,'-_','+/'),strlen($data)%4,'=',STR_PAD_RIGHT));
 }function baseconvert($text,$from,$to=false){
+if(is_string($from)&&strtoupper($from)=="ASCII")return baseconvert(bin2hex($text),"0123456789abcdef",$to);
+if(is_string($to  )&&strtoupper($to)  =="ASCII")return hex2bin(baseconvert($text,$from,"0123456789abcdef"));
 $text=(string)$text;
 if(!is_array($from))$fromel=str_split($from);
 else $fromel=$from;
@@ -3765,7 +3769,7 @@ return unserialize(gzdecode($data));
 }
 class XNJsonString {
 private $data;
-public $math,$proMath;
+public $math,$proMath,$dir;
 public function __construct($data=','){
 $this->data=$data;
 $this->math=new XNJsonMath($this);
@@ -3931,6 +3935,7 @@ $el=$this->elencode($key,$value);
 $this->data=str_replace($el.',','',$this->data);
 return $this;
 }public function array(){
+if($this->data==',')return [];
 $data=explode(',',substr($this->data,1,-1));
 foreach($data as &$dat){
 $dat=$this->eldecode($dat);
@@ -3943,28 +3948,54 @@ return count(explode(',',$this->data))-2;
 foreach((array)$list as $key=>$value)
 $this->set($key,$value);
 return $this;
+}public function all($func){
+if($this->data==',')return;
+foreach(explode(',',substr($this->data,1,-1)) as $dat){
+$dat=$this->eldecode($dat);
+$dat[0]=$this->decode($dat[0]);
+$dat[1]=$this->decode($dat[1]);
+$func($dat);
+}
+}public function size(){
+return strlen($this->data);
 }
 }class XNJsonFile {
-private $file;
-public $math,$proMath;
-public function __construct($file){
+private $file,$thumb=false,$name=false;
+public $math,$proMath,$dir;
+public function __construct($file,$thumb=false){
+if(!is_string($file))
 $this->file=$file;
+else{
+$this->name=$file;
+if(!file_exists($file))
+file_put_contents($file,',');
+$this->file=fopen($file,'rw+');
+}$this->thumb=$thumb;
 $this->math=new XNJsonMath($this);
 $this->proMath=new XNJsonProMath($this);
-if(!file_exists($file))fput($file,',');
+}public function __destruct(){
+fclose($this->file);
+if($this->thumb)unlink($this->name);
 }public function convert(){
 return new XNJsonString(fget($this->file));
 }public function reset(){
 fput($this->file,',');
 return $this;
 }public function get(){
-return fget($this->file);
+$g=fread($this->file,filesize($this->name));
+rewind($this->file);
+return $g;
 }public function close(){
-$this->file=null;
+fclose($this->file);
+if($this->thumb)unlink($this->name);
 }public function __toString(){
-return fget($this->file);
+$g=fread($this->file,filesize($this->name));
+rewind($this->file);
+return $g;
 }public function getFile(){
 return $this->file;
+}public function getFileName(){
+return $this->name;
 }private function encode($data){
 $type=gettype($data);
 switch($type){
@@ -4037,7 +4068,7 @@ return explode('.',explode(";",$code)[1]);
 }private function sizedecode($size){
 return base_convert(bin2hex(base64url_decode($size)),16,10);
 }public function key($value){
-$f=fopen($this->file,'r');
+$f=&$this->file;
 fseek($f,1);
 $value=$this->encode($value).',';
 $l=strlen($value);
@@ -4077,10 +4108,10 @@ $p.=$h;
 }}}if($h===false)return false;
 fseek($f,$key);
 $key=fread($f,$s);
-fclose($f);
+rewind($f);
 return $this->decode($key);
 }public function value($key){
-$f=fopen($this->file,'r');
+$f=&$this->file;
 fseek($f,1);
 $key=$this->encode($key).'.';
 $l=strlen($key);
@@ -4107,10 +4138,10 @@ $p=$this->sizedecode($p);
 $p.=$h;
 }}}if($h===false)return false;
 $value=fread($f,$p);
-fclose($f);
+rewind($f);
 return $this->decode($value);
 }public function keys($value){
-$f=fopen($this->file,'r');
+$f=&$this->file;
 fseek($f,1);
 $value=$this->encode($value).',';
 $l=strlen($value);
@@ -4152,10 +4183,10 @@ $o=3;
 $p=$this->sizedecode($p);
 }else{
 $p.=$h;
-}}}fclose($f);
+}}}rewind($f);
 return $keys;
 }public function iskey($key){
-$f=fopen($this->file,'r');
+$f=&$this->file;
 fseek($f,1);
 $key=$this->encode($key).'.';
 $l=strlen($key);
@@ -4181,10 +4212,10 @@ $p=$this->sizedecode($p);
 }else{
 $p.=$h;
 }}}if($h===false)return false;
-fclose($f);
+rewind($f);
 return true;
 }public function isvalue($value){
-$f=fopen($this->file,'r');
+$f=&$this->file;
 fseek($f,1);
 $value=$this->encode($value).',';
 $l=strlen($value);
@@ -4220,7 +4251,7 @@ $p=$this->sizedecode($p);
 }else{
 $p.=$h;
 }}}if($h===false)return false;
-fclose($f);
+rewind($f);
 return true;
 }public function type($key){
 return $this->iskey($key)?"key":$this->isvalue($key)?"value":false;
@@ -4228,9 +4259,9 @@ return $this->iskey($key)?"key":$this->isvalue($key)?"value":false;
 $key=$this->encode($key).'.';
 $value=$this->encode($value).',';
 $el=$this->elencode($key,$value);
-$f=fopen($this->file,'r');
+$f=&$this->file;
 $random=rand(0,999999999).rand(0,999999999);
-$t=fopen("xn$random.$this->file.log",'w');
+$t=fopen("xn$random.$this->name.log",'w');
 fwrite($t,',');
 fseek($f,1);
 $l=strlen($key);
@@ -4266,15 +4297,18 @@ $u=ftell($f)-$g;
 if($u>0){
 fseek($f,$g);
 fwrite($t,fread($f,$u));
-}fclose($f);
+}rewind($f);
+rewind($t);
+while(($h=fread($t,999))!=='')
+fwrite($f,$h);
+rewind($f);
 fclose($t);
-copy("xn$random.$this->file.log",$this->file);
-unlink("xn$random.$this->file.log");
+unlink("xn$random.$this->name.log");
 }private function add($key,$value){
 $key=$this->encode($key);
 $value=$this->encode($value);
 $el=$this->elencode($key,$value);
-$f=fopen($this->file,'a');
+$f=fopen($this->name,'a');
 fwrite($f,"$el,");
 fclose($f);
 }public function set($key,$value=null){
@@ -4283,9 +4317,9 @@ else $this->add($key,$value);
 return $this;
 }public function delete($key){
 $key=$this->encode($key).'.';
-$f=fopen($this->file,'r');
+$f=&$this->file;
 $random=rand(0,999999999).rand(0,999999999);
-$t=fopen("xn$random.$this->file.log",'w');
+$t=fopen("xn$random.$this->name.log",'w');
 fwrite($t,',');
 fseek($f,1);
 $l=strlen($key);
@@ -4320,13 +4354,16 @@ $u=ftell($f)-$g;
 if($u>0){
 fseek($f,$g);
 fwrite($t,fread($f,$u));
-}fclose($f);
+}rewind($f);
+rewind($t);
+while(($h=fread($t,1000))!=='')
+fwrite($f,$h);
+rewind($f);
 fclose($t);
-copy("xn$random.$this->file.log",$this->file);
-unlink("xn$random.$this->file.log");
+unlink("xn$random.$this->name.log");
 return $this;
 }public function array(){
-$f=fopen($this->file,'r');
+$f=&$this->file;
 fseek($f,1);
 $arr=[];
 $p='';
@@ -4341,9 +4378,10 @@ fseek($f,1,SEEK_CUR);
 $p='';
 }else{
 $p.=$h;
-}}return $arr;
+}}rewind($f);
+return $arr;
 }public function count(){
-$f=fopen($this->file,'r');
+$f=&$this->file;
 fseek($f,1);
 $c=0;
 $p='';
@@ -4355,11 +4393,30 @@ fseek($f,$p+1,SEEK_CUR);
 $p='';
 }else{
 $p.=$h;
-}}return $c;
+}}rewind($f);
+return $c;
 }public function list($list){
 foreach((array)$list as $key=>$value)
 $this->set($key,$value);
 return $this;
+}public function all($func){
+$f=&$this->file;
+fseek($f,1);
+$p='';
+while(($h=fgetc($f))!==false){
+if($h==';'){
+$p=$this->sizedecode($p);
+$ar=$this->eldecode(';'.fread($f,$p));
+$ar[0]=$this->decode($ar[0]);
+$ar[1]=$this->decode($ar[1]);
+fseek($f,1,SEEK_CUR);
+$p='';
+}else{
+$p.=$h;
+}$func($ar);
+}rewind($f);
+}public function size(){
+return filesize($this->name);
 }
 }class XNJsonURL {
 private $file;
@@ -4670,6 +4727,22 @@ $p.=$h;
 foreach((array)$list as $key=>$value)
 $this->set($key,$value);
 return $this;
+}public function all($func){
+$f=fopen($this->file,'r');
+fgetc($f);
+$p='';
+while(($h=fgetc($f))!==false){
+if($h==';'){
+$p=$this->sizedecode($p);
+$ar=$this->eldecode(';'.fread($f,$p));
+$ar[0]=$this->decode($ar[0]);
+$ar[1]=$this->decode($ar[1]);
+fgetc($f);
+$p='';
+}else{
+$p.=$h;
+}$func($ar);
+}
 }
 }function XNJson($j=',',$file=false){
 if(is_array($j)){
@@ -4682,6 +4755,15 @@ if($file){
 if(strpos($j,'://')>0)return new XNJsonURL($j);
 return new XNJsonFile($j);
 }return new XNJsonString($j);
+}
+
+function address_repeater(&$x){
+$x=&$x;
+}function array_random(array $x){
+return $x[array_rand($x)];
+}function chars_random(string $x){
+$x=str_split($x);
+return $x[array_rand($x)];
 }
 
 function calc($c){
@@ -4728,7 +4810,7 @@ return rand((float)calc($a[1]),(float)calc($a[2]));
 $c=preg_replace_callback('/([^0-9a-zA-Z\.])~(-*\+*[0-9]+(\.[0-9]+){0,1})|^()~(-*\+*[0-9]+(\.[0-9]+){0,1})/',function($a){
 return $a[1].(~(float)$a[5]);
 },$c);
-foreach(["tan","log","ln","cos","tan","sin","round","ceil","acos","acosh","asin","asinh","atan","atan2","atanh","cosh",
+foreach(["tan","log","cos","sin","round","ceil","acos","acosh","asin","asinh","atan","atan2","atanh","cosh",
          "exp","expm1","log10","log1p","tanh","sinh","sqrt","floor","abs","fact","gcd","min","max"] as $func){
 $c=preg_replace_callback("/$func(([^\(\)\,]+)(,([^\(\)]+))*)/",function($a)use($func){
 return ($func)(...explode(',',calc($a[1])));
@@ -4763,11 +4845,11 @@ if($p==$c)return str_repeat($p1,$p).$o;
 if($p==0)return $o.str_repeat($p2,$c);
 return str_repeat($p1,$p).$o.str_repeat($p2,$c-$p);
 }class XNColor {
-static function init($color=0){
+public static function init($color=0){
 return [$color&0xff,($color>>8)&0xff,($color>>16)&0xff,($color>>24)&0xff];
-}static function read($color=0){
+}public static function read($color=0){
 return ["red"=>$color&0xff,"green"=>($color>>8)&0xff,"blue"=>($color>>16)&0xff,"alpha"=>($color>>24)&0xff];
-}static function par($a=0,$b=false,$c=false,$d=false){
+}public static function par($a=0,$b=false,$c=false,$d=false){
 if(is_array($a)){
 $b=isset($a[1])?$a[1]:0;
 $c=isset($a[2])?$a[2]:0;
@@ -4799,11 +4881,11 @@ $b=$b&&$b>-1?$b%256:0;
 $c=$c&&$c>-1?$c%256:0;
 $d=$d&&$d>-1?$d%256:0;
 return [$a,$b,$c,$d];
-}static function get($a=0,$b=false,$c=false,$d=false){
+}public static function get($a=0,$b=false,$c=false,$d=false){
 $color=self::par($a,$b,$c,$d);
 if($color===false)return false;
 return ($color[0]+($color[1]<<8)+($color[2]<<16)+($color[3]<<24));
-}static function hex($a=0,$b=false,$c=false,$d=false,$tag=true){
+}public static function hex($a=0,$b=false,$c=false,$d=false,$tag=true){
 $color=self::par($a,$b,$c,$d);
 if($color===false)return false;
 $last=[$color[0],$color[1],$color[2],$color[3]];
@@ -4824,7 +4906,7 @@ if($color[0][0]==$color[0][1]&&$color[1][0]==$color[1][1]&&$color[2][0]==$color[
 return ($tag?"#":'').$color[0][0].$color[1][0].$color[2][0].$color[3][0];
 return ($tag?"#":'').$color[0].$color[1].$color[2].$color[3];
 }
-}static function fromXYBri($x,$y,$br){
+}public static function fromXYBri($x,$y,$br){
 $_x=($x*$br)/$y;
 $_y=$br;
 $_z=((1-$x-$y)*$br)/$y;
@@ -4838,7 +4920,7 @@ $r=$r>0?round($r*255):0;
 $g=$g>0?round($g*255):0;
 $b=$b>0?round($b*255):0;
 return ["red"=>$r,"green"=>$g,"blue"=>$b];
-}static function toHsvInt($a=0,$b=false,$c=false){
+}public static function toHsvInt($a=0,$b=false,$c=false){
 $rgb=self::par($a,$b,$c);
 if($rgb===false)return false;
 $rgb=["red"=>$rgb[0],"green"=>$rgb[1],"blue"=>$rgb[2]];
@@ -4855,7 +4937,7 @@ return $hsv;
 round(171+43*($rgb['red']-$rgb['green'])/($max-$min)));
 if($hsv['hue']<0)$hsv['hue']+=255;
 return $hsv;
-}static function toHsvFloat($a=0,$b=false,$c=false){
+}public static function toHsvFloat($a=0,$b=false,$c=false){
 $rgb=self::par($a,$b,$c);
 if($rgb===false)return false;
 $rgb=["red"=>$rgb[0],"green"=>$rgb[1],"blue"=>$rgb[2]];
@@ -4884,7 +4966,7 @@ $hsv['hue']+=360;
 }}else $hsv['hue']=$max==$rgb['green']?120+(60*($rgb['blue']-$rgb['red'])):
 240+(60*($rgb['red']-$rgb['green']));
 return $hsv;
-}static function toXYZ($a=0,$b=false,$c=false){
+}public static function toXYZ($a=0,$b=false,$c=false){
 $rgb=self::par($a,$b,$c);
 if($rgb===false)return false;
 $rgb=["red"=>$rgb[0],"green"=>$rgb[1],"blue"=>$rgb[2]];
@@ -4899,7 +4981,7 @@ $xyz=[
 'y'=>($rgb['red']*0.2126)+($rgb['green']*0.7152)+($rgb['blue']*0.0722),
 'z'=>($rgb['red']*0.0193)+($rgb['green']*0.1192)+($rgb['blue']*0.9505)
 ];return $xyz;
-}static function toLabCie($a=0,$b=false,$c=false) {
+}public static function toLabCie($a=0,$b=false,$c=false) {
 $xyz=$this->toXYZ($a,$b,$c);
 if($xyz===false)return false;
 $xyz['x']/=95.047;
@@ -4916,7 +4998,7 @@ $lab=[
 'a'=>500*($xyz['x']-$xyz['y']),
 'b'=>200*($xyz['y']-$xyz['z'])
 ];return $lab;
-}static function toXYBri($a=0,$b=false,$c=false){
+}public static function toXYBri($a=0,$b=false,$c=false){
 $rgb=self::par($a,$b,$c);
 if($rgb===false)return false;
 $rgb=["red"=>$rgb[0],"green"=>$rgb[1],"blue"=>$rgb[2]];
@@ -4941,7 +5023,7 @@ $hue_y=0.1;
 $hue_x=$cie_x/($cie_x+$cie_y+$cie_z);
 $hue_y=$cie_y/($cie_x+$cie_y+$cie_z);
 }return ['x'=>$hue_x,'y'=>$hue_y,'bri'=>$cie_y];
-}static function average($from,$to=false){
+}public static function average($from,$to=false){
 $from=self::init($from);
 if(!$to){
 return ($from[0]+$from[1]+$from[2])/3;
@@ -4951,123 +5033,26 @@ $from[1]=($from[1]+$to[1])/2;
 $from[2]=($from[2]+$to[2])/2;
 $from[3]=($from[3]+$to[3])/2;
 return $from;
-}static function averageAll($from,$to){
+}public static function averageAll($from,$to){
 $from=self::init($from);
 $to=self::init($to);
 $av=(($from[0]+$to[0])/2+($from[1]+$to[1])/2+($from[2]+$to[2])/2)/3;
 return [$av,$av,$av];
-}static function averageAllAlpha($from,$to){
+}public static function averageAllAlpha($from,$to){
 $from=self::init($from);
 $to=self::init($to);
 $av=(($from[0]+$to[0])/2+($from[1]+$to[1])/2+($from[2]+$to[2])/2+($from[3]+$to[3]))/4;
 return [$av,$av,$av,$av];
-}static function toBW($color){
+}public static function toBW($color){
 $color=self::init($color);
 return 16777215*(int)(($color[0]+$color[1]+$color[2])/3>127.5);
-}static function fromname($color){
+}public static function fromname($color){
 return base_convert(substr(xndata("colorsname/name"),1),16,10);
-}static function getname($color){
+}public static function getname($color){
 
 }
 }
 class XNImage {
-private $headers=[];
-public $pixels=[],$info=[];
-const HEADER_PNG="\x89\x50\x4e\x47\x0d\x0a\x1a\x0a";
-public function __construct($data=''){
-$this->color=new XNColor;
-
-}private function _clone($headers,$pixels,$info){
-$this->headers=$headers;
-$this->pixels=$pixels;
-$this->info=$info;
-}public function clone(){
-$im=new XNImage;
-$im->_clone($this->headers,$this->pixels,$this->info);
-return $im;
-}public function __clone(){
-$im=new XNImage;
-$im->_clone($this->headers,$this->pixels,$this->info);
-return $im;
-}public function serialize(){
-$im=new XNImage;
-unset($im->color);
-$im->headers=$this->headers;
-$im->pixels=$this->pixels;
-$im->info=$this->info;
-return serialize($im);
-}static function unserialize($str){
-$im=new XNImage;
-$str=unserialize($str);
-$im->headers=$str->headers;
-$im->pixels=$str->pixels;
-$im->info=$str->info;
-return $im;
-}public function reset(){
-$this->headers=[];
-$this->pixels=[];
-$this->info=[];
-}public function close(){
-$this->color=null;
-$this->headers=null;
-$this->pixels=null;
-$this->info=null;
-}public function __destruct(){
-$this->color=null;
-$this->headers=null;
-$this->pixels=null;
-$this->info=null;
-}public function frompng($png){
-$pos=0;
-if(isset($png[7])&&substr($png,0,8)==self::HEADER_PNG){
-$pos=8;
-}elseif(file_exists($png)){
-return $this->frompng(file_get_contents($png));
-}else{
-new XNError("XNImage","invalid png image");
-return false;
-}$htitle='';
-while($htitle!="IEND"){
-$hsize=base10_encode(substr($png,$pos,4));
-$pos+=4;
-$htitle=substr($png,$pos,4);
-$pos+=4;
-$hcontent=substr($png,$pos,$hsize);
-$pos+=$hsize;
-$hcrc=substr($png,$pos,4);
-$pos+=4;
-if(!$htitle){
-new XNError("XNImage","invalid png image");
-return false;
-}if(!isset($this->headers[$htitle]))$this->headers[$htitle]=["size"=>$hsize,"content"=>$hcontent,"crc"=>$hcrc];
-elseif(is_string($this->headers[$htitle]))$this->headers[$htitle]=[
-$this->headers[$htitle],
-["size"=>$hsize,"content"=>$hcontent,"crc"=>$hcrc]
-];else $this->headers[$htitle][]=["size"=>$hsize,"content"=>$hcontent,"crc"=>$hcrc];
-}if(!isset($this->headers['IDAT'])||!isset($this->headers['IHDR'])){
-new XNError("XNImage","invalid png image");
-return false;
-}$this->info['width']=base10_encode(substr($this->headers['IHDR']['content'],0,4));
-$this->info['height']=base10_encode(substr($this->headers['IHDR']['content'],4,4));
-$this->info['depth']=ord($this->headers['IHDR']['content'][8]);
-$this->info['color']=ord($this->headers['IHDR']['content'][9]);
-$this->info['compression']=ord($this->headers['IHDR']['content'][10]);
-$this->info['filter']=ord($this->headers['IHDR']['content'][11]);
-$this->info['interlace']=ord($this->headers['IHDR']['content'][12]);
-$pixels=$this->headers['IDAT']['content'];
-$pixels=zlib_decode($pixels);
-$pos=0;
-$x=-1;$y=0;
-while(@$pixels[$pos+3]){
-++$x;
-if($x+1>$this->info['width']){
-$x=0;++$y;
-}$this->pixels[$y][$x]=base10_encode(substr($pixels,$pos,4));
-$pos+=4;
-}
-
-return $this;
-}
 
 }
 function clockanalogimage(array $req=[],bool $rs=false){
@@ -5613,7 +5598,13 @@ $size=0;
 for($c=1;isset($arr[$c]);++$c)
 $size=$size*255+$arr[$c];
 return (int)$size;
-}function xnserialize(...$datas){
+}
+$GLOBALS['-XN-']['serializeParent']=false;
+function xnserialize(...$datas){
+if(!$GLOBALS['-XN-']['serializeParent'])
+$savep=new ThumbCode(function(){
+$GLOBALS['-XN-']['serializeParent']=false;
+});
 $dall='';
 foreach($datas as $data){
 $type=gettype($data);
@@ -5637,7 +5628,12 @@ $m=strlen($data)-strpos($data,'.')-1;
 $data*=10**$m;
 $data=chr(strlen($data)).chr($m).$data;
 break;case "array":
-$dtype=7;
+if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=$data;
+elseif($GLOBALS['-XN-']['serializeParent']===$data){
+$dtype=11;
+$data='';
+break;
+}$dtype=7;
 $d=[];
 foreach($data as $k=>$v){
 $d[]=$k;
@@ -5646,7 +5642,12 @@ $d[]=$v;
 $data=xnsize_encode($data).$data;
 break;case "object":
 if(is_stdClass($data)){
-$dtype=8;
+if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=$data;
+elseif($GLOBALS['-XN-']['serializeParent']===$data){
+$dtype=11;
+$data='';
+break;
+}$dtype=8;
 $data=(array)$data;
 $d=[];
 foreach($data as $k=>$v){
@@ -5720,7 +5721,12 @@ if($file=="\x00")$file="\x01\x01\x01";
 $data=$par.$sts.$type.$file;
 $data=xnsize_encode($data).$data;
 }else{
-$dtype=10;
+if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=$data;
+elseif($GLOBALS['-XN-']['serializeParent']===$data){
+$dtype=11;
+$data='';
+break;
+}$dtype=10;
 $name=get_class($data);
 $data=(array)$data;
 $d=[];
@@ -5735,6 +5741,10 @@ return XNSERIALIZE_TYPE_INVALID;
 }$dall.=chr($dtype).$data;
 }return $dall;
 }function xnunserialize($datas){
+if(!$GLOBALS['-XN-']['serializeParent'])
+$savep=new ThumbCode(function(){
+$GLOBALS['-XN-']['serializeParent']=false;
+});
 $u=strlen($datas);
 $dall=[];
 for($c=0;$c<$u;){
@@ -5760,6 +5770,7 @@ $m=ord($datas[$c++]);
 $data=(double)substr($datas,$c,$l);
 $c+=$l;
 break;case 7:
+if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=&$data;
 $l=ord($datas[$c++]);
 $size=substr($datas,$c,$l);
 $size=xnsize_decode(chr($l).$size);
@@ -5771,6 +5782,7 @@ $data=[];
 for($o=0;isset($d[$o]);$o+=2)
 $data[$d[$o]]=$d[$o+1];
 break;case 8:
+if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=&$data;
 $l=ord($datas[$c++]);
 $size=substr($datas,$c,$l);
 $size=xnsize_decode(chr($l).$size);
@@ -5864,6 +5876,7 @@ $$k=$v;
 return eval("return $func;");
 })();
 break;case 10:
+if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=&$data;
 $l=ord($datas[$c++]);
 $size=substr($datas,$c,$l);
 $c+=$l;
@@ -5885,6 +5898,8 @@ $data[$d[$o]]=$d[$o+1];
 $data=serialize((object)$data);
 $data=replaceone("8:\"stdClass\"",strlen($name).":\"$name\"",$data);
 $data=unserialize($data);
+break;case 11:
+return $GLOBALS['-XN-']['serializeParent'];
 break;default:
 return XNSERIALIZE_TYPE_INVALID;
 }$dall[]=$data;
@@ -5949,54 +5964,56 @@ return isset($class["$key"])?"public":
 }function class_var_exists(object $class,$key){
 return get_class_var_type($class,$key)!==false;
 }class Memory {
-static function usage(){
+public static function usage(){
 return memory_get_usage();
-}static function free(&$give){
+}public static function peakusage(){
+return memory_get_peak_usage();
+}public static function free(&$give){
 unset($give);
 }
 }
 class XNNumber {
 // consts variables
-static function PI($l=-1){
+public static function PI($l=-1){
 $pi=xndata("pi");
 if($l<0)return $pi;
 if($l==0)return substr($pi,1);
 return substr($pi,0,$l+2);
-}static function PHI($l=-1){
+}public static function PHI($l=-1){
 $phi=xndata("phi");
 if($l<0)return $phi;
 if($l==0)return substr($phi,1);
 return substr($phi,0,$l+2);
 }
 // validator
-static function is_number($a){
+public static function is_number($a){
 return is_numeric($a);
 }
 // system functions
-static function _check($a){
+public static function _check($a){
 if(!is_numeric($a)){
 if(strlen($a)>20)$a=substr($a,0,12).'...'.substr($a,-5);
 new XNError("XNNumber","invalid number \"$a\".");
 return false;
 }return true;
-}static function _view($a){
+}public static function _view($a){
 if($a[0]=='-')return true;
 return false;
-}static function abs($a){
+}public static function abs($a){
 if($a[0]=='-'||$a[0]=='+')return substr($a,1);
 return $a;
-}static function _change($a){
+}public static function _change($a){
 if($a==0)return '0';
 if($a[0]=='-')return substr($a,1);
 if($a[0]=='+')return '-'.substr($a,1);
 return '-'.$a;
-}static function _get0($a){
+}public static function _get0($a){
 $a=ltrim($a,'0');
 return $a?$a:'0';
-}static function _get1($a){
+}public static function _get1($a){
 $a=rtrim($a,'0');
 return $a?$a:'0';
-}static function _get2($a){
+}public static function _get2($a){
 $a=self::_mo($a);
 $a[1]=isset($a[1])?$a[1]:'0';
 $a[0]=self::_get0($a[0]);
@@ -6005,21 +6022,21 @@ if($a[0]&&$a[1])return "{$a[0]}.{$a[1]}";
 if($a[1])return "0.{$a[1]}";
 if($a[0])return "{$a[0]}";
 return "0";
-}static function _get3($a){
+}public static function _get3($a){
 if(self::_view($a))return '-'.self::_get2(self::abs($a));
 return self::_get2(self::abs($a));
-}static function _get($a){
+}public static function _get($a){
 if(!self::_check($a))return false;
 return self::_get3($a);
-}static function _set0($a,$b){
+}public static function _set0($a,$b){
 $l=strlen($b)-strlen($a);
 if($l<=0)return $a;
 else return str_repeat('0',$l).$a;
-}static function _set1($a,$b){
+}public static function _set1($a,$b){
 $l=strlen($b)-strlen($a);
 if($l<=0)return $a;
 else return $a.str_repeat('0',$l);
-}static function _set2($a,$b){
+}public static function _set2($a,$b){
 $a=self::_mo($a);
 $b=self::_mo($b);
 if(!isset($a[1])&&isset($b[1])){
@@ -6028,49 +6045,49 @@ $a[1]='0';
 $a[0]=self::_set0($a[0],$b[0]);
 if(!isset($a[1]))return "{$a[0]}";
 return "{$a[0]}.{$a[1]}";
-}static function _set3($a,$b){
+}public static function _set3($a,$b){
 if( self::_view($a)&& self::_view($b))return '-'.self::_set2(self::abs($a),self::abs($b));
 if(!self::_view($a)&& self::_view($b))return     self::_set2(self::abs($a),self::abs($b));
 if( self::_view($a)&&!self::_view($b))return '-'.self::_set2(self::abs($a),self::abs($b));
                                       return     self::_set2(self::abs($a),self::abs($b));
-}static function _set($a,$b){
+}public static function _set($a,$b){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 return self::_set3($a,$b);
-}static function _full($a,$b){
+}public static function _full($a,$b){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 return self::_set(self::_get($a),self::_get($b));
-}static function _setfull(&$a,&$b){
+}public static function _setfull(&$a,&$b){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 $a=self::_get($a);
 $b=self::_get($b);
 $a=self::_set($a,$b);
 $b=self::_set($b,$a);
-}static function _mo($a){
+}public static function _mo($a){
 return explode('.',$a);
-}static function _lm($a){
+}public static function _lm($a){
 return strpos($a,'.');
-}static function _im($a){
+}public static function _im($a){
 $p=self::_lm($a);
 return $p!==false&&$p!=-1;
-}static function _nm($a){
+}public static function _nm($a){
 return str_replace('.','',$a);
-}static function _st($a,$b){
+}public static function _st($a,$b){
 if(!isset($a[$b])||$b==0)return $a;
 return substr_replace($a,'.',$b,0);
-}static function _iz($a){
+}public static function _iz($a){
 $a=$a[strlen($a)-1];
 return $a=='0'||$a=='2'||$a=='4'||$a=='6'||$a=='8';
-}static function _if($a){
+}public static function _if($a){
 $a=$a[strlen($a)-1];
 return $a=='1'||$a=='3'||$a=='5'||$a=='7'||$a=='9';
-}static function _so($a,$b){
+}public static function _so($a,$b){
 $l=strlen($a)%$b;
 if($l==0)return $a;
 else return str_repeat('0',$b-$l).$a;
-}static function _pl($a){
+}public static function _pl($a){
 $l='0';
 while($a!=$l){
 $l=$a;
@@ -6078,7 +6095,7 @@ $a=str_replace(['--','-+','+-','++'],['+','-','-','+'],$a);
 }return $a;
 }
 // retry calc functions
-static function _powTen0($a,$b){
+public static function _powTen0($a,$b){
 $p=self::_lm($a);
 $i=$p===false||$p==-1;
 $a=self::_nm($a);
@@ -6090,14 +6107,14 @@ if($s>$l)return $a.str_repeat('0',$s-$l);
 if($s==0)return "0.$a";
 if($s<0)return "0.".str_repeat('0',abs($s)).$a;
 return substr_replace($a,".",$s,0);
-}static function _powTen1($a,$b){
+}public static function _powTen1($a,$b){
 if(self::_view($a))return '-'.self::_powTen0(self::abs($a),$b);
 return self::_powTen0(self::abs($a),$b);
-}static function powTen($a,$b){
+}public static function powTen($a,$b){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 return self::_get(self::_powTen1($a,$b));
-}static function _mulTwo0($a){
+}public static function _mulTwo0($a){
 $a=subsplit($a,13);
 $c=count($a)-1;
 while($c>=0){
@@ -6110,7 +6127,7 @@ $a[$c-$k]-=10000000000000;
 }$a[$c]=self::_so($a[$c],13);
 --$c;
 }return implode('',$a);
-}static function _mulTwo1($a){
+}public static function _mulTwo1($a){
 $a=self::_mo($a);
 $a[0]=self::_so($a[0],13);
 $a[0]=self::_mulTwo0("0000000000000{$a[0]}");
@@ -6123,13 +6140,13 @@ $a[1]=substr($a[1],-$l);
 if($a[2]>0)$a[0]=self::_add0("0000000000000{$a[0]}","0000000000000".str_repeat('0',strlen($a[0])-1).'1');
 return "{$a[0]}.{$a[1]}";
 }return $a[0];
-}static function _mulTwo2($a){
+}public static function _mulTwo2($a){
 if(self::_view($a))return '-'.self::_mulTwo1(self::abs($a));
 return self::_mulTwo1(self::abs($a));
-}static function mulTwo($a){
+}public static function mulTwo($a){
 if(!self::_check($a))return false;
 return self::_get3(self::_mulTwo2(self::_get3($a)));
-}static function _divTwo0($a){
+}public static function _divTwo0($a){
 $s='';
 $c=0;
 $k=false;
@@ -6142,7 +6159,7 @@ if($h%2==1)$k=true;
 $c+=14;
 }if($k)$s.='5';
 return $s;
-}static function _divTwo1($a){
+}public static function _divTwo1($a){
 $p=self::_lm($a);
 $a=self::_nm($a);
 if($p===false||$p==-1)$p=strlen($a);
@@ -6151,12 +6168,12 @@ $a=self::_so($a,14);
 $p+=strlen($a)-$l;
 $a=self::_divTwo0($a);
 return self::_st($a,$p);
-}static function _divTwo2($a){
+}public static function _divTwo2($a){
 if(self::_view($a))return '-'.self::_divTwo1(self::abs($a));
 return self::_divTwo1(self::abs($a));
-}static function divTwo($a){
+}public static function divTwo($a){
 return self::_get(self::_divTwo2(self::_get($a)));
-}static function _powTwo0($a){
+}public static function _powTwo0($a){
 $a=subsplit($a,1);
 $x=false;
 $c=$d=count($a)-1;
@@ -6176,7 +6193,7 @@ $t=$s.$y.($k?str_repeat('0',$k):'');
 $x=$x?self::add($x,$t):$t;
 ++$k;
 }return $x;
-}static function _powTwo1($a){
+}public static function _powTwo1($a){
 $p=self::_lm($a);
 if(!$p)return self::_powTwo0($a);
 $p=strlen($a)-$p-1;
@@ -6184,27 +6201,27 @@ $p*=2;
 $a=self::_nm($a);
 $a='0'.self::_powTwo0($a);
 return self::_st($a,strlen($a)-$p);
-}static function _powTwo2($a){
+}public static function _powTwo2($a){
 return self::_powTwo1(self::abs($a));
-}static function powTwo($a){
+}public static function powTwo($a){
 if(!self::_check($a))return false;
 return self::_get3(self::_powTwo2(self::_get3($a)));
 }
 // set functions
-static function floor($a){
+public static function floor($a){
 if(!self::_check($a))return false;
 return explode('.',"$a")[0];
-}static function ceil($a){
+}public static function ceil($a){
 if(!self::_check($a))return false;
 $a=explode('.',"$a");
 return isset($a[1])?self::add($a[0],'1'):$a[0];
-}static function round($a){
+}public static function round($a){
 if(!self::_check($a))return false;
 $a=explode('.',"$a");
 return isset($a[1])&&$a[1][0]>=5?self::add($a[0],'1'):$a[0];
 }
 // calc functions
-static function _add0($a,$b){
+public static function _add0($a,$b){
 $a=subsplit($a,13);
 $b=subsplit($b,13);
 $c=count($a)-1;
@@ -6218,7 +6235,7 @@ $a[$c-$k]-=10000000000000;
 }$a[$c]=self::_so($a[$c],13);
 --$c;
 }return implode('',$a);
-}static function _add1($a,$b){
+}public static function _add1($a,$b){
 $a="0000000000000$a";
 $b="0000000000000$b";
 $o=self::_lm($a);
@@ -6227,12 +6244,12 @@ $a=self::_so(self::_nm($a),13);
 $b=self::_so(self::_nm($b),13);
 if($o!==false&&$o!==-1)return self::_st(self::_add0($a,$b),$p);
 return self::_add0($a,$b);
-}static function _add2($a,$b){
+}public static function _add2($a,$b){
 if( self::_view($a)&& self::_view($b))return '-'.self::_add1(self::abs($a),self::abs($b));
 if( self::_view($a)&&!self::_view($b))return     self::rem  (self::abs($b),self::abs($a));
 if(!self::_view($a)&& self::_view($b))return     self::rem  (self::abs($a),self::abs($b));
                                       return     self::_add1(self::abs($a),self::abs($b));
-}static function add($a,$b){
+}public static function add($a,$b){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 self::_setfull($a,$b);
@@ -6254,23 +6271,23 @@ $a[$c-$k]+=10000000000000;
 }$a[$c]=self::_so($a[$c],13);
 --$c;
 }return implode('',$a);
-}static function _rem1($a,$b){
+}public static function _rem1($a,$b){
 $o=self::_lm($a);
 $p=$o+(13-(strlen($a)-1)%13);
 $a=self::_so(self::_nm($a),13);
 $b=self::_so(self::_nm($b),13);
 if($o!==false&&$o!==-1)return self::_st(self::_rem0($a,$b),$p);
 return self::_rem0($a,$b);
-}static function _rem2($a,$b){
+}public static function _rem2($a,$b){
 if( self::_view($a)&& self::_view($b))return '-'.self::_rem1(self::abs($a),self::abs($b));
 if( self::_view($a)&&!self::_view($b))return '-'.self::_add1(self::abs($a),self::abs($b));
 if(!self::_view($a)&& self::_view($b))return     self::_add1(self::abs($a),self::abs($b));
                                       return     self::_rem1(self::abs($a),self::abs($b));
-}static function _rem3($a,$b){
+}public static function _rem3($a,$b){
 if($a<$b){
 return '-'.self::_rem2($b,$a);
 }return self::_rem2($a,$b);
-}static function rem($a,$b){
+}public static function rem($a,$b){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 self::_setfull($a,$b);
@@ -6278,7 +6295,7 @@ $r=$a==0?self::_change($b):
    $b==0?$a:
    self::_rem3($a,$b);
 return self::_pl(self::_get3($r));
-}static function _mul0($a,$b){
+}public static function _mul0($a,$b){
 $a=subsplit($a,1);
 $b=subsplit($b,1);
 $x=false;
@@ -6299,7 +6316,7 @@ $t=$s.$y.($k?str_repeat('0',$k):'');
 $x=$x?self::add($x,$t):$t;
 ++$k;
 }return $x;
-}static function _mul1($a,$b){
+}public static function _mul1($a,$b){
 $ap=self::_lm($a);
 $bp=self::_lm($b);
 if(!$ap)return self::_mul0($a,$b);
@@ -6310,12 +6327,12 @@ $a=self::_nm($a);
 $b=self::_nm($b);
 $a='0'.self::_mul0($a,$b);
 return self::_st($a,strlen($a)-$p);
-}static function _mul2($a,$b){
+}public static function _mul2($a,$b){
 if( self::_view($a)&& self::_view($b))return     self::_mul1(self::abs($a),self::abs($b));
 if(!self::_view($a)&& self::_view($b))return '-'.self::_mul1(self::abs($a),self::abs($b));
 if( self::_view($a)&&!self::_view($b))return '-'.self::_mul1(self::abs($a),self::abs($b));
                                       return     self::_mul1(self::abs($a),self::abs($b));
-}static function mul($a,$b){
+}public static function mul($a,$b){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 self::_setfull($a,$b);
@@ -6326,18 +6343,18 @@ if($a==2)return self::mulTwo($b);
 if($b==2)return self::mulTwo($a);
 if($a==$b)return self::powTwo($a);
 return self::_get3(self::_mul2($a,$b));
-}static function _rand0($a){
+}public static function _rand0($a){
 $rand="0.";
 $b=floor($a/9);
 for($c=0;$c<$b;++$c){
 $rand.=self::_so(rand(0,999999999),9);
 }if($a%9==0)return $rand;
 return $rand.self::_so(rand(0,str_repeat('9',$a%9)),$a%9);
-}static function _rand1($a,$b){
+}public static function _rand1($a,$b){
 $c=self::rem($a,$b);
 $d=self::_rand0(strlen($a));
 return self::add(self::floor(self::mul(self::add($c,'1'),$d)),$b);
-}static function _rand2($a,$b){
+}public static function _rand2($a,$b){
 $p=self::_lm($a);
 if(!$p)return self::_rand1($a,$b);
 $p=strlen($a)-$p-1;
@@ -6345,24 +6362,24 @@ $a=self::_nm($a);
 $b=self::_nm($b);
 $a='0'.self::_rand1($a,$b);
 return self::_st($a,strlen($a)-$p);
-}static function _rand3($b,$a){
+}public static function _rand3($b,$a){
 if($a>$b)return self::_rand2($a,$b);
 return self::_rand2($b,$a);
-}static function _rand4($a,$b){
+}public static function _rand4($a,$b){
 if(self::_view($a)&&self::_view($b))return '-'.self::_rand3(self::abs($a),self::abs($b));
 if(!self::_view($a)&& self::_view($b)){
 return self::_change(self::rem(self::_rand3('0',self::add(self::abs($a),self::abs($b))),$a));
 }if(self::_view($a)&&!self::_view($b)){
 return self::_change(self::rem(self::_rand3('0',self::add(self::abs($a),self::abs($b))),$b));
 }return self::_rand3(self::abs($a),self::abs($b));
-}static function rand($a,$b){
+}public static function rand($a,$b){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 self::_setfull($a,$b);
 $r=$a==$b?$a:
    self::_rand4($a,$b);
 return self::_get($r);
-}static function _div0($a,$b){
+}public static function _div0($a,$b){
 if($b>$a)return 0;
 if(($c=self::mulTwo($b))>$a)return 1;
 if(self::mul($b,'3')>$a)return 2;
@@ -6373,7 +6390,7 @@ if(self::mul($b,'7')>$a)return 6;
 if(self::mulTwo($c)>$a)return 7;
 if(self::mul($b,'9')>$a)return 8;
                         return 9;
-}static function _div1($a,$b,$o=0){
+}public static function _div1($a,$b,$o=0){
 $a=subsplit($a,1);
 $p=$r=$i=$d='0';
 $c=count($a);
@@ -6396,17 +6413,17 @@ $r.=$p;
 }else $r.='0';
 --$o;
 }return $r;
-}static function _div2($a,$b,$c=0){
+}public static function _div2($a,$b,$c=0){
 $a=self::_nm($a);
 $b=self::_nm($b);
 if($c<0)$c=0;
 return self::_div1($a,$b,$c);
-}static function _div3($a,$b,$c=0){
+}public static function _div3($a,$b,$c=0){
 if( self::_view($a)&& self::_view($b))return     self::_div2(self::abs($a),self::abs($b),$c);
 if( self::_view($a)&&!self::_view($b))return '-'.self::_div2(self::abs($a),self::abs($b),$c);
 if(!self::_view($a)&& self::_view($b))return '-'.self::_div2(self::abs($a),self::abs($b),$c);
                                       return     self::_div2(self::abs($a),self::abs($b),$c);
-}static function div($a,$b,$c=0){
+}public static function div($a,$b,$c=0){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 self::_setfull($a,$b);
@@ -6417,7 +6434,7 @@ return false;
 if($b==1)return "$a";
 if($a==$b)return '1';
 return self::_get2(self::_div3($a,$b,$c));
-}static function _res0($a,$b){
+}public static function _mod0($a,$b){
 $a=subsplit($a,1);
 $p=$r=$i=$d='0';
 $c=count($a);
@@ -6430,14 +6447,14 @@ $r.=$p;
 }else $r.='0';
 ++$i;
 }return $d;
-}static function _res1($a,$b){
+}public static function _mod1($a,$b){
 $a=self::_nm($a);
 $b=self::_nm($b);
-return self::_res0($a,$b);
-}static function _res2($a,$b){
-if(self::_view($a))return '-'.self::_res1(self::abs($a),self::abs($b));
-                   return     self::_res1(self::abs($a),self::abs($b));
-}static function res($a,$b){
+return self::_mod0($a,$b);
+}public static function _mod2($a,$b){
+if(self::_view($a))return '-'.self::_mod1(self::abs($a),self::abs($b));
+                   return     self::_mod1(self::abs($a),self::abs($b));
+}public static function mod($a,$b){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 self::_setfull($a,$b);
@@ -6445,10 +6462,10 @@ if($b==0){
 new XNError("XNNumber","not can div by Ziro");
 return false;
 }if($a==0||$b==1||$a==$b)return '0';
-return self::_get(self::_res2($a,$b));
+return self::_get(self::_mod2($a,$b));
 }
 // algo functions
-static function fact($a){
+public static function fact($a){
 if(!self::_check($a))return false;
 if($a<=1)return 1;
 $r='1';
@@ -6456,9 +6473,9 @@ while($a>0){
 $r=self::mul($r,$a);
 $a=self::rem($a,'1');
 }return $r;
-}static function gcd($a,$b){
-return $b?self::gcd($b,self::res($a,$b)):$a;
-}static function sin($x,$limit=1,$offset=10){
+}public static function gcd($a,$b){
+return $b?self::gcd($b,self::mod($a,$b)):$a;
+}public static function sin($x,$limit=1,$offset=10){
 if(!self::_check($x))return false;
 $limit=$limit<0?
        self::mul($x,'0.1'):
@@ -6474,10 +6491,10 @@ $c=self::mul($c,self::mul($g,self::add($g,1)));
 }return $a;
 }
 // convertor functions
-static function toNumber($a='0'){
+public static function toNumber($a='0'){
 if(!self::_check($a))return false;
 return $a*1;
-}static function toXNNumber($a=0){
+}public static function toXNNumber($a=0){
 if($a==NAN||$a==INF){
 if(strlen($a)>20)$a=substr($a,0,12).'...'.substr($a,-5);
 new XNError("XNNumber","the '$a' not is a number");
@@ -6486,11 +6503,13 @@ return false;
 if(!isset($a[1]))return "{$a[0]}";
 $a=self::powTen($a[0],$a[1]);
 return $a;
-}static function init($number,$init=10){
+}public static function init($number,$init=10){
 return self::base_convert($number,$init,10);
 }
 // parser functions
-public function baseconvert($text,$from=false,$to=false){
+public static function baseconvert($text,$from=false,$to=false){
+if(is_string($from)&&strtoupper($from)=="ASCII")return self::baseconvert(bin2hex($text),"0123456789abcdef",$to);
+if(is_string($to  )&&strtoupper($to)  =="ASCII")return hex2bin(self::baseconvert($text,$from,"0123456789abcdef"));
 $text=(string)$text;
 if(!is_array($from))$fromel=str_split($from);
 else $fromel=$from;
@@ -6513,7 +6532,7 @@ $th=self::mul($th,$fromc);
 }$r='';
 if($to===false)return "$bs";
 while($bs>0){
-$r=$toe[self::res($bs,$toc)].$r;
+$r=$toe[self::mod($bs,$toc)].$r;
 $bs=self::floor(self::div($bs,$toc));
 }return "$r";
 }public function base_convert($str,$from,$to=10){
@@ -6527,23 +6546,23 @@ return self::baseconvert($str,$from,$to);
 }
 class XNBinary {
 // validator
-static function is_binary($a){
+public static function is_binary($a){
 return preg_match('/^[01]+$/',$a);
 }
 // system functions
-static function _check($a){
+public static function _check($a){
 if(!self::is_binary($a)){
 if(strlen($a)>20)$a=substr($a,0,12).'...'.substr($a,-5);
 new XNError("XNBinary","invalid binary \"$a\".");
 return false;
 }return true;
-}static function _set($a,$b){
+}public static function _set($a,$b){
 if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 $l=strlen($b)-strlen($a);
 if($l<=0)return $a;
 else return str_repeat('0',$l).$a;
-}static function _setall(&$a,&$b){
+}public static function _setall(&$a,&$b){
 $a=self::_set($a,$b);
 if($a===false)return false;
 $b=self::_set($b,$a);
@@ -6568,13 +6587,13 @@ return true;
 // parser functions
 
 // calc functions
-static function xor($a,$b){
+public static function xor($a,$b){
 if(!self::_setfull($a,$b))return false;
 $l=strlen($a);
 for($c=0;$c<$l;++$c)
 $a[$c].=$a[$c]==$b[$c]?'1':'0';
 return $a;
-}static function add($a,$b){
+}public static function add($a,$b){
 if(!self::_setfull($a,$b))return false;
 if($a==0)return $b;
 if($b==0)return $a;
@@ -6591,7 +6610,7 @@ $a[$c-$w]=0;
 }
 }if($a[0]=='0')$a=substr($a,1);
 return self::_get($a);
-}static function rem($a,$b){
+}public static function rem($a,$b){
 if(!self::_setfull($a,$b))return false;
 if($b>$a)var_move($a,$b);
 if($b==0)return $a;
@@ -6611,7 +6630,7 @@ $a[$c-$w]=1;
 ++$w;
 }
 }return self::_get(implode('',$a));
-}static function mul($a,$b){
+}public static function mul($a,$b){
 $g=str_repeat('0',strlen($a)+strlen($b));
 if(!self::_setfull($a,$b))return false;
 if($a==0||$b==0)return '0';
@@ -6623,16 +6642,16 @@ $r.=$a[$x]*$b[$y];
 if($x>0)$r.=str_repeat('0',$x);
 $g=self::add($g,$r);
 }return self::_get($g);
-}static function div($a,$b){
+}public static function div($a,$b){
 if(!self::_getfull($a))return false;
 if(!self::_getfull($b))return true;
 if($b>$a)var_move($a,$b);
 return strlen($a)-strlen($b);
-}static function rshift($a,$shift=1){
+}public static function rshift($a,$shift=1){
 if(!self::_getfull($a))return false;
 if($shift==0)return $a;
 return substr($a,-$shift);
-}static function lshift($a,$shift=1){
+}public static function lshift($a,$shift=1){
 if(!self::_getfull($a))return false;
 if($shift==0)return $a;
 return $a.str_repeat('0',$shift);
@@ -6705,17 +6724,17 @@ return ceil($this->length/$this->size);
 }
 class XNString {
 // parser functions
-static function lshift(string $str,int $shift=1){
+public static function lshift(string $str,int $shift=1){
 $l=strlen($str);
 $shift=$shift<0?1:$shift%$l;
 return substr($str,$shift,$l-1).substr($str,0,$shift);
-}static function rshift(string $str,int $shift=1){
+}public static function rshift(string $str,int $shift=1){
 $l=strlen($str);
 $shift=$shift<0?1:$shift%$l;
 return substr($str,$l-$shift,$l-1).substr($str,0,$l-$shift);
-}static function usedchars(string $str){
+}public static function usedchars(string $str){
 return array_unique(str_split($str));
-}static function max(...$chars){
+}public static function max(...$chars){
 if(isset($chars[0][1]))$chars=str_split($chars[0]);
 elseif(is_array(@$chars[0]))$chars=$chars[0];
 $chars=array_unique($chars);
@@ -6723,7 +6742,7 @@ $l=-1;
 for($c=0;isset($chars[$c]);++$c)
 if(($h=ord($chars[$c]))>$l)$l=$h;
 return $l;
-}static function min(...$chars){
+}public static function min(...$chars){
 if(isset($chars[0][1]))$chars=str_split($chars[0]);
 elseif(is_array(@$chars[0]))$chars=$chars[0];
 $chars=array_unique($chars);
@@ -6731,41 +6750,41 @@ $l=256;
 for($c=0;isset($chars[$c]);++$c)
 if(($h=ord($chars[$c]))<$l)$l=$h;
 return $l;
-}static function end(string $str,string $im){
+}public static function end(string $str,string $im){
 return substr($str,strrpos($str,$im)+1);
-}static function start(string $str,string $im){
+}public static function start(string $str,string $im){
 return substr($str,0,strpos($str,$im));
-}static function noend(string $str,string $im){
+}public static function noend(string $str,string $im){
 return substr($str,0,strrpos($str,$im));
-}static function nostart(string $str,string $im){
+}public static function nostart(string $str,string $im){
 return substr($str,strpos($str,$im)+1);
-}static function endi(string $str,string $im){
+}public static function endi(string $str,string $im){
 return substr($str,strripos($str,$im)+1);
-}static function starti(string $str,string $im){
+}public static function starti(string $str,string $im){
 return substr($str,0,stripos($str,$im));
-}static function noendi(string $str,string $im){
+}public static function noendi(string $str,string $im){
 return substr($str,0,strripos($str,$im));
-}static function nostarti(string $str,string $im){
+}public static function nostarti(string $str,string $im){
 return substr($str,stripos($str,$im)+1);
-}static function char(string $str,int $x){
+}public static function char(string $str,int $x){
 return @$str[$x];
-}static function islength(string $str,int $x){
+}public static function islength(string $str,int $x){
 return isset($str[$x-1]);
-}static function position(string $str,int $from=0){
+}public static function position(string $str,int $from=0){
 return new XNStringPosition($str,$from);
-}static function binaryPosition(string $str,int $size=8,int $from=0){
+}public static function binaryPosition(string $str,int $size=8,int $from=0){
 return new XNStringBinaryPosition($str,$size,$from);
-}static function endchar(string $str){
+}public static function endchar(string $str){
 return $str[strlen($str)-1];
-}static function startby(string $str,string $by){
+}public static function startby(string $str,string $by){
 return strpos($str,$by)===0;
-}static function endby(string $str,string $by){
+}public static function endby(string $str,string $by){
 return strrpos($str,$by)===strlen($str)-strlen($by);
-}static function startiby(string $str,string $by){
+}public static function startiby(string $str,string $by){
 return stripos($str,$by)===0;
-}static function endiby(string $str,string $by){
+}public static function endiby(string $str,string $by){
 return strripos($str,$by)===strlen($str)-strlen($by);
-}static function toString($str=20571922739462){
+}public static function toString($str=20571922739462){
 if($str===20571922739462)return '';
 switch(gettype($str)){
 case "NULL":
@@ -6782,9 +6801,9 @@ case "array":
 return unce($str);
 }new XNError("XNString::toString","argumant type not found");
 return false;
-}static function toregex(string $str){
+}public static function toregex(string $str){
 return "\Q".str_replace('\E','\E\\\E\Q',$str)."\E";
-}static function toiregex(string $str){
+}public static function toiregex(string $str){
 return "\Q".str_replace([
 "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r",
 "s","t","u","v","w","x","y","z","A","B","C","D","E","F","G","H","I",
@@ -6800,7 +6819,7 @@ return "\Q".str_replace([
 ],$str)."\E";
 }
 // calc functions
-static function xorn(string $a,string $b){
+public static function xorn(string $a,string $b){
 $al=strlen($a);
 $bl=strlen($b);
 $l=max($al,$bl);
@@ -6810,17 +6829,17 @@ if(!isset($a[$i])||!isset($b[$i])||$a[$i]!=$b[$i])
 $n.='1';
 else $n.='0';
 }return $n;
-}static function xor(string $a,string $b){
+}public static function xor(string $a,string $b){
 return base2_decode(set_bytes(self::xorn($a,$b),8,'0'));
-}static function bxor(string $a,string $b){
+}public static function bxor(string $a,string $b){
 return XNBinary::toString(XNBinary::xor(base2_encode($a),base2_encode($b)));
-}static function badd(string $a,string $b){
+}public static function badd(string $a,string $b){
 return XNBinary::toString(XNBinary::add(base2_encode($a),base2_encode($b)));
-}static function brem(string $a,string $b){
+}public static function brem(string $a,string $b){
 return XNBinary::toString(XNBinary::rem(base2_encode($a),base2_encode($b)));
-}static function bmul(string $a,string $b){
+}public static function bmul(string $a,string $b){
 return XNBinary::toString(XNBinary::mul(base2_encode($a),base2_encode($b)));
-}static function bdiv(string $a,string $b){
+}public static function bdiv(string $a,string $b){
 return XNBinary::toString(XNBinary::div(base2_encode($a),base2_encode($b)));
 }
 }class XNPHPSuperSource {
@@ -6883,6 +6902,23 @@ return hash("sha512",$str);
 return hash("sha256",$str);
 }function md4($str){
 return hash("md4",$str);
+}function md2($str){
+return hash("md2",$str);
+}function sha224($str){
+return hash("sha224",$str);
+}function sha384($str){
+return hash("sha384",$str);
+}function hashs($str){
+$n='';
+$s=hash_algos();
+foreach($s as $h)
+$n.=hash($h,$str);
+return $n;
+}function hasha($str){
+$s=hash_algos();
+foreach($s as $h)
+$str=hash($h,$str);
+return $str;
 }
 
 $GLOBALS['-XN-']['endTime']=microtime(true);
