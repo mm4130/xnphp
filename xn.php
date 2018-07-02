@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1530427405.5848{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1250762794.0773{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
@@ -3013,7 +3013,11 @@ return $w;
 }function fexists($file){
 return file_exists($file);
 }function fsize($file){
-return filesize($file);
+$l=ftell($file);
+fseek($file,0,SEEK_END);
+$s=ftell($file);
+fseek($file,$l);
+return $s;
 }function fspeed($file,$type='r'){
 if($f=@fopen($file,$type))fclose($f);
 return $f;
@@ -3768,10 +3772,12 @@ return gzencode(serialize($data),$level);
 return unserialize(gzdecode($data));
 }
 class XNJsonString {
-private $data;
-public $math,$proMath,$dir;
-public function __construct($data=','){
+private $data,$parent=false;
+public $math,$proMath,$auto=true;
+public function __construct($data=',',$parent=false){
+if(@$data[0]!==',')$data=',';
 $this->data=$data;
+$this->parent=$parent;
 $this->math=new XNJsonMath($this);
 $this->proMath=new XNJsonProMath($this);
 }public function convert($file){
@@ -3782,8 +3788,42 @@ $this->data=',';
 return $this;
 }public function get(){
 return $this->data;
+}public function __destruct(){
+$this->save();
+}public function save(){
+if($this->parent){
+$this->direncode();
+$here=&$this->parent[0];
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
+$key=$here->encode($this->parent[1]);
+$ssff=strlen($this->data);
+$ssk=strlen($key);
+$ssf=base_convert($ssff+2,10,16);
+if(strlen($ssf)%2==1)$ssf="0$ssf";
+$ssf=base64url_encode(hex2bin($ssf));
+$ssz=$ssff+strlen($ssf)+$ssk+4;
+$ssz=base_convert($ssz,10,16);
+if(strlen($ssz)%2==1)$ssz="0$ssz";
+$ssz=base64url_encode(hex2bin($ssz));
+$el2=$ssz.';'.$key.'.'.$ssf.':{'.$this->data.'}';
+$ky=';'.$key.'.';
+$p=strpos($here->data,$ky)+strlen($ky);
+$size='';
+while(($h=$here->data[$p++])!==':')$size.=$h;
+$sizee=$size;
+$size=$here->sizedecode($size);
+$value=$sizee.':'.substr($here->data,$p,$size);
+$el1=$here->elencode($key,$value);
+$here->data=str_replace($el1,$el2,$here->data);
+}
 }public function close(){
+$this->__destruct();
 $this->data=null;
+$this->parent=null;
+$this->math=null;
+$this->proMath=null;
 }public function __toString(){
 return $this->data;
 }private function encode($data){
@@ -3846,6 +3886,7 @@ break;case 7:
 return (string)$data;
 break;case 8:
 return unserialize($data);
+break;
 }
 }private function elencode($key,$value){
 $data="$key.$value";
@@ -3858,6 +3899,11 @@ return explode('.',explode(";",$code)[1]);
 }private function sizedecode($size){
 return base_convert(bin2hex(base64url_decode($size)),16,10);
 }public function value($key){
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
 $key=';'.$this->encode($key).'.';
 $p=strpos($this->data,$key);
 if($p===false||$p==-1)return false;
@@ -3867,6 +3913,11 @@ while(($h=$this->data[$p++])!==':')$size.=$h;
 $size=$this->sizedecode($size);
 return $this->decode(substr($this->data,$p,$size));
 }public function key($value){
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
 $value='.'.$this->encode($value).',';
 $p=strpos($this->data,$value);
 if($p===false||$p==-1)return false;
@@ -3874,6 +3925,11 @@ $key='';
 while(($h=$this->data[$p--])!==':')$key=$h.$key;
 return $this->decode($key);
 }public function iskey($key){
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
 $key=';'.$this->encode($key).'.';
 $p=strpos($this->data,$key);
 return $p!=-1&&$p!==false;
@@ -3884,6 +3940,11 @@ return $p!=-1&&$p!==false;
 }public function type($key){
 return $this->iskey($key)?"key":$this->isvalue($key)?"value":false;
 }public function keys($value){
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
 $values=[];
 $data=$this->data;
 $value='.'.$this->encode($value).',';
@@ -3898,6 +3959,11 @@ $data=substr($data,$pp+$vallen);
 $values[]=$this->decode($key);
 }return $values;
 }private function replace($key,$value){
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
 $key=$this->encode($key);
 $value=$this->encode($value);
 $el2=$this->elencode($key,$value);
@@ -3910,18 +3976,25 @@ $size=$this->sizedecode($size);
 $value=$sizee.':'.substr($this->data,$p,$size);
 $el1=$this->elencode($key,$value);
 $this->data=str_replace($el1,$el2,$this->data);
+if($this->auto)$this->save();
 return $this;
 }private function add($key,$value){
 $key=$this->encode($key);
 $value=$this->encode($value);
 $el=$this->elencode($key,$value);
 $this->data.="$el,";
+if($this->auto)$this->save();
 return $this;
 }public function set($key,$value=null){
 if(self::iskey($key))$this->replace($key,$value);
 else $this->add($key,$value);
 return $this;
 }public function delete($key){
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
 $key=$this->encode($key);
 $value=$this->encode($value);
 $ky=';'.$key.'.';
@@ -3933,9 +4006,20 @@ $size=$this->sizedecode($size);
 $value=$sizee.':'.substr($this->data,$p,$size);
 $el=$this->elencode($key,$value);
 $this->data=str_replace($el.',','',$this->data);
+if($this->auto)$this->save();
 return $this;
 }public function array(){
 if($this->data==',')return [];
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
 $data=explode(',',substr($this->data,1,-1));
 foreach($data as &$dat){
 $dat=$this->eldecode($dat);
@@ -3943,6 +4027,11 @@ $dat[0]=$this->decode($dat[0]);
 $dat[1]=$this->decode($dat[1]);
 }return $data;
 }public function count(){
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
 return count(explode(',',$this->data))-2;
 }public function list($list){
 foreach((array)$list as $key=>$value)
@@ -3950,6 +4039,11 @@ $this->set($key,$value);
 return $this;
 }public function all($func){
 if($this->data==',')return;
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
 foreach(explode(',',substr($this->data,1,-1)) as $dat){
 $dat=$this->eldecode($dat);
 $dat[0]=$this->decode($dat[0]);
@@ -3958,38 +4052,168 @@ $func($dat);
 }
 }public function size(){
 return strlen($this->data);
+}private $dirs=[],$dirc=-1;
+private function direncode(){
+$here=&$this;
+$this->data=preg_replace_callback("/\.([a-zA-Z\-_0-9]+):\{(?:\\\\\{|\\\\\}|[^\{\}]|(?R))*\}/",function($x)use($here){
+++$here->dirc;
+$size=strlen($here->dirc)+2;
+$size=base_convert($size,10,16);
+if(strlen($size)%2==1)$size="0$size";
+$size=base64url_encode(hex2bin($size));
+$data=".$size:<$here->dirc>";
+$here->dirs[$data]=$x[0];
+return $data;
+},$this->data);
+$this->dirc=-1;
+}private function dirdecode(){
+foreach($this->dirs as $k=>$v)
+$this->data=str_replace($k,$v,$this->data);
+}public function make($name){
+if($this->iskey($name))$this->delete($name);
+$key=$this->encode($name);
+$el=$this->elencode($key,"Ag:{}");
+$this->data.="$el,";
+if($this->auto)$this->save();
+return $this;
+}public function isdir($name){
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
+$key=';'.$this->encode($name).'.';
+$p=strpos($this->data,$key);
+if($p===false||$p==-1)return false;
+$p+=strlen($key);
+$size='';
+while(($h=$this->data[$p++])!==':')$size.=$h;
+$size=$this->sizedecode($size);
+return $this->data[$p]=='<';
+}public function dir($name){
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
+$key=';'.$this->encode($name).'.';
+$p=strpos($this->data,$key);
+if($p===false||$p==-1)return false;
+$p+=strlen($key);
+$size='';
+while(($h=$this->data[$p++])!==':')$size.=$h;
+$size=$this->sizedecode($sizt=$size);
+$data=substr($this->data,$p,$size);
+$data=substr($this->dirs[".".$sizt.":".$data],1,-1);
+return new XNJsonString($data,[$this,$name]);
 }
 }class XNJsonFile {
-private $file,$thumb=false,$name=false;
-public $math,$proMath,$dir;
-public function __construct($file,$thumb=false){
-if(!is_string($file))
+private $file,$limit=999,$name=false,$parent=false;
+public $math,$proMath,$auto=true;
+public function __construct($file,int $limit=999,$parent=false){
+if(!is_string($file)){
 $this->file=$file;
-else{
+if(fgetc($file)!=','){
+rewind($file);
+ftruncate($this->file,0);
+fwrite($this->file,',');
+}rewind($file);
+}else{
 $this->name=$file;
 if(!file_exists($file))
 file_put_contents($file,',');
 $this->file=fopen($file,'rw+');
-}$this->thumb=$thumb;
+}$this->limit=$limit;
+$this->parent=$parent;
 $this->math=new XNJsonMath($this);
 $this->proMath=new XNJsonProMath($this);
+}public function save(){
+if($this->parent){
+$here=&$this->parent[0];
+$key=$this->encode($this->parent[1]).'.';
+$f=&$here->file;
+$ff=&$this->file;
+$t=tmpfile();
+fwrite($t,',');
+fseek($f,1);
+$l=strlen($key);
+$p='';
+$m=0;
+$o=false;
+while(($h=fgetc($f))!==false){
+if($o){
+--$p;
+if($m==$l-1){
+$m=0;
+$ssff=fsize($ff);
+$ssk=strlen($key)-1;
+$ssf=base_convert($ssff+2,10,16);
+if(strlen($ssf)%2==1)$ssf="0$ssf";
+$ssf=base64url_encode(hex2bin($ssf));
+$ssz=$ssff+strlen($ssf)+$ssk+4;
+$ssz=base_convert($ssz,10,16);
+if(strlen($ssz)%2==1)$ssz="0$ssz";
+$ssz=base64url_encode(hex2bin($ssz));
+fwrite($t,$ssz.';'.$key.$ssf.':{');
+while(($h=fread($ff,$here->limit))!=='')
+fwrite($t,$h);
+fwrite($t,'}');
+fseek($f,$p,SEEK_CUR);
+break;
+}elseif($key[$m]==$h){
+++$m;
+}else{
+$o=false;
+fwrite($t,$here->elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
+$m=0;
+$p='';
+}
+}else{
+if($h==';'){
+$o=true;
+$p=$this->sizedecode($p);
+}else{
+$p.=$h;
+}}}
+$g=ftell($f);
+fseek($f,0,SEEK_END);
+$u=ftell($f)-$g;
+if($u>0){
+fseek($f,$g);
+fwrite($t,fread($f,$u));
+}rewind($f);
+ftruncate($f,0);
+rewind($t);
+while(($h=fgetc($t))===',');
+fwrite($f,",$h");
+while(($h=fread($t,$this->limit))!=='')
+fwrite($f,$h);
+rewind($f);
+fclose($t);
+$this->parent=false;
+}
 }public function __destruct(){
-fclose($this->file);
-if($this->thumb)unlink($this->name);
+$this->save();
 }public function convert(){
 return new XNJsonString(fget($this->file));
 }public function reset(){
-fput($this->file,',');
+ftruncate($this->file,0);
+fwrite($this->file,',');
+rewind($this->file);
 return $this;
 }public function get(){
-$g=fread($this->file,filesize($this->name));
+$g=fread($this->file,$this->name?filesize($this->name):fsize($this->file));
 rewind($this->file);
 return $g;
 }public function close(){
-fclose($this->file);
-if($this->thumb)unlink($this->name);
+$this->__destruct();
+$this->file=null;
+$this->limit=null;
+$this->parent=null;
+$this->math=null;
+$this->proMath=null;
 }public function __toString(){
-$g=fread($this->file,filesize($this->name));
+$g=fread($this->file,$this->name?filesize($this->name):fsize($this->file));
 rewind($this->file);
 return $g;
 }public function getFile(){
@@ -4056,6 +4280,7 @@ break;case 7:
 return (string)$data;
 break;case 8:
 return unserialize($data);
+break;
 }
 }private function elencode($key,$value){
 $data="$key.$value";
@@ -4260,8 +4485,7 @@ $key=$this->encode($key).'.';
 $value=$this->encode($value).',';
 $el=$this->elencode($key,$value);
 $f=&$this->file;
-$random=rand(0,999999999).rand(0,999999999);
-$t=fopen("xn$random.$this->name.log",'w');
+$t=tmpfile();
 fwrite($t,',');
 fseek($f,1);
 $l=strlen($key);
@@ -4273,14 +4497,14 @@ if($o){
 --$p;
 if($m==$l-1){
 $m=0;
-fwrite($t,$this->elencode(substr($key,0,-1),substr($value,0,-1)));
+fwrite($t,','.$this->elencode(substr($key,0,-1),substr($value,0,-1)));
 fseek($f,$p,SEEK_CUR);
 break;
 }elseif($key[$m]==$h){
 ++$m;
 }else{
 $o=false;
-fwrite($t,self::elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
+fwrite($t,$this->elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
 $m=0;
 $p='';
 }
@@ -4298,19 +4522,26 @@ if($u>0){
 fseek($f,$g);
 fwrite($t,fread($f,$u));
 }rewind($f);
+ftruncate($f,0);
 rewind($t);
-while(($h=fread($t,999))!=='')
+while(($h=fgetc($t))===',');
+fwrite($f,",$h");
+while(($h=fread($t,$this->limit))!=='')
 fwrite($f,$h);
 rewind($f);
 fclose($t);
-unlink("xn$random.$this->name.log");
+if($this->auto)$this->save();
+return $this;
 }private function add($key,$value){
 $key=$this->encode($key);
 $value=$this->encode($value);
 $el=$this->elencode($key,$value);
-$f=fopen($this->name,'a');
+$f=&$this->file;
+fseek($f,0,SEEK_END);
 fwrite($f,"$el,");
-fclose($f);
+rewind($f);
+if($this->auto)$this->save();
+return $this;
 }public function set($key,$value=null){
 if($this->iskey($key))$this->replace($key,$value);
 else $this->add($key,$value);
@@ -4318,8 +4549,7 @@ return $this;
 }public function delete($key){
 $key=$this->encode($key).'.';
 $f=&$this->file;
-$random=rand(0,999999999).rand(0,999999999);
-$t=fopen("xn$random.$this->name.log",'w');
+$t=tmpfile();
 fwrite($t,',');
 fseek($f,1);
 $l=strlen($key);
@@ -4337,7 +4567,7 @@ break;
 ++$m;
 }else{
 $o=false;
-fwrite($t,self::elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
+fwrite($t,$this->elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
 $m=0;
 $p='';
 }
@@ -4355,12 +4585,15 @@ if($u>0){
 fseek($f,$g);
 fwrite($t,fread($f,$u));
 }rewind($f);
+ftruncate($f,0);
 rewind($t);
-while(($h=fread($t,1000))!=='')
+while(($h=fgetc($t))===',');
+fwrite($f,",$h");
+while(($h=fread($t,$this->limit))!=='')
 fwrite($f,$h);
 rewind($f);
 fclose($t);
-unlink("xn$random.$this->name.log");
+if($this->auto)$this->save();
 return $this;
 }public function array(){
 $f=&$this->file;
@@ -4416,12 +4649,95 @@ $p.=$h;
 }$func($ar);
 }rewind($f);
 }public function size(){
-return filesize($this->name);
+return $this->name?filesize($this->name):fsize($this->file);
+}public function make($key){
+if($this->iskey($key))$this->delete($key);
+$key=$this->encode($key);
+$el=$this->elencode($key,'Ag:{}');
+$f=&$this->file;
+fseek($f,0,SEEK_END);
+fwrite($f,"$el,");
+rewind($f);
+if($this->auto)$this->save();
+return $this;
+}public function isdir($key){
+$f=&$this->file;
+fseek($f,1);
+$key=$this->encode($key).'.';
+$l=strlen($key);
+$p='';
+$m=0;
+$o=false;
+while(($h=fgetc($f))!==false){
+if($o){
+--$p;
+if($m==$l-1)break;
+if($key[$m]==$h){
+++$m;
+}else{
+$m=0;
+$o=false;
+fseek($f,$p,SEEK_CUR);
+$p='';
+}
+}else{
+if($h==';'){
+$o=true;
+$p=$this->sizedecode($p);
+}else{
+$p.=$h;
+}}}if($h===false)return false;
+while(fgetc($f)!==':');
+$v=fgetc($f);
+rewind($f);
+return $v=='{';
+}public function dir($name,$limit=false){
+if(!$limit)$limit=$this->limit;
+$f=&$this->file;
+fseek($f,1);
+$key=$this->encode($name).'.';
+$l=strlen($key);
+$p='';
+$m=0;
+$o=false;
+while(($h=fgetc($f))!==false){
+if($o){
+--$p;
+if($m==$l-1)break;
+if($key[$m]==$h){
+++$m;
+}else{
+$m=0;
+$o=false;
+fseek($f,$p,SEEK_CUR);
+$p='';
+}
+}else{
+if($h==';'){
+$o=true;
+$p=$this->sizedecode($p);
+}else{
+$p.=$h;
+}}}if($h===false)return false;
+$file=tmpfile();
+$p=0;
+while(($h=fgetc($f))!=='{');
+if($h===false)return false;
+while(($h=fgetc($f))!==false){
+if($h=='{')++$p;
+elseif($h=='}')--$p;
+if($p<0)break;
+fwrite($file,$h);
+}rewind($f);
+rewind($file);
+return new XNJsonFile($file,$limit,[$this,$name]);
 }
 }class XNJsonURL {
-private $file;
-public function __construct($file){
+public $file,$limit=999,$parent=false;
+public function __construct($file,int $limit=999,$parent=false){
 $this->file=$file;
+$this->limit=$limit;
+$this->parent=$parent;
 }public function convert(){
 return new XNJsonString(fget($this->file));
 }public function reset(){
@@ -4743,18 +5059,234 @@ $p='';
 $p.=$h;
 }$func($ar);
 }
+}public function isdir($key){
+$f=&$this->file;
+fgetc($f);
+$key=$this->encode($key).'.';
+$l=strlen($key);
+$p='';
+$m=0;
+$o=false;
+while(($h=fgetc($f))!==false){
+if($o){
+--$p;
+if($m==$l-1)break;
+if($key[$m]==$h){
+++$m;
+}else{
+$m=0;
+$o=false;
+fread($f,$p);
+$p='';
 }
-}function XNJson($j=',',$file=false){
-if(is_array($j)){
-if($file&&$file!='.'&&$file!='..')$xnj=new XNJsonFile($file);
-else $xnj=new XNJsonString();
-$xnj->list($j);
+}else{
+if($h==';'){
+$o=true;
+$p=$this->sizedecode($p);
+}else{
+$p.=$h;
+}}}if($h===false)return false;
+while(fgetc($f)!==':');
+$v=fgetc($f);
+rewind($f);
+return $v=='{';
+}public function dir($name,$limit=false){
+if(!$limit)$limit=$this->limit;
+$f=&$this->file;
+fgetc($f);
+$key=$this->encode($name).'.';
+$l=strlen($key);
+$p='';
+$m=0;
+$o=false;
+while(($h=fgetc($f))!==false){
+if($o){
+--$p;
+if($m==$l-1)break;
+if($key[$m]==$h){
+++$m;
+}else{
+$m=0;
+$o=false;
+fread($f,$p);
+$p='';
+}
+}else{
+if($h==';'){
+$o=true;
+$p=$this->sizedecode($p);
+}else{
+$p.=$h;
+}}}if($h===false)return false;
+$file=tmpfile();
+$p=0;
+while(($h=fgetc($f))!=='{');
+if($h===false)return false;
+while(($h=fgetc($f))!==false){
+if($h=='{')++$p;
+elseif($h=='}')--$p;
+if($p<0)break;
+fwrite($file,$h);
+}rewind($f);
+rewind($file);
+return new XNJsonURL($file,$limit,[$this,$name]);
+}
+}class XNJson {
+private $xnj=false;
+public $type=false;
+public $math=false,$proMath=false;
+public static function file($file,int $limit=999){
+$this->type="file";
+$this->xnj=new XNJsonFile($file,$limit);
+$this->math=$this->xnj->math;
+$this->proMath=$this->xnj->proMath;
 return $this->xnj;
-}if(!$file&&$j!='.'&&$j!='..'&&file_exists($j))return new XNJsonFile($j);
-if($file){
-if(strpos($j,'://')>0)return new XNJsonURL($j);
-return new XNJsonFile($j);
-}return new XNJsonString($j);
+}public static function url($url,int $limit=999){
+$this->type="url";
+$this->xnj=new XNJsonURL($url,$limit);
+$this->math=$this->xnj->math;
+$this->proMath=$this->xnj->proMath;
+return $this->xnj;
+}public static function string($str){
+$this->type="string";
+$this->xnj=new XNJsonString($str);
+$this->math=$this->xnj->math;
+$this->proMath=$this->xnj->proMath;
+return $this->xnj;
+}public static function thumb($data=',',int $limit=999){
+$f=tmpfile();
+fwrite($f,$data);
+rewind($f);
+$this->type="thumb";
+$this->xnj=new XNJsonFile($f,$limit);
+$this->math=$this->xnj->math;
+$this->proMath=$this->xnj->proMath;
+return $this->xnj;
+}public function close(){
+$this->xnj->close();
+}public function save(){
+$this->xnj->save();
+return $this;
+}public function get(){
+return $this->xnj->get();
+}public function reset(){
+$this->xnj->reset();
+return $this;
+}public function value($key){
+return $this->xnj->value($key);
+}public function key($value){
+return $this->xnj->key($value);
+}public function type($x){
+return $this->xnj->type($x);
+}public function set($key,$value){
+return $this->xnj->set($key,$value);
+}public function iskey($x){
+return $this->xnj->iskey($x);
+}public function isvalue($x){
+return $this->xnj->isvalue($x);
+}public function isdir($x){
+return $this->xnj->isdir();
+}public function make($name){
+$this->xnj->make($name);
+return $this;
+}public function delete($key){
+$this->xnj->delete($key);
+return $this;
+}public function dir($name){
+return $this->xnj->dir($name);
+}public function convert($to="string",$file=null){
+if($this->type=="string"&&$to=="string"){
+$this->xnj=new XNJsonString($this->xnj->get());
+return $this->xnj;
+}if($this->type=="string"&&$to="file"){
+$this->type="file";
+if(!fput($file,$this->xnj->get()))return false;
+$this->xnj=new XNJsonFile($file);
+$this->math=$this->xnj->math;
+$this->proMath=$this->xnj->proMath;
+return $this->xnj;
+}if($this->type=="string"&&$to="thumb"){
+$this->type="thumb";
+$f=tmpfile();
+fwrite($f,$this->xnj->get());
+rewind($f);
+$this->xnj=new XnJsonFile($f);
+$this->math=$this->xnj->math;
+$this->proMath=$this->xnj->proMath;
+return $this->xnj;
+}if(($this->type="file"||$this->type="url")&&$to="string"){
+$this->type="string";
+fclose($this->xnj->getFile());
+$this->xnj=new XNJsonString(fget($this->xnj->getFileName()));
+$this->math=$this->xnj->math;
+$this->proMath=$this->xnj->proMath;
+return $this->xnj;
+}if(($this->type="file"||$this->type="url")&&$to="file"){
+$this->type="thumb";
+$f=fopen($file,'rw+');
+while(($h=fread($this->xnj->file,$this->limit))!=='')
+fwrite($f,$h);
+rewind($f);
+$this->xnj=new XNJsonFile($f);
+$this->math=$this->xnj->math;
+$this->proMath=$this->xnj->proMath;
+return $this->xnj;
+}if(($this->type="file"||$this->type="url")&&$to="thumb"){
+$this->type="thumb";
+$f=tmpfile();
+$file=$this->xnj->getFile();
+while(($h=fread($file,$this->limit))!=='')
+fwrite($f,$h);
+rewind($f);
+$this->xnj=new XNJsonFile($f);
+$this->math=$this->xnj->math;
+$this->proMath=$this->xnj->proMath;
+return $this->xnj;
+}if($this->type=="thumb"&&$to="string"){
+$this->type="string";
+$g=fread($this->xnj->file,fsize($this->xnj->file));
+fclose($this->xnj->file);
+$this->xnj=new XNJsonString($g);
+$this->math=$this->xnj->math;
+$this->proMath=$this->xnj->proMath;
+return $this->xnj;
+}if($this->type="thumb"&&$to="file"){
+$this->type="thumb";
+$f=fopen($file,'rw+');
+$file=$this->xnj->getFile();
+while(($h=fread($file,$this->limit))!=='')
+fwrite($f,$h);
+rewind($f);
+$this->xnj=new XNJsonFile($f);
+$this->math=$this->xnj->math;
+$this->proMath=$this->xnj->proMath;
+return $this->xnj;
+}if($this->type="thumb"&&$to="thumb"){
+$this->type="thumb";
+$f=tmpfile();
+$file=$this->xnj->getFile();
+while(($h=fread($file,$this->limit))!=='')
+fwrite($f,$h);
+rewind($f);
+$this->xnj=new XNJsonFile($f);
+$this->math=$this->xnj->math;
+$this->proMath=$this->xnj->proMath;
+return $this->xnj;
+}return false;
+}public function getFile(){
+return $this->xnj->getFile();
+}public function getFileName(){
+return $this->xnj->getFileName();
+}public function size(){
+return $this->xnj->size();
+}public function count(){
+return $this->xnj->count();
+}public function array(){
+return $this->xnj->array();
+}public function all($func){
+$this->xnj->all($func);
+return $this;
+}
 }
 
 function address_repeater(&$x){
@@ -5582,8 +6114,7 @@ return "function *$name\($pars\)$stc$typa *\{ *$file *\}";
 }
 }
 }
-function xnsize_encode(string $str){
-$l=strlen($str);
+function xnsize_encode($l){
 $arr=[];
 while($l>0){
 $arr[]=$l&0xff;
@@ -5618,7 +6149,7 @@ else $dtype=3;
 $data='';
 break;case "string":
 $dtype=4;
-$data=xnsize_encode($data).$data;
+$data=xnsize_encode(strlen($data)).$data;
 break;case "integer":
 $dtype=5;
 $data=chr(strlen($data)).$data;
@@ -5639,7 +6170,7 @@ foreach($data as $k=>$v){
 $d[]=$k;
 $d[]=$v;
 }$data=xnserialize(...$d);
-$data=xnsize_encode($data).$data;
+$data=xnsize_encode(strlen($data)).$data;
 break;case "object":
 if(is_stdClass($data)){
 if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=$data;
@@ -5654,7 +6185,7 @@ foreach($data as $k=>$v){
 $d[]=$k;
 $d[]=$v;
 }$data=xnserialize(...$d);
-$data=xnsize_encode($data).$data;
+$data=xnsize_encode(strlen($data)).$data;
 }elseif(is_closure($data)){
 $dtype=9;
 $r=new ReflectionFunction($data);
@@ -5676,8 +6207,8 @@ $pars[$k].='\&{0,1} *\$'.$p->getName().' *';
 if($p->isDefaultValueAvailable()){
 $t.=':'.xnserialize($p->getDefaultValue());
 $pars[$k].='= *'.preg_unce($p->getDefaultValue()).' *';
-}$par.=xnsize_encode($t).$t;
-}$par=xnsize_encode($par).$par;
+}$par.=xnsize_encode(strlen($t)).$t;
+}$par=xnsize_encode(strlen($par)).$par;
 $pars=implode(',',$pars);
 $sts=$r->getStaticVariables();
 $stc=[];
@@ -5691,7 +6222,7 @@ $typa='';
 if($r->hasReturnType()){
 $type=$r->getReturnType();
 $typa=" *: *$type";
-$type=xnsize_encode($type).$type;
+$type=xnsize_encode(strlen($type)).$type;
 }else $type="\x01\x01\x01";
 $name=$r->getName();
 $name=$name[0]=='{'?'':$name;
@@ -5716,10 +6247,10 @@ if($file[$o]==$b)$a=false;
 }
 }--$o;
 $file=substr($file,0,$o);
-$file=xnsize_encode($file).$file;
+$file=xnsize_encode(strlen($file)).$file;
 if($file=="\x00")$file="\x01\x01\x01";
 $data=$par.$sts.$type.$file;
-$data=xnsize_encode($data).$data;
+$data=xnsize_encode(strlen($data)).$data;
 }else{
 if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=$data;
 elseif($GLOBALS['-XN-']['serializeParent']===$data){
@@ -5734,8 +6265,8 @@ foreach($data as $k=>$v){
 $d[]=$k;
 $d[]=$v;
 }$data=xnserialize(...$d);
-$data=xnsize_encode($name).$name.$data;
-$data=xnsize_encode($data).$data;
+$data=xnsize_encode(strlen($name)).$name.$data;
+$data=xnsize_encode(strlen($data)).$data;
 }break;default:
 return XNSERIALIZE_TYPE_INVALID;
 }$dall.=chr($dtype).$data;
@@ -5859,7 +6390,7 @@ $pars[$pv].='$'.$pn.'='.unce(xnunserialize($pu));
 }else $pars[$pv].='$'.substr($p,$kc);
 }
 }$pars=implode(',',$pars);
-$stcs=xnunserialize("\x07".xnsize_encode($stc).$stc);
+$stcs=xnunserialize("\x07".xnsize_encode(strlen($stc)).$stc);
 $stc=[];
 foreach($stcs as $k=>$v)
 $stc[]="$$k";
@@ -6842,60 +7373,6 @@ return XNBinary::toString(XNBinary::mul(base2_encode($a),base2_encode($b)));
 }public static function bdiv(string $a,string $b){
 return XNBinary::toString(XNBinary::div(base2_encode($a),base2_encode($b)));
 }
-}class XNPHPSuperSource {
-private $code='',$define=[],$idefine=[],$rdefine=[],$vdefine=[];
-const VARIABLE = "(?:\[(?:[^\[\]]|(?R))*\]|\((?:[^\(\)]|(?R))*\)|\{(?:[^\{\}]|(?R))*\}|\<(?:[^\<\>]|(?R))*\>|\\\"(?:\\\\\\\"|[^\\\"])*\\\"|\'(?:\\\\\'|[^\'])*\'|\`(?:\\\\\`|[^\`])*\`|\\\\\,|[^\,])+|(?:,,)";
-public function __construct($code=''){
-if(file_exists($code))$this->code=fget($code);
-else $this->code=$code;
-}public function __invoke($code){
-if(file_exists($code))$this->code=fget($code);
-else $this->code=$code;
-}public function define(string $define,string $value){
-$this->define[$define]=$value;
-}public function idefine(string $define,string $value){
-$this->idefine[$define]=$value;
-}public function rdefine(string $define,string $value){
-$this->rdefine[$define]=$value;
-}public function vdefine(string $define,string $value){
-$v=XNString::toregex($define);
-$r=[];
-var_dump($v);
-$v=preg_replace_callback('/([^\\])\<((?:[^\<\>]|(?R))+)\>/',function($x)use(&$r){
-$r[]=$x[2];
-return $x[1].'\E'.self::VARIABLE.'\Q';
-},$v);
-$this->vdefine[$define]=[$value,$r];
-}public function run(){
-$code=$this->code;
-$l='';
-while($code!=$l){
-$l=$code;
-foreach($this->define as $k=>$v)
-$code=str_replace($k,$v,$code);
-foreach($this->idefine as $k=>$v)
-$code=str_ireplace($k,$v,$code);
-foreach($this->rdefine as $k=>$v)
-$code=preg_replace_callback("$k",function($x)use($v){
-foreach($x as $k=>$p)
-$v=str_replace("$$k",$p,$v);
-return $v;
-},$code);
-}foreach($this->vdefine as $k=>$v){
-$code=preg_replace_callback($k,function($x)use($v){
-foreach($x as $a=>$b)
-$v[0]=str_replace("<{$v[1][$a]}>",$b,$v[0]);
-return $v[0];
-},$code);
-}return eval($code);
-}public function include($file){
-$this->__construct($file);
-return $this->run();
-}
-}function evalo($code){
-$XPSS = new XNPHPSuperSource($code);
-$XPSS->rdefine("/>> ([^\n])/");
-return $XPSS->run();
 }function sha512($str){
 return hash("sha512",$str);
 }function sha256($str){
