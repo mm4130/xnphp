@@ -7,8 +7,10 @@ $GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1250762794.0773{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1531089195.2778{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
+$GLOBALS['-XN-']['isf']=file_exists($GLOBALS['-XN-']['dirNameDir']."xn.php");
+$GLOBALS['-XN-']['savememory']=&$GLOBALS;
 $DATA=json_decode(base64_decode(substr($GLOBALS['-XN-']['DATA'],0,-8)),@$XNDATA===1);
 class ThumbCode {
 private $code=false;
@@ -23,6 +25,7 @@ return new ThumbCode($this->code);
 }}function thumbCode($func){
 return new ThumbCode($func);
 }function set_last_update_nter(){
+if($GLOBALS['-XN-']['isf']){
 $file=$GLOBALS['-XN-']['dirNameDir'].'xn.php';
 $f=file_get_contents($file);
 $p=strpos($f,"{[LASTUPDATE]}");
@@ -34,7 +37,9 @@ while($f[$p]!='{')$h.=$f[$p++];
 if(!is_numeric($h))return false;
 $f=str_replace("$h{[LASTUPDATE]}",microtime(true)."{[LASTUPDATE]}",$f);
 return file_put_contents($file,$f);
+}
 }function set_last_use_nter(){
+if($GLOBALS['-XN-']['isf']){
 $file=$GLOBALS['-XN-']['dirNameDir'].'xn.php';
 $f=file_get_contents($file);
 $p=strpos($f,"{[LASTUSE]}");
@@ -46,7 +51,9 @@ while($f[$p]!='{')$h.=$f[$p++];
 if(!is_numeric($h))return false;
 $f=str_replace("$h{[LASTUSE]}",microtime(true)."{[LASTUSE]}",$f);
 return file_put_contents($file,$f);
+}
 }function set_data_nter(){
+if($GLOBALS['-XN-']['isf']){
 $data=base64_encode(json_encode($GLOBALS['DATA']));
 $file=$GLOBALS['-XN-']['dirNameDir'].'xn.php';
 $f=file_get_contents($file);
@@ -58,10 +65,9 @@ $p+=2;
 while($f[$p]!='{')$h.=$f[$p++];
 $f=str_replace("$h{[DA"."TA]}","$data{[D"."ATA]}",$f);
 return file_put_contents($file,$f);
+}
 }function xnupdate(){
 copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php",$GLOBALS['-XN-']['dirNameDir']."xn.php");
-if(file_exists("xn.beautify.php"))
-copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.beautify.php",$GLOBALS['-XN-']['dirNameDir']."xn.beautify.php");
 set_last_update_nter();
 }if(@$XNUPDATE===2||(@$XNUPDATE===1&&substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+10000<=time()))xnupdate();
 if(@$SAVELASTES !== 1){
@@ -2958,6 +2964,11 @@ new XNError("Files","No such file or directory.",1);
 return false;
 }fclose($f);
 return true;
+}function fcontent($file,$limit=4096){
+$str='';
+while(($read=fread($file,$limit))!=='')
+$str.=$read;
+return $str;
 }function fget($file){
 $size=@filesize($file);
 if($size!==false&&$size!==null){
@@ -3025,11 +3036,13 @@ return $f;
 return filetype($file);
 }function fdir($file){
 return dirname($file);
-}function fname($file){
+}function filename($file){
 return XNString::end($file,DIRECTORY_SEPARATOR);
-}function fformat($file){
+}function fileformat($file){
 $f=XNString::end($file,'.');
 return strhave($f,DIRECTORY_SEPARATOR)?false:$f;
+}function fname($stream){
+return stream_get_meta_data($stream)['uri'];
 }function dirdel($dir){
 $s=dirscan($dir);
 foreach($s as $f){
@@ -3817,6 +3830,7 @@ $size=$here->sizedecode($size);
 $value=$sizee.':'.substr($here->data,$p,$size);
 $el1=$here->elencode($key,$value);
 $here->data=str_replace($el1,$el2,$here->data);
+$this->parent->save();
 }
 }public function close(){
 $this->__destruct();
@@ -4191,6 +4205,7 @@ fwrite($f,$h);
 rewind($f);
 fclose($t);
 $this->parent=false;
+$this->parent->save();
 }
 }public function __destruct(){
 $this->save();
@@ -5136,38 +5151,59 @@ private $xnj=false;
 public $type=false;
 public $math=false,$proMath=false;
 public static function file($file,int $limit=999){
-$this->type="file";
-$this->xnj=new XNJsonFile($file,$limit);
-$this->math=$this->xnj->math;
-$this->proMath=$this->xnj->proMath;
-return $this->xnj;
+$here=new XNJson;
+$here->type="file";
+$here->xnj=new XNJsonFile($file,$limit);
+$here->math=$here->xnj->math;
+$here->proMath=$here->xnj->proMath;
+return $here;
 }public static function url($url,int $limit=999){
-$this->type="url";
-$this->xnj=new XNJsonURL($url,$limit);
-$this->math=$this->xnj->math;
-$this->proMath=$this->xnj->proMath;
-return $this->xnj;
-}public static function string($str){
-$this->type="string";
-$this->xnj=new XNJsonString($str);
-$this->math=$this->xnj->math;
-$this->proMath=$this->xnj->proMath;
-return $this->xnj;
+$here=new XNJson;
+$here->type="url";
+$here->xnj=new XNJsonURL($url,$limit);
+$here->math=$here->xnj->math;
+$here->proMath=$here->xnj->proMath;
+return $here;
+}public static function string($str=","){
+$here=new XNJson;
+$here->type="string";
+$here->xnj=new XNJsonString($str);
+$here->math=$here->xnj->math;
+$here->proMath=$here->xnj->proMath;
+return $here;
 }public static function thumb($data=',',int $limit=999){
 $f=tmpfile();
 fwrite($f,$data);
 rewind($f);
-$this->type="thumb";
-$this->xnj=new XNJsonFile($f,$limit);
-$this->math=$this->xnj->math;
-$this->proMath=$this->xnj->proMath;
-return $this->xnj;
+$here=new XNJson;
+$here->type="thumb";
+$here->xnj=new XNJsonFile($f,$limit);
+$here->math=$here->xnj->math;
+$here->proMath=$here->xnj->proMath;
+return $here;
+}public static function xnj($xnj,int $limit=999){
+if(isset($xnj->xnj))$xnj=$xnj->xnj;
+$here=new XNJson;
+if($xnj instanceof XNJsonString)  $here->type="string";
+elseif($xnj instanceof XNJsonURL) $here->type="url";
+elseif($xnj instanceof XNJsonFile){
+if(!$xnj->getFileName()&&fileformat(fname($xnj->getFile()))=="tmp")
+$here->type="thumb";
+else $here->type="file";
+}else return false;
+$here->xnj=$xnj;
+$here->limit=$limit;
+$here->math=$xnj->math;
+$here->proMath=$xnj->proMath;
+return $here;
 }public function close(){
 $this->xnj->close();
 }public function save(){
 $this->xnj->save();
 return $this;
 }public function get(){
+return $this->xnj->get();
+}public function __toString(){
 return $this->xnj->get();
 }public function reset(){
 $this->xnj->reset();
@@ -5193,7 +5229,9 @@ return $this;
 $this->xnj->delete($key);
 return $this;
 }public function dir($name){
-return $this->xnj->dir($name);
+$dir=$this->xnj->dir($name);
+if($dir)self::xnj($dir);
+return false;
 }public function convert($to="string",$file=null){
 if($this->type=="string"&&$to=="string"){
 $this->xnj=new XNJsonString($this->xnj->get());
@@ -5274,9 +5312,9 @@ $this->proMath=$this->xnj->proMath;
 return $this->xnj;
 }return false;
 }public function getFile(){
-return $this->xnj->getFile();
+return $this->type=="file"||$this->type=="thumb"?$this->xnj->getFile():$this->type=="url"?fopen($this->xnj->getFileName(),'r'):false;
 }public function getFileName(){
-return $this->xnj->getFileName();
+return $this->type=="file"||$this->type=="thumb"||$this->type=="url"?$this->xnj->getFileName():false;
 }public function size(){
 return $this->xnj->size();
 }public function count(){
@@ -7396,10 +7434,1165 @@ $s=hash_algos();
 foreach($s as $h)
 $str=hash($h,$str);
 return $str;
+}class XNPluginVariablesString{
+private $x;
+public function __construct(&$x){
+$this->x=&$x->variables;
+}public function encode($data){
+return '"'.str_replace(['"','\\'],['\"','\\"'],$data).'"';
+}public function decode($data){
+if($data[0]=="\"")return str_replace(["\\\"","\\\\"],["\"","\\"],substr($data));
+if($data[0]=='\'')return str_replace(['\\\'','\\\\'],['\'','\\'],substr($data));
+return $data;
+}public function is($data){
+return preg_match("/^".XNPlugin::STRING_REGEX."$/",$data);
+}public function size($data){
+return strlen($data);
+}public function length($data){
+return strlen($data);
+}public function set($var,$data){
+return $this->x->set($var,$this->encode($data));
+}public function get($var){
+return $this->decode($this->x->get($var));
+}
+}class XNPluginVariablesNumber{
+private $x;
+public function __construct(&$x){
+$this->x=&$x->variables;
+}public function encode($data){
+return "$data";
+}public function decode($data){
+$x=(int)$data;
+$y=(double)$data;
+return $x==$y?$x:$y;
+}public function is($data){
+return preg_match("/^".XNPlugin::NUMBER_REGEX."$/",$data);
+}public function size($data){
+return strlen($data);
+}public function length($data){
+return strlen($data);
+}public function set($var,$data){
+return $this->x->set($var,$this->encode($data));
+}public function get($var){
+return $this->decode($this->x->get($var));
+}
+}class XNPluginVariablesBoolean{
+private $x;
+public function __construct(&$x){
+$this->x=&$x->variables;
+}public function encode($data){
+if($data)return "true";
+return "false";
+}public function decode($data){
+return preg_match("/^".XNPlugin::BOOLEAN1_REGEX."$/")?true:false;
+}public function is($data){
+return preg_match("/^".XNPlugin::BOOLEAN_REGEX."$/",$data);
+}public function size($data){
+return 1;
+}public function length($data){
+return 1;
+}public function set($var,$data){
+return $this->x->set($var,$this->encode($data));
+}public function get($var){
+return $this->decode($this->x->get($var));
+}
+}class XNPluginVariablesNull{
+private $x;
+public function __construct(&$x){
+$this->x=&$x->variables;
+}public function encode($data){
+return "NULL";
+}public function decode($data){
+return null;
+}public function is($data){
+return preg_match("/^".XNPlugin::NULL_REGEX."$/",$var);
+}public function size($data){
+return 0;
+}public function length($data){
+return 0;
+}public function set($var,$data){
+return $this->x->set($var,"null");
+}public function get($var){
+return null;
+}
+}class XNPluginVariablesRegex{
+private $x;
+public function __construct(&$x){
+$this->x=&$x->variables;
+}public function encode($data){
+return $data;
+}public function decode($data){
+return $data;
+}public function is($data){
+return preg_match("/^".XNPlugin::REGEX_REGEX."$/",$data);
+}public function size($data){
+return strlen($data);
+}public function length($data){
+return strlen($data);
+}public function set($var,$data){
+return $this->x->set($var,$data);
+}public function get($var){
+return $this->x->get($var);
+}
+}class XNPluginVariablesArray{
+private $x,$y;
+public function __construct(&$x){
+$this->x=&$x->variables;
+$this->y=&$x;
+}
+}class XNPluginVariablesObject{
+private $x;
+public function __construct(&$x){
+$this->x=&$x->variables;
+}
+}class XNPluginVariablesFunction{
+private $x;
+public function __construct(&$x){
+$this->x=&$x->variables;
+}
+}class XNPluginVariablesAuto{
+private $x;
+public function __construct(&$x){
+$this->x=&$x->variables;
+}public function type($data){
+if($this->x->string  ->is($data))return "string"  ;
+if($this->x->number  ->is($data))return "number"  ;
+if($this->x->boolean ->is($data))return "boolean" ;
+if($this->x->null    ->is($data))return "null"    ;
+if($this->x->function->is($data))return "function";
+if($this->x->regex   ->is($data))return "regex"   ;
+if($this->x->array   ->is($data))return "array"   ;
+if($this->x->object  ->is($data))return "object"  ;
+}private function in($data){
+if($this->x->string  ->is($data))return $this->x->string  ;
+if($this->x->number  ->is($data))return $this->x->number  ;
+if($this->x->boolean ->is($data))return $this->x->boolean ;
+if($this->x->null    ->is($data))return $this->x->null    ;
+if($this->x->function->is($data))return $this->x->function;
+if($this->x->regex   ->is($data))return $this->x->regex   ;
+if($this->x->array   ->is($data))return $this->x->array   ;
+if($this->x->object  ->is($data))return $this->x->object  ;
+}private function ni($data){
+if(is_string($data)&&$this->x->regex->is($data))  return $this->x->regex;
+if(!is_string($data)&&$this->x->number->is($data))return $this->x->number;
+if(is_string($data))                              return $this->x->string;
+if(is_null($data))                                return $this->x->null;
+if(is_bool($data))                                return $this->x->boolean;
+if(is_closure($data))                             return $this->x->function;
+if(is_array($data))                               return $this->x->array;
+if(is_object($data))                              return $this->x->object;
+}public function set($var,$data){
+return $this->ni($data)->set($var,$data);
+}public function get($var){
+$g=$this->x->get($var);
+return $this->ni($g)->decode($g);
+}
 }
 
-$GLOBALS['-XN-']['endTime']=microtime(true);
-function xnscript(){
+class XNPluginVariables{
+private $x;
+public $string  ,
+       $number  ,
+       $boolean ,
+       $null    ,
+       $function,
+       $array   ,
+       $object  ,
+       $regex   ,
+       $auto    ;
+
+public function __construct(&$x){
+$this->x=&$x;
+$this->string  =new XNPluginVariablesString   ($x);
+$this->function=new XNPluginVariablesFunctions($x);
+$this->boolean =new XNPluginVariablesBoolean  ($x);
+$this->number  =new XNPluginVariablesNumebr   ($x);
+$this->array   =new XNPluginVariablesArraay   ($x);
+$this->object  =new XNPluginVariablesObject   ($x);
+$this->null    =new XNPluginVariablesNull     ($x);
+$this->regex   =new XNPluginVariablesRegex    ($x);
+$this->auto    =new XNPluginVariablesAuto     ($x);
+}public function exists($var){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$var))return $this->x->NotBeAcceptedNameError();
+if($var[0]=='$'||$var[0]=='@'||$var[0]=='#')$name=substr($var,1);
+else $name=$var;
+$DIR1     =  $this->x->DIR1;
+$DIR2     =  $this->x->DIR2;
+$DIR3     =  $this->x->DIR3;
+$VARIABLE = &$this->x->VARIABLE;
+$memory   =  $this->x->MEMORY;
+switch($this->x->MEMORYT){
+case 'json':
+case 'object':
+if($var[0]=='$'){
+foreach($DIR1 as $dir)
+$memory=&$memory->$dir;
+return isset($memory->$name);
+}elseif($var[0]=='@'){
+foreach($DIR2 as $dir)
+$memory=&$memory->$dir;
+return isset($memory->$name);
+}elseif($var[0]=='#'){
+foreach($DIR3 as $dir)
+$memory=&$memory->$dir;
+return isset($memory->$name);
+}else return isset($VARIABLE[$name]);
+break;case 'array':
+if($var[0]=='$'){
+foreach($DIR1 as $dir)
+$memory=&$memory[$dir];
+return isset($memory[$name]);
+}elseif($var[0]=='@'){
+foreach($DIR2 as $dir)
+$memory=&$memory[$dir];
+return isset($memory[$name]);
+}elseif($var[0]=='#'){
+foreach($DIR3 as $dir)
+$memory=&$memory[$dir];
+return isset($memory[$name]);
+}else return isset($VARIABLE[$name]);
+break;case "diractory":
+if($var[0]=='$'){
+return file_exists($DIR1.DIRECTORY_SEPARATOR.base64url_encode($name));
+}elseif($var[0]=='@'){
+return file_exists($DIR2.DIRECTORY_SEPARATOR.base64url_encode($name));
+}elseif($var[0]=='#'){
+return file_exists($DIR3.DIRECTORY_SEPARATOR.base64url_encode($name));
+}else return isset($VARIABLE[$name]);
+break;case "xnjson":
+if($var[0]=='$')
+return $memory->iskey($DIR1.$name);
+elseif($var[0]=='@')
+return $memory->iskey($DIR2.$name);
+elseif($var[0]=='#')
+return $memory->iskey($DIR3.$name);
+else return isset($VARIABLE[$name]);
+break;
+}
+}public function get($var){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$var))return $this->x->NotBeAcceptedNameError();
+if($var[0]=='$'||$var[0]=='@'||$var[0]=='#')$name=substr($var,1);
+else $name=$var;
+$DIR1     =  $this->x->DIR1;
+$DIR2     =  $this->x->DIR2;
+$DIR3     =  $this->x->DIR3;
+$VARIABLE = &$this->x->VARIABLE;
+$memory   =  $this->x->MEMORY;
+switch($this->x->MEMORYT){
+case 'json':
+case 'object':
+if($var[0]=='$'){
+foreach($DIR1 as $dir)
+$memory=&$memory->$dir;
+return @$memory->$name;
+}elseif($var[0]=='@'){
+foreach($DIR2 as $dir)
+$memory=&$memory->$dir;
+return @$memory->$name;
+}elseif($var[0]=='#'){
+foreach($DIR3 as $dir)
+$memory=&$memory->$dir;
+return @$memory->$name;
+}else return @$VARIABLE[$name];
+break;case 'array':
+if($var[0]=='$'){
+foreach($DIR1 as $dir)
+$memory=&$memory[$dir];
+return @$memory[$name];
+}elseif($var[0]=='@'){
+foreach($DIR2 as $dir)
+$memory=&$memory[$dir];
+return @$memory[$name];
+}elseif($var[0]=='#'){
+foreach($DIR3 as $dir)
+$memory=&$memory[$dir];
+return @$memory[$name];
+}else return @$VARIABLE[$name];
+break;case "diractory":
+if($var[0]=='$'){
+return fget($DIR1.DIRECTORY_SEPARATOR.base64url_encode($name));
+}elseif($var[0]=='@'){
+return fget($DIR2.DIRECTORY_SEPARATOR.base64url_encode($name));
+}elseif($var[0]=='#'){
+return fget($DIR3.DIRECTORY_SEPARATOR.base64url_encode($name));
+}else return @$VARIABLE[$name];
+break;case "xnjson":
+if($var[0]=='$')
+return $memory->value($DIR1.$name);
+elseif($var[0]=='@')
+return $memory->value($DIR2.$name);
+elseif($var[0]=='#')
+return $memory->value($DIR3.$name);
+else return @$VARIABLE[$name];
+break;
+}
+}public function set($var,$value){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$var))return $this->x->NotBeAcceptedNameError();
+if($var[0]=='$'||$var[0]=='@'||$var[0]=='#')$name=substr($var,1);
+else $name=$var;
+$DIR1     =  $this->x->DIR1;
+$DIR2     =  $this->x->DIR2;
+$DIR3     =  $this->x->DIR3;
+$VARIABLE = &$this->x->VARIABLE;
+$memory   = &$this->x->MEMORY;
+switch($this->x->MEMORYT){
+case 'json':
+case 'object':
+if($var[0]=='$'){
+foreach($DIR1 as $dir)
+$memory=&$memory->$dir;
+$memory->$name=$value;
+}elseif($var[0]=='@'){
+foreach($DIR2 as $dir)
+$memory=&$memory->$dir;
+$memory->$name=$value;
+}elseif($var[0]=='#'){
+foreach($DIR3 as $dir)
+$memory=&$memory->$dir;
+$memory->$name=$value;
+}else $VARIABLE[$name]=$value;
+break;case 'array':
+if($var[0]=='$'){
+foreach($DIR1 as $dir)
+$memory=&$memory[$dir];
+$memory[$name]=$value;
+}elseif($var[0]=='@'){
+foreach($DIR2 as $dir)
+$memory=&$memory[$dir];
+$memory[$name]=$value;
+}elseif($var[0]=='#'){
+foreach($DIR3 as $dir)
+$memory=&$memory[$dir];
+$memory[$name]=$value;
+}else $VARIABLE[$name]=$value;
+break;case "diractory":
+if($var[0]=='$'){
+fput($DIR1.DIRECTORY_SEPARATOR.base64url_encode($name),$value);
+}elseif($var[0]=='@'){
+fput($DIR2.DIRECTORY_SEPARATOR.base64url_encode($name),$value);
+}elseif($var[0]=='#'){
+fput($DIR3.DIRECTORY_SEPARATOR.base64url_encode($name),$value);
+}else $VARIABLE[$name]=$value;
+break;case "xnjson":
+if($var[0]=='$')
+return $memory->set($DIR1.$name,$value);
+elseif($var[0]=='@')
+return $memory->set($DIR2.$name,$value);
+elseif($var[0]=='#')
+return $memory->set($DIR3.$name,$value);
+else $VARIABLE[$name]=$value;
+break;
+}return true;
+}public function delete($var){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$var))return $this->x->NotBeAcceptedNameError();
+if($var[0]=='$'||$var[0]=='@'||$var[0]=='#')$name=substr($var,1);
+else $name=$var;
+$DIR1     =  $this->x->DIR1;
+$DIR2     =  $this->x->DIR2;
+$DIR3     =  $this->x->DIR3;
+$VARIABLE = &$this->x->VARIABLE;
+$memory   =  $this->x->MEMORY;
+switch($this->x->MEMORYT){
+case 'json':
+case 'object':
+if($var[0]=='$'){
+foreach($DIR1 as $dir)
+$memory=&$memory->$dir;
+unset($memory->$name);
+}elseif($var[0]=='@'){
+foreach($DIR2 as $dir)
+$memory=&$memory->$dir;
+unset($memory->$name);
+}elseif($var[0]=='#'){
+foreach($DIR3 as $dir)
+$memory=&$memory->$dir;
+unset($memory->$name);
+}else unset($VARIABLE[$name]);
+break;case 'array':
+if($var[0]=='$'){
+foreach($DIR1 as $dir)
+$memory=&$memory[$dir];
+unset($memory[$name]);
+}elseif($var[0]=='@'){
+foreach($DIR2 as $dir)
+$memory=&$memory[$dir];
+unset($memory[$name]);
+}elseif($var[0]=='#'){
+foreach($DIR3 as $dir)
+$memory=&$memory[$dir];
+unset($memory[$name]);
+}else unset($VARIABLE[$name]);
+break;case "diractory":
+if($var[0]=='$'){
+unlink($DIR1.DIRECTORY_SEPARATOR.base64url_encode($name));
+}elseif($var[0]=='@'){
+unlink($DIR2.DIRECTORY_SEPARATOR.base64url_encode($name));
+}elseif($var[0]=='#'){
+unlink($DIR3.DIRECTORY_SEPARATOR.base64url_encode($name));
+}else unset($VARIABLE[$name]);
+break;case "xnjson":
+if($var[0]=='$')
+$memory->delete($DIR1.$name);
+elseif($var[0]=='@')
+$memory->delete($DIR2.$name);
+elseif($var[0]=='#')
+$memory->delete($DIR3.$name);
+else unset($VARIABLE[$name]);
+break;
+}return true;
+}
+}
+
+class XNPluginFunctionsString{
+private $x;
+public function __construct(&$x){
+$this->x=&$x;
+}public function set($name,object $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$this->x->FUNCTIONS['string'][$name]=$func;
+}public function get($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return @$this->x->FUNCTIONS['string'][$name];
+}public function exists($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return isset($this->x->FUNCTIONS['string'][$name]);
+}public function delete($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+unset($this->x->FUNCTIONS['string'][$name]);
+}public function setCode($name,strung $pars,string $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$here=&$this->x;
+$here->run("$name out($pars){{$func}}");
+$this->x->FUNCTIONS['string'][$name]=function(...$param)use($here,$name){
+$here->run($name."(".implode(',',$param).")");
+};
+}
+}class XNPluginFunctionsNumber{
+private $x;
+public function __construct(&$x){
+$this->x=&$x;
+}public function set($name,object $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$this->x->FUNCTIONS['number'][$name]=$func;
+}public function get($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return @$this->x->FUNCTIONS['number'][$name];
+}public function exists($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return isset($this->x->FUNCTIONS['number'][$name]);
+}public function delete($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+unset($this->x->FUNCTIONS['number'][$name]);
+}public function setCode($name,strung $pars,string $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$here=&$this->x;
+$here->run("$name out($pars){{$func}}");
+$this->x->FUNCTIONS['number'][$name]=function(...$param)use($here,$name){
+$here->run($name."(".implode(',',$param).")");
+};
+}
+}class XNPluginFunctionsRegex{
+private $x;
+public function __construct(&$x){
+$this->x=&$x;
+}public function set($name,object $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$this->x->FUNCTIONS['regex'][$name]=$func;
+}public function get($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return @$this->x->FUNCTIONS['regex'][$name];
+}public function exists($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return isset($this->x->FUNCTIONS['regex'][$name]);
+}public function delete($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+unset($this->x->FUNCTIONS['regex'][$name]);
+}public function setCode($name,strung $pars,string $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$here=&$this->x;
+$here->run("$name out($pars){{$func}}");
+$this->x->FUNCTIONS['regex'][$name]=function(...$param)use($here,$name){
+$here->run($name."(".implode(',',$param).")");
+};
+}
+}class XNPluginFunctionsBoolean{
+private $x;
+public function __construct(&$x){
+$this->x=&$x;
+}public function set($name,object $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$this->x->FUNCTIONS['boolean'][$name]=$func;
+}public function get($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return @$this->x->FUNCTIONS['boolean'][$name];
+}public function exists($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return isset($this->x->FUNCTIONS['boolean'][$name]);
+}public function delete($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+unset($this->x->FUNCTIONS['boolean'][$name]);
+}public function setCode($name,strung $pars,string $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$here=&$this->x;
+$here->run("$name out($pars){{$func}}");
+$this->x->FUNCTIONS['boolean'][$name]=function(...$param)use($here,$name){
+$here->run($name."(".implode(',',$param).")");
+};
+}
+}class XNPluginFunctionsFunction{
+private $x;
+public function __construct(&$x){
+$this->x=&$x;
+}public function set($name,$f,object $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$this->x->FUNCTIONS[$f.'.'.$name]=$func;
+}public function get($name,$f){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return @$this->x->FUNCTIONS[$f.'.'.$name];
+}public function exists($name,$f){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return isset($this->x->FUNCTIONS[$f.'.'.$name]);
+}public function delete($name,$f){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+unset($this->x->FUNCTIONS[$f.'.'.$name]);
+}public function setCode($name,$f,strung $pars,string $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$here=&$this->x;
+$here->run("$f.$name out($pars){{$func}}");
+$this->x->FUNCTIONS['function'][$name]=function(...$param)use($here,$name,$f){
+$here->run($f.'.'.$name."(".implode(',',$param).")");
+};
+}
+}class XNPluginFunctionsArray{
+private $x;
+public function __construct(&$x){
+$this->x=&$x;
+}public function set($name,object $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$this->x->FUNCTIONS['array'][$name]=$func;
+}public function get($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return @$this->x->FUNCTIONS['array'][$name];
+}public function exists($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return isset($this->x->FUNCTIONS['array'][$name]);
+}public function delete($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+unset($this->x->FUNCTIONS['array'][$name]);
+}public function setCode($name,strung $pars,string $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$here=&$this->x;
+$here->run("$name out($pars){{$func}}");
+$this->x->FUNCTIONS['array'][$name]=function(...$param)use($here,$name){
+$here->run($name."(".implode(',',$param).")");
+};
+}
+}class XNPluginFunctionsObject{
+private $x;
+public function __construct(&$x){
+$this->x=&$x;
+}public function set($name,object $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$this->x->FUNCTIONS['object'][$name]=$func;
+}public function get($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return @$this->x->FUNCTIONS['object'][$name];
+}public function exists($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return isset($this->x->FUNCTIONS['object'][$name]);
+}public function delete($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+unset($this->x->FUNCTIONS['object'][$name]);
+}public function setCode($name,strung $pars,string $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$here=&$this->x;
+$here->run("$name out($pars){{$func}}");
+$this->x->FUNCTIONS['object'][$name]=function(...$param)use($here,$name){
+$here->run($name."(".implode(',',$param).")");
+};
+}
+}class XNPluginFunctionsNull{
+private $x;
+public function __construct(&$x){
+$this->x=&$x;
+}public function set($name,object $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$this->x->FUNCTIONS['null'][$name]=$func;
+}public function get($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return @$this->x->FUNCTIONS['null'][$name];
+}public function exists($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return isset($this->x->FUNCTIONS['null'][$name]);
+}public function delete($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+unset($this->x->FUNCTIONS['null'][$name]);
+}public function setCode($name,strung $pars,string $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$here=&$this->x;
+$here->run("$name out($pars){{$func}}");
+$this->x->FUNCTIONS['null'][$name]=function(...$param)use($here,$name){
+$here->run($name."(".implode(',',$param).")");
+};
+}
+}
+
+class XNPluginFunctions{
+private $x;
+public $function,
+       $string,
+       $number,
+       $boolean,
+       $null,
+       $array,
+       $object;
+
+public function __construct(&$x){
+$this->x=&$x;
+$this->funcion=new XNPluginFunctionsFunction($x);
+$this->boolean=new XNPluginFunctionsBoolean ($x);
+$this->string =new XNPluginFunctionsString  ($x);
+$this->number =new XNPluginFunctionsNumber  ($x);
+$this->object =new XNPluginFunctionsObject  ($x);
+$this->array  =new XNPluginFunctionsarray   ($x);
+$this->null   =new XNPluginFunctionsNull    ($x);
+}public function set($name,object $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$this->x->FUNCTIONS[$name]=$func;
+}public function get($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return @$this->x->FUNCTIONS[$name];
+}public function exists($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return isset($this->x->FUNCTIONS[$name]);
+}public function delete($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+unset($this->x->FUNCTIONS[$name]);
+}public function setCode($name,strung $pars,string $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$here=&$this->x;
+$here->run("$name out($pars){{$func}}");
+$this->x->FUNCTIONS[$name]=function(...$param)use($here,$name){
+$here->run($name."(".implode(',',$param).")");
+};
+}
+}
+
+class XNPluginCommands{
+private $x;
+public function __construct(&$x){
+$this->x=&$x;
+}public function set($name,object $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$this->x->COMMANDS[$name]=$func;
+}public function get($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return @$this->x->COMMANDS[$name];
+}public function exists($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+return isset($this->x->COMMANDS[$name]);
+}public function delete($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+unset($this->x->COMMANDS[$name]);
+}public function setCode($name,string $func){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$here=&$this->x;
+$this->x->COMMANDS[$name]=function(...$param)use($here,$func){
+$here->run($func."(".implode('',$param).")");
+};
+}
+}
+
+class XNPluginGlobal{
+private $x;
+public function __construct(&$x){
+$this->x=&$x;
+}public function set($name,$data){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$name=strtoupper($name);
+$this->x->GLOBALS[$name]=$data;
+}public function get($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$name=strtoupper($name);
+return @$this->x->GLOBALS[$name];
+}public function exists($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$name=strtoupper($name);
+return isset($this->x->GLOBALS[$name]);
+}public function delete($name){
+if(!preg_match("/^".XNPlugin::STATIC__REGEX."$/",$name))return $this->x->NotBeAcceptedNameError();
+$name=strtoupper($name);
+unset($this->x->GLOBALS[$name]);
+}
+}
+
+class XNPluginDirs{
+private $x;
+public function __construct(&$x){
+$this->x=&$x;
+}public function set($dir,$x=1){
+$t=$this->x->MEMORYT;
+if($x==3){
+if(!is_array($dir)&&($t=='array'||$t=='object'||$t=='json'))return $this->x->DiractoryTypeInvalidError();
+elseif(!is_string($dir)&&($t=='xnjson'||$t=='diractory'))   return $this->x->DiractoryTypeInvalidError();
+$this->x->DIR3=$dir;
+}elseif($x==2){
+if(!is_array($dir)&&($t=='array'||$t=='object'||$t=='json'))return $this->x->DiractoryTypeInvalidError();
+elseif(!is_string($dir)&&($t=='xnjson'||$t=='diractory'))   return $this->x->DiractoryTypeInvalidError();
+$this->x->DIR2=$dir;
+}else{
+if(!is_array($dir)&&($t=='array'||$t=='object'||$t=='json'))return $this->x->DiractoryTypeInvalidError();
+elseif(!is_string($dir)&&($t=='xnjson'||$t=='diractory'))   return $this->x->DiractoryTypeInvalidError();
+$this->x->DIR1=$dir;
+}
+}public function setall($dir1,$dir2,$dir3){
+$t=$this->x->MEMORYT;
+if(((!is_array($dir1)&&($t=='array'||$t=='object'||$t=='json'))||(!is_array($dir2)&&($t=='array'||$t=='object'||$t=='json'))||(!is_array($dir3)&&($t=='array'||$t=='object'||$t=='json')))||
+   ((!is_string($dir1)&&($t=='xnjson'||$t=='diractory'))||(!is_string($dir2)&&($t=='xnjson'||$t=='diractory'))||(!is_string($dir3)&&($t=='xnjson'||$t=='diractory'))))
+   return $this->x->DiractoryTypeInvalidError();
+$this->x->DIR1=$dir1;
+$this->x->DIR2=$dir2;
+$this->x->DIR3=$dir3;
+}public function view($x=1){
+if($x==3)return $this->x->DIR3;
+if($x==2)return $this->x->DIR2;
+return $this->x->DIR1;
+}public function set1($dir){
+$this->set($dir,1);
+}public function set2($dir){
+$this->set($dir,2);
+}public function set3($dir){
+$this->set($dir,3);
+}public function view1(){
+return $this->x->DIR1;
+}public function view2(){
+return $this->x->DIR2;
+}public function view3(){
+return $this->x->DIR3;
+}
+}
+
+class XNPluginMemory{
+private $x;
+public function __construct(&$x){
+$this->x=&$x;
+}public function set($type='json',$memory=false){
+switch(strtolower($type)){
+case 'json':
+if($memory&&!is_array($memory)&&!is_object($memory)&&!is_json($memory))return $this->x->MemoryInputInvalidError();
+$this->x->MEMORYT = 'json';
+$this->x->MEMORY  = $memory?(is_array($memory)?(object)$memory:is_object($memory)?$memory:json_decode($memory)):new stdClass;
+break;case 'array':
+if($memory&&!is_array($memory)&&!is_object($memory)&&!is_json($memory))return $this->x->MemoryInputInvalidError();
+$this->x->MEMORYT = 'array';
+$this->x->Memory  = $memory?(is_array($memory)?$memory:is_object($memory)?(array)$memory:json_decode($memory,true)):[];
+break;case 'object':
+if($memory&&!is_array($memory)&&!is_object($memory)&&!is_json($memory))return $this->x->MemoryInputInvalidError();
+$this->x->MEMORYT = 'object';
+$this->x->MEMORY  = $memory?(is_array($memory)?(object)$memory:is_object($memory)?$memory:json_decode($memory)):new stdClass;
+break;case "xn":
+case "xnjson":
+if($memory&&!is_xnjson($memory))return $this->x->MemoryInputInvalidError();
+$this->x->MEMORYT = 'xnjson';
+$this->x->MEMORY  = $memory?$memory:new XNJsonString;
+break;case "diractory":
+case "dir":
+case "file":
+if($memory&&!is_string($memory)&&!is_numeric($memory))return $this->x->MemoryInputInvalidError();
+$this->x->MEMORYT = 'diractory';
+$this->x->MEMORY  = $memory?$memory:realpath('').DIRECTORY_SEPARATOR;
+break;default:
+return $this->x->MemoryTypeInvalidError();
+}
+}public function get(){
+switch($this->x->MEMORYT){
+case 'json':
+return json_encode($this->x->MEMORY);
+break;case 'object':
+case 'array':
+case 'xnjson':
+return $this->x->MEMORY;
+break;case 'diractory':
+return substr($this->x->MEMORY,-1);
+}return false;
+}public function type(){
+return $this->x->MEMORYT;
+}
+}
+
+class XNPlugin {
+// Code Variable : in|out (params){ codes }
+// normal Variable : var
+// memory group1 Variable : $var
+// memory group2 Variable : @var
+// memory group3 Variable : #var
+/* types :
+   function
+   array
+   object
+   string
+   number
+   boolean
+   regex
+   NULL
+*/
+const NORMAL_REGEX   = "(?:[^ \/\\n\\t\\r\(\)\[\]\{\}\<\>\,\+\-\*:@\\$\%\^\&\|\#\\\"\'\.\\x00-\\x17\\xef-\\xff`~=]+)";
+const NORMAL__REGEX   = "(?:[^ \\n\\t\\r\(\)\[\]\{\}\,\\\"\'\\x00-\\x17\\xef-\\xff`w]+)";
+const BINE_REGEX     = "(?:[\,;@\?\\$\#\.`~=]{1,}| [\,;@\?\\$\#\.`~=a-zA-Z0-9\<\>\-\+]{1,} )";
+const STATIC_REGEX   = "(?:[@\\$\#]{0,1}".self::NORMAL_REGEX.")";
+const STATIC__REGEX  = "(?:[@\\$\#]{0,1}".self::NORMAL__REGEX."+)";
+const MEMORY1_REGEX  = "(?:\\$".self::NORMAL_REGEX.")";
+const MEMORY2_REGEX  = "(?:@"  .self::NORMAL_REGEX.")";
+const MEMORY3_REGEX  = "(?:\#" .self::NORMAL_REGEX.")";
+const CODE_REGEX     = "(?:(?:\\\\\}|\[(?:\\\\\[|\\\\\]|[^\[\]]|(?R))*\]|\((?:\\\\\(|\\\\\)|[^\(\)]|(?R))*\)|\{(?:\\\\\{|\\\\\}|[^\{\}]|(?R))*\}|\<(?:\\\\\<|\\\\\>|[^\<\>]|(?R))*\>|\\\"(?:\\\\\\\"|[^\\\"])*\\\"|\'(?:\\\\\'|[^\'])*\'|\`(?:\\\\\`|[^\`])*\`|[^\}\]\)\>])*)";
+const CODES_REGEX   = "(?:(\{)(".self::CODE_REGEX.")\}|(\{\{)(".self::CODE_REGEX.")\}\})";
+const PARAMS_REGEX   = "(?:\( *(".self::STATIC_REGEX." *(?:(".self::BINE_REGEX.") *".self::STATIC_REGEX." *)*|)\)|(".self::STATIC_REGEX." *(?:(".self::BINE_REGEX.") *".self::STATIC_REGEX." *)*))";
+const FUNCTION_REGEX = "(?:(in|out|) *".self::PARAMS_REGEX." *\{(".self::CODE_REGEX.")\})";
+const COMMENT_REGEX  = "(?:\/\/[^\\n]\\n|\/\*(?:(?!\*\/)[^]])+\*\/)";
+const NUMBER_REGEX   = "(?:[0-9]*(?:\.[0-9]*))";
+const INTEGER_REGEX  = "(?:[0-9]+)";
+const HEX_REGEX      = "(?:x([0-9a-f]+))";
+const BINARY_REGEX   = "(?:b([01]+))";
+const STRING_REGEX   = "(?:\\\"(?:\\\"|[^\\\"])*\\\"|\'(?:\\\\\'|[^\'])*\')";
+const BOOLEAN0_REGEX = "(?:(?i)false)";
+const BOOLEAN1_REGEX = "(?:(?i)true)";
+const BOOLEAN_REGEX  = "(?:(?i)false|(?i)true)";
+const NULL_REGEX     = "(?:(?i)null)";
+//const SCRIPT_REGEX   = "(?:\`(?:(?i)(php|xn|shell|calc))(?: |\n)*((?:\\\\\`|[^\`]))*\`)";
+const ARRAY_REGEX    = "(?:\[(?:\\\\\[|\\\\\]|[^\[\]]|(?R))*\])";
+const OBJECT_REGEX   = "(?:\{(?:\\\\\{|\\\\\}|[^\{\}]|(?R))*\})";
+const GLOBAL_REGEX   = "(?:: *((?i)(?:\\\\:|[^:])*) *:)";
+const REGEX_REGEX    = "(?:\/(?:\\\\\/|[^\/])*\/[euisxm]{0,1})";
+const INPUT_REGEX    = "(?:".self::REGEX_REGEX."|".self::STRING_REGEX."|".self::NUMBER_REGEX."|".self::BOOLEAN_REGEX."|".self::NULL_REGEX."|".self::ARRAY_REGEX."|".self::OBJECT_REGEX."|".self::FUNCTION_REGEX."|".self::STATIC__REGEX.")";
+const CINPUT_REGEX   = "(?:\%(STRING|NUMBER|FUNCTION|SCRIPT|CODE|VARIABLE|ARRAY|NULL|BOOLEAN|OBJECT|REGEX)\-([0-9]+)\%)";
+const FUNC_REGEX     = "(?:".self::STATIC__REGEX." *".self::FUNCTION_REGEX.")";
+const CALL_REGEX     = "(?:".self::STATIC__REGEX." *((?: *\( *".self::STATIC_REGEX."+(?: *, *".self::STATIC_REGEX."+){0,1} *\)){0,1}))";
+const COMMAND_REGEX  = "(?:".self::STATIC_REGEX." *".self::PARAMS_REGEX.")";
+const CONVERT_REGEX  = "(?:\<(STRING|NUMBER|FUNCTION|SCRIPT|CODE|VARIABLE|ARRAY|NULL|BOOLEAN|OBJECT|REGEX)\>".self::INPUT_REGEX.")";
+const MEMORYS_REGEX  = "(?:[@\\$\#]".self::NORMAL_REGEX.")";
+const DEFINEVR_REGEX = "(?:(regex):(".self::REGEX_REGEX.
+                        ")|(string):(".self::STRING_REGEX.
+                        ")|(number):(".self::NUMBER_REGEX.
+                        ")|(boolean):(".self::BOOLEAN_REGEX.
+                        ")|(null):(".self::NULL_REGEX.
+                        ")|(array):(".self::ARRAY_REGEX.
+                        ")|(object):(".self::OBJECT_REGEX.
+                        ")|(function):(".self::FUNCTION_REGEX.
+                        ")|(memory):(".self::MEMORYS_REGEX.
+                        ")|(variable):(".self::NORMAL_REGEX.
+                        ")|(var):(".self::STATIC__REGEX.
+                        ")|(code):(".self::CODE_REGEX.
+                        ")|(codes):(".self::CODES_REGEX.
+                        ")|(bine):(".self::BINE_REGEX.
+                        ")|(parameter):(".self::PARAM_REGEX.
+                        ")|(input):(".self::INPUT_REGEX.
+                        "))";
+const DEFINEVG_ARRAY = [
+  "regex"=>self::REGEX_REGEX,
+  "string"=>self::STING_REGEX,
+  "number"=>self::NUMBER_REGEX,
+  "boolean"=>self::NUMBER_REGEX,
+  "null"=>self::NULL_REGEX,
+  "array"=>self::ARRAY_REGEX,
+  "object"=>self::OBJECT_REGEX,
+  "memory"=>self::MEMORY_REGEX,
+  "function"=>self::FUNCTION_REGEX,
+  "variable"=>self::NORMAL_REGEX,
+  "var"=>self::STATIC__REGEX,
+  "code"=>self::CODE_REGEX,
+  "codes"=>self::CODE_REGEX,
+  "bine"=>self::BINE_REGEX,
+  "parameter"=>self::PARAM_REGEX,
+  "input"=>self::INPUT_REGEX
+];
+const DEFINEGV_REGEX = "(?:(regex|string|number|boolean|null|array|object|memory|function|variable|var|code|codes|bine|parameter|input):(".self::STATIC__REGEX."))";
+
+public $GLOBALS     = [];
+public $COMMANDS    = [];
+public $FUNCTIONS   = [];
+public $VARIABLE    = [];
+public $MEMORY      =  null ;
+public $DIR1        = 'dir1';
+public $DIR2        = 'dir2';
+public $DIR3        = 'dir3';
+public $MEMORYT     = 'json';
+public $last_error_message = '';
+public $last_error         = '';
+public $functions,
+       $commands ,
+       $variables,
+       $dirs     ,
+       $memory   ,
+       $global   ,
+       $class    ;
+
+const MEMOEY_INPUT_INVALID   = 87587938975398;
+const MEMORY_TYPE_INVALID    = 91742047010405;
+const DIRACTORY_TYPE_INVALID = 19270741295823;
+const NOT_BE_ACCEPRED_NAME   = 64737985047850;
+
+public function MemoryInputInvalidError()  {$last_error="memory";    new XNError("XNPlugin Memory"    ,$this->last_error_message="memory input type not match"       ,0);return self::MEMOEY_INPUT_INVALID  ;}
+public function MemoryTypeInvalidError()   {$last_error="memory";    new XNError("XNPlugin Memory"    ,$this->last_error_message="memory type not found"             ,0);return self::MEMORY_TYPE_INVALID   ;}
+public function DiractoryTypeInvalidError(){$last_error="diractory"; new XNError("XNPlugin Dir"       ,$this->last_error_message="diractory type invalid"            ,0);return self::DIRACTORY_TYPE_INVALID;}
+public function NotBeAcceptedNameError()   {$last_error="SyntaxName";new XNError("XNPlugin SyntexName",$this->last_error_message="selected name will not be accepted",0);return self::NOT_BE_ACCEPRED_NAME  ;}
+
+public function __construct(){
+$this->functions=new XNPluginFunctions($this);
+$this->commands =new XNPluginCommands ($this);
+$this->variables=new XNPluginVariables($this);
+$this->dirs     =new XNPluginDirs     ($this);
+$this->memory   =new XNPluginMemory   ($this);
+$this->global   =new XNPluginGlobal   ($this);
+$this->loadGLOBALS  ();
+$this->loadCOMMANDS ();
+$this->loadFUNCTIONS();
+}
+
+private function loadGLOBALS(){
+$this->global->set("version",'1.0');
+$this->global->set("start_time",microtime(true));
+}private function loadCOMMANDS(){
+$here=&$this;
+$this->commands->set("print",function(...$param){
+foreach($param as $par)print $par;
+});
+
+}private function loadFUNCTIONS(){
+$this->functions->set(".Math.add",function($x,$y=2){return $x+$y;});
+$this->functions->set(".Math.rem",function($x,$y=2){return $x-$y;});
+$this->functions->set(".Math.mul",function($x,$y=2){return $x*$y;});
+$this->functions->set(".Math.div",function($x,$y=2){return $x/$y;});
+$this->functions->set(".Math.mod",function($x,$y=2){return $x%$y;});
+$this->functions->set(".Math.pow",function($x,$y=2){return $x**$y;});
+$this->functions->set(".Math.xor",function($x,$y=2){return $x xor $y;});
+$this->functions->set(".Math.tan",function($param){return tan($param);});
+$this->functions->set(".Math.log",function($x,$y=2){return log($x,$y=2);});
+$this->functions->set(".Math.cos",function($param){return cos($param);});
+$this->functions->set(".Math.sin",function($param){return sin($param);});
+$this->functions->set(".Math.round",function($param,$x=0){return round($param,$x);});
+$this->functions->set(".Math.ceil",function($param){return ceil($param);});
+$this->functions->set(".Math.acos",function($param){return acos($param);});
+$this->functions->set(".Math.acosh",function($param){return acosh($param);});
+$this->functions->set(".Math.asin",function($param){return asin($param);});
+$this->functions->set(".Math.asinh",function($param){return asinh($param);});
+$this->functions->set(".Math.atan",function($param){return atan($param);});
+$this->functions->set(".Math.atan2",function($param){return atan2($param);});
+$this->functions->set(".Math.atanh",function($param){return atanh($param);});
+$this->functions->set(".Math.cosh",function($param){return cosh($param);});
+$this->functions->set(".Math.exp",function($param){return exp($param);});
+$this->functions->set(".Math.expm1",function($param){return expm1($param);});
+$this->functions->set(".Math.log10",function($param){return log10($param);});
+$this->functions->set(".Math.log1p",function($param){return log1p($param);});
+$this->functions->set(".Math.tanh",function($param){return tanh($param);});
+$this->functions->set(".Math.sinh",function($param){return sinh($param);});
+$this->functions->set(".Math.floor",function($param){return floor($param);});
+$this->functions->set(".Math.abs",function($param){return abs($param);});
+$this->functions->set(".Math.fact",function($param){return fact($param);});
+$this->functions->set(".Math.gcd",function($x,$y){return gcd($x,$y);});
+$this->functions->set(".Math.min",function(...$x){return min(...$x);});
+$this->functions->set(".Math.max",function(...$x){return max(...$x);});
+$this->functions->set("array",function(...$x){return unse($x);});
+$this->functions->set("object",function(...$x){return unce((object)$x);});
+$this->functions->string->set(".hash.md2",function($x){return hash("md2",$x);});
+$this->functions->string->set(".hash.md4",function($x){return hash("md4",$x);});
+$this->functions->string->set(".hash.md5",function($x){return md5($x);});
+$this->functions->string->set(".hash.sha1",function($x){return sha1($x);});
+$this->functions->string->set(".hash.sha224",function($x){return hash("sha224",$x);});
+$this->functions->string->set(".hash.sha384",function($x){return hash("sha384",$x);});
+$this->functions->string->set(".hash.sha256",function($x){return hash("sha256",$x);});
+$this->functions->string->set(".hash.sha512/224",function($x){return hash("sha512/224",$x);});
+$this->functions->string->set(".hash.sha512/256",function($x){return hash("sha512/256",$x);});
+$this->functions->string->set(".hash.sha512",function($x){return hash("sha512",$x);});
+$this->functions->string->set(".hash.sha3-224",function($x){return hash("sha3-224",$x);});
+$this->functions->string->set(".hash.sha3-256",function($x){return hash("sha3-256",$x);});
+$this->functions->string->set(".hash.sha3-384",function($x){return hash("sha3-384",$x);});
+$this->functions->string->set(".hash.sha3-512",function($x){return hash("sha3-512",$x);});
+$this->functions->string->set(".hash.ripemd128",function($x){return hash("ripemd128",$x);});
+$this->functions->string->set(".hash.ripemd160",function($x){return hash("ripemd160",$x);});
+$this->functions->string->set(".hash.ripemd256",function($x){return hash("ripemd256",$x);});
+$this->functions->string->set(".hash.ripemd320",function($x){return hash("ripemd320",$x);});
+$this->functions->string->set(".hash.whirlpool",function($x){return hash("whirlpool",$x);});
+$this->functions->string->set(".hash.tiger128/3",function($x){return hash("tiger128,3",$x);});
+$this->functions->string->set(".hash.tiger160/3",function($x){return hash("tiger160,3",$x);});
+$this->functions->string->set(".hash.tiger192/3",function($x){return hash("tiger192,3",$x);});
+$this->functions->string->set(".hash.tiger128/4",function($x){return hash("tiger128,4",$x);});
+$this->functions->string->set(".hash.tiger160/4",function($x){return hash("tiger160,4",$x);});
+$this->functions->string->set(".hash.tiger192/4",function($x){return hash("tiger192,4",$x);});
+$this->functions->string->set(".hash.snefru",function($x){return hash("snefru",$x);});
+$this->functions->string->set(".hash.snefru256",function($x){return hash("snefru256",$x);});
+$this->functions->string->set(".hash.gost-crypto",function($x){return hash("gost-crypto",$x);});
+$this->functions->string->set(".hash.adler32",function($x){return hash("adler32",$x);});
+$this->functions->string->set(".hash.crc32",function($x){return hash("crc32",$x);});
+$this->functions->string->set(".hash.crc32b",function($x){return hash("crc32b",$x);});
+$this->functions->string->set(".hash.fnv132",function($x){return hash("fnv132",$x);});
+$this->functions->string->set(".hash.fnv1a32",function($x){return hash("fnv1a32",$x);});
+$this->functions->string->set(".hash.fnv164",function($x){return hash("fnv164",$x);});
+$this->functions->string->set(".hash.fnv1a64",function($x){return hash("fnv1a64",$x);});
+$this->functions->string->set(".hash.joaat",function($x){return hash("joaat",$x);});
+$this->functions->string->set(".hash.haval128/3",function($x){return hash("haval128,3",$x);});
+$this->functions->string->set(".hash.haval160/3",function($x){return hash("haval160,3",$x);});
+$this->functions->string->set(".hash.haval192/3",function($x){return hash("haval192,3",$x);});
+$this->functions->string->set(".hash.haval224/3",function($x){return hash("haval224,3",$x);});
+$this->functions->string->set(".hash.haval256/3",function($x){return hash("haval256,3",$x);});
+$this->functions->string->set(".hash.haval128/4",function($x){return hash("haval128,4",$x);});
+$this->functions->string->set(".hash.haval160/4",function($x){return hash("haval160,4",$x);});
+$this->functions->string->set(".hash.haval192/4",function($x){return hash("haval192,4",$x);});
+$this->functions->string->set(".hash.haval224/4",function($x){return hash("haval224,4",$x);});
+$this->functions->string->set(".hash.haval256/4",function($x){return hash("haval256,4",$x);});
+$this->functions->string->set(".hash.haval128/5",function($x){return hash("haval128,5",$x);});
+$this->functions->string->set(".hash.haval160/5",function($x){return hash("haval160,5",$x);});
+$this->functions->string->set(".hash.haval192/5",function($x){return hash("haval192,5",$x);});
+$this->functions->string->set(".hash.haval224/5",function($x){return hash("haval224,5",$x);});
+$this->functions->string->set(".hash.haval256/5",function($x){return hash("haval256,5",$x);});
+$this->functions->string->set(".hash.hashs",function($x){return hashs($x);});
+$this->functions->string->set(".hash.hasha",function($x){return hasha($x);});
+$this->functions->string->set(".hash.crypt",function($x,$y=''){return crypt("md2",$y);});
+$this->functions->string->set(".hash.xncrypt",function($x,$y=''){return xncrypt("md2",$y);});
+$this->functions->string->set(".base64.encode",function($x){return base64_encode($x);});
+$this->functions->string->set(".base64.decode",function($x){return base64_decode($x);});
+$this->functions->string->set(".base64url.encode",function($x){return base64url_encode($x);});
+$this->functions->string->set(".base64url.decode",function($x){return base64url_decode($x);});
+$this->functions->string->set(".binary.encode",function($x){return base2_encode($x);});
+$this->functions->string->set(".binary.decode",function($x){return base2_decode($x);});
+$this->functions->string->set(".hex.encode",function($x){return bin2hex($x);});
+$this->functions->string->set(".hex.decode",function($x){return hex2bin($x);});
+$this->functions->string->set(".base4.encode",function($x){return base4_encode($x);});
+$this->functions->string->set(".base4.decode",function($x){return base4_decode($x);});
+$this->functions->string->set(".System.iconv",function($x,$y,$z){return iconv($y,$z,$x);});
+$this->functions->string->setCode(".coding",'from to to','return :string:.coding.iconv("from","to")');
+$this->functions->string->set(".slice",function($x,$y,$z=false){return $z!==false?substr($x,$y,$z):substr($x,$y);});
+$this->functions->string->set(".char",function($x,$y){return @$x[$y];});
+$this->functions->string->set(".charCode",function($x,$y){return @ord(@$x[$y]);});
+
+}
+
+
+}function script_runtime(){
+return microtime(true)-$_SERVER['REQUEST_TIME_FLOAT'];
+}function userip(){
+if(@$_SERVER['HTTP_CLIENT_IP'])
+return $_SERVER['HTTP_CLIENT_IP'];
+elseif(@$_SERVER['HTTP_X_FORWARDED'])
+return $_SERVER['HTTP_X_FORWARDED'];
+elseif(@$_SERVER['HTTP_X_FORWARDED_FOR'])
+return $_SERVER['HTTP_X_FORWARDED_FOR'];
+elseif(@$_SERVER['REMOTE_ADDR'])
+return $_SERVER['REMOTE_ADDR'];
+else return "127.0.0.1";
+}
+class XNNet {
+public $socket,$server,$port=80,
+       $method="GET",
+       $diractory="/",
+       $address='localhost',
+       $http="HTTP/1.0",
+       $browser='',
+       $browsers=[],
+       $proxyip=false,
+       $proxyport=false,
+       $header='',
+       $headers='',
+       $content='',
+       $download=true,
+       $data=[],
+       $username=false,
+       $password=false,
+       $code=0,
+       $info='',
+       $httpreturn='HTTP/1.0',
+       $domain=1,
+       $type=1,
+       $protocol=0;
+const STREAM   = 1;
+const DGRAM    = 2;
+const SEQPACKET= 5;
+const RAW      = 3;
+const RDM      = 4;
+const INET     = 2;
+const INET6    = 10;
+const UNIX     = 1;
+public function __construct(string $server='',$port=80,int $type=1){
+if($server){
+$this->setType($type);
+$this->connect($server,$port);
+}
+}public function connect(string $server,$port=80){
+$this->address="$server:$port";
+$server=explode($server,"://");
+if(!isset($server[1]))$server=$server[0];
+else{
+$this->protocol=getprotobyname($server[0]);
+$server=$server[1];
+}
+$this->server=$server;
+$this->setPort($port);
+$this->domain=filter_var($server,275,1048576)?self::INET:
+              filter_var($server,275,2097152)?self::INET6:
+              self::UNIX;
+$this->socket=socket_create($this->domain,$this->type,$this->protocol);
+//socket_connect($this->socket,$this->server,$this->port);
+}public function setProtocol($protocol){
+$this->protocol=is_numeric($protocol)?$protocol:getprotobyname($protocol);
+}public function setType($type){
+$types=[
+  "stream"   =>1,
+  "dgram"    =>2,
+  "seqpacket"=>5,
+  "raw"      =>3,
+  "rdm"      =>4
+];
+if(isset($types[strtolower($type)]))
+$type=$types[$type];
+$this->type=$type;
+}public function setDomain($domain){
+$domains=[
+  "inet" =>2 ,
+  "inet6"=>10,
+  "unix" =>1 ,
+];
+if(isset($domains[strtolower($domain)]))
+$domain=$domains[$domain];
+$this->domain=$domain;
+}public function setPort($port){
+$ports=[
+  "http"=>80,
+  "https"=>443,
+  "tsl/ssl"=>443,
+  "ssl"=>443,
+  "tsl"=>443,
+  "tpp"=>631,
+  "ssh"=>22,
+  "smtp"=>25,
+  "dns"=>53,
+  "pop2"=>109,
+  "pop3"=>110,
+  "sql"=>118,
+  "rpc"=>530,
+  "ftp-u"=>989,
+  "ftp-c"=>990,
+  "ftps"=>989,
+  "socks"=>1080
+];
+if(isset($ports[strtolower($port)]))
+$port=$ports[$port];
+$this->port=$port;
+}
+
+}function save_memory($file=false){
+if($file)fput($file,xnserialize($GLOBALS));
+else $GLOBALS['-XN-']['savememory']=$GLOBALS;
+}function back_memory($file=false){
+if($file&&file_exists($file))$GLOBALS=xnunserialize(fget($file));
+elseif(!$file)$GLOBALS=$GLOBALS['-XN-']['savememory'];
+}
+
+function getmd5xn(){
+if($GLOBALS['-XN-']['isf']){
+$get=file_get_contents($GLOBALS['-XN-']['dirNameDir']."xn.php");
+$get=str_replace(["\"".$GLOBALS['-XN-']['lastUse']."\";","\"".$GLOBALS['-XN-']['lastUse']."\";","\"".$GLOBALS['-XN-']['DATA']."\";"],'',$get);
+return md5($get);
+}else return '';
+}function xnscript(){
 return ["version"=>"1.7",
 "start_time"=>$GLOBALS['-XN-']['startTime'],
 "end_time"=>$GLOBALS['-XN-']['endTime'],
@@ -7409,4 +8602,6 @@ return ["version"=>"1.7",
 "last_use"=>substr($GLOBALS['-XN-']['lastUse'],0,-11)
 ];
 }
+
+$GLOBALS['-XN-']['endTime']=microtime(true);
 ?>
