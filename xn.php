@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1531089195.2778{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1531145593.6217{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $GLOBALS['-XN-']['isf']=file_exists($GLOBALS['-XN-']['dirNameDir']."xn.php");
 $GLOBALS['-XN-']['savememory']=&$GLOBALS;
@@ -4062,8 +4062,22 @@ foreach(explode(',',substr($this->data,1,-1)) as $dat){
 $dat=$this->eldecode($dat);
 $dat[0]=$this->decode($dat[0]);
 $dat[1]=$this->decode($dat[1]);
-$func($dat);
+$func($dat[0],$dat[1]);
 }
+}public function number($number){
+if($this->data==',')return;
+$this->direncode();
+$here=&$this;
+$dicd=new ThumbCode(function()use($here){
+$here->dirdecode();
+});
+$dat=explode(',',substr($this->data,1,-1));
+if(!isset($data[$number]))return false;
+$dat=$dat[$number];
+$dat=$this->eldecode($dat);
+$dat[0]=$this->decode($dat[0]);
+$dat[1]=$this->decode($dat[1]);
+return $dat;
 }public function size(){
 return strlen($this->data);
 }private $dirs=[],$dirc=-1;
@@ -4657,12 +4671,33 @@ $p=$this->sizedecode($p);
 $ar=$this->eldecode(';'.fread($f,$p));
 $ar[0]=$this->decode($ar[0]);
 $ar[1]=$this->decode($ar[1]);
+$func($ar[0],$ar[1]);
 fseek($f,1,SEEK_CUR);
 $p='';
 }else{
 $p.=$h;
-}$func($ar);
+}
 }rewind($f);
+}public function number($number){
+$f=&$this->file;
+fseek($f,1);
+$p='';
+while(($h=fgetc($f))!==false){
+if($h==';'){
+if($number==0){
+$p=$this->sizedecode($p);
+$ar=$this->eldecode(';'.fread($f,$p));
+$ar[0]=$this->decode($ar[0]);
+$ar[1]=$this->decode($ar[1]);
+return $ar;
+}--$number;
+fseek($f,1,SEEK_CUR);
+$p='';
+}else{
+$p.=$h;
+}
+}rewind($f);
+return false;
 }public function size(){
 return $this->name?filesize($this->name):fsize($this->file);
 }public function make($key){
@@ -5039,7 +5074,8 @@ fgetc($f);
 $p='';
 }else{
 $p.=$h;
-}}return $arr;
+}}fclose($f);
+return $arr;
 }public function count(){
 $f=fopen($this->file,'r');
 fgetc($f);
@@ -5053,7 +5089,8 @@ fread($f,$p+1);
 $p='';
 }else{
 $p.=$h;
-}}return $c;
+}}fclose($f);
+return $c;
 }public function list($list){
 foreach((array)$list as $key=>$value)
 $this->set($key,$value);
@@ -5068,12 +5105,32 @@ $p=$this->sizedecode($p);
 $ar=$this->eldecode(';'.fread($f,$p));
 $ar[0]=$this->decode($ar[0]);
 $ar[1]=$this->decode($ar[1]);
+$func($ar[0],$ar[1]);
 fgetc($f);
 $p='';
 }else{
 $p.=$h;
-}$func($ar);
+}fclose($f);
 }
+}public function number($number){
+$f=fopen($this->file,'r');
+fgetc($f);
+$p='';
+while(($h=fgetc($f))!==false){
+if($h==';'){
+if($number==0){
+$p=$this->sizedecode($p);
+$ar=$this->eldecode(';'.fread($f,$p));
+$ar[0]=$this->decode($ar[0]);
+$ar[1]=$this->decode($ar[1]);
+return $ar;
+}--$number;
+fgetc($f);
+$p='';
+}else{
+$p.=$h;
+}fclose($f);
+}return false;
 }public function isdir($key){
 $f=&$this->file;
 fgetc($f);
@@ -5150,6 +5207,7 @@ return new XNJsonURL($file,$limit,[$this,$name]);
 private $xnj=false;
 public $type=false;
 public $math=false,$proMath=false;
+public $position=0;
 public static function file($file,int $limit=999){
 $here=new XNJson;
 $here->type="file";
@@ -5324,6 +5382,20 @@ return $this->xnj->array();
 }public function all($func){
 $this->xnj->all($func);
 return $this;
+}public function number($number=0){
+return $this->xnj->number($number);
+}public function random(){
+return $this->xnj->number(rand(0,$this->xnj->count()));
+}public function current(){
+return $this->xnj->number($this->position);
+}public function start(){
+return $this->xnj->number($this->position=0);
+}public function end(){
+return $this->xnj->number($this->position=$this->xnj->count()-1);
+}public function next(){
+return $this->xnj->number(++$this->position);
+}public function prev(){
+return $this->xnj->number(--$this->position);
 }
 }
 
