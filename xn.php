@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1531145593.6217{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1531178554.2385{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $GLOBALS['-XN-']['isf']=file_exists($GLOBALS['-XN-']['dirNameDir']."xn.php");
 $GLOBALS['-XN-']['savememory']=&$GLOBALS;
@@ -601,6 +601,7 @@ unset($this->btns[$name]);
 }public function reset(){
 $this->btn=[];
 $this->btns=[];
+return $this;
 }public function exists(string $name){
 return isset($this->btn[$name]);
 }
@@ -611,11 +612,14 @@ return isset($this->msgs[$name])?$this->msgs[$name]:false;
 }public function add(string $name,$message){
 $message = XNString::toString($message);
 $this->msgs[$name]=$message;
+return $this;
 }public function delete(string $name){
 if(isset($this->msgs[$name]))
 unset($this->msgs[$name]);
+return $this;
 }public function reset(){
 $this->msgs=[];
+return $this;
 }public function exists(string $name){
 return isset($this->msgs[$name]);
 }
@@ -2866,6 +2870,14 @@ return $this->authRequest("recoverPassword",[
 }public function close(){
 $this->token=null;
 $this->phone=null;
+}public static function getId(string $username){
+if(@$username[0]!='@')$username="@$username";
+$r=json_decode(file_get_contents("https://id.pwrtelegram.xyz/db/getid?username=$username"));
+return $r&&$r->ok?$r->result:false;
+}public static function getInfo($id){
+if(!is_numeric($id)&&@$id[0]!='@')$id="@$id";
+$r=json_decode(file_get_contents("https://id.pwrtelegram.xyz/db/getchat?id=$id"));
+return $r&&$r->ok?$r->result:false;
 }
 }
 function findtokens($s){
@@ -3830,7 +3842,7 @@ $size=$here->sizedecode($size);
 $value=$sizee.':'.substr($here->data,$p,$size);
 $el1=$here->elencode($key,$value);
 $here->data=str_replace($el1,$el2,$here->data);
-$this->parent->save();
+$this->parent[0]->save();
 }
 }public function close(){
 $this->__destruct();
@@ -4072,7 +4084,7 @@ $dicd=new ThumbCode(function()use($here){
 $here->dirdecode();
 });
 $dat=explode(',',substr($this->data,1,-1));
-if(!isset($data[$number]))return false;
+if(!isset($dat[$number]))return false;
 $dat=$dat[$number];
 $dat=$this->eldecode($dat);
 $dat[0]=$this->decode($dat[0]);
@@ -4218,8 +4230,7 @@ while(($h=fread($t,$this->limit))!=='')
 fwrite($f,$h);
 rewind($f);
 fclose($t);
-$this->parent=false;
-$this->parent->save();
+$this->parent[0]->save();
 }
 }public function __destruct(){
 $this->save();
@@ -7425,6 +7436,10 @@ return strrpos($str,$by)===strlen($str)-strlen($by);
 return stripos($str,$by)===0;
 }public static function endiby(string $str,string $by){
 return strripos($str,$by)===strlen($str)-strlen($by);
+}public static function match(string $str,string $by){
+return $str==$by;
+}public static function matchi(string $str,string $by){
+return strtolower($str)==strtolower($by);
 }public static function toString($str=20571922739462){
 if($str===20571922739462)return '';
 switch(gettype($str)){
@@ -7483,6 +7498,8 @@ return XNBinary::toString(XNBinary::mul(base2_encode($a),base2_encode($b)));
 }public static function bdiv(string $a,string $b){
 return XNBinary::toString(XNBinary::div(base2_encode($a),base2_encode($b)));
 }
+}
+class XNStr extends XNString {
 }function sha512($str){
 return hash("sha512",$str);
 }function sha256($str){
@@ -7506,7 +7523,9 @@ $s=hash_algos();
 foreach($s as $h)
 $str=hash($h,$str);
 return $str;
-}class XNPluginVariablesString{
+}
+
+class XNPluginVariablesString{
 private $x;
 public function __construct(&$x){
 $this->x=&$x->variables;
@@ -8554,27 +8573,27 @@ else return "127.0.0.1";
 }
 class XNNet {
 public $socket,$server,$port=80,
-       $method="GET",
-       $diractory="/",
-       $address='localhost',
-       $http="HTTP/1.0",
-       $browser='',
-       $browsers=[],
-       $proxyip=false,
-       $proxyport=false,
-       $header='',
-       $headers='',
-       $content='',
-       $download=true,
-       $data=[],
-       $username=false,
-       $password=false,
-       $code=0,
-       $info='',
-       $httpreturn='HTTP/1.0',
-       $domain=1,
-       $type=1,
-       $protocol=0;
+       $method   = "GET",
+       $diractory= "/",
+       $address  = 'localhost',
+       $http     = "HTTP/1.0",
+       $browser  = '',
+       $browsers = [],
+       $proxyip  = false,
+       $proxyport= false,
+       $header   = '',
+       $headers  = '',
+       $content  = '',
+       $download = true,
+       $data     = [],
+       $username = false,
+       $password = false,
+       $code     = 0,
+       $info     = '',
+       $httpres  = 'HTTP/1.0',
+       $domain   = 1,
+       $type     = 1,
+       $protocol = 0;
 const STREAM   = 1;
 const DGRAM    = 2;
 const SEQPACKET= 5;
