@@ -10,11 +10,12 @@ namespace xn\Telegram;
 
 use xn;
 
-require_once $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "button.php";
-require_once $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "inlineButton.php";
-require_once $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "queryResult.php";
-require_once $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "saveButtons.php";
-require_once $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "sends.php";
+require $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "button.php";
+require $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "inlineButton.php";
+require $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "queryResult.php";
+require $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "saveButtons.php";
+require $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "sends.php";
+require $GLOBALS['-XN-']['dirNameDir'] . "telegram" . DIRECTORY_SEPARATOR . "settings" . DIRECTORY_SEPARATOR . "telegramBot" . DIRECTORY_SEPARATOR . "saveMsgs.php";
 
 /* TelegramBot for APIs bot
  * params : String token = ""
@@ -48,14 +49,82 @@ class TelegramBot {
          $bot->last = false; // inactive
          $bot->last = true ; // active
        */
-         $parser = true;
+         $parser = true,
+      /* on/off variables
+         you can use variables in text and caption
+       * variables :
+         * messages variables :
+             use for messages save by method $bot->msgs
+           * use:
+             %message%
+           * example :
+             admin username is @%amin_username%
+         * updates variables :
+             use for give a text from update
+           * use:
+             %method1.method2. ...%
+           * example :
+             hello %message.new_chat_member.first_name% welcom to group %message.chat.title% :)
+         * a % char :
+             %%
+           * example :
+             hello %%message.from.first_name%%%%
+           * return :
+             hello %message.from.first_name%%
+       * enable variables :
+         $bot->variables = true;
+       * disable variables :
+         $bot->variables = false;
+       */
+         $variables = false,
+      /* run callback for when the job is finished but no request has been executed.
+       * use :
+         
+         $bot->noresponce = function(){
+           // codes...
+         }
+       * disable :
+         $bot->noresponce = false;
+       */
+         $notresponse = false,
+      /* auto action for some requests
+       * enable :
+         $bot->autoaction = true;
+       * disable :
+         $bot->autoaction = false;
+       * list for actions :
+         sendMessage   -> typing
+         sendPhoto     -> upload_photo
+         sendVideo     -> upload_video
+         sendAudio     -> upload_audio
+         sendDocument  -> upload_document
+         sendVoice     -> record_audio
+         sendVideoNote -> upload_video_note
+       */
+         $autoaction = false,
+      /* handle callback for all requests
+       * args : Object data {
+                         method    , // request method
+                         arguments , // input args
+                         result    , // result returned
+                         level       // level request
+                       }
+       * save function :
+         $bot->handle = function( data ){
+           // codes...
+         }
+       * disable :
+         $bot->handle = false;
+       */
+         $handle = false;
   public $keyboard,
          $inlineKeyboard,
          $foreReply,
          $removeKeyboard,
          $queryResult,
          $menu,
-         $send;
+         $send,
+         $msgs;
   
   // require send object
   public function send($chat = null, $level = null) {
@@ -82,6 +151,7 @@ class TelegramBot {
     $this->queryResult    = new xn\Telegram\Settings\TelegramBot\queryResult;
     $this->menu           = new xn\Telegram\Settings\TelegramBot\buttonSave;
     $this->send           = new xn\Telegram\Settings\TelegramBot\sends($this);
+    $this->msgs           = new xn\Telegram\Settings\TelegramBot\saveMsgs;
     $this->forceReply     = ["force_reply" => true];
     $this->removeKeyboard = ["remove_keyboard" => true];
   }
@@ -126,43 +196,102 @@ class TelegramBot {
    $bot->request( String , Array , Level );
    */
   public function request($method, $args = [], $level = 3) {
-    $args = $this->parse_args($args);
-    if($level == 1){
-      header("Content-Type: application/json");
+    $args   = $this->parse_args($args);
+    $res    = false;
+    $func   = $this->handle;
+    $handle = $func?
+      new ThumbCode( function() use(&$method, &$args, &$res, &$level, &$func) {
+        $func((object) [
+          "method"    => $method,
+          "arguments" => $args,
+          "result"    => $res,
+          "level"     => $level
+        ]);
+      }): false;
+    if($this->autoaction && isset($args['chat_id'])) {
+    switch(strtolower($method)) {
+      case "sendmessage":
+        $action = "typing";
+      break;
+      case "sendphoto":
+        $action = "upload_photo";
+      break;
+      case "sendvoice":
+        $action = "record_audio";
+      break;
+      case "sendvideo":
+        $action = "upload_video";
+      break;
+      case "sendvideonote":
+        $action = "uplaod_video_note";
+      break;
+      case "sendaudio":
+        $action = "upload_audio";
+      break;
+      case "senddocument":
+        $action = "upload_document";
+      break;
+      default:
+        $action = false;
+      break;
+    }
+    if($action)
+      $this->request("sendChatAction", [
+        "chat_id" => $args['chat_id'],
+        "action"  => $action
+      ]);
+    }
+    if($level == 1) {
       $args['method'] = $method;
-      echo json_encode($args);
+      print json_encode($args);
       $res = true;
     }
     elseif($level == 2) {
-      $res = fclose(fopen("https://api.telegram.org/bot$this->token/$method?" . http_build_query($args), 'r'));
+      $res = @fopen("https://api.telegram.org/bot$this->token/$method?".http_build_query($args),'r');
+      if($res)fclose($res = true);
+      else $res = false;
     }
     elseif($level == 3) {
-      $c = curl_init("https://api.telegram.org/bot$this->token/$method");
-      curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($c, CURLOPT_POSTFIELDS, $args);
-      $res = json_decode(curl_exec($c));
-      curl_close($c);
+      $curl = curl_init("https://api.telegram.org/bot$this->token/$method");
+      curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($curl, CURLOPT_POSTFIELDS, $args);
+      $res = json_decode(curl_exec($curl));
+      curl_close($curl);
     }
     elseif($level == 4) {
-      $res=fclose(fopen("https://api.pwrtelegram.xyz/bot$this->token/$method?" . http_build_query($args), 'r'));
+      $res = @fopen("https://api.pwrtelegram.xyz/bot$this->token/$method?".http_build_query($args),'r');
+      if($res)fclose($res = true);
+      else $res = false;
     }
     elseif($level == 5) {
-      $c = curl_init("https://api.pwrtelegram.xyz/bot$this->token/$method");
-      curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($c, CURLOPT_POSTFIELDS, $args);
-      $res = json_decode(curl_exec($c));
-      curl_close($c);
+      $curl = curl_init("https://api.pwrtelegram.xyz/bot$this->token/$method");
+      curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($curl, CURLOPT_POSTFIELDS, $args);
+      $res = json_decode(curl_exec($curl));
+      curl_close($curl);
     }
-    else return false;
+    else
+      return false;
     $args['method'] = $method;
-    $args['level'] = $level;
+    $args['level']  = $level;
     if($this->save) {
       $this->sents[]   = $args;
       $this->results[] = $this->final = $res;
     }
     if($res === false)return false;
-    if($res === true) return true;
-    if(! $res->ok) {
+    if($res === true)return true;
+    if(! $res) {
+      $server = [
+        "OUTPUT",
+        "api.telegram.org",
+        "api.telegram.org",
+        "api.pwrtelegram.xyz",
+        "api.pwrtelegram.xyz"
+      ] [$level - 1];
+      new XNError("TelegramBot","network error for Connect to $server", 1);
+      return false;
+    }
+    elseif(! $res->ok) {
       new XNError("TelegramBot", "$res->description [$res->error_code]", 1);
       return $res;
     }
@@ -1090,14 +1219,14 @@ class TelegramBot {
    * phone                    -> phone_number
    + auto json_encode for allowed_updates and reply_markup
    */
-  private function parse_args($args=[]){
+  private function parse_args($args = []) {
     if(! $this->parser) return $args;
-    if(isset($args['user']))    $args['user_id']    = $args['user'];
-    if(isset($args['chat']))    $args['chat_id']    = $args['chat'];
-    if(isset($args['message'])) $args['message_id'] = $args['message'];
-    if(isset($args['msg']))     $args['message_id'] = $args['msg'];
-    if(isset($args['msg_id']))  $args['message_id'] = $args['msg_id'];
-    if(! isset($args['chat_id']) && isset($args['message_id'])) {
+    if(  isset($args['user'])) $args['user_id'] = $args['user'];
+    if(  isset($args['chat'])) $args['chat_id'] = $args['chat'];
+    if(  isset($args['message'] )) $args['message_id'] = $args['message'];
+    if(  isset($args['msg']     )) $args['message_id'] = $args['msg'];
+    if(  isset($args['msg_id']  )) $args['message_id'] = $args['msg_id'];
+    if(! isset($args['chat_id']  ) && isset($args['message_id'])) {
       $args['inline_message_id'] = $args['message_id'];
       unset($args['message_id']);
     }
@@ -1107,35 +1236,36 @@ class TelegramBot {
     if(isset($args['markup']))    $args['reply_markup']        = $args['markup'];
     if(isset($args['reply']))     $args['reply_to_message_id'] = $args['reply'];
     if(isset($args['from_chat'])) $args['from_chat_id']        = $args['from_chat'];
-    $args['file']=isset($args['file'])?               $args['file']:
-                  isset($args['document'])?           $args['document']:
-                  isset($args['video'])?              $args['video']:
-                  isset($args['voice'])?              $args['voice']:
-                  isset($args['video_note'])?         $args['video_note']:
-                  isset($args['audio'])?              $args['audio']:
-                  isset($args['sticker'])?            $args['sticker']:
-                  isset($args['photo_file_id'])?      $args['photo_file_id']:
-                  isset($args['document_file_id'])?   $args['document_file_id']:
-                  isset($args['video_file_id'])?      $args['video_file_id']:
-                  isset($args['voice_file_id'])?      $args['voice_file_id']:
-                  isset($args['video_note_file_id'])? $args['video_note_file_id']:
-                  isset($args['audio_file_id'])?      $args['audio_file_id']:
-                  isset($args['sticker_file_id'])?    $args['sticker_file_id']:
-                  isset($args['photo_url'])?          $args['photo_url']:
-                  isset($args['document_url'])?       $args['document_url']:
-                  isset($args['video_url'])?          $args['video_url']:
-                  isset($args['voice_url'])?          $args['voice_url']:
-                  isset($args['video_note_url'])?     $args['video_note_url']:
-                  isset($args['audio_url'])?          $args['audio_url']:
-                  isset($args['sticker_url'])?        $args['sticker_url']:
-                  isset($args['file_id'])?            $args['file_id']:
-                  isset($args['photo'])?              $args['photo']: false;
+    $args['file'] = isset($args['file'])               ? $args['file']               :
+                    isset($args['document'])           ? $args['document']           :
+                    isset($args['video'])              ? $args['video']              :
+                    isset($args['voice'])              ? $args['voice']              :
+                    isset($args['video_note'])         ? $args['video_note']         :
+                    isset($args['audio'])              ? $args['audio']              :
+                    isset($args['sticker'])            ? $args['sticker']            :
+                    isset($args['photo_file_id'])      ? $args['photo_file_id']      :
+                    isset($args['document_file_id'])   ? $args['document_file_id']   :
+                    isset($args['video_file_id'])      ? $args['video_file_id']      :
+                    isset($args['voice_file_id'])      ? $args['voice_file_id']      :
+                    isset($args['video_note_file_id']) ? $args['video_note_file_id'] :
+                    isset($args['audio_file_id'])      ? $args['audio_file_id']      :
+                    isset($args['sticker_file_id'])    ? $args['sticker_file_id']    :
+                    isset($args['photo_url'])          ? $args['photo_url']          :
+                    isset($args['document_url'])       ? $args['document_url']       :
+                    isset($args['video_url'])          ? $args['video_url']          :
+                    isset($args['voice_url'])          ? $args['voice_url']          :
+                    isset($args['video_note_url'])     ? $args['video_note_url']     :
+                    isset($args['audio_url'])          ? $args['audio_url']          :
+                    isset($args['sticker_url'])        ? $args['sticker_url']        :
+                    isset($args['file_id'])            ? $args['file_id']            :
+                    isset($args['photo'])              ? $args['photo']              :
+                    false;
     if($args['file']) {
-      $gettype=TelegramCode::getFileType($args['file']);
-    if(is_string($args['file']) &&
-      $gettype !== false &&
-      file_exists($args['file']))
-        $args['file'] = new CURLFile($args['file']);
+      $gettype = TelegramCode::getFileType($args['file']);
+      if(is_string($args['file']) &&
+        $gettype !== false        &&
+        file_exists($args['file']))
+          $args['file'] = new CURLFile($args['file']);
       $args['photo']              =
       $args['document']           =
       $args['video']              =
@@ -1158,34 +1288,81 @@ class TelegramBot {
       $args['audio_url']          =
       $args['sticker_url']        =
       $args['file_id']            =
-      $args['file'];
+      $args['file']               ;
     }
     if(isset($args['phone'])) $args['phone_number'] = $args['phone'];
     if(isset($args['allowed_updates']) && (is_array($args['allowed_updates']) || is_object($args['allowed_updates'])))
       $args['allowed_updates'] = json_encode($args['allowed_updates']);
-    if(isset($args['reply_markup'])    && (is_array($args['reply_markup'])    || is_object($args['reply_markup'])))
-      $args['reply_markup']    = json_encode($args['reply_markup']);
-    if(is_object($args['chat_id'])) {
+    if(isset($args['reply_markup']) && is_string($args['reply_markup']) && $this->menu->exists($args['reply_markup']))
+      $args['reply_markup'] = $this->menu->get($args['reply_markup']);
+    if(isset($args['reply_markup']) && (is_array($args['reply_markup']) || is_object($args['reply_markup'])))
+      $args['reply_markup'] = json_encode($args['reply_markup']);
+    if(isset($args['chat_id']) && is_object($args['chat_id'])) {
       if(isset($args['chat_id']) && isset($args['chat_id']->update_id)) {
-        $args['chat_id']    = @$this->getUpdateInType($args['chat_id']);
-        $args['chat_id']    = isset($args['chat_id']->chat)? $args['chat_id']->chat->id: @$args['chat_id']->from->id;
+        $args['chat_id'] = @$this->getUpdateInType($args['chat_id']);
+        $args['chat_id'] = isset($args['chat_id']->chat)?
+           $args['chat_id']->chat->id:
+          @$args['chat_id']->from->id;
       }
-      else $args['chat_id'] = isset($args['chat_id']->chat)? $args['chat_id']->chat->id: @$args['chat_id']->from->id;
+      else
+        $args['chat_id'] = isset($args['chat_id']->chat)?
+          $args['chat_id']->chat->id:
+         @$args['chat_id']->from->id;
     }
     if(isset($args['user_id']) && is_object($args['user_id'])) {
       if(isset($args['user_id']->update_id)) {
-        $args['user_id']    = @$this->getUpdateInType($args['user_id']);
-        $args['user_id']    = isset($args['user_id']->chat)? $args['user_id']->chat->id: @$args['user_id']->from->id;
+        $args['user_id'] = @$this->getUpdateInType($args['user_id']);
+        $args['user_id'] = isset($args['user_id']->chat)?
+          $args['user_id']->chat->id:
+         @$args['user_id']->from->id;
       }
-      else $args['user_id'] = isset($args['user_id']->chat)? $args['user_id']->chat->id: @$args['user_id']->from->id;
+      else
+        $args['user_id'] = isset($args['user_id']->chat)?
+          $args['user_id']->chat->id:
+         @$args['user_id']->from->id;
     }
-    if(isset($args['text'])) {
-      if(is_array($args['text']))  $args['text'] = array_read($args['text']);
-      if(is_object($args['text'])) $args['text'] = var_read  ($args['text']);
+    if($this->variables && ! isset($args['variables'])) $args['variables'] = true;
+      if(isset($args['text'])) {
+        $args['text'] = xn\str::toString($args['text']);
+        if(isset($args['variables']) && $args['variables']) {
+          $msgs = &$this->msgs;
+          $up   = $this->data? $this->data: false;
+          $args['text'] = preg_replace_callback("/(?<!\%\%)\%((?:\%\%|[^\%])*)(?<!\%\%)\%/", function($x) use(&$msgs, $up) {
+            $ms = str_replace('%%', '%', $x[1]);
+            if($msgs->exists($ms)) return $msgs->get($ms);
+            if($up) {
+              $ms = explode('.', $ms);
+            foreach($ms as $u)
+              if(isset($up->$u))
+                $up = $up->$u;
+            if(! is_string($up)) return $x[0];
+            return $up;
+          }
+          return $x[0];
+        }, $args['text']);
+      $args['text'] = str_replace('%%', '%', $args['text']);
+    }
     }
     if(isset($args['caption'])) {
-      if(is_array($args['caption']))  $args['caption'] = array_read($args['caption']);
-      if(is_object($args['caption'])) $args['caption'] = var_read  ($args['caption']);
+      $args['caption'] = xn\str::toString($args['caption']);
+      if(isset($args['variables']) && $args['variables']) {
+        $msgs = &$this->msgs;
+        $up   = $this->data? $this->data: false;
+        $args['caption'] = preg_replace_callback("/(?<!\%\%)\%((?:\%\%|[^\%])*)(?<!\%\%)\%/",function($x) use(&$msgs, $up) {
+          $ms = str_replace('%%', '%', $x[1]);
+          if($msgs->exists($ms)) return $msgs->get($ms);
+          if($up) {
+            $ms = explode('.', $ms);
+            foreach($ms as $u)
+              if(isset($up->u))
+                $up = $up->u;
+            if(! is_string($up)) return $x[0];
+            return $up;
+          }
+          return $x[0];
+        }, $args['caption']);
+        $args['caption'] = str_replace('%%', '%', $args['caption']);
+      }
     }
     return $args;
   }
