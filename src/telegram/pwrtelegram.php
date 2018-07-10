@@ -1101,6 +1101,16 @@ class PWRTelegram {
     $this->token = null;
     $this->phone = null;
   }
+  public static function getId(string $username) {
+    if(@$username[0] != '@') $username = "@$username";
+    $r = json_decode(file_get_contents("https://id.pwrtelegram.xyz/db/getid?username=$username"));
+    return $r && $r->ok? $r->result: false;
+  }
+  public static function getInfo($id) {
+    if(! is_numeric($id) && @$id[0] != '@') $id = "@$id";
+    $r = json_decode(file_get_contents("https://id.pwrtelegram.xyz/db/getchat?id=$id"));
+    return $r && $r->ok? $r->result: false;
+  }
 }
 
 ?>
