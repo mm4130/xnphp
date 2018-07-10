@@ -306,6 +306,9 @@ class TelegramBot {
   }
   // ending the work
   public function close() {
+    $this->__destruct();
+  }
+  public function __destruct() {
     $this->final          = null;
     $this->results        = null;
     $this->sents          = null;
@@ -318,6 +321,7 @@ class TelegramBot {
     $this->queryResult    = null;
     $this->send           = null;
     $this->menu           = null;
+    if($this->notresponse) ($this->notresponse) ();
   }
 
   // sendMessage
