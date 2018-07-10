@@ -63,6 +63,15 @@ class buttonSave {
     $this->btn  = [];
     $this->btns = [];
   }
+  /* exists menu name
+   * params : String name
+   * use :
+   
+   $bot->menu->exists( String );
+   */
+  public function exists(string $name) {
+    return isset($this->btn[$name]);
+  }
 }
 
 ?>
