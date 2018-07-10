@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1531178554.2385{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1531222671.7183{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $GLOBALS['-XN-']['isf']=file_exists($GLOBALS['-XN-']['dirNameDir']."xn.php");
 $GLOBALS['-XN-']['savememory']=&$GLOBALS;
@@ -833,7 +833,7 @@ $this->bot->deleteMessage($this->chat,$id,$this->level);
 return $this;
 }
 }class TelegramBot {
-public $data,$token,$final,$results=[],$sents=[],$save=true,$last,$parser=true,$variables=false;
+public $data,$token,$final,$results=[],$sents=[],$save=true,$last,$parser=true,$variables=false,$notresponse=false,$autoaction=false,$handle=false;
 public $keyboard,$inlineKeyboard,$foreReply,$removeKeyboard,$queryResult,$menu,$send,$msgs;
 public function send($chat=null,$level=null){
 return new TelegramBotSends($this,$chat,$level);
@@ -867,6 +867,36 @@ else $res=$this->data=$this->request("getUpdates",[
 return (object)$res;
 }public function request($method,$args=[],$level=3){
 $args=$this->parse_args($args);
+$res=false;
+$func=$this->handle;
+$handle=$func?new ThumbCode(function()use(&$method,&$args,&$res,&$level,&$func){
+$func((object)["method"=>$method,"arguments"=>$args,"result"=>$res,"level"=>$level]);
+}):false;
+if($this->autoaction&&isset($args['chat_id'])){
+switch(strtolower($method)){
+case "sendmessage":
+$action="typing";
+break;case "sendphoto":
+$action="upload_photo";
+break;case "sendvoice":
+$action="record_audio";
+break;case "sendvideo":
+$action="upload_video";
+break;case "sendvideonote":
+$action="record_video_note";
+break;case "sendaudio":
+$action="upload_audio";
+break;case "senddocument":
+$action="upload_document";
+break;default:
+$action=false;
+break;
+}if($action)
+$this->request("sendChatAction",[
+"chat_id"=>$args['chat_id'],
+"action"=>$action
+]);
+}
 if($level==1){
 header("Content-Type: application/json");
 $args['method']=$method;
@@ -896,7 +926,11 @@ $this->sents[]=$args;
 $this->results[]=$this->final=$res;
 }if($res===false)return false;
 if($res===true)return true;
-if(!$res->ok){
+if(!$res){
+$server = ["OUTPUT","api.telegram.org","api.telegram.org","api.pwrtelegram.xyz","api.pwrtelegram.xyz"][$level-1];
+new XNError("TelegramBot","network error for Connect to $server",1);
+return false;
+}elseif(!$res->ok){
 new XNError("TelegramBot","$res->description [$res->error_code]",1);
 return $res;
 }return $res;
@@ -906,6 +940,8 @@ $this->results=[];
 $this->sents=[];
 $this->data=null;
 }public function close(){
+$this->__destruct();
+}public function __destruct(){
 $this->final=null;
 $this->results=null;
 $this->sents=null;
@@ -918,6 +954,7 @@ $this->removeKeyboard=null;
 $this->queryResult=null;
 $this->send=null;
 $this->menu=null;
+if($this->notresponse)($this->notresponse)();
 }public function sendMessage($chat,$text,$args=[],$level=3){
 $args['chat_id']=$chat;
 $args['text']=$text;
