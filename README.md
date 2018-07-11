@@ -1,6 +1,6 @@
 # xnphp
 
-**`version : 1.5`**
+**`version : 1.7`**
 
 import XNLib :
 ```php
