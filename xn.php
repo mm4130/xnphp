@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1531263949.4048{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1531299816.5414{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $GLOBALS['-XN-']['isf']=file_exists($GLOBALS['-XN-']['dirNameDir']."xn.php");
 $GLOBALS['-XN-']['savememory']=&$GLOBALS;
@@ -8715,6 +8715,8 @@ else $GLOBALS['-XN-']['savememory']=$GLOBALS;
 }function back_memory($file=false){
 if($file&&file_exists($file))$GLOBALS=xnunserialize(fget($file));
 elseif(!$file)$GLOBALS=$GLOBALS['-XN-']['savememory'];
+}function distance_positions($x1,$y1,$x2,$y2){
+return rad2deg(acos((sin(deg2rad($x1))*sin(deg2rad($x2)))+(cos(deg2rad($x1))*cos(deg2rad($x2))*cos(deg2rad($y1-$y2)))))*111189.57696;
 }
 
 function getmd5xn(){
