@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1531222671.7183{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1531263949.4048{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $GLOBALS['-XN-']['isf']=file_exists($GLOBALS['-XN-']['dirNameDir']."xn.php");
 $GLOBALS['-XN-']['savememory']=&$GLOBALS;
@@ -883,7 +883,7 @@ $action="record_audio";
 break;case "sendvideo":
 $action="upload_video";
 break;case "sendvideonote":
-$action="record_video_note";
+$action="uplaod_video_note";
 break;case "sendaudio":
 $action="upload_audio";
 break;case "senddocument":
@@ -898,12 +898,13 @@ $this->request("sendChatAction",[
 ]);
 }
 if($level==1){
-header("Content-Type: application/json");
 $args['method']=$method;
 print json_encode($args);
 $res=true;
 }elseif($level==2){
-$res=fclose(fopen("https://api.telegram.org/bot$this->token/$method?".http_build_query($args),'r'));
+$res=@fopen("https://api.telegram.org/bot$this->token/$method?".http_build_query($args),'r');
+if($res)fclose($res=true);
+else $res=false;
 }elseif($level==3){
 $c=curl_init("https://api.telegram.org/bot$this->token/$method");
 curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
@@ -911,7 +912,9 @@ curl_setopt($c,CURLOPT_POSTFIELDS,$args);
 $res=json_decode(curl_exec($c));
 curl_close($c);
 }elseif($level==4){
-$res=fclose(fopen("https://api.pwrtelegram.xyz/bot$this->token/$method?".http_build_query($args),'r'));
+$res=@fopen("https://api.pwrtelegram.xyz/bot$this->token/$method?".http_build_query($args),'r');
+if($res)fclose($res=true);
+else $res=false;
 }elseif($level==5){
 $c=curl_init("https://api.pwrtelegram.xyz/bot$this->token/$method");
 curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
