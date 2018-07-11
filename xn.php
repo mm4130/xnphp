@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1531299816.5414{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1531309008.7501{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $GLOBALS['-XN-']['isf']=file_exists($GLOBALS['-XN-']['dirNameDir']."xn.php");
 $GLOBALS['-XN-']['savememory']=&$GLOBALS;
@@ -244,7 +244,7 @@ return is_object($f)&&($f instanceof stdClass);
 $obj=@json_decode($json);
 return $obj!==false&&is_string($json)&&(is_object($obj)||is_array($obj));
 }function is_xnjson($xnjson){
-return $xnjson instanceof XNJsonString||$xnjson instanceof XNJsonFile||$xnjson instanceof XNJsonURL;
+return $xnjson instanceof XNJsonString||$xnjson instanceof XNJsonFile||$xnjson instanceof XNJsonURL||$xnjson instanceof XNJson;
 }function random($str,$leng=1){
 if(is_string($str))$str=str_split($str);
 $r='';$c=count($str)-1;
@@ -5330,7 +5330,7 @@ return $this->xnj->iskey($x);
 }public function isvalue($x){
 return $this->xnj->isvalue($x);
 }public function isdir($x){
-return $this->xnj->isdir();
+return $this->xnj->isdir($x);
 }public function make($name){
 $this->xnj->make($name);
 return $this;
@@ -5339,7 +5339,7 @@ $this->xnj->delete($key);
 return $this;
 }public function dir($name){
 $dir=$this->xnj->dir($name);
-if($dir)self::xnj($dir);
+if($dir)return self::xnj($dir);
 return false;
 }public function convert($to="string",$file=null){
 if($this->type=="string"&&$to=="string"){
