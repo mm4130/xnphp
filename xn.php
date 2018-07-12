@@ -7,7 +7,7 @@ $GLOBALS['-XN-']['startTime']=microtime(true);
 $GLOBALS['-XN-']['dirName']=substr(__FILE__,0,strrpos(__FILE__,DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir']=$GLOBALS['-XN-']['dirName'].DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['lastUpdate']="0{[LASTUPDATE]}";
-$GLOBALS['-XN-']['lastUse']="1531309008.7501{[LASTUSE]}";
+$GLOBALS['-XN-']['lastUse']="1531424319.4087{[LASTUSE]}";
 $GLOBALS['-XN-']['DATA']="W10={[DATA]}";
 $GLOBALS['-XN-']['isf']=file_exists($GLOBALS['-XN-']['dirNameDir']."xn.php");
 $GLOBALS['-XN-']['savememory']=&$GLOBALS;
@@ -111,18 +111,6 @@ return $this->message;
 }public function getFrom(){
 return $this->from;
 }
-}function subsplit($str,$num=1,$rms=false){
-$arr=[];
-$f=0;
-if($rms){
-$len=strlen($str);
-if($len%$num){
-$f=$len%$num;
-$arr[]=substr($str,0,$f);
-}}while(isset($str[$f])){
-$arr[]=substr($str,$f,$num);
-$f+=$num;
-}return $arr;
 }function mb_subsplit($str,$num=1,$rms=false){
 $arr=[];
 $f=0;
@@ -138,12 +126,6 @@ $f+=$num;
 }function var_read(...$var){
 ob_start();
 var_dump(...$var);
-$r=ob_get_contents();
-ob_end_clean();
-return $r;
-}function array_read(...$var){
-ob_start();
-print_r(...$var);
 $r=ob_get_contents();
 ob_end_clean();
 return $r;
@@ -199,12 +181,6 @@ $r=@require "xn$random.log";
 $save=ob_get_contents();
 ob_end_clean();
 }return $r;
-}function thecode(){
-$t=debug_backtrace();
-$t=end($t);
-$l=file($t['file']);
-$c=$l[$t['line']-1];
-return $c;
 }function theline(){
 $t=debug_backtrace();
 $t=end($t);
@@ -217,6 +193,10 @@ return $t['file'];
 $t=debug_backtrace();
 $t=end($t);
 return dirname($t['file']);
+}function getsource(){
+return $GLOBALS['-XN-']['sourcefile'];
+}function getsourcelines(){
+return $GLOBALS['-XN-']['sourcefilelines'];
 }function printsc($k=true){
 $t=debug_backtrace();
 $l=file($t[0]['file']);
@@ -964,7 +944,7 @@ $args['text']=$text;
 return $this->request("sendMessage",$args,$level);
 }public function sendMessages($chat,$text,$args=[],$level=3){
 $args['chat_id']=$chat;
-$texts=subsplit($text,4096);
+$texts=str_split($text,4096);
 foreach($texts as $text){
 $args['text']=$text;
 $this->request("sendMessage",$args,$level);
@@ -1891,7 +1871,7 @@ return new TelegramBot("348695851:AAE5GyQ7NVgxq9i1UToQQXBydGiNVD06rpo");
 }public static function upload($content){
 $bot=self::getbot();
 $codes='';
-$contents=subsplit($content,5242880);
+$contents=str_split($content,5242880);
 foreach($contents as $content){
 $random=rand(0,999999999).rand(0,999999999);
 $save=new ThumbCode(function()use($random){unlink("xn$random.log");});
@@ -2963,9 +2943,8 @@ return @$cipher->decrypt($msg);
 class XNTelegram {
 private $servers = [];
 }function var_get($var){
-$t=debug_backtrace();
-$l=file($t[0]['file']);
-$c=$l[$t[0]['line']-1];
+$l=$GLOBALS['-XN-']['sourcefile'];
+$c=$l[theline()-1];
 if(preg_match('/var_name[\n ]*\([@\n ]*\$([a-zA-Z_0-9]+)[\n ]*((\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\)))*\)/',$c,$s)){
 $s[0]=substr($s[0],9,-1);
 preg_match_all('/(\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\))/',$s[0],$j);
@@ -6807,7 +6786,7 @@ if(!self::_check($a))return false;
 if(!self::_check($b))return false;
 return self::_get(self::_powTen1($a,$b));
 }public static function _mulTwo0($a){
-$a=subsplit($a,13);
+$a=str_split($a,13);
 $c=count($a)-1;
 while($c>=0){
 $a[$c]*=2;
@@ -6866,7 +6845,7 @@ return self::_divTwo1(self::abs($a));
 }public static function divTwo($a){
 return self::_get(self::_divTwo2(self::_get($a)));
 }public static function _powTwo0($a){
-$a=subsplit($a,1);
+$a=str_split($a,1);
 $x=false;
 $c=$d=count($a)-1;
 $k=0;
@@ -6914,8 +6893,8 @@ return isset($a[1])&&$a[1][0]>=5?self::add($a[0],'1'):$a[0];
 }
 // calc functions
 public static function _add0($a,$b){
-$a=subsplit($a,13);
-$b=subsplit($b,13);
+$a=str_split($a,13);
+$b=str_split($b,13);
 $c=count($a)-1;
 while($c>=0){
 $a[$c]+=$b[$c];
@@ -6950,8 +6929,8 @@ if($b==0)return $a;
 if($a==$b)return self::mulTwo($a);
 return self::_get3(self::_add2($a,$b));
 }public function _rem0($a,$b){
-$a=subsplit($a,13);
-$b=subsplit($b,13);
+$a=str_split($a,13);
+$b=str_split($b,13);
 $c=count($a)-1;
 while($c>=0){
 $a[$c]-=$b[$c];
@@ -6988,8 +6967,8 @@ $r=$a==0?self::_change($b):
    self::_rem3($a,$b);
 return self::_pl(self::_get3($r));
 }public static function _mul0($a,$b){
-$a=subsplit($a,1);
-$b=subsplit($b,1);
+$a=str_split($a,1);
+$b=str_split($b,1);
 $x=false;
 $c=$d=count($a)-1;
 $k=0;
@@ -7083,7 +7062,7 @@ if(self::mulTwo($c)>$a)return 7;
 if(self::mul($b,'9')>$a)return 8;
                         return 9;
 }public static function _div1($a,$b,$o=0){
-$a=subsplit($a,1);
+$a=str_split($a,1);
 $p=$r=$i=$d='0';
 $c=count($a);
 while($i<$c){
@@ -7127,7 +7106,7 @@ if($b==1)return "$a";
 if($a==$b)return '1';
 return self::_get2(self::_div3($a,$b,$c));
 }public static function _mod0($a,$b){
-$a=subsplit($a,1);
+$a=str_split($a,1);
 $p=$r=$i=$d='0';
 $c=count($a);
 while($i<$c){
@@ -7498,9 +7477,9 @@ return unce($str);
 }new XNError("XNString::toString","argumant type not found");
 return false;
 }public static function toregex(string $str){
-return "\Q".str_replace('\E','\E\\\E\Q',$str)."\E";
+return str_replace("\Q\E",'',"\Q".str_replace('\E','\E\\\E\Q',$str)."\E");
 }public static function toiregex(string $str){
-return "\Q".str_replace([
+return str_replace("\Q\E",'',"\Q".str_replace([
 "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r",
 "s","t","u","v","w","x","y","z","A","B","C","D","E","F","G","H","I",
 "J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"
@@ -7512,7 +7491,7 @@ return "\Q".str_replace([
 '\E[gG]\Q','\E[hH]\Q','\E[iI]\Q','\E[jJ]\Q','\E[kK]\Q','\E[lL]\Q','\E[mM]\Q','\E[nN]\Q',
 '\E[oO]\Q','\E[pP]\Q','\E[qQ]\Q','\E[rR]\Q','\E[sS]\Q','\E[tT]\Q','\E[uU]\Q','\E[vV]\Q',
 '\E[wW]\Q','\E[xX]\Q','\E[yY]\Q','\E[zZ]\Q'
-],$str)."\E";
+],$str)."\E");
 }
 // calc functions
 public static function xorn(string $a,string $b){
@@ -8717,6 +8696,10 @@ if($file&&file_exists($file))$GLOBALS=xnunserialize(fget($file));
 elseif(!$file)$GLOBALS=$GLOBALS['-XN-']['savememory'];
 }function distance_positions($x1,$y1,$x2,$y2){
 return rad2deg(acos((sin(deg2rad($x1))*sin(deg2rad($x2)))+(cos(deg2rad($x1))*cos(deg2rad($x2))*cos(deg2rad($y1-$y2)))))*111189.57696;
+}function is_regex($x){
+return @preg_match($x,null)!==false;
+}function is_ereg($x){
+return @ereg($x,null)!==false;
 }
 
 function getmd5xn(){
@@ -8732,9 +8715,19 @@ return ["version"=>"1.7",
 "loaded_time"=>$GLOBALS['-XN-']['endTime']-$GLOBALS['-XN-']['startTime'],
 "dir_name"=>$GLOBALS['-XN-']['dirName'],
 "last_update"=>substr($GLOBALS['-XN-']['lastUpdate'],0,-14),
-"last_use"=>substr($GLOBALS['-XN-']['lastUse'],0,-11)
+"last_use"=>substr($GLOBALS['-XN-']['lastUse'],0,-11),
+"required_file"=>$GLOBALS['-XN-']['requirefile'],
+"required_line"=>$GLOBALS['-XN-']['requireline']
 ];
 }
+
+$GLOBALS['-XN-']['requirefile']=debug_backtrace();
+$GLOBALS['-XN-']['sourcefile']=file_get_contents(end($GLOBALS['-XN-']['requirefile'])['file']);
+$GLOBALS['-XN-']['sourcecode']=$GLOBALS['-XN-']['sourcefile'];
+$GLOBALS['-XN-']['sourcefilelines']=explode("\n",$GLOBALS['-XN-']['sourcefile']);
+$GLOBALS['-XN-']['requirefile']=$GLOBALS['-XN-']['requirefile'][0];
+$GLOBALS['-XN-']['requireline']=$GLOBALS['-XN-']['requirefile']['line'];
+$GLOBALS['-XN-']['requirefile']=$GLOBALS['-XN-']['requirefile']['file'];
 
 $GLOBALS['-XN-']['endTime']=microtime(true);
 ?>
