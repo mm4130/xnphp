@@ -7615,104 +7615,81 @@ return (($x+1)**(1/$y)-1)*$y;
 foreach($vars as $var)print unce($var);
 }function string_dump(...$vars){
 foreach($vars as $var)print XNStr::toString($var);
-}class BrainWalkingRandom {
-const EARTH = 0;
-const WALL  = 1;
-const HUMAN = 2;
-public $page=[],$wall="◼️",$earth="◻️",$human="😐",$width=16,$height=16,$position=false,$lastgo=0;
-public function create($width=16,$height=16){
-$this->width=$width;
-$this->height=$height;
-$page=&$this->page;
-for($c=0;$c<3;++$c)
-for($x=0;$x<$width;++$x)
-for($y=0;$y<$height;++$y){
-if(!isset($page[$x-1][$y])||$page[$x-1][$y]===1||
-!isset($page[$x+1][$y])||$page[$x+1][$y]===1||
-!isset($page[$x][$y-1])||$page[$x][$y-1]===1||
-!isset($page[$x][$y+1])||$page[$x][$y+1]===1)
-$page[$x][$y]=[1,0,0][rand(0,2)];
-elseif(@$page[$x-1][$y]===0||
-@$page[$x+1][$y]===0||
-@$page[$x][$y-1]===0||
-@$page[$x][$y+1]===0)
-$page[$x][$y]=[1,1,0][rand(0,2)];
-else $page[$x][$y]=rand(0,1);
-}$this->position=[];
-do{
-$this->position[0]=rand(0,$width-1);
-$this->position[1]=rand(0,$height-1);
-}while($this->getType($this->position[0],$this->position[1])===1);
-$page[$this->position[0]][$this->position[1]]=2;
-return $this;
-}public function page(){
-$str='';
-$page=$this->page;
-$obj=[
-$this->earth,
-$this->wall,
-$this->human
-];
-$width=$this->width;
-$height=$this->height;
-for($x=0;$x<$width;++$x){
-for($y=0;$y<$height;++$y)
-$str.=$obj[$page[$x][$y]];
-$str.="\n";
-}return $str;
-}public function getType($x,$y){
-if($x>=$this->width||$x<0||$y>=$this->height||$y<0)return "";
-return $this->page[$x][$y];
-}public function set($x,$y,$z){
-if($x>=$this->width||$x<0||$y>=$this->height||$y<0||($z!==0&&$z!==1&&$z!=2))return false;
-$this->page[$x][$y]=$z;
+}function is_match_files($f1,$f2,$limit=262144){
+$f1=@fopen($f1,'r');
+$f2=@fopen($f2,'r');
+if(!$f1||!$f2){
+new XNError("Files","No such file or directory.",1);
+return false;
+}while(($r1=fread($f1,$limit))!==''&&($r2=fread($f2,$limit)))
+if($r1!==$r2)return false;
 return true;
-}public function go($x,$y){
-$t=$this->getType($x,$y);
-if($t==2)return true;
-if($t===0){
-$this->page[$this->position[0]][$this->position[1]]=0;
-$this->position=[$x,$y];
-$this->page[$x][$y]=2;
-return true;
-}return false;
-}public function goUp(){
-$this->lastgo=1;
-return $this->go($this->position[0]-1,$this->position[1]);
-}public function goDown(){
-$this->lastgo=2;
-return $this->go($this->position[0]+1,$this->position[1]);
-}public function goLeft(){
-$this->lastgo=3;
-return $this->go($this->position[0],$this->position[1]-1);
-}public function goRight(){
-$this->lastgo=4;
-return $this->go($this->position[0],$this->position[1]+1);
-}public function goNum($num){
-if($num<1||$num>4)return false;
-$this->lastgo=$num;
-if($num===1)return $this->goUp();
-if($num===2)return $this->goDown();
-if($num===3)return $this->goLeft();
-if($num===4)return $this->goRight();
-}public function getLastGo(){
-return [0,2,1,4,3][$this->lastgo];
-}public function goRandom(){
-$x1=$this->getType($this->position[0]-1,$this->position[1]);
-$x2=$this->getType($this->position[0]+1,$this->position[1]);
-$y1=$this->getType($this->position[0],$this->position[1]-1);
-$y2=$this->getType($this->position[0],$this->position[1]+1);
-if($x1===1&&$x2===1&&$y1===1&&$y2===1)return false;
-$r=false;
-$g=[];
-$l=$this->getLastGo();
-if($x1===0&&$l!==1)$g[]=1;
-if($x2===0&&$l!==2)$g[]=2;
-if($y1===0&&$l!==3)$g[]=3;
-if($y2===0&&$l!==4)$g[]=4;
-if($g===[])$this->goNum($l);
-else $this->goNum($g[array_rand($g)]);
-return true;
+}class BrainFuck {
+public $homes=[0],$home=0,$output='',$input='',$position=-1;
+private function __construct(string $code,string $input=''){
+$this->input=$input;
+$this->code($code);
+}private function code(string $code){
+$homes=&$this->homes;
+$home=&$this->home;
+$output=&$this->output;
+$input=&$this->input;
+$position=&$this->position;
+for($c=0;isset($code[$c]);++$c)
+switch($code[$c]){
+case "+":
+$homes[$home]++;
+break;case "-":
+$homes[$home]--;
+break;case ">":
+$home++;
+if(!isset($homes[$home]))
+$homes[$home]=0;
+break;case "<":
+$home--;
+if(!isset($homes[$home]))
+$homes[$home]=0;
+break;case "[":
+$q='';
+for($x=1;isset($code[++$c])&&$x>0;){
+if($code[$c]=='[')++$x;
+elseif($code[$c]==']')--$x;
+$q.=$code[$c];
+}$c--;
+$q=substr($q,0,-1);
+while($homes[$home]%256!=0)
+$this->code($q);
+break;case ".":
+$output.=chr($homes[$home]);
+break;case ",":
+$homes[$home]=ord(isset($input[$position])?$input[++$position]:$input[$position--]);
+break;
+}
+}public static function run(string $code,string $input=''){
+return (new BrainFuck($code,$input))->output;
+}public static function file(string $file,string $input=''){
+$code=@file_get_contents($file);
+if($code===false)return false;
+return (new BrainFuck($code,$input))->output;
+}public static function create(string $string){
+$string=str_split($string);
+$l='';
+$r='';
+foreach($string as $x){
+$x=ord($x);
+if($x==$l)
+$r.=".";
+elseif($x==0)
+$r.="[-].";
+elseif($l&&$l>$x&&$l-$x<$x)
+$r.=str_repeat("-",$l-$x).'.';
+elseif($l&&$l<$x&&$x-$l<$x)
+$r.=str_repeat("+",$x-$l).'.';
+else $r.="[-]".str_repeat('+',$x).'.';
+$l=$x;
+}if(strpos($r,"[-]")===0)
+return substr($r,3);
+return $r;
 }
 }
 
