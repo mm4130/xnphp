@@ -5948,6 +5948,36 @@ return $this->reflection->isDisabled();
 $this->closure=null;
 $this->reflection=null;
 $this->functions=null;
+}public function getFull(){
+$code=unce($this->closure);
+if($code==XNSERIALIZE_CLOSURE_ERROR)return false;
+return $code;
+}public function getCode(){
+$code=unce($this->closure);
+if($code==XNSERIALIZE_CLOSURE_ERROR)return false;
+$start=strpos($code,'{');
+$end=strrpos($code,'}');
+return substr($code,$start+1,$end-$start-2);
+}public function eval($variables=false){
+$code=$this->getCode();
+if(!$code)return false;
+if($variables==false)$variables=&$GLOBALS;
+foreach($variables as $var=>&$val)
+$$var=&$val;
+return eval($code);
+}public function changeCode($cod){
+$code=unce($this->closure);
+if($code==XNSERIALIZE_CLOSURE_ERROR)return false;
+$start=strpos($code,'{');
+$end=strrpos($code,'}');
+$codewhye73gra87wg7rihwtg6r97agw4iug=substr_replace($code,$cod,$start+1,$end-$start-2);
+$stcwhye73gra87wg7rihwtg6r97agw4iug=$this->reflection->getStaticVariables();
+$func=(function()use(&$stcwhye73gra87wg7rihwtg6r97agw4iug,$codewhye73gra87wg7rihwtg6r97agw4iug){
+foreach($stcwhye73gra87wg7rihwtg6r97agw4iug as $namewhye73gra87wg7rihwtg6r97agw4iug=>&$valwhye73gra87wg7rihwtg6r97agw4iug)
+$$namewhye73gra87wg7rihwtg6r97agw4iug=&$valwhye73gra87wg7rihwtg6r97agw4iug;
+return eval("return $codewhye73gra87wg7rihwtg6r97agw4iug;");
+})();
+$this->closure($func);
 }
 }function XNClosure(...$param){
 return new XNClosure(...$param);
