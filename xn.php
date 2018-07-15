@@ -167,7 +167,8 @@ $r=@require "xn$random.log";
 }else{
 ob_start();
 $r=@require "xn$random.log";
-$save=ob_get_contents();
+if($save===true)$r=ob_get_contents();
+else $save=ob_get_contents();
 ob_end_clean();
 }return $r;
 }function theline(){
@@ -195,6 +196,10 @@ print evalc(substr($l[$p++],2));
 }else while(isset($l[$p][1])&&$l[$p][0].$l[$p][1]=='#>'){
 print substr($l[$p++],2);
 }
+}function evalg($codeiuefhuisegbfyusegfrusbgtys){
+foreach($GLOBALS as $xiuefhuisegbfyusegfrusbgtys=>&$yiuefhuisegbfyusegfrusbgtys)
+$$xiuefhuisegbfyusegfrusbgtys=&$yiuefhuisegbfyusegfrusbgtys;
+return eval($codeiuefhuisegbfyusegfrusbgtys);
 }function evalc($code){
 return eval('return '.$code.';');
 }function evald($code){
@@ -1500,6 +1505,82 @@ curl_setopt($c,CURLOPT_RETURNTRANSFER,true);
 $r=curl_exec($c);
 curl_close($c);
 return $r;
+}public function sendMessageFromUpdate($chat,$update=false,$args=[],$level=3){
+if($update)$update=$this->update->message;
+elseif(isset($update->message))$update=$update->message;
+$args['file']=isset($args['file'])?$args['file']:
+              isset($args['document'])?$args['document']:
+              isset($args['video'])?$args['video']:
+              isset($args['voice'])?$args['voice']:
+              isset($args['video_note'])?$args['video_note']:
+              isset($args['audio'])?$args['audio']:
+              isset($args['sticker'])?$args['sticker']:
+              isset($args['photo_file_id'])?$args['photo_file_id']:
+              isset($args['document_file_id'])?$args['document_file_id']:
+              isset($args['video_file_id'])?$args['video_file_id']:
+              isset($args['voice_file_id'])?$args['voice_file_id']:
+              isset($args['video_note_file_id'])?$args['video_note_file_id']:
+              isset($args['audio_file_id'])?$args['audio_file_id']:
+              isset($args['sticker_file_id'])?$args['sticker_file_id']:
+              isset($args['photo_url'])?$args['photo_url']:
+              isset($args['document_url'])?$args['document_url']:
+              isset($args['video_url'])?$args['video_url']:
+              isset($args['voice_url'])?$args['voice_url']:
+              isset($args['video_note_url'])?$args['video_note_url']:
+              isset($args['audio_url'])?$args['audio_url']:
+              isset($args['sticker_url'])?$args['sticker_url']:
+              isset($args['file_id'])?$args['file_id']:
+              isset($args['photo'])?$args['photo']:false;
+if($args['file']){
+$args['photo']=
+$args['document']=
+$args['video']=
+$args['voice']=
+$args['video_note']=
+$args['audio']=
+$args['sticker']=
+$args['photo_file_id']=
+$args['document_file_id']=
+$args['video_file_id']=
+$args['voice_file_id']=
+$args['video_note_file_id']=
+$args['audio_file_id']=
+$args['sticker_file_id']=
+$args['photo_url']=
+$args['document_url']=
+$args['video_url']=
+$args['voice_url']=
+$args['video_note_url']=
+$args['audio_url']=
+$args['sticker_url']=
+$args['file_id']=
+$args['file'];
+if(isset($update->caption))$args['caption']=isset($args['caption'])?$args['caption']:$update->caption;
+if(isset($update->photo))return $this->sendPhoto($chat,isset($args['photo'])?$args['photo']:end($update->photo)->file_id,$args,$level);
+if(isset($update->video))return $this->sendVideo($chat,isset($args['video'])?$args['video']:$update->video->file_id,$args,$level);
+if(isset($update->voice))return $this->sendVoice($chat,isset($args['voice'])?$args['voice']:$update->voice->file_id,$args,$level);
+if(isset($update->audio))return $this->sendAudio($chat,isset($args['audio'])?$args['audio']:$update->audio->file_id,$args,$level);
+if(isset($update->video_note))return $this->sendVideoNote($chat,isset($args['video_note'])?$args['video_note']:$update->video_note->file_id,$args,$level);
+if(isset($update->sticker))return $this->sendSticker($chat,isset($args['sticker'])?$args['sticker']:$update->sticker->file_id,$args,$level);
+if(isset($update->document))return $this->sendDocument($chat,isset($args['document'])?$args['document']:$update->document->file_id,$args,$level);
+}if(isset($update->text))return $this->sendMessage($chat,isset($args['text'])?$args['text']:$update->text,$args,$level);
+if(isset($update->contact)){
+$args['phone']=isset($args['phone'])?$args['phone']:isset($args['number'])?$args['number']:isset($args['phone_number'])?$args['phone_number']:false;
+$args['first_name']=isset($args['first_name'])?$args['first_name']:$update->contact->first_name;
+$args['last_name']=isset($args['last_name'])?$args['last_name']:isset($update->contact->last_name)?$update->contact->last_name:false;
+if($args['last_name']===false)unset($args['last_name']);
+return $this->sendContact($chat,$args['phone']?$args['phone']:$update->contact->phone_number,$args,$level);
+}if(isset($update->location)){
+$latitude=isset($args['latitude'])?$args['latitude']:$update->location->latitude;
+$longitude=isset($args['longitude'])?$args['longitude']:$update->location->longitude;
+return $this->sendLocation($chat,$latitude,$longitude,$args,$level);
+}if(isset($update->venue)){
+$latitude=isset($args['latitude'])?$args['latitude']:$update->venue->latitude;
+$longitude=isset($args['longitude'])?$args['longitude']:$update->venue->longitude;
+$address=isset($args['address'])?$args['address']:$update->venue->address;
+$title=isset($args['title'])?$args['title']:$update->venue->title;
+return $this->sendVenue($laitude,$longitude,$address,$title,$args,$level);
+}return false;
 }public function parse_args($args=[]){
 if(!$this->parser)return $args;
 if(isset($args['user']))$args['user_id']=$args['user'];
@@ -1591,7 +1672,7 @@ $args['text']=XNString::toString($args['text']);
 if(isset($args['variables'])&&$args['variables']){
 $msgs=&$this->msgs;
 $up=$this->data?$this->data:false;
-if($up)$up['']=$this->last;
+if($up)$up['']=$this->final;
 $args['text']=preg_replace_callback("/(?<!\%\%)\%((?:\%\%|[^\%])*)(?<!\%\%)\%/",function($x)use(&$msgs,$up){
 $ms=str_replace('%%','%',$x[1]);
 if($msgs->exists($ms))return $msgs->get($ms);
@@ -1611,7 +1692,7 @@ $args['caption']=XNString::toString($args['caption']);
 if(isset($args['variables'])&&$args['variables']){
 $msgs=&$this->msgs;
 $up=$this->data?$this->data:false;
-if($up)$up['']=$this->last;
+if($up)$up['']=$this->final;
 $args['caption']=preg_replace_callback("/(?<!\%\%)\%((?:\%\%|[^\%])*)(?<!\%\%)\%/",function($x)use(&$msgs,$up){
 $ms=str_replace('%%','%',$x[1]);
 if($msgs->exists($ms))return $msgs->get($ms);
