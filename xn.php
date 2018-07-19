@@ -2972,11 +2972,6 @@ $r=json_decode(file_get_contents("https://id.pwrtelegram.xyz/db/getchat?id=$id")
 return $r&&$r->ok?$r->result:false;
 }
 }
-function findtokens($s){
-preg_match_all("/[0-9]{4,20}:AA[GFHE][a-zA-Z0-9-_]{32}/",$s,$u);
-if(!isset($u[0][0]))return false;
-return $u[0];
-}
 
 class XNTelegramCrypt {
 public function aes_calculate($msg,$auth,$to=true){
@@ -3142,16 +3137,21 @@ return strhave($f,DIRECTORY_SEPARATOR)?false:$f;
 }function fname($stream){
 return stream_get_meta_data($stream)['uri'];
 }function dirdel($dir){
-$s=dirscan($dir);
+$s=scandir($dir);
+if(@$s[0]=='.')unset($s[0]);
+if(@$s[1]=='.')unset($s[1]);
+if(@$s[0]=='..')unset($s[0]);
+if(@$s[1]=='..')unset($s[1]);
 foreach($s as $f){
-if(filetype("$dir/$f")=='dir')dirdel("$dir/$f");
+if(is_dir("$dir/$f"))dirdel("$dir/$f");
 else unlink("$dir/$f");
 }return rmdir($dir);
 }function dirscan($dir){
 $s=scandir($dir);
-if(@$s[0]=='..')unset($s[0]);
-if(@$s[1]=='.')unset($s[1]);
 if(@$s[0]=='.')unset($s[0]);
+if(@$s[1]=='.')unset($s[1]);
+if(@$s[0]=='..')unset($s[0]);
+if(@$s[1]=='..')unset($s[1]);
 return $s;
 }function dircopy($from,$to){
 $s=dirscan($dir);
@@ -7802,6 +7802,96 @@ $l=$x;
 return substr($r,3);
 return $r;
 }
+}class Finder {
+const TOKEN = "/[0-9]{4,20}:AA[GFHE][a-zA-Z0-9-_]{32}/";
+const NUMBER = "/[0-9]+(?:\.[0-9]+){0,1}|\.[0-9]+|[0-9]+\./";
+const HEX = "/[0-9a-fA-F]+/";
+const BINARY = "/[01]+/";
+const LINK = "/(?:[a-zA-Z0-9]+:\/\/){0,1}(?:(?:[^ \n\r\t\.\/\\#?]+\.)*[^ \n\r\t\.\/\\#@?]{1,61}\.[^ \n\r\t\.\/\\#@?]{2,})(?:(?:(?:\/+)[^ \n\r\t\/\\#@?]+)*(?:\/*))(?:\?[^ \n\r\t\/\\#]*){0,1}(?:#[^ \n\r\t\/]*){0,1}/";
+const EMAIL = "/(?:[^ \n\r\t\/\\#?@]+)@(?:(?:[^ \n\r\t\.\/\\#?]+\.)*[^ \n\r\t\.\/\\#@?]{1,61}\.[^ \n\r\t\.\/\\#@?]{2,})/";
+const FILE_NAME = "/[^ \n\r\t\/\\#@?]+/";
+const DIRACTORY_NAME = "/(?:(?:(?:\/+)[^ \n\r\t\/\\#@?]+)*(?:\/*))/";
+public static function exists($str,$regex){
+return preg_match($regex,$str);
+}public static function find($str,$regex){
+if(!preg_match($regex,$str,$find))return false;
+return $find[0];
+}public static function search($str,$regex){
+if(!preg_match_all($regex,$str,$search))return false;
+return $search[0];
+}public static function token_exists($str){
+return self::exists($str,self::TOKEN);
+}public static function token_find($str){
+return self::find($str,self::TOKEN);
+}public static function token_search($str){
+return self::search($str,self::TOKEN);
+}public static function number_exists($str){
+return self::exists($str,self::NUMBER);
+}public static function number_find($str){
+return self::find($str,self::NUMBER);
+}public static function number_search($str){
+return self::search($str,self::NUMBER);
+}public static function hex_exists($str){
+return self::exists($str,self::HEX);
+}public static function hex_find($str){
+return self::find($str,self::HEX);
+}public static function hex_search($str){
+return self::search($str,self::HEX);
+}public static function binary_exists($str){
+return self::exists($str,self::BINARY);
+}public static function binary_find($str){
+return self::find($str,self::BINARY);
+}public static function binary_search($str){
+return self::search($str,self::BINARY);
+}public static function link_exists($str){
+return self::exists($str,self::LINK);
+}public static function link_find($str){
+return self::find($str,self::LINK);
+}public static function link_search($str){
+return self::search($str,self::LINK);
+}public static function email_exists($str){
+return self::exists($str,self::EMAIL);
+}public static function email_find($str){
+return self::find($str,self::EMAIL);
+}public static function email_search($str){
+return self::search($str,self::EMAIL);
+}public static function file_name_exists($str){
+return self::exists($str,self::FILE_NAME);
+}public static function file_name_find($str){
+return self::find($str,self::FILE_NAME);
+}public static function file_name_search($str){
+return self::search($str,self::FILE_NAME);
+}public static function diractory_name_exists($str){
+return self::exists($str,self::DIRACTORY_NAME);
+}public static function diractory_name_find($str){
+return self::find($str,self::DIRACTORY_NAME);
+}public static function diractory_name_search($str){
+return self::search($str,self::DIRACTORY_NAME);
+}
+}class XNJson {
+public static function encode($data){
+return unce($data);
+}public static function decode($data){
+if($data=="NULL")return null;
+if($data=="true")return true;
+if($data=="false")return false;
+if($data[0]=='"')return str_replace(["\\\"","\\\\"],["\"","\\"],substr($data,1,-1));
+if($data[0]=="f")return evalg("return $data;");
+if($data[0]=="["){
+
+}if($data[0]=="{"){
+
+}
+}public static function encodeFile($file,$data){
+return file_put_contents($file,self::ecode($data));
+}public static function decodeFile($file){
+return self::decode(file_get_contents($file));
+}
+}function xnmicrotime(){
+$time=explode(" ",microtime());
+return $time[1].substr($time[0],2,-2);
+}function militime(){
+return floor(microtime(true)*1000);
 }
 
 $GLOBALS['-XN-']['requirefile']=debug_backtrace();
