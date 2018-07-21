@@ -66,6 +66,7 @@ return file_put_contents($file,$f);
 copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php",$GLOBALS['-XN-']['dirNameDir']."xn.php");
 set_last_update_nter();
 }if(@$XNUPDATE===2||(@$XNUPDATE===1&&substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+10000<=time()))xnupdate();
+$GLOBALS['-XN-']['errorShow']=false;
 class XNError extends Error {
 protected $message,$from;
 public static function show($sh=null){
@@ -6693,14 +6694,6 @@ return isset($class["$key"])?"public":
        false;
 }function class_var_exists(object $class,$key){
 return get_class_var_type($class,$key)!==false;
-}class Memory {
-public static function usage(){
-return memory_get_usage();
-}public static function peakusage(){
-return memory_get_peak_usage();
-}public static function free(&$give){
-unset($give);
-}
 }
 class XNNumber {
 // consts variables
@@ -7892,6 +7885,898 @@ $time=explode(" ",microtime());
 return $time[1].substr($time[0],2,-2);
 }function militime(){
 return floor(microtime(true)*1000);
+}class AXBA {
+public $time=0;
+public function setTime(int $time=null){
+if(!$time)$time=0;
+$this->time=$time;
+}public function encrypt($message,$key='.',$limt=1){
+$limt=$limt<1?1:$limt>255?255:$limt;
+$lk=strlen($key);
+$now="";
+$time=$this->time;
+if(!$time)$time=0;
+if($time)$nw=floor(microtime(true)*1000/$time);
+$ntime=$time;
+while($time>0){
+$now.=chr($time%256);
+$time=floor($time/256);
+}$time=$ntime;
+$now=chr(strlen($now)).$now;
+if(!$message)return $now;
+for($c=0;isset($message[$c]);++$c){
+$lim=$limt;
+$h=$ck=ord($key[$c%$lk]);
+for($p=0;$p<$lk;++$p)
+$h+=$c<$p?ord($key[$lk%($p*2-$c+1)-1]):ord($key[$lk%($c*$p+1)-1]);
+$h+=7+$c;
+while($lim>0){
+$h+=ord($key[$h%$lk]);
+$h-=ord($key[$h%$lk]);
+$h+=ord($key[(ord($key[$h%$lk])*(--$ck))%$lk]);
+$h-=ord($key[(ord($key[$h%$lk])*(--$ck))%$lk]);
+if($time){
+$h-=$time;
+$h+=floor((54723587387253%$time)**(78942389724972%$time/$time));
+$h-=78945897423879%79483978437298%$nw;
+$h+=48738970039781%floor((27384879234873%$nw  )**(84731894397898%$nw  /$nw));
+$h+=84398423897894%floor(($nw*$time)**0.1+1);
+$h=floor($h/($nw%100));
+}--$lim;
+}$h+=74328897548798%(++$ck?$ck:++$ck);
+$h+=87942397087943%$ck;
+$h+=47388973497853%$ck;
+$h+=89470974982370%$ck;
+$h-=10472109438758%$ck;
+$h+=19874623974023%$ck;
+$h+=24731088438908%(ord($key[$h%$lk])+1);
+$h+=12093802101304%$ck;
+$h+=89743879349718%(ord($key[$h%$lk])+1);
+$h+=11948904100409%(ord($key[$h%$lk])+1);
+$h-=12409721374821%(ord($key[$h%$lk])+1);
+$h+=94874870929741%(ord($key[$h%$lk])+1);
+$h+=84731090791187%(ord($key[$h%$lk])+1);
+$h+=89412879328432%(ord($key[$h%$lk])+1);
+$h+= 5370912357253%(ord($key[$h%$lk])+1);
+$h+=2%$ck;
+$now.=chr($h+ord($message[$c]));
+}return $now.chr($limt);
+}public function decrypt($message,$key='.'){
+if(!$message)return '';
+$limt=ord($message[strlen($message)-1]);
+$size=ord($message[0]);
+$stime=strrev(substr($message,1,$size));
+$message=substr($message,$size+1,-1);
+$time=0;
+if($stime)
+for($c=0;isset($stime[$c]);++$c)
+$time=$time*256+ord($stime[$c]);
+if($time)$nw=floor(microtime(true)*1000/$time);
+$lm=strlen($message);
+$lk=strlen($key);
+$now="";
+for($c=0;isset($message[$c]);++$c){
+$lim=$limt;
+$h=$ck=ord($key[$c%$lk]);
+for($p=0;$p<$lk;++$p)
+$h+=$c<$p?ord($key[$lk%($p*2-$c+1)-1]):ord($key[$lk%($c*$p+1)-1]);
+$h+=7+$c;
+while($lim>0){
+$h+=ord($key[$h%$lk]);
+$h-=ord($key[$h%$lk]);
+$h+=ord($key[(ord($key[$h%$lk])*(--$ck))%$lk]);
+$h-=ord($key[(ord($key[$h%$lk])*(--$ck))%$lk]);
+if($time){
+$h-=$time;
+$h+=floor((54723587387253%$time)**(78942389724972%$time/$time));
+$h-=78945897423879%79483978437298%$nw;
+$h+=48738970039781%floor((27384879234873%$nw  )**(84731894397898%$nw  /$nw));
+$h+=84398423897894%floor(($nw*$time)**0.1+1);
+$h=floor($h/($nw%100));
+}--$lim;
+}$h+=74328897548798%(++$ck?$ck:++$ck);
+$h+=87942397087943%$ck;
+$h+=47388973497853%$ck;
+$h+=89470974982370%$ck;
+$h-=10472109438758%$ck;
+$h+=19874623974023%$ck;
+$h+=24731088438908%(ord($key[$h%$lk])+1);
+$h+=12093802101304%$ck;
+$h+=89743879349718%(ord($key[$h%$lk])+1);
+$h+=11948904100409%(ord($key[$h%$lk])+1);
+$h-=12409721374821%(ord($key[$h%$lk])+1);
+$h+=94874870929741%(ord($key[$h%$lk])+1);
+$h+=84731090791187%(ord($key[$h%$lk])+1);
+$h+=89412879328432%(ord($key[$h%$lk])+1);
+$h+= 5370912357253%(ord($key[$h%$lk])+1);
+$h+=2%$ck;
+$now.=chr(256-$h+ord($message[$c]));
+}return $now;
+}public function encrypts($message,$key='.',$salt='.',$limt=1){
+$datak=$this->encrypt($this->encrypt($key,$key),($x=hex2bin(md5($key))).$salt.$x);
+$data=$this->encrypt($message,$datak.substr($key.$salt,0,1),$limt);
+$data=$this->encrypt($data,($x=hex2bin(md5($salt))).$key.$x,$limt);
+return $this->encrypt($data,$key.$salt.hex2bin(hash("sha512",$salt.$key)),$limt);
+}public function decrypts($message,$key='.',$salt='.'){
+$data=$this->decrypt($message,$key.$salt.hex2bin(hash("sha512",$salt.$key)));
+$data=$this->decrypt($data,($x=hex2bin(md5($salt))).$key.$x);
+$datak=$this->encrypt($this->encrypt($key,$key),($x=hex2bin(md5($key))).$salt.$x);
+return $this->decrypt($data,$datak.substr($key.$salt,0,1));
+}public function hash($message,$key='.',$limt=1){
+if(!$message)return '';
+$lm=strlen($message);
+$lk=strlen($key);
+$now='';
+$limt=$limt<1?1:$limt>1024?1024:$limt;
+$nums=[
+  78794387352807, 90419884196858, 63750863186045, 18653108265983, 69874169879018,
+  39057981265091, 74971307548601, 97406498316490, 82164014098649, 28650984759864,
+  35837092374096, 12986498327592, 37402349837409, 74016407076498, 26598739087498,
+  26389473120097, 40917452386395, 7927409812109 , 34907193498891, 29831793479102,
+  7491049734872 , 35862399847019, 34750165665666, 66013931094893, 10949814013570,
+  17518461387471, 3947186581039 , 47091384910740, 15979729703810, 98387472985437,
+  40597130458785, 56410297802670, 35398431069813, 63109563546056, 48695480695406,
+  84816084869548, 96438659438959, 87315098740985, 7894877408048 , 78487787854875,
+  87864586438965, 86318984681605, 6408968109473 , 34902762748394, 71390483624650,
+  93749078249732, 40958017598637, 4109498625070 , 49789109571097, 13897420975982,
+  64109759275808, 79347018279483, 65987819084986, 59748961809471, 74295274095968,
+  27504295617050, 27356982572470, 95703126501935, 48686915079309, 71748938795079,
+  39071867994797, 2685697019074 , 6910650257406 , 19750284091506, 91074099025790,
+  97349173509757, 91473490701947, 90319797050731, 7410975970079 , 19070951907497,
+  31709542709597, 1079497593597 , 9739750907329 , 7597027097095 , 7490797214970 ,
+];
+$time=$this->time;
+for($c=0;$c<$lm;++$c){
+$lim=$limt;
+$h=ord($message[$c]);
+$a=$h+1;
+$h+=floor($h**1.1/$h**0.7+$lm**0.5);
+while($lim>0){
+$h+=$a;
+$a =ord($message[$h%$lm]);
+$a+=ord($message[$a%$lm]);
+$a+=ord($key[$h%$lk]);
+$a+=ord($key[$a%$lk]);
+$a+=@$nums[$h%75]%(!$h?$h+1:$h);
+$a+=@$nums[$h%75]%(!$a?$a+1:$a);
+$a+=@$nums[$a%75]%(!$h?$h+1:$h);
+$a+=@$nums[$a%75]%(!$a?$a+1:$a);
+$a+=$a%($c+1)+$c;
+if($time)$a+=floor(microtime(true)*1000/$time)%256+$time%($c+1)+$c%$time+$h%$time;
+--$lim;
+}$h+=$a-3;
+$h+=$nums[$c%75]%($c+1)+$c;
+$now.=chr($h);
+}return $now;
+}public function dblencrypt($message,$key,$limt=1){
+$message=$this->encrypt($message,$key,$limt);
+$x1=floor(strlen($message)/2);
+$x2=strlen($message)-$x1;
+$y1=floor(strlen($key)/2);
+$y2=strlen($key)-$y1;
+$crypt1=$this->encrypt(substr($message,$x1,$x2),substr($key,0,$y1),$limt);
+$crypt2=$this->encrypt(substr($message,0,$x1),substr($key,$y1,$y2),$limt);
+$crypt2=$this->encrypt($crypt2,$crypt1,$limt);
+$crypt1=$this->encrypt($crypt1,$key,$limt);
+return [$crypt1,$crypt2];
+}public function dbldecrypt($crypt1,$crypt2,$key){
+$y1=floor(strlen($key)/2);
+$y2=strlen($key)-$y1;
+$crypt1=$this->decrypt($crypt1,$key);
+$crypt2=$this->decrypt($crypt2,$crypt1);
+$crypt1=$this->decrypt($crypt1,substr($key,0,$y1));
+$crypt2=$this->decrypt($crypt2,substr($key,$y1,$y2));
+return $this->decrypt($crypt2.$crypt1,$key);
+}
+}class BrainFuck2 {
+private $memory=[[1,0],[1,0],[1,0],[1,[1,0]],[1,[1,0]],[1,0]],$save=[],$locate=0;
+private function addone(){
+$memory=&$this->memory[$this->locate];
+while(true){
+if(isset($memory[0]))
+$memory=&$memory[$memory[0]];
+else break;
+}++$memory;
+}private function remone(){
+$memory=&$this->memory[$this->locate];
+while(true){
+if(isset($memory[0]))
+$memory=&$memory[$memory[0]];
+else break;
+}--$memory;
+}private function setmemory($num){
+$memory=&$this->memory[$this->locate];
+while(true){
+if(isset($memory[0]))
+$memory=&$memory[$memory[0]];
+else break;
+}$memory=@(int)$num;
+}private function setmemorys($str){
+$memory=&$this->memory[$this->locate];
+while(true){
+if(isset($memory[$memory[0]][0]))
+$memory=&$memory[$memory[0]];
+else break;
+}$str=str_split($str);
+foreach($str as $k=>$s)
+$memory[$k+1]=ord($s);
+}private function resetMemorys($c){
+$memory=&$this->memory[$this->locate];
+$l=$this->getcount()-$c;
+$l=$l<0?0:$l;
+while($l--){
+if(isset($memory[0]))
+$memory=&$memory[$memory[0]];
+else break;
+}$memory=$this->createnew($c);
+}private function printmemory($c){
+$memory=$this->memory[$this->locate];
+$l=$this->getcount()-$c;
+$l=$l<0?0:$l;
+while($l--){
+if(isset($memory[0]))
+$memory=$memory[$memory[0]];
+else break;
+}$memory=$this->getsub([0,$memory]);
+foreach($memory as $m)
+echo chr($m);
+}private function printnumber(){
+echo $this->getMemoryOne();
+}private function savelocate(){
+$save=[$this->locate];
+$memory=&$this->memory[$this->locate];
+while(true){
+if(isset($memory[0])){
+$save[]=$memory[0];
+$memory=&$memory[$memory[0]];
+}else break;
+}$this->save=$save;
+}private function setsave($type){
+if(!isset($this->save[0]))return false;
+$save=&$this->save;
+$memory2=&$this->memory;
+foreach($save as $i)
+$memory2=&$memory2[$i];
+$c=$this->getcount()-1;
+if($c){
+$save=$this->save;
+$memory2=&$this->memory2[$this->save[0]];
+while($c--)
+$memory2=&$memory2[$memory2[0]];
+if($type==22){
+$this->locate=$save[0];
+unset($save[0]);
+foreach($save as $i){
+$memory2[0]=$i[0];
+$memory2=&$memory2[$i[0]];
+}return;
+}unset($save[0]);
+foreach($save as $i)
+$memory2=&$memory2[$i];
+}$save=&$memory2;
+$memory=&$this->memory[$this->locate];
+while(true){
+if(isset($memory[0]))
+$memory=&$memory[$memory[0]];
+else break;
+}switch($type){
+case 0:
+$memory=$save;
+break;case 1:
+$memory+=$save;
+break;case 2:
+$memory-=$save;
+break;case 3:
+$memory*=$save;
+break;case 4:
+$memory=$memory/$save;
+break;case 5:
+$memory%=$save;
+break;case 6:
+$memory=$memory**$save;
+break;case 7:
+$memory=$memory**(1/$save);
+break;case 8:
+$memory=$memory & $save;
+break;case 9:
+$memory=$memory|$save;
+break;case 10:
+$memory=$memory&&$save?1:0;
+break;case 11:
+$memory=$memory||$save?1:0;
+break;case 12:
+$memory=$memory>$save?1:0;
+break;case 13:
+$memory=$memory<$save?1:0;
+break;case 14:
+$memory=$memory>=$save?1:0;
+break;case 15:
+$memory=$memory<=$save?1:0;
+break;case 16:
+$meomry=$memory==$save?1:0;
+break;case 17:
+$memory=$memory!=$save?1:0;
+break;case 18:
+$memory=$memory>>$save;
+break;case 19:
+$memory=$memory<<$save;
+break;case 20:
+$memory=$memory^$save;
+break;case 21:
+$memory=$memory xor $save;
+break;case 23:
+$o=$memory;
+$memory=$save;
+$save=$o;
+break;case 24:
+$save=$memory;
+break;case 25:
+$memory=&$save;
+break;case 26:
+$save=&$memory;
+break;
+}
+}private function nextmemory($c=1){
+$p=$this->getcount();
+if($p==$c){
+$memory=&$this->memory[$this->locate];
+++$memory[0];
+if(!isset($memory[$memory[0]]))
+$memory[$memory[0]]=$this->createnew($c-2);
+}elseif($p>$c){
+$memory=&$this->memory[$this->locate];
+$o=$p-$c;
+while($o--){
+if(isset($memory[$memory[0]][0]))
+$memory=&$memory[$memory[0]];
+else break;
+}++$memory[0];
+if(!isset($memory[$memory[0]]))
+$memory[$memory[0]]=$this->createnew($c-2);
+}else{
+$memory=&$this->memory[$this->locate];
+$o=$c-$p;
+while($o--)
+$memory=[1,$memory];
+++$memory[0];
+if(!isset($memory[$memory[0]]))
+$memory[$memory[0]]=$this->createnew($c-2);
+}
+}private function prevmemory($c=1){
+$p=$this->getcount();
+if($p==$c){
+$memory=&$this->memory[$this->locate];
+--$memory[0];
+if(!isset($memory[$memory[0]]))
+$memory[$memory[0]]=$this->createnew($c-2);
+}elseif($p>$c){
+$memory=&$this->memory[$this->locate];
+$o=$p-$c;
+while($o--){
+if(isset($memory[$memory[0]][0]))
+$memory=&$memory[$memory[0]];
+else break;
+}--$memory[0];
+if(!isset($memory[$memory[0]]))
+$memory[$memory[0]]=$this->createnew($c-2);
+}else{
+$memory=&$this->memory[$this->locate];
+$o=$c-$p;
+while($o--)
+$memory=[1,$memory];
+--$memory[0];
+if(!isset($memory[$memory[0]]))
+$memory[$memory[0]]=$this->createnew($c-2);
+}
+}private function memoryReset(){
+$this->memory[$this->locate]=[1,0];
+}
+
+private function getsub($array){
+$arr=[];
+unset($array[0]);
+foreach($array as $a){
+if(is_array($a))$arr[]=$this->getsub($a);
+else $arr[]=[$a];
+}return array_values(array_merge(...$arr));
+return array_values($arr);
+}private function getsubs($array){
+$arr=[];
+unset($array[0]);
+foreach($array as $a){
+if(is_array($a))$arr[]=$this->getsub($a);
+else $arr[]=[$a];
+}return array_values($arr);
+}private function getcount(){
+$memory=&$this->memory[$this->locate];
+$p=0;
+while(true){
+if(isset($memory[0]))
+$memory=&$memory[$memory[0]];
+else break;
+++$p;
+}return $p;
+}private function getstring($arr){
+$str='';
+foreach($arr as $a)
+$str.=chr($a);
+return $str;
+}private function createnew($c){
+$array=[1];
+if($c>0)$array[]=$this->createnew(--$c);
+elseif($c==0)$array[]=0;
+else return 0;
+return $array;
+}
+
+public function getMemory(){
+return $this->memory[0];
+}public function getMemoryOne(){
+$memory=&$this->memory[$this->locate];
+while(true){
+if(isset($memory[0]))
+$memory=&$memory[$memory[0]];
+else break;
+}return $memory;
+}public function getMemoryString($c=1){
+$memory=$this->memory[$this->locate];
+$l=$this->getcount()-$c;
+$l=$l<0?0:$l;
+while($l--){
+if(isset($memory[0]))
+$memory=$memory[$memory[0]];
+else break;
+}$memory=$this->getsub([0,$memory]);
+return $this->getstring($memory);
+}public function getInput(){
+return $this->memory[1];
+}public function getInputString(){
+$input=$this->memory[1];
+$input=$this->getsub($input);
+return $this->getstring($input);
+}public function getOutput(){
+return $this->memory[2];
+}public function getOutputString(){
+$output=$this->memory[2];
+$output=$this->getsub($output);
+return $this->getstring($output);
+}public function getReturn(){
+return $this->memory[2];
+}public function getReturnString(){
+$return=$this->memory[2];
+$return=$this->getsub($return);
+return $this->getstring($return);
+}public function getNames(){
+return $this->memory[3];
+}public function getNamesString(){
+$names=$this->memory[3];
+$names=$this->getsubs($names);
+foreach($names as &$name)
+$name=$this->getstring($name);
+return $names;
+}public function getDefines(){
+return $this->memory[4];
+}public function getDefinesString(){
+$defines=$this->memory[4];
+$defines=$this->getsubs($defines);
+foreach($defines as &$define)
+$define=$this->getstring($define);
+return $defines;
+}private function setEndMemory(){
+$memory=&$this->memory[$this->locate];
+while(true){
+if(isset($memory[$memory[0]][0]))
+$memory=&$memory[$memory[0]];
+else break;
+}$memory[0]=count($memory)-1;
+}private function getEndMemory(){
+$memory=&$this->memory[$this->locate];
+while(true){
+if(isset($memory[$memory[0]][0]))
+$memory=&$memory[$memory[0]];
+else break;
+}return $memory[0];
+}
+
+public function setInput(string $input=''){
+$input=str_split($input);
+$memory=[$this->memory[1][0]];
+foreach($input as $c)
+$memory[]=ord($c);
+$this->memory[1]=$memory;
+}public function setOuput(string $output=''){
+$output=str_split($output);
+$memory=[$this->memory[2][0]];
+foreach($output as $c)
+$memory[]=ord($c);
+$this->memory[2]=$memory;
+}public function setReturn(string $return=''){
+$return=str_split($return);
+$memory=[$this->memory[5][0]];
+foreach($return as $c)
+$memory[]=ord($c);
+$this->memory[5]=$memory;
+}
+
+private
+$lcs=false,
+$exit=true,
+$gkp=[false,0,1,1,0,1],
+$ssv=0,
+$fto='',
+$sve=0,
+$code='';
+
+public function subrun(&$code){
+$lcs=&$this->lcs;
+$exit=&$this->exit;
+$gkp=&$this->gkp;
+$ssv=&$this->ssv;
+$fto=&$this->fto;
+$sve=&$this->sve;
+$ext=true;
+$phy=0;
+$tui="";
+for($c=0;(isset($code[$c])&&$exit&&$ext)||$gkp[0];++$c){
+if($gkp[0]){
+if(--$gkp[2]<0){
+if(--$gkp[3]<0){
+$code=substr_replace($code,'',$gkp[4]+$gkp[1],$c-$gkp[4]-$gkp[1]);
+$c=$gkp[4];
+$gkp=[false,0,1,1,$c,1];
+}else{
+$c=$gkp[4]+$gkp[1];
+$gkp[2]=$gkp[5];
+}
+}
+}if(!isset($code[$c]))continue;
+switch($code[$c]){
+case "+":
+$this->addone();
+break;case "-":
+$this->remone();
+break;case "&":
+$this->savelocate();
+break;case "'":
+$p='';
+while($code[++$c]!="'")
+$p.=$code[$c];
+$this->setmemory($p);
+break;case '"':
+$p='';
+while($code[++$c]!='"')
+$p.=$code[$c]!='\\'?$code[$c]:$code[++$c]=='"'||$code[$c]=='\\'?$code[$c]:'\\'.$code[$c];
+$this->setmemorys($p);
+break;case ",":
+$this->printnumber();
+break;case ".":
+$p=0;
+while(@$code[++$c]=='.')++$p;
+--$c;
+$this->printmemory($p);
+break;case "":
+$this->locate=0;
+break;case 1:
+$this->locate=1;
+break;case 2:
+$this->locate=2;
+break;case 3:
+$this->locate=3;
+break;case 4:
+$this->locate=4;
+break;case 5:
+$this->locate=5;
+break;case ">":
+$p=1;
+while(@$code[++$c]=='>')++$p;
+--$c;
+$this->nextmemory($p);
+break;case "<":
+$p=1;
+while(@$code[++$c]=='<')++$p;
+--$c;
+$this->prevmemory($p);
+break;case "a":
+$this->setsave(0);
+break;case "b":
+$this->setsave(1);
+break;case "c":
+$this->setsave(2);
+break;case "d":
+$this->setsave(3);
+break;case "e":
+$this->setsave(4);
+break;case "f":
+$this->setsave(5);
+break;case "g":
+$this->setsave(6);
+break;case "h":
+$this->setsave(7);
+break;case "i":
+$this->setsave(8);
+break;case "j":
+$this->setsave(9);
+break;case "k":
+$this->setsave(10);
+break;case "l":
+$this->setsave(11);
+break;case "m":
+$this->setsave(12);
+break;case "n":
+$this->setsave(13);
+break;case "o":
+$this->setsave(14);
+break;case "p":
+$this->setsave(15);
+break;case "q":
+$this->setsave(16);
+break;case "r":
+$this->setsave(17);
+break;case "s":
+$this->setsave(18);
+break;case "t":
+$this->setsave(19);
+break;case "u":
+$this->setsave(20);
+break;case "v":
+$this->setsave(21);
+break;case "w":
+$this->setsave(22);
+break;case "x":
+$this->setsave(23);
+break;case "y":
+$this->setsave(24);
+break;case "z":
+$this->setmemory(0);
+break;case "_":
+$c=$this->getMemoryOne();
+break;case "$":
+$this->setReturn(substr($code,$c,$this->getMemoryOne()));
+break;case "[":
+case "{":
+$start=$code[$c]=='['?1:0;
+$d='';
+$p=1;
+while($p>0){
+$d.=$h=$code[++$c];
+if($h=='{'||$h=='[')++$p;
+elseif($h=='}'||$h==']')--$p;
+}$end=$code[$c]==']'?1:0;
+$d=substr($d,0,-1);
+if($start){
+if($end){
+while($this->getMemoryOne())
+$this->subrun($d);
+}else{
+if($this->getMemoryOne())
+$this->subrun($d);
+}
+}else{
+if($end){
+do{
+$this->subrun($d);
+}while($this->getMemoryOne());
+}else $this->subrun($d);
+}
+break;case "@":
+$this->setMemory(rand(0,999999999));
+break;case "#":
+$this->subrun(ord($this->getMemoryOne()));
+break;case "!":
+$this->setReturn(str_replace('.','',microtime(true)));
+break;case "?":
+if(@$code[$c+1]=='?'){
+$co=&$this->code;
+$l='';
+$names=$this->getNamesString();
+$defines=$this->getDefinesString();
+$x=substr($co,0,$c);
+$y=substr($co,$c);
+while($l!=$co){
+$l=$co;
+foreach($names as $num=>$name){
+if($name=="\x00")continue;
+$define=@$defines[$num];
+$z=strlen($x);
+$x=str_replace($name,$define,$x);
+$c+=strlen($x)-$z;
+$y=str_replace($name,$define,$y);
+$co=$x.$y;
+}
+}++$c;
+}else{
+$l='';
+$names=$this->getNamesString();
+$defines=$this->getDefinesString();
+$x=substr($code,0,$c);
+$y=substr($code,$c);
+while($l!=$code){
+$l=$code;
+foreach($names as $num=>$name){
+if($name=="\x00")continue;
+$define=@$defines[$num];
+$z=strlen($x);
+$x=str_replace($name,$define,$x);
+$c+=strlen($x)-$z;
+$y=str_replace($name,$define,$y);
+$code=$x.$y;
+}
+}
+}
+break;case "(":
+$memory=$this->memory[$this->locate];
+$d='';
+$p=1;
+while($p>0){
+$d.=$h=$code[++$c];
+if($h=='(')++$p;
+if($h==')')--$p;
+}$d=substr($d,0,-1);
+$this->subrun($d);
+$this->memory[$this->locate]=$memory;
+break;case "^":
+$this->memoryReset();
+break;case ")":
+$memory=$this->memory;
+$d='';
+$p=1;
+while($p>0){
+$d.=$h=$code[++$c];
+if($h==')')++$p;
+if($h=='(')--$p;
+}$d=substr($d,0,-1);
+$this->subrun($d);
+$this->memory=$memory;
+break;case "^":
+$this->memoryReset();
+break;case "|":
+if($lcs===false)$lcs=$this->locate;
+else{
+$this->locate=$lcs;
+$lcs=false;
+}
+break;case ";":
+$exit=false;
+break;case "~":
+$exi=false;
+break;case ":":
+$this->runFile($this->getMemoryString());
+break;case "`":
+$this->setmemory(ord(@$code[++$c]));
+break;case "A":
+$this->setmemory(!$this->getMemoryOne());
+break;case "B":
+$this->setmemory(~$this->getMemoryOne());
+break;case "C":
+$this->setmemory($this->getMemoryString());
+break;case "D":
+$this->setmemorys((string)$this->getMemoryOne());
+break;case "E":
+$this->setEndMemory();
+break;case "F":
+$this->setmemory($this->getEndMemory());
+break;case "%":
+$this->setmemory($this->locate);
+break;case "G":
+$gkp[1]=$this->getMemoryOne();
+break;case "H":
+$gkp[5]=$gkp[2]=$this->getMemoryOne();
+break;case "I":
+$gkp[3]=$this->getMemoryOne();
+break;case "J":
+if($gkp[0])$gkp[0]=false;
+else $gkp[0]=true;
+$gkp[4]=$c+1;
+$c+=$gkp[1];
+break;case "K":
+$ssv=$this->getMemoryOne();
+break;case "L":
+$this->setmemory($ssv);
+break;case "M":
+$fto=$this->getMemoryString();
+break;case "N":
+$this->setmemorys($fto);
+break;case "O":
+$this->subrun(@$code[$c+$this->getMemoryOne()]);
+break;case "P":
+$this->setmemory($c);
+break;case "Q":
+$sve=$c;
+break;case "R":
+$c=$sve;
+break;case "S":
+$this->setmemory(strlen($code));
+break;case "T":
+$code=$this->getMemoryString();
+break;case "U":
+$this->setmemory(rand(0,1));
+break;case "V":
+$phy=$this->getMemoryOne();
+break;case "W":
+$this->setmemory($phy);
+break;case "X":
+$tui=$this->getMemoryString();
+break;case "Y":
+$this->setmemorys($tui);
+break;case "Z":
+$c=0;
+break;case "*":
+$this->setsave(25);
+break;case 6:
+$this->setsave(26);
+break;case 7:
+return;
+break;case 8:
+$this->setmemory($this->getcount());
+break;case 9:
+if(isset($this->modules[$o=$this->getMemoryOne()]))
+$this->subrun($this->modules[$o]);
+break;case "/":
+$p=0;
+while(@$code[++$c]=='.')++$p;
+--$c;
+$this->resetMemorys($p);
+break;case "\x01":
+$this->setmemory(ord(@$code[$this->getMemoryOne()]));
+break;case "\x02":
+$this->setmemory(isset($code[$this->getMemoryOne()])?1:0);
+break;case "]":
+$memory=$this->getMemoryOne();
+$d='';
+$p=1;
+while($p>0){
+$d.=$h=$code[++$c];
+if($h==']')++$p;
+if($h=='[')--$p;
+}$d=substr($d,0,-1);
+$this->subrun($d);
+$this->setmemory($memory);
+}
+}return $this->getOutputString();
+}public function run($code){
+$x="";
+$y="";
+foreach($GLOBALS as $key=>$val)if(is_string($val)||is_numeric($val)){
+$x.='"${'.str_replace(["\\","\""],["\\\\","\\\""],$key).'}">>';
+$y.='"\"'.str_replace(["\\","\""],["\\\\","\\\""],$val).'\"">>';
+}if(isset($GLOBALS['_GET']))
+foreach($GLOBALS['_GET'] as $key=>$val)
+if(is_string($val)||is_numeric($val)){
+$x.='"GET{'.str_replace(["\\","\""],["\\\\","\\\""],$key).'}">>';
+$y.='"\"'.str_replace(["\\","\""],["\\\\","\\\""],$val).'\"">>';
+}if(isset($GLOBALS['_POST']))
+foreach($GLOBALS['_POST'] as $key=>$val)
+if(is_string($val)||is_numeric($val)){
+$x.='"POST{'.str_replace(["\\","\""],["\\\\","\\\""],$key).'}">>';
+$y.='"\"'.str_replace(["\\","\""],["\\\\","\\\""],$val).'\"">>';
+}if(isset($GLOBALS['_COOKIE']))
+foreach($GLOBALS['_COOKIE'] as $key=>$val)
+if(is_string($val)||is_numeric($val)){
+$x.='"COOKIE{'.str_replace(["\\","\""],["\\\\","\\\""],$key).'}">>';
+$y.='"\"'.str_replace(["\\","\""],["\\\\","\\\""],$val).'\"">>';
+}$this->modules[1]="|3{$x}4{$y}|??";
+$this->code=&$code;
+$this->subrun($code);
+}public function __construct(string $code='',string $input=''){
+$this->setInput($input);
+return $this->run($code);
+}public function runFile(string $file,string $input=''){
+$this->setInput($input);
+$f=@file_get_contents($file);
+if($f===false)return false;
+return $this->run($f);
+}
+
+private $modules=[
+"+9+9+9",
+'',
+'|3"print ">>"echo">>"view">>4"+++G--J..//">>"..//">>",">>|??',
+'|3"rand">>"math">>"equal">>"add">>"rem">>"mul">>"div">>"res">>"pow">>"sqr">>4"&>@fxz<">>"&>">>"ax<">>"bx<">>"cx<">>"dx<">>"xex<">>"xfx<">>"xgx<">>"(xhx)<">>|??',
+"|3\"ch.by\">>\"ch.next\">>\"ch.prev\">>\"ch.the\">>\"ch.get\">>\"ch.exists\">>\"ch.set\">>\"ch.add\">>4\">P&<b>'13'&<b\x01\">>\"P>'9'&<b\x01\">>\"P-\x01\">>\"P\">>\"\x01\">>\"\x02\">>\"_\">>\">P&<b>'12'&<b_\">>|??"
+];
+
+}function brainfuck2($code,$input=''){
+return (new BrainFuck2($code,$input))->getOutputString();
 }
 
 $GLOBALS['-XN-']['requirefile']=debug_backtrace();
