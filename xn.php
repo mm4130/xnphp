@@ -8831,7 +8831,7 @@ return get_class_all_vars($this->var);
 }
 function xnobject($object=null){
 return $object=new XNObject($object);
-class XNCode {
+}class XNCode {
 private $code,$errorfile="error_log",$wait=false,$proc,$pipes,$php="php",$timer=0,$global=false,$response;
 public function setCode($code){
 if($code instanceof XNClosure){
