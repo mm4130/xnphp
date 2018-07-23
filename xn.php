@@ -66,7 +66,7 @@ return file_put_contents($file,$f);
 copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php",$GLOBALS['-XN-']['dirNameDir']."xn.php");
 set_last_update_nter();
 }if(@$XNUPDATE===2||(@$XNUPDATE===1&&substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+10000<=time()))xnupdate();
-$GLOBALS['-XN-']['errorShow']=false;
+$GLOBALS['-XN-']['errorShow']=true;
 class XNError extends Error {
 protected $message,$from;
 public static function show($sh=null){
@@ -3253,7 +3253,7 @@ fclose($f);
 if($str==$l||$str=='')$r[]='';
 return $r;
 }function is_url($file){
-return filter_var($file,FILTER_VALIDATE_URL)&&fvalid($file)&&!file_exists($file);
+return filter_var($file,FILTER_VALIDATE_URL)&&!file_exists($file)&&fvalid($file);
 }function fsubget($file,$from=0,$to=false){
 if($to===false)$t=filesize($file);
 elseif($to<0)$to=filesize($file)+$to;
@@ -5497,13 +5497,13 @@ return $this->xnd->number(--$this->position);
 }
 }
 
-function address_repeater(&$x){
-$x=&$x;
-}function array_random(array $x){
+function array_random(array $x){
 return $x[array_rand($x)];
 }function chars_random(string $x){
 $x=str_split($x);
 return $x[array_rand($x)];
+}function array_clone(array $array){
+return (array)(object)$array;
 }
 
 function calc($c){
@@ -6047,6 +6047,14 @@ if($variables==false)$variables=&$GLOBALS;
 foreach($variables as $var=>&$val)
 $$var=&$val;
 return eval($code);
+}public function getRunCode($variables=false){
+$code=$this->getCode();
+if(!$code)return false;
+if($variables==false)$variables=$GLOBALS;
+foreach($variables as $key=>$val)
+if($key=="GLOBALS"||is_closure($val))unset($variables[$key]);
+$code="extract(unserialize('".str_replace(["\\","'"],["\\\\","\\'"],serialize($variables))."'));\n$code";
+return $code;
 }public function changeCode($cod){
 $code=unce($this->closure);
 if($code==XNSERIALIZE_CLOSURE_ERROR)return false;
@@ -6186,6 +6194,8 @@ $arr.=unce($k).':'.unce($v).',';
 }if($arr=='{')return '{}';
 return substr($arr,0,-1).'}';
 }elseif(is_closure($data)){
+if($data instanceof XNClosure)
+$data=$data->closure();
 $r=new ReflectionFunction($data);
 $pare=$r->getParameters();
 $pars=[];
@@ -6330,12 +6340,7 @@ for($c=1;isset($arr[$c]);++$c)
 $size=$size*255+$arr[$c];
 return (int)$size;
 }
-$GLOBALS['-XN-']['serializeParent']=false;
 function xnserialize(...$datas){
-if(!$GLOBALS['-XN-']['serializeParent'])
-$savep=new ThumbCode(function(){
-$GLOBALS['-XN-']['serializeParent']=false;
-});
 $dall='';
 foreach($datas as $data){
 $type=gettype($data);
@@ -6359,12 +6364,7 @@ $m=strlen($data)-strpos($data,'.')-1;
 $data*=10**$m;
 $data=chr(strlen($data)).chr($m).$data;
 break;case "array":
-if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=$data;
-elseif($GLOBALS['-XN-']['serializeParent']===$data){
-$dtype=11;
-$data='';
-break;
-}$dtype=7;
+$dtype=7;
 $d=[];
 foreach($data as $k=>$v){
 $d[]=$k;
@@ -6373,12 +6373,7 @@ $d[]=$v;
 $data=xnsize_encode(strlen($data)).$data;
 break;case "object":
 if(is_stdClass($data)){
-if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=$data;
-elseif($GLOBALS['-XN-']['serializeParent']===$data){
-$dtype=11;
-$data='';
-break;
-}$dtype=8;
+$dtype=8;
 $data=(array)$data;
 $d=[];
 foreach($data as $k=>$v){
@@ -6452,12 +6447,7 @@ if($file=="\x00")$file="\x01\x01\x01";
 $data=$par.$sts.$type.$file;
 $data=xnsize_encode(strlen($data)).$data;
 }else{
-if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=$data;
-elseif($GLOBALS['-XN-']['serializeParent']===$data){
-$dtype=11;
-$data='';
-break;
-}$dtype=10;
+$dtype=10;
 $name=get_class($data);
 $data=(array)$data;
 $d=[];
@@ -6472,10 +6462,6 @@ return XNSERIALIZE_TYPE_INVALID;
 }$dall.=chr($dtype).$data;
 }return $dall;
 }function xnunserialize($datas){
-if(!$GLOBALS['-XN-']['serializeParent'])
-$savep=new ThumbCode(function(){
-$GLOBALS['-XN-']['serializeParent']=false;
-});
 $u=strlen($datas);
 $dall=[];
 for($c=0;$c<$u;){
@@ -6501,7 +6487,6 @@ $m=ord($datas[$c++]);
 $data=(double)substr($datas,$c,$l);
 $c+=$l;
 break;case 7:
-if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=&$data;
 $l=ord($datas[$c++]);
 $size=substr($datas,$c,$l);
 $size=xnsize_decode(chr($l).$size);
@@ -6513,7 +6498,6 @@ $data=[];
 for($o=0;isset($d[$o]);$o+=2)
 $data[$d[$o]]=$d[$o+1];
 break;case 8:
-if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=&$data;
 $l=ord($datas[$c++]);
 $size=substr($datas,$c,$l);
 $size=xnsize_decode(chr($l).$size);
@@ -6607,7 +6591,6 @@ $$k=$v;
 return eval("return $func;");
 })();
 break;case 10:
-if(!$GLOBALS['-XN-']['serializeParent'])$GLOBALS['-XN-']['serializeParent']=&$data;
 $l=ord($datas[$c++]);
 $size=substr($datas,$c,$l);
 $c+=$l;
@@ -6630,7 +6613,7 @@ $data=serialize((object)$data);
 $data=replaceone("8:\"stdClass\"",strlen($name).":\"$name\"",$data);
 $data=unserialize($data);
 break;case 11:
-return $GLOBALS['-XN-']['serializeParent'];
+
 break;default:
 return XNSERIALIZE_TYPE_INVALID;
 }$dall[]=$data;
@@ -7614,7 +7597,7 @@ else $GLOBALS['-XN-']['savememory']=$GLOBALS;
 }function back_memory($file=false){
 if($file&&file_exists($file))$GLOBALS=xnunserialize(fget($file));
 elseif(!$file)$GLOBALS=$GLOBALS['-XN-']['savememory'];
-}function numberboolencode($x,int $bbv=12){
+}function boolnumber($x,int $bbv=12){
 $tree=XNMath::tree($x);
 $strs=[];
 foreach($tree as $num){
@@ -7637,9 +7620,12 @@ $strs[$num]=["($s)",1];
 }}$s=[];
 foreach($strs as $num){
 if($num[1]==1)$s[]=$num[0];
-else $s[]=$num[0].'**('.numberboolencode($num[1]).')';
+else $s[]=$num[0].'**('.boolnumber($num[1]).')';
 }$s=implode("*",$s);
 return preg_replace('/\((\([^\(\)]+\))\)/','$1',$s);
+}function boolstring($str){
+if(!$str)return '';
+return "chr(".implode(").chr(",array_map("boolnumber",array_values(unpack("c*",$str)))).")";
 }function distance_positions($x1,$y1,$x2,$y2){
 return rad2deg(acos((sin(deg2rad($x1))*sin(deg2rad($x2)))+(cos(deg2rad($x1))*cos(deg2rad($x2))*cos(deg2rad($y1-$y2)))))*111189.57696;
 }function is_regex($x){
@@ -8777,7 +8763,189 @@ private $modules=[
 
 }function brainfuck2($code,$input=''){
 return (new BrainFuck2($code,$input))->getOutputString();
+}class XNObject {
+private $var        = null,
+        $call       = [],
+        $static     = [],
+        $destruct   = null,
+        $wakeup     = null,
+        $tostring   = null,
+        $callmethod = null,
+        $callstatic = null,
+        $invoke     = null,
+        $clone      = null;
+public function var(&$var){
+$this->var=&$var;
+$var=$this;
+}public function __construct(&$var=null){
+if($var)$this->from($var);
+}public function from(&$object){
+$object=serialize((object)$object);
+$object=replaceone("8:\"stdClass\"","8:\"XNObject\"",$object);
+$object=unserialize($object);
+$object->var($object);
+return $object;
+}public function set(string $var,string $type,$value){
+set_class_var($this->var,$type,$var,$value);
+}public function get(string $var){
+return get_class_var($this->var,get_class_var_type($this->var,$var),$var);
+}public function type(string $var){
+return get_class_var_type($this->var,$var);
+}public function setMethod(string $method,object $value){
+$this->call[$method]=$value;
+}public function setStaticMethod(string $method,object $value){
+$this->static[$method]=$value;
+}public function setDestruct(object $value){
+$this->destruct=$value;
+}public function setWakeup(object $value){
+$this->wakeup=$value;
+}public function setTostring(object $value){
+$this->tostring=$value;
+}public function setInvoke(object $value){
+$this->invoke=$value;
+}public function setClone(object $value){
+$this->clone=$value;
+}public function clone(){
+return $this->__clone();
+}public function __destruct(){
+if($this->destruct)($this->destruct)();
+}public function __toString(){
+if($this->tostring)($this->tostring)();
+}public function __clone(){
+if($this->clone)if(($r=($this->clone)())&&is_object($r))return $r;
+$object=$this->object;
+return new XNObject($object);
+}public function __call($x,$y){
+if($this->callmethod)$r=($this->callmethod)($x,$y);
+if(isset($this->call[$x]))
+return ($this->call[$x])(...$y);
+if(isset($r))return $r;
+}public static function __callStatic($x,$y){
+if($this->callstatic)$r=($this->callstatic)($x,$y);
+if(isset($this->static[$x]))
+return ($this->static[$x])(...$y);
+if(isset($r))return $r;
+}public function all(){
+return get_class_all_vars($this->var);
 }
+}
+function xnobject($object=null){
+return $object=new XNObject($object);
+class XNCode {
+private $code,$errorfile="error_log",$wait=false,$proc,$pipes,$php="php",$timer=0,$global=false,$response;
+public function setCode($code){
+if($code instanceof XNClosure){
+$code = $code->getCode();
+}elseif($code instanceof Closure){
+$code = (new XNClosure($code))->getCode();
+}elseif(is_string($code)&&(file_exists($code)||filter_var($code,FILTER_VALIDATE_URL))){
+$code = file_get_contents($code);
+}elseif(is_string($code));
+else{
+new XNError("XNCode","Invalid Code or Closure or File");
+return false;
+}$this->code = $code;
+return true;
+}public function getCode($code){
+return $this->code;
+}public function __construct($code=''){
+$this->setCode($code);
+}public function setPHPConsole($php="php"){
+if(!XNStr::endiby($php,"php.exe")&&$php!='php')return false;
+$this->php=$php;
+return true;
+}public function addCode($code){
+$last = $this->code;
+$this->setCode($code);
+$code = $this->code;
+$this->code = "$last;$code";
+}public function timer($time){
+if(!is_numeric($time))return false;
+$this->timer=$time;
+return true;
+}public function global(bool $global=null){
+if($global===null)$global=!$this->global;
+$this->global=$global;
+}private function setErrorFile(string $file=''){
+$this->errorfile=$file;
+}private function compile(){
+$code = $this->code;
+if($this->global){
+$variables=array_clone($GLOBALS);
+foreach($variables as $key=>$val)
+if($key=="GLOBALS"||$key=="-XN-")unset($variables[$key]);
+foreach($variables as $key=>$val){
+if(is_object($val))$val="unserialize(base64_decode('".base64_encode(serialize($val))."'))";
+else $val=unce($val);
+$code="\${'".str_replace(["\\","'"],["\\\\","\\'"],$key)."'}=$val;\n$code";
+}
+}if($this->timer){
+$code="usleep({$this->timer});\n$code";
+}$code="<?php\n$code\n?>";
+return $code;
+}private function open(){
+$proc=proc_open($this->php,$this->errorfile?[
+["pipe","r"],
+["pipe","w"],
+["file",$this->errorfile,"a"]
+]:[
+["pipe","r"],
+["pipe","w"]
+],$pipes,".",["PARENT_XNCODE"=>__FILE__]);
+$this->proc=$proc;
+$this->pipes=$pipes;
+return $pipes;
+}public function run(){
+if($this->proc){
+new XNError("XNCode","you last runned the Code");
+return false;
+}$pipes=$this->open();
+fwrite($pipes[0],$this->compile());
+return true;
+}public function close(){
+if($this->proc){
+fclose($this->pipes[0]);
+fclose($this->pipes[1]);
+if(!$this->wait)proc_terminate($this->proc,15);
+proc_close($this->proc);
+$this->proc=null;
+$this->response=null;
+}
+}public function __destruct(){
+if(!$this->proc);
+elseif($this->wait)
+$this->close();
+else{
+fclose($this->pipes[0]);
+fclose($this->pipes[1]);
+}
+}public function response(){
+if(!$this->proc){
+new XNError("XNCode","code not runned");
+return false;
+}return $this->response?$this->response:$this->response=stream_get_contents($this->pipes[1]);
+}public function wait($timeout=0){
+if(!$this->proc){
+new XNError("XNCode","code not runned");
+return false;
+}if(!$timeout){
+while(fgets($this->pipes[1])!==false);
+}else{
+$end=time()+$timeout;
+while(fgets($this->pipes[1])!==false&&time()<=$end);
+if(time()>$end)return null;
+}return true;
+}public function stop(){
+proc_terminate($this->proc);
+}
+}if(!isset($argv))
+$argv=[__FILE__];
+if(!isset($argc))
+$argc=1;
+if(!isset($_SERVER['argv']))
+$_SERVER['argv']=[__FILE__];
+if(!isset($_SERVER['argc']))
+$_SERVER['argc']=1;
 
 $GLOBALS['-XN-']['requirefile']=debug_backtrace();
 $GLOBALS['-XN-']['sourcefile']=end($GLOBALS['-XN-']['requirefile']);
