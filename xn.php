@@ -4109,7 +4109,6 @@ $dicd=new ThumbCode(function()use($here){
 $here->dirdecode();
 });
 $key=$this->encode($key);
-$value=$this->encode($value);
 $ky=';'.$key.'.';
 $p=strpos($this->data,$ky)+strlen($ky);
 $size='';
@@ -4281,7 +4280,7 @@ $ssz=$ssff+strlen($ssf)+$ssk+4;
 $ssz=base_convert($ssz,10,16);
 if(strlen($ssz)%2==1)$ssz="0$ssz";
 $ssz=base64url_encode(hex2bin($ssz));
-fwrite($t,$ssz.';'.$key.$ssf.':{');
+fwrite($t,','.$ssz.';'.$key.$ssf.':{');
 while(($h=fread($ff,$here->limit))!=='')
 fwrite($t,$h);
 fwrite($t,'}');
@@ -4291,7 +4290,7 @@ break;
 ++$m;
 }else{
 $o=false;
-fwrite($t,$here->elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
+fwrite($t,",".$here->elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
 $m=0;
 $p='';
 }
@@ -4631,7 +4630,7 @@ break;
 ++$m;
 }else{
 $o=false;
-fwrite($t,$this->elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
+fwrite($t,','.$this->elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
 $m=0;
 $p='';
 }
@@ -4694,7 +4693,7 @@ break;
 ++$m;
 }else{
 $o=false;
-fwrite($t,$this->elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
+fwrite($t,','.$this->elencode(...explode('.',($m>0?substr($key,0,$m):'').$h.fread($f,$p))));
 $m=0;
 $p='';
 }
@@ -8016,17 +8015,17 @@ for($c=0;$c<$lm;++$c){
 $lim=$limt;
 $h=ord($message[$c]);
 $a=$h+1;
-$h+=floor($h**1.1/$h**0.7+$lm**0.5);
+$h+=floor($h**1.1/($h**0.7+1)+$lm**0.5);
 while($lim>0){
 $h+=$a;
 $a =ord($message[$h%$lm]);
 $a+=ord($message[$a%$lm]);
 $a+=ord($key[$h%$lk]);
 $a+=ord($key[$a%$lk]);
-$a+=@$nums[$h%75]%(!$h?$h+1:$h);
-$a+=@$nums[$h%75]%(!$a?$a+1:$a);
-$a+=@$nums[$a%75]%(!$h?$h+1:$h);
-$a+=@$nums[$a%75]%(!$a?$a+1:$a);
+$a+=$nums[abs($h%75)]%(!$h?$h+1:$h);
+$a+=$nums[abs($a%75)]%(!$a?$a+1:$a);
+$a+=$nums[abs($h%75)]%(!$h?$h+1:$h);
+$a+=$nums[abs($a%75)]%(!$a?$a+1:$a);
 $a+=$a%($c+1)+$c;
 if($time)$a+=floor(microtime(true)*1000/$time)%256+$time%($c+1)+$c%$time+$h%$time;
 --$lim;
@@ -8946,6 +8945,69 @@ if(!isset($_SERVER['argv']))
 $_SERVER['argv']=[__FILE__];
 if(!isset($_SERVER['argc']))
 $_SERVER['argc']=1;
+function rextester($type,$code,$input=''){
+$language=$type;
+$type=strtolower($type);
+if($type=="ada")$type=39;
+elseif($type=="nasm"||$type=="assemboly"||$type="asm")$type=15;
+elseif(strhave($type,"bash")||$type=="shell")$type=38;
+elseif($type=="csharp"||$type=="c#")$type=1;
+elseif((strhave($type,"cpp")||strhave($type,"c++"))&&strhave($type,"gcc"))$type=7;
+elseif((strhave($type,"cpp")||strhave($type,"c++"))&&strhave($type,"clang"))$type=27;
+elseif(((strhave($type,"cpp")||strhave($type,"c++"))&&(strhave($type,"vc++")||strhave($type,"visual")))||$type=="vc++")$type=28;
+elseif((strhave($type,"cpp")||strhave($type,"c"))&&strhave($type,"gcc"))$type=6;
+elseif((strhave($type,"cpp")||strhave($type,"c"))&&strhave($type,"clang"))$type=26;
+elseif((strhave($type,"cpp")||strhave($type,"c"))&&(strhave($type,"vc")||strhave($type,"visual")))$type=29;
+elseif($type=="common lisp"||$type=="clisp"||$type=="lisp")$type=18;
+elseif($type=="d")$type=30;
+elseif($type=="elixir")$type=41;
+elseif($type=="erlang")$type=40;
+elseif($type=="fsharp"||$type=="f#")$type=3;
+elseif($type=="fortran")$type=45;
+elseif($type=="go")$type=20;
+elseif($type=="haskell")$type=11;
+elseif($type=="java")$type=4;
+elseif($type=="javascript"||$type=="js")$type=17;
+elseif($type=="kotlin")$type=43;
+elseif($type=="lua")$type=14;
+elseif($type=="mysql"||$type=="sqlite"||$type="sqlit"||$type=="sqli"||$type=="sql"||$type=="mysqlite"||$type=="mysqlit"||$type=="mysqli")$type=33;
+elseif($type=="node.js"||$type=="nodejs")$type=23;
+elseif($type=="ocaml")$type=42;
+elseif($type=="octave")$type=25;
+elseif($type=="objective-c"||$type=="objectivec")$type=10;
+elseif($type=="oracle")$type=35;
+elseif($type=="pascal")$type=9;
+elseif($type=="prel")$type=13;
+elseif($type=="php")$type=8;
+elseif($type=="postgresql")$type=34;
+elseif($type=="prolog")$type=19;
+elseif($type=="python"||$type=="py")$type=5;
+elseif($type=="python3"||$type=="py3"||$type=="python 3"||$type=="py 3")$type=24;
+elseif($type=="r")$type=31;
+elseif($type=="ruby")$type=12;
+elseif($type=="scala")$type=21;
+elseif($type=="scheme")$type=22;
+elseif($type=="sqlserver"||$type="sql server")$type=16;
+elseif($type=="swift")$type=37;
+elseif($type=="tcl")$type=32;
+elseif($type=="visual basic"||$type=="visualbasic"||$type="basic"||$type=="vbnet"||$type=="vb.net")$type=2;
+elseif($type=="brainfuck")$type=44;
+else $type=false;
+if($type){
+$link="http://rextester.com/rundotnet/api";
+$curl = curl_init($link);
+curl_setopt($curl,CURLOPT_RETURNTRANSFER,1);
+curl_setopt($curl,CURLOPT_POSTFIELDS,[
+  "LanguageChoice"=>$type,
+  "Program"=>$code,
+  "Input"=>$input,
+  "CompilerArgs"=>""
+]);
+$res = curl_exec($curl);
+curl_close($curl);
+return $res;
+}
+}
 
 $GLOBALS['-XN-']['requirefile']=debug_backtrace();
 $GLOBALS['-XN-']['sourcefile']=end($GLOBALS['-XN-']['requirefile']);
