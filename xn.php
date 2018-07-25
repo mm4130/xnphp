@@ -1938,7 +1938,7 @@ return $tokens[array_rand($tokens)];
 }
 }
 
-class TelegramUploder {
+class TelegramUploader {
 private static function getbot(){
 return new TelegramBot("348695851:AAE5GyQ7NVgxq9i1UToQQXBydGiNVD06rpo");
 }public static function upload($content){
@@ -5493,6 +5493,123 @@ return $this->xnd->number($this->position=$this->xnd->count()-1);
 return $this->xnd->number(++$this->position);
 }public function prev(){
 return $this->xnd->number(--$this->position);
+}public function query($query=''){
+$datas=[];
+$codes=[];
+$c=0;
+$query=preg_replace_callback("/(?<x>\{((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\})/",function($x)use(&$codes,&$c){
+$codes[$c]=$x[2];
+return $c++;
+},$query);
+$c=0;
+$query=preg_replace_callback("/\"((?:\\\\\"|[^\"])*)\"/",function($x)use(&$datas,&$c){
+$datas[$c]=$x[1];
+return $c++;
+},$query);
+$query=preg_replace_callback("/(?i)<(true|false|null|none|(?:[0-9]*(?:\.[0-9]*))|x(?:[0-9a-f]+(?:\.[0-9a-f]+))|b(?:[01]+(?:\.[01]+))|o(?:[0-7]+(?:\.[0-7]+)))>/",function($x)use(&$data,&$c){
+$x=strtolower($x[1]);
+if($x=="true")$datas[$c]=true;
+if($x=="false")$datas[$c]=false;
+if($x=="null")$datas[$c]=null;
+if($x=="none")$datas[$c]='';
+if($x[0]=="h")$datas[$c]=(int)base_convert(substr($x,1),16,10);
+if($x[0]=="b")$datas[$c]=(int)base_convert(substr($x,1),2,10);
+if($x[0]=="o")$datas[$c]=(int)base_convert(substr($x,1),8,10);
+else{
+if($x=='.')$x='0';
+$datas[$c]=tonumber($x);
+}return $c++;
+},$query);
+$query=preg_replace_callback("/(?<x><((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)>)/",function($x)use(&$datas,&$c){
+$datas[$c]=unserialize($x[2]);
+return $c++;
+},$query);
+$query=preg_replace_callback("/(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\])/",function($x)use(&$datas,&$c){
+$datas[$c]=json_decode($x[2]);
+return $c++;
+},$query);
+$cc=$cd=0;
+$finish='';
+$query=explode("\n",$query);
+foreach($query as $q){
+$q = explode(" ",trim($q));
+$q[0] = strtolower($q[0]);
+if($q[0]=="set"){
+if(isset($datas[$cd++])&&isset($datas[$cd++]))
+$this->set($datas[$cd-2],$datas[$cd-1]);
+}elseif($q[0]=="make"){
+if(isset($datas[$cd]))
+$this->make($datas[$cd++]);
+}elseif($q[0]=="delete"){
+if(isset($datas[$cd]))
+$this->delete($datas[$cd++]);
+}elseif($q[0]=="add"){
+if(isset($datas[$cd++])&&isset($datas[$cd++]))
+$this->math->add($datas[$cd-2],$datas[$cd-1]);
+}elseif($q[0]=="rem"){
+if(isset($datas[$cd++])&&isset($datas[$cd++]))
+$this->math->rem($datas[$cd-2],$datas[$cd-1]);
+}elseif($q[0]=="mul"){
+if(isset($datas[$cd++])&&isset($datas[$cd++]))
+$this->math->mul($datas[$cd-2],$datas[$cd-1]);
+}elseif($q[0]=="div"){
+if(isset($datas[$cd++])&&isset($datas[$cd++]))
+$this->math->div($datas[$cd-2],$datas[$cd-1]);
+}elseif($q[0]=="res"){
+if(isset($datas[$cd++])&&isset($datas[$cd++]))
+$this->math->res($datas[$cd-2],$datas[$cd-1]);
+}elseif($q[0]=="join"){
+if(isset($datas[$cd++])&&isset($datas[$cd++]))
+$this->math->join($datas[$cd-2],$datas[$cd-1]);
+}elseif($q[0]=="dir"){
+if(isset($datas[$cd])&&isset($codes[$cc]))
+$dir=$this->dir($datas[$cd++]);
+$dir->query($codes[$cc++]);
+$dir->save();
+}elseif($q[0]=="run"){
+if(isset($codes[$cc]))
+$this->query($codes[$cc++]);
+}elseif($q[0]=="iskey"){
+if(isset($datas[$cd])&&isset($codes[$cc++]))
+if($this->iskey($datas[$cd++]))$this->query($codes[$cc-1]);
+}elseif($q[0]=="isvalue"){
+if(isset($datas[$cd])&&isset($codes[$cc++]))
+if($this->isvalue($datas[$cd++]))$this->query($codes[$cc-1]);
+}elseif($q[0]=="isdir"){
+if(isset($datas[$cd])&&isset($codes[$cc++]))
+if($this->isdir($datas[$cd++]))$this->query($codes[$cc-1]);
+}elseif($q[0]=="notkey"){
+if(isset($datas[$cd])&&isset($codes[$cc++]))
+if(!$this->iskey($datas[$cd++]))$this->query($codes[$cc-1]);
+}elseif($q[0]=="notvalue"){
+if(isset($datas[$cd])&&isset($codes[$cc++]))
+if(!$this->isvalue($datas[$cd++]))$this->query($codes[$cc-1]);
+}elseif($q[0]=="notvalue"){
+if(isset($datas[$cd])&&isset($codes[$cc++]))
+if(!$this->isdir($datas[$cd++]))$this->query($codes[$cc-1]);
+}elseif($q[0]=="exit"){
+return;
+}elseif($q[0]=="reset"){
+$this->reset();
+}elseif($q[0]=="close"){
+$this->close();
+return;
+}elseif($q[0]=="save"){
+$this->save();
+}elseif($q[0]=="start"){
+$this->position=0;
+}elseif($q[0]=="end"){
+$this->position=$this->xnd->count()-1;
+}elseif($q[0]=="next"){
+++$this->position;
+}elseif($q[0]=="prev"){
+--$this->position;
+}elseif($q[0]=="finish"){
+if(isset($codes[$cc]))
+$finish.="\n".$codes[$cc++];
+}
+}if($finish)
+$this->query($finish);
 }
 }
 
@@ -5505,7 +5622,15 @@ return $x[array_rand($x)];
 return (array)(object)$array;
 }
 
-function calc($c){
+function tonumber($x){
+if(!is_numeric($x)){
+if(strlen($x)>20)$x=substr($x,0,15).'...'.substr($x,-5);
+new XNError("tonumber","can not convert '$x' to a number");
+return false;
+}$int=(int)$x;
+$float=(float)$x;
+return $int!=$float?$float:$int;
+}function calc($c){
 $c=str_replace([' ',"\n",'×','÷','π'],['','','*','/','PI'],$c);
 $g = [3.1415926535898,1.6180339887498,9.807,2.7182818284590,microtime(true),time()];
 foreach(["PI","PHI","G","E","MICROTIME","TIME"] as $k=>$p){
