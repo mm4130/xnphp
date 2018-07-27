@@ -158,7 +158,7 @@ $to=array_merge($to,(array)$arg);
 }function xneval($code,&$save=5636347437634){
 $p=strpos($code,"<?");
 if($p===false||$p==-1)$code="<?php ".$code;
-$random = rand(0,99999999).rand(0,99999999);
+$random=rand(0,99999999).rand(0,99999999);
 fput("xn$random.log",$code);
 $z=new thumbCode(function()use($random){
 unlink("xn$random.log");
@@ -585,7 +585,7 @@ private $msgs=[];
 public function get(string $name){
 return isset($this->msgs[$name])?$this->msgs[$name]:false;
 }public function add(string $name,$message){
-$message = XNString::toString($message);
+$message=XNString::toString($message);
 $this->msgs[$name]=$message;
 return $this;
 }public function delete(string $name){
@@ -905,7 +905,7 @@ $this->results[]=$this->final=$res;
 }if($res===false)return false;
 if($res===true)return true;
 if(!$res){
-$server = ["OUTPUT","api.telegram.org","api.telegram.org","api.pwrtelegram.xyz","api.pwrtelegram.xyz"][$level-1];
+$server=["OUTPUT","api.telegram.org","api.telegram.org","api.pwrtelegram.xyz","api.pwrtelegram.xyz"][$level-1];
 new XNError("TelegramBot","network error for Connect to $server",1);
 return false;
 }elseif(!$res->ok){
@@ -1885,11 +1885,13 @@ $title=$x->query("$path//div[@class='tgme_page_title']");
 if(!isset($title[0]))return false;
 $title=trim($title[0]->nodeValue);
 $description=$x->query("$path//div[@class='tgme_page_description']")[0]->nodeValue;
-$members=explode(' ',$x->query("$path//div[@class='tgme_page_extra']")[0]->nodeValue)[0];
+$members=explode(' ',$x->query("$path//div[@class='tgme_page_extra']")[0]->nodeValue);
+unset($members[count($members)-1]);
+$members=implode('',$members)*1;
 $r=["title"=>$title];
 if($photo)$r['photo']=$photo;
 if($description)$r['description']=$description;
-if($members>0)$r['members']=$members*1;
+if($members>0)$r['members']=$members;
 return (object)$r;
 }public static function getJoinChat($code){
 return self::getChat("joinchat/$code");
@@ -1906,7 +1908,7 @@ return (object)[
 "title"=>$title
 ];
 }public function channelCreatedDate($channel){
-return self::getMessage($channel,1)["date"];
+return self::getMessage($channel,1)->date;
 }
 }
 
@@ -2992,26 +2994,26 @@ $key=substr($a,0,8).substr($b,8,12).substr($c,4,12);
 $iv=substr($a,8,12).substr($b,0,8).substr($c,16,4).substr($d,0,8);
 return [$key,$iv];
 }public function ige_encrypt($msg,$key,$iv){
-$cipher = new \phpseclib\Crypt\AES('ige');
+$cipher=new \phpseclib\Crypt\AES('ige');
 $cipher->setKey($key);
 $cipher->setIV($iv);
 return @$cipher->encrypt($msg);
 }public function ctr_encrypt($msg,$key,$iv){
-$cipher = new \phpseclib\Crypt\AES('ctr');
+$cipher=new \phpseclib\Crypt\AES('ctr');
 $cipher->setKey($key);
 $cipher->setIV($iv);
 return @$cipher->encrypt($msg);
 }public function ige_decrypt($msg,$key,$iv){
-$cipher = new \phpseclib\Crypt\AES('ige');
+$cipher=new \phpseclib\Crypt\AES('ige');
 $cipher->setKey($key);
 $cipher->setIV($iv);
 return @$cipher->decrypt($msg);
 }
 }
 class XNTelegram {
-private $servers = [];
+private $servers=[];
 }function var_get($var){
-$c=file($GLOBALS['-XN-']['sourcefile'])[theline()-1];
+$c=file(thefile())[theline()-1];
 if(preg_match('/var_name[\n ]*\([@\n ]*\$([a-zA-Z_0-9]+)[\n ]*((\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\)))*\)/',$c,$s)){
 $s[0]=substr($s[0],9,-1);
 preg_match_all('/(\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\))/',$s[0],$j);
@@ -4072,11 +4074,6 @@ $data=substr($data,$pp+$vallen);
 $values[]=$this->decode($key);
 }return $values;
 }private function replace($key,$value){
-$this->direncode();
-$here=&$this;
-$dicd=new ThumbCode(function()use($here){
-$here->dirdecode();
-});
 $key=$this->encode($key);
 $value=$this->encode($value);
 $el2=$this->elencode($key,$value);
@@ -4103,11 +4100,6 @@ if(self::iskey($key))$this->replace($key,$value);
 else $this->add($key,$value);
 return $this;
 }public function delete($key){
-$this->direncode();
-$here=&$this;
-$dicd=new ThumbCode(function()use($here){
-$here->dirdecode();
-});
 $key=$this->encode($key);
 $ky=';'.$key.'.';
 $p=strpos($this->data,$ky)+strlen($ky);
@@ -4127,16 +4119,14 @@ $here=&$this;
 $dicd=new ThumbCode(function()use($here){
 $here->dirdecode();
 });
-$this->direncode();
-$here=&$this;
-$dicd=new ThumbCode(function()use($here){
-$here->dirdecode();
-});
 $data=explode(',',substr($this->data,1,-1));
 foreach($data as &$dat){
 $dat=$this->eldecode($dat);
 $dat[0]=$this->decode($dat[0]);
-$dat[1]=$this->decode($dat[1]);
+var_dump($dat[1]);
+if($dat[1][strlen($dat)-1]==">")
+$dat[1]=(new XNDataString(substr(explode(':',$this->dirs[substr(explode(':',$dat[1])[1],1,-1)])[1],1,-1)))->array();
+else $dat[1]=$this->decode($dat[1]);
 }return $data;
 }public function count(){
 $this->direncode();
@@ -4181,7 +4171,7 @@ return strlen($this->data);
 }private $dirs=[],$dirc=-1;
 private function direncode(){
 $here=&$this;
-$this->data=preg_replace_callback("/\.([a-zA-Z\-_0-9]+):\{(?:\\\\\{|\\\\\}|[^\{\}]|(?R))*\}/",function($x)use($here){
+$this->data=preg_replace_callback("/\.(?:[a-zA-Z\-_0-9]+):(?<x>\{(?:\g<x>|[^\{\}])*\})/",function($x)use($here){
 ++$here->dirc;
 $size=strlen($here->dirc)+2;
 $size=base_convert($size,10,16);
@@ -4193,8 +4183,7 @@ return $data;
 },$this->data);
 $this->dirc=-1;
 }private function dirdecode(){
-foreach($this->dirs as $k=>$v)
-$this->data=str_replace($k,$v,$this->data);
+$this->data=strtr($this->data,$this->dirs);
 }public function make($name){
 if($this->iskey($name))$this->delete($name);
 $key=$this->encode($name);
@@ -4731,7 +4720,9 @@ if($h==';'){
 $p=$this->sizedecode($p);
 $ar=$this->eldecode(';'.fread($f,$p));
 $ar[0]=$this->decode($ar[0]);
-$ar[1]=$this->decode($ar[1]);
+if($dat[1][0]=="{")
+$dat[1]=(new XNDataString(substr($data[1],1,-1)))->array();
+else $dat[1]=$this->decode($dat[1]);
 $arr[]=$ar;
 fseek($f,1,SEEK_CUR);
 $p='';
@@ -5165,7 +5156,9 @@ if($h==';'){
 $p=$this->sizedecode($p);
 $ar=$this->eldecode(';'.fread($f,$p));
 $ar[0]=$this->decode($ar[0]);
-$ar[1]=$this->decode($ar[1]);
+if($dat[1][0]=="{")
+$dat[1]=(new XNDataString(substr($data[1],1,-1)))->array();
+else $dat[1]=$this->decode($dat[1]);
 $arr[]=$ar;
 fgetc($f);
 $p='';
@@ -5532,8 +5525,8 @@ $cc=$cd=0;
 $finish='';
 $query=explode("\n",$query);
 foreach($query as $q){
-$q = explode(" ",trim($q));
-$q[0] = strtolower($q[0]);
+$q=explode(" ",trim($q));
+$q[0]=strtolower($q[0]);
 if($q[0]=="set"){
 if(isset($datas[$cd++])&&isset($datas[$cd++]))
 $this->set($datas[$cd-2],$datas[$cd-1]);
@@ -5607,9 +5600,50 @@ $this->position=$this->xnd->count()-1;
 }elseif($q[0]=="finish"){
 if(isset($codes[$cc]))
 $finish.="\n".$codes[$cc++];
+}elseif($q[0]=="type"){
+$cs=[];
+foreach(explode("-",$q[1]) as $n){
+foreach(explode(',',$n) as $m){
+if(isset($datas[$cd])&&isset($codes[$cc])&&$m=="iskey"&&$this->iskey($datas[$cd++]))
+$cs[]=$codes[$cc++];
+elseif(isset($datas[$cd])&&isset($codes[$cc])&&$m=="notkey"&&!$this->iskey($datas[$cd++]))
+$cs[]=$codes[$cc++];
+elseif(isset($datas[$cd])&&isset($codes[$cc])&&$m=="isvalue"&&$this->isvalue($datas[$cd++]))
+$cs[]=$codes[$cc++];
+elseif(isset($datas[$cd])&&isset($codes[$cc])&&$m=="notvalue"&&!$this->notvalue($datas[$cd++]))
+$cs[]=$codes[$cc++];
+elseif(isset($datas[$cd])&&isset($codes[$cc])&&$m=="isdir"&&$this->isdir($datas[$cd++]))
+$cs[]=$codes[$cc++];
+elseif(isset($datas[$cd])&&isset($codes[$cc])&&$m=="notdir"&&!$this->isdir($datas[$cd++]))
+$cs[]=$codes[$cc++];
+elseif(isset($datas[$cd])&&isset($codes[$cc])&&$m=="is"&&$this->iskey($datas[$cd])&&$this->isvalue($datas[$cd++]))
+$cs[]=$codes[$cc++];
+elseif(isset($datas[$cd])&&isset($codes[$cc])&&$m=="not"&&!$this->iskey($datas[$cd])&&!$this->isvalue($datas[$cd++]))
+$cs[]=$codes[$cc++];
+}foreach($cs as $co)
+$this->query($co);
 }
 }if($finish)
 $this->query($finish);
+}
+}public function compote($dir){
+$file=filename($dir);
+if(is_file($dir))$this->set($file,file_get_contents($dir));
+else{
+if(!$this->isdir($file))
+$this->make($file);
+$d=$this->dir($file);
+foreach(scandir($dir) as $f)
+if($f!='..'&&$f!='.')$d->compote("$dir/$f");
+}
+}public function extract($dir="."){
+$here=&$this;
+if(!file_exists($dir))mkdir($dir);
+$this->all(function($key,$value)use(&$here,$dir){
+if($here->isdir($key))
+$here->dir($key)->extract("$dir/$key");
+else file_put_contents("$dir/$key",$value);
+});
 }
 }
 
@@ -5632,7 +5666,7 @@ $float=(float)$x;
 return $int!=$float?$float:$int;
 }function calc($c){
 $c=str_replace([' ',"\n",'×','÷','π'],['','','*','/','PI'],$c);
-$g = [3.1415926535898,1.6180339887498,9.807,2.7182818284590,microtime(true),time()];
+$g=[3.1415926535898,1.6180339887498,9.807,2.7182818284590,microtime(true),time()];
 foreach(["PI","PHI","G","E","MICROTIME","TIME"] as $k=>$p){
 $c=preg_replace("/([a-zA-Z0-9])$p/","$1*".$g[$k],$c);
 $c=preg_replace("/$p([\(\[])/",$g[$k]."*$1",$c);
@@ -5979,7 +6013,7 @@ ob_end_clean();
 imagedestroy($im2);
 return $get;
 }function screenshot(string $url,int $width=1280,bool $fullpage=false,bool $mobile=false,string $format="PNG"){
-return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=".urlencode($url)."&width=".$width."&fullpage=".json_encode($fullpage==true)."&moblie=".json_encode($mobile==true)."&format=".strtoupper($format));
+return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=".urlencode($url)."&width=".$width."&fullpaghttps://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=".urlencode($url)."&width=".$width."&fullpage=".($fullpage?"true":"false")."&moblie=".($mobile?"true":"false")."&format=".strtoupper($format));
 }function virusscanner($file){
 $key='639ed0eea3f1b650a7c35ef6dac6685f83c01cf08c67d44d52b043f5d26f5519';
 if(file_exists($file)){
@@ -7637,20 +7671,6 @@ return unce($str);
 return false;
 }public static function toregex(string $str){
 return str_replace("\Q\E",'',"\Q".str_replace('\E','\E\\\E\Q',$str)."\E");
-}public static function toiregex(string $str){
-return str_replace("\Q\E",'',"\Q".str_replace([
-"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r",
-"s","t","u","v","w","x","y","z","A","B","C","D","E","F","G","H","I",
-"J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"
-],[
-'\E[aA]\Q','\E[bB]\Q','\E[cC]\Q','\E[dD]\Q','\E[eE]\Q','\E[fF]\Q','\E[gG]\Q','\E[hH]\Q',
-'\E[iI]\Q','\E[jJ]\Q','\E[kK]\Q','\E[lL]\Q','\E[mM]\Q','\E[nN]\Q','\E[oO]\Q','\E[pP]\Q',
-'\E[qQ]\Q','\E[rR]\Q','\E[sS]\Q','\E[tT]\Q','\E[uU]\Q','\E[vV]\Q','\E[wW]\Q','\E[xX]\Q',
-'\E[yY]\Q','\E[zZ]\Q','\E[aA]\Q','\E[bB]\Q','\E[cC]\Q','\E[dD]\Q','\E[eE]\Q','\E[fF]\Q',
-'\E[gG]\Q','\E[hH]\Q','\E[iI]\Q','\E[jJ]\Q','\E[kK]\Q','\E[lL]\Q','\E[mM]\Q','\E[nN]\Q',
-'\E[oO]\Q','\E[pP]\Q','\E[qQ]\Q','\E[rR]\Q','\E[sS]\Q','\E[tT]\Q','\E[uU]\Q','\E[vV]\Q',
-'\E[wW]\Q','\E[xX]\Q','\E[yY]\Q','\E[zZ]\Q'
-],$str)."\E");
 }
 // calc functions
 public static function xorn(string $a,string $b){
@@ -7769,16 +7789,12 @@ return ["version"=>"1.7",
 "start_time"=>$GLOBALS['-XN-']['startTime'],
 "end_time"=>$GLOBALS['-XN-']['endTime'],
 "loaded_time"=>$GLOBALS['-XN-']['endTime']-$GLOBALS['-XN-']['startTime'],
-"dir_name"=>$GLOBALS['-XN-']['dirName'],
-"required_file"=>$GLOBALS['-XN-']['requirefile'],
-"required_line"=>$GLOBALS['-XN-']['requireline'],
-"source_file"=>$GLOBALS['-XN-']['sourcefile'],
-"source_line"=>$GLOBALS['-XN-']['sourceline']
+"dir_name"=>$GLOBALS['-XN-']['dirName']
 ];
 }class XNMath {
-const PI  = 3.1415926535898;
-const PHI = 1.6180339887498;
-const G   = 9.80665        ;
+const PI =3.1415926535898;
+const PHI=1.6180339887498;
+const G  =9.80665        ;
 public static function fact($n){
 $n=(int)$n;
 $r=1;
@@ -7906,14 +7922,14 @@ return substr($r,3);
 return $r;
 }
 }class Finder {
-const TOKEN = "/[0-9]{4,20}:AA[GFHE][a-zA-Z0-9-_]{32}/";
-const NUMBER = "/[0-9]+(?:\.[0-9]+){0,1}|\.[0-9]+|[0-9]+\./";
-const HEX = "/[0-9a-fA-F]+/";
-const BINARY = "/[01]+/";
-const LINK = "/(?:[a-zA-Z0-9]+:\/\/){0,1}(?:(?:[^ \n\r\t\.\/\\#?]+\.)*[^ \n\r\t\.\/\\#@?]{1,61}\.[^ \n\r\t\.\/\\#@?]{2,})(?:(?:(?:\/+)[^ \n\r\t\/\\#@?]+)*(?:\/*))(?:\?[^ \n\r\t\/\\#]*){0,1}(?:#[^ \n\r\t\/]*){0,1}/";
-const EMAIL = "/(?:[^ \n\r\t\/\\#?@]+)@(?:(?:[^ \n\r\t\.\/\\#?]+\.)*[^ \n\r\t\.\/\\#@?]{1,61}\.[^ \n\r\t\.\/\\#@?]{2,})/";
-const FILE_NAME = "/[^ \n\r\t\/\\#@?]+/";
-const DIRACTORY_NAME = "/(?:(?:(?:\/+)[^ \n\r\t\/\\#@?]+)*(?:\/*))/";
+const TOKEN="/[0-9]{4,20}:AA[GFHE][a-zA-Z0-9-_]{32}/";
+const NUMBER="/[0-9]+(?:\.[0-9]+){0,1}|\.[0-9]+|[0-9]+\./";
+const HEX="/[0-9a-fA-F]+/";
+const BINARY="/[01]+/";
+const LINK="/(?:[a-zA-Z0-9]+:\/\/){0,1}(?:(?:[^ \n\r\t\.\/\\#?]+\.)*[^ \n\r\t\.\/\\#@?]{1,61}\.[^ \n\r\t\.\/\\#@?]{2,})(?:(?:(?:\/+)[^ \n\r\t\/\\#@?]+)*(?:\/*))(?:\?[^ \n\r\t\/\\#]*){0,1}(?:#[^ \n\r\t\/]*){0,1}/";
+const EMAIL="/(?:[^ \n\r\t\/\\#?@]+)@(?:(?:[^ \n\r\t\.\/\\#?]+\.)*[^ \n\r\t\.\/\\#@?]{1,61}\.[^ \n\r\t\.\/\\#@?]{2,})/";
+const FILE_NAME="/[^ \n\r\t\/\\#@?]+/";
+const DIRACTORY_NAME="/(?:(?:(?:\/+)[^ \n\r\t\/\\#@?]+)*(?:\/*))/";
 public static function exists($str,$regex){
 return preg_match($regex,$str);
 }public static function find($str,$regex){
@@ -8888,16 +8904,16 @@ private $modules=[
 }function brainfuck2($code,$input=''){
 return (new BrainFuck2($code,$input))->getOutputString();
 }class XNObject {
-private $var        = null,
-        $call       = [],
-        $static     = [],
-        $destruct   = null,
-        $wakeup     = null,
-        $tostring   = null,
-        $callmethod = null,
-        $callstatic = null,
-        $invoke     = null,
-        $clone      = null;
+private $var       =null,
+        $call      =[],
+        $static    =[],
+        $destruct  =null,
+        $wakeup    =null,
+        $tostring  =null,
+        $callmethod=null,
+        $callstatic=null,
+        $invoke    =null,
+        $clone     =null;
 public function var(&$var){
 $this->var=&$var;
 $var=$this;
@@ -8959,16 +8975,16 @@ return $object=new XNObject($object);
 private $code,$errorfile="error_log",$wait=false,$proc,$pipes,$php="php",$timer=0,$global=false,$response;
 public function setCode($code){
 if($code instanceof XNClosure){
-$code = $code->getCode();
+$code=$code->getCode();
 }elseif($code instanceof Closure){
-$code = (new XNClosure($code))->getCode();
+$code=(new XNClosure($code))->getCode();
 }elseif(is_string($code)&&(file_exists($code)||filter_var($code,FILTER_VALIDATE_URL))){
-$code = file_get_contents($code);
+$code=file_get_contents($code);
 }elseif(is_string($code));
 else{
 new XNError("XNCode","Invalid Code or Closure or File");
 return false;
-}$this->code = $code;
+}$this->code=$code;
 return true;
 }public function getCode($code){
 return $this->code;
@@ -8979,10 +8995,10 @@ if(!XNStr::endiby($php,"php.exe")&&$php!='php')return false;
 $this->php=$php;
 return true;
 }public function addCode($code){
-$last = $this->code;
+$last=$this->code;
 $this->setCode($code);
-$code = $this->code;
-$this->code = "$last;$code";
+$code=$this->code;
+$this->code="$last;$code";
 }public function timer($time){
 if(!is_numeric($time))return false;
 $this->timer=$time;
@@ -8993,7 +9009,7 @@ $this->global=$global;
 }private function setErrorFile(string $file=''){
 $this->errorfile=$file;
 }private function compile(){
-$code = $this->code;
+$code=$this->code;
 if($this->global){
 $variables=array_clone($GLOBALS);
 foreach($variables as $key=>$val)
@@ -9120,7 +9136,7 @@ elseif($type=="brainfuck")$type=44;
 else $type=false;
 if($type){
 $link="http://rextester.com/rundotnet/api";
-$curl = curl_init($link);
+$curl=curl_init($link);
 curl_setopt($curl,CURLOPT_RETURNTRANSFER,1);
 curl_setopt($curl,CURLOPT_POSTFIELDS,[
   "LanguageChoice"=>$type,
@@ -9128,19 +9144,122 @@ curl_setopt($curl,CURLOPT_POSTFIELDS,[
   "Input"=>$input,
   "CompilerArgs"=>""
 ]);
-$res = curl_exec($curl);
+$res=curl_exec($curl);
 curl_close($curl);
 return $res;
 }
+}define("XNDEFINE_TEXT",1);
+define("XNDEFINE_REGEX",2);
+define("XNDEFINE_INPUT",3);
+define("XNDEFINE_REGEX_CALLBACK",4);
+define("XNDEFINE_INPUT_CALLBACK",5);
+define("XNDEFINE_ITEXT",6);
+define("XNDEFINE_IINPUT",7);
+define("XNDEFINE_CONST",8);
+define("XNDEFINE_ALL",1);
+define("XNDEFINE_STRING",2);
+define("XNDEFINE_NUMBER",3);
+define("XNDEFINE_CODE",4);
+$GLOBALS['-XN-']['xndefine']=file_get_contents(thefile());
+function xndefine(string $from,string $to,int $type=1,int $locate=1){
+$source=$GLOBALS['-XN-']['xndefine'];
+$source=implode("\n",array_slice(explode("\n",$source),theline()));
+if($type==XNDEFINE_CONST){
+define($from,$to);
+return;
+}switch($locate){
+case XNDEFINE_ALL:
+switch($type){
+case XNDEFINE_TEXT:
+$source=str_replace($from,$to,$source);
+break;case XNDEFINE_REGEX:
+$source=preg_replace_callback($from,$to,$source);
+break;case XNDEFINE_REGEX_CALLBACK:
+$source=preg_replace($from,$to,$source);
+break;case XNDEFINE_ITEXT:
+$source=str_ireplace($from,$to,$source);
+break;default:
+return false;
+break;
+}if(!$source)return false;
+$GLOBALS['-XN-']['xndefine']=$source;
+eval($source);
+exit;
+break;case XNDEFINE_STRING:
+$source=preg_replace_callback("/(?<!\\\\)(?:\'(?:\\\'|[^\'])*(?<!\\\\)\'|\"(?:\\\\\"|[^\"])*(?<!\\\\)\")/",function($x)use($from,$to,$type){
+$source=substr($x[0],1,-1);
+$x=$x[0][0];
+switch($type){
+case XNDEFINE_TEXT:
+$source=str_replace($from,$to,$source);
+break;case XNDEFINE_REGEX:
+$source=preg_replace_callback($from,$to,$source);
+break;case XNDEFINE_REGEX_CALLBACK:
+$source=preg_replace($from,$to,$source);
+break;case XNDEFINE_ITEXT:
+$source=str_ireplace($from,$to,$source);
+break;default:
+return false;
+break;
+}if(!$source)return false;
+return $x.$source.$x;
+},$source);
+if(!$source)return false;
+$GLOBALS['-XN-']['xndefine']=$source;
+eval($source);
+exit;
+break;case XNDEFINE_CODE:
+$saves=[];
+$source=preg_replace_callback("/(?i)(?:(?<!\\\\)(?:\'(?:\\\'|[^\'])*(?<!\\\\)\'|\"(?:\\\\\"|[^\"])*(?<!\\\\)\")|(?:[0-9]+\.[0-9]+|[0-9]+\.|\.[0-9]+|[0-9]+)|(?:0[xb][0-9]+)|true|false|null)/",function($x)use(&$saves,$source){
+$saves[]=[strpos($source,$x[0]),$x[0]];
+return '';
+},$source);
+if(!$source)return false;
+switch($type){
+case XNDEFINE_TEXT:
+$source=str_replace($from,$to,$source);
+break;case XNDEFINE_REGEX:
+$source=preg_replace_callback($from,$to,$source);
+break;case XNDEFINE_REGEX_CALLBACK:
+$source=preg_replace($from,$to,$source);
+break;case XNDEFINE_ITEXT:
+$source=str_ireplace($from,$to,$source);
+break;default:
+return false;
+break;
+}if(!$source)return false;
+foreach($saves as $save)
+$source=substr_replace($source,$save[1],$save[0],0);
+$GLOBALS['-XN-']['xndefine']=$source;
+eval($source);
+exit;
+break;default:
+if(is_string($locate)){
+$source=preg_replace_callback($locate,function($x)use($from,$to,$type){
+$x=$x[0];
+switch($type){
+case XNDEFINE_TEXT:
+$x=str_replace($from,$to,$x);
+break;case XNDEFINE_REGEX:
+$x=preg_replace_callback($from,$to,$x);
+break;case XNDEFINE_REGEX_CALLBACK:
+$x=preg_replace($from,$to,$x);
+break;case XNDEFINE_ITEXT:
+$x=str_ireplace($from,$to,$x);
+break;default:
+return false;
+break;
+}if(!$x)return false;
+return $x;
+},$source);
+if(!$source)return false;
+$GLOBALS['-XN-']['xndefine']=$source;
+eval($source);
+exit;
+}return false;
+break;
+}return true;
 }
-
-$GLOBALS['-XN-']['requirefile']=debug_backtrace();
-$GLOBALS['-XN-']['sourcefile']=end($GLOBALS['-XN-']['requirefile']);
-$GLOBALS['-XN-']['sourceline']=$GLOBALS['-XN-']['sourcefile']['line'];
-$GLOBALS['-XN-']['sourcefile']=$GLOBALS['-XN-']['sourcefile']['file'];
-$GLOBALS['-XN-']['requirefile']=$GLOBALS['-XN-']['requirefile'][0];
-$GLOBALS['-XN-']['requireline']=$GLOBALS['-XN-']['requirefile']['line'];
-$GLOBALS['-XN-']['requirefile']=$GLOBALS['-XN-']['requirefile']['file'];
 
 $GLOBALS['-XN-']['endTime']=microtime(true);
 ?>
