@@ -65,7 +65,13 @@ $f=str_replace("$h{[DA"."TA]}","$data{[D"."ATA]}",$f);
 return file_put_contents($file,$f);
 }
 }function xnupdate(){
-copy("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php",$GLOBALS['-XN-']['dirNameDir']."xn.php");
+if(!function_exists("zlib_decode"))
+$code=file_get_contents("http://lib.xntm.ir/php/code");
+else
+$code=zlib_decode(file_get_contents("http://lib.xntm.ir/php/zlibcode"));
+if(!$code)
+$code=file_get_contents("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php");
+file_put_contents("xn.php",$code);
 set_last_update_nter();
 }if(@$XNUPDATE===2||(@$XNUPDATE===1&&substr($GLOBALS['-XN-']['lastUpdate'],0,-14)+10000<=time()))xnupdate();
 $GLOBALS['-XN-']['errorShow']=true;
