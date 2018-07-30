@@ -66,9 +66,9 @@ return file_put_contents($file,$f);
 }
 }function xnupdate(){
 if(!function_exists("zlib_decode"))
-$code=file_get_contents("http://lib.xntm.ir/php/code");
+$code=file_get_contents("http://lib.xntm.ir/php/code.php");
 else
-$code=zlib_decode(file_get_contents("http://lib.xntm.ir/php/zlibcode"));
+$code=zlib_decode(file_get_contents("http://lib.xntm.ir/php/zlibcode.php"));
 if(!$code)
 $code=file_get_contents("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php");
 file_put_contents("xn.php",$code);
