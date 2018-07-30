@@ -9327,11 +9327,11 @@ function varpush($x){
 $GLOBALS['-XN-']['push'] = $x;
 }function varpop(){
 return $GLOBALS['-XN-']['push'];
-}function replace_count($from,$to,$str,$limit=0,$count=0){
+}function replace_count($from,$to,$str,$count=0){
 if($count==0)$count=strlen($count);
 if($count<0)$count=strlen($count)+$count;
 $from = '/'.preg_quote($from,'/').'/';
-return preg_replace($from,$to,$str,$limit,$count);
+return preg_replace($from,$to,$str,$count);
 }function replace_first($from,$to,$str){
 return substr_replace($str,$to,strpos($str,$from),strlen($from));
 }function ireplace_first($from,$to,$str){
