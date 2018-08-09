@@ -3931,2034 +3931,509 @@ function base4_decode($text){
 	}
 	return hex2bin($n);
 }
-class XNDataMath {
-	private $xnd;
-	public function __construct($xnd){
-		$this->xnd = $xnd;
-	}
-	public function add($key, $count = 1){
-		$this->xnd->set($key, $this->xnd->value($key)+ $count);
-		return $this->xnd;
-	}
-	public function rem($key, $count = 1){
-		$this->xnd->set($key, $this->xnd->value($key)- $count);
-		return $this->xnd;
-	}
-	public function div($key, $count = 1){
-		$this->xnd->set($key, $this->xnd->value($key)/ $count);
-		return $this->xnd;
-	}
-	public function mul($key, $count = 1){
-		$this->xnd->set($key, $this->xnd->value($key)* $count);
-		return $this->xnd;
-	}
-	public function pow($key, $count = 1){
-		$this->xnd->set($key, $this->xnd->value($key) ** $count);
-		return $this->xnd;
-	}
-	public function rect($key, $count = 1){
-		$this->xnd->set($key, $this->xnd->value($key)% $count);
-		return $this->xnd;
-	}
-	public function calc($key, $calc){
-		$this->xnd->set($key, XNNumber::calc($calc, ['x' => $this->xnd->value($key)]));
-		return $this->xnd;
-	}
-	public function join($key, $data){
-		$this->xnd->set($key, $this->xnd->value($key). $data);
-		return $this->xnd;
-	}
-}
-class XNDataProMath {
-	private $xnd;
-	public function __construct($xnd){
-		$this->xnd = $xnd;
-	}
-	public function add($key, $count = 1){
-		$this->xnd->set($key, XNNumber::add($this->xnd->value($key), $count));
-		return $this->xnd;
-	}
-	public function rem($key, $count = 1){
-		$this->xnd->set($key, XNNumber::rem($this->xnd->value($key), $count));
-		return $this->xnd;
-	}
-	public function mul($key, $count = 1){
-		$this->xnd->set($key, XNNumber::mul($this->xnd->value($key), $count));
-		return $this->xnd;
-	}
-	public function div($key, $count = 1){
-		$this->xnd->set($key, XNNumber::div($this->xnd->value($key), $count));
-		return $this->xnd;
-	}
-	public function rect($key, $count = 1){
-		$this->xnd->set($key, XNNumber::rect($this->xnd->value($key), $count));
-		return $this->xnd;
-	}
-	public function pow($key, $count = 1){
-		$this->xnd->set($key, XNNumber::pow($this->xnd->value($key), $count));
-		return $this->xnd;
-	}
-	public function calc($key, $calc){
-		$this->xnd->set($key, XNNumber::calc($calc, ['x' => $this->xnd->value($key)]));
-		return $this->xnd;
-	}
-}
-function gzserialize($data, $level = 5){
-	return gzencode(serialize($data), $level);
-}
-function gzunserialize($data){
-	return unserialize(gzdecode($data));
-}
-class XNDataString {
-	private $data, $parent = false;
-	public $math, $proMath, $auto = true;
-	public function __construct($data = ',', $parent = false){
-		if(@$data[0] !== ',')$data = ',';
-		$this->data = $data;
-		$this->parent = $parent;
-		$this->math = new XNDataMath($this);
-		$this->proMath = new XNDataProMath($this);
-	}
-	public function convert($file){
-		fput($file, $this->data);
-		return new XNDataFile($file);
-	}
-	public function reset(){
-		$this->data = ',';
-		return $this;
-	}
-	public function get(){
-		return $this->data;
-	}
-	public function __destruct(){
-		$this->save();
-	}
-	public function save(){
-		if($this->parent) {
-			$this->direncode();
-			$here = &$this->parent[0];
-			$dicd = new ThumbCode(
-			function()use($here){
-				$here->dirdecode();
-			});
-			$key = $here->encode($this->parent[1]);
-			$ssff = strlen($this->data);
-			$ssk = strlen($key);
-			$ssf = base_convert($ssff + 2, 10, 16);
-			if(strlen($ssf)% 2 == 1)$ssf = "0$ssf";
-			$ssf = base64url_encode(hex2bin($ssf));
-			$ssz = $ssff + strlen($ssf)+ $ssk + 4;
-			$ssz = base_convert($ssz, 10, 16);
-			if(strlen($ssz)% 2 == 1)$ssz = "0$ssz";
-			$ssz = base64url_encode(hex2bin($ssz));
-			$el2 = $ssz . ';' . $key . '.' . $ssf . ':{' . $this->data . '}';
-			$ky = ';' . $key . '.';
-			$p = strpos($here->data, $ky)+ strlen($ky);
-			$size = '';
-			while(($h = $here->data[$p++]) !== ':')$size.= $h;
-			$sizee = $size;
-			$size = $here->sizedecode($size);
-			$value = $sizee . ':' . substr($here->data, $p, $size);
-			$el1 = $here->elencode($key, $value);
-			$here->data = str_replace($el1, $el2, $here->data);
-			$this->parent[0]->save();
-		}
-	}
-	public function close(){
-		$this->__destruct();
-		$this->data = null;
-		$this->parent = null;
-		$this->math = null;
-		$this->proMath = null;
-	}
-	public function __toString(){
-		return $this->data;
-	}
-	private function encode($data){
-		$type = gettype($data);
-		switch ($type) {
-		case "NULL":
-			$type = 1;
-			$data = '';
-			break;
-		case "boolean":
-			if($data)$type = 2;
-			else $type = 3;
-			$data = '';
-			break;
-		case "integer":
-			$type = 4;
-			break;
-		case "float":
-			$type = 5;
-			break;
-		case "double":
-			$type = 6;
-			break;
-		case "string":
-			$type = 7;
-			break;
-		case "array":
-		case "object":
-			$type = 8;
-			$data = serialize($data);
-			break;
-		default:
-			new XNError("XNData", "invalid data type");
-			return false;
-		}
-		$zdata = zlib_encode($data, 31);
-		if(strlen($zdata)< strlen($data)) {
-			$data = $zdata;
-			$type+= 8;
-		}
-		$data = base64url_encode(chr($type). $data);
-		$size = base_convert(strlen($data), 10, 16);
-		if(strlen($size)% 2 == 1)$size = "0$size";
-		$size = base64url_encode(hex2bin($size));
-		return $size . ':' . $data;
-	}
-	private function decode($data){
-		$data = explode(':', $data);
-		$data = end($data);
-		$data = base64url_decode($data);
-		$type = ord($data);
-		$data = substr($data, 1);
-		if($type > 8) {
-			$data = zlib_decode($data);
-			$type-= 8;
-		}
-		switch ($type) {
-		case 1:
-			return null;
-			break;
-		case 2:
-			return true;
-			break;
-		case 3:
-			return false;
-			break;
-		case 4:
-			return (int)$data;
-			break;
-		case 5:
-			return (float)$data;
-			break;
-		case 6:
-			return (double)$data;
-			break;
-		case 7:
-			return (string)$data;
-			break;
-		case 8:
-			return unserialize($data);
-			break;
-		}
-	}
-	private function elencode($key, $value){
-		$data = "$key.$value";
-		$size = base_convert(strlen($data), 10, 16);
-		if(strlen($size)% 2 == 1)$size = "0$size";
-		$size = base64url_encode(hex2bin($size));
-		return "$size;$data";
-	}
-	private function eldecode($code){
-		$code = explode(";", $code, 2);
-		unset($code[0]);
-		return explode('.', $code[1], 2);
-	}
-	private function sizedecode($size){
-		return base_convert(bin2hex(base64url_decode($size)), 16, 10);
-	}
-	public function value($key){
-		$this->direncode();
-		$here = &$this;
-		$dicd = new ThumbCode(
-		function()use($here){
-			$here->dirdecode();
-		});
-		$key = ';' . $this->encode($key). '.';
-		$p = strpos($this->data, $key);
-		if($p === false || $p == - 1)return false;
-		$p+= strlen($key);
-		$size = '';
-		while(($h = $this->data[$p++]) !== ':')$size.= $h;
-		$size = $this->sizedecode($size);
-		return $this->decode(substr($this->data, $p, $size));
-	}
-	public function key($value){
-		$this->direncode();
-		$here = &$this;
-		$dicd = new ThumbCode(
-		function()use($here){
-			$here->dirdecode();
-		});
-		$value = '.' . $this->encode($value). ',';
-		$p = strpos($this->data, $value);
-		if($p === false || $p == - 1)return false;
-		$key = '';
-		while(($h = $this->data[$p--]) !== ':')$key = $h . $key;
-		return $this->decode($key);
-	}
-	public function iskey($key){
-		$this->direncode();
-		$here = &$this;
-		$dicd = new ThumbCode(
-		function()use($here){
-			$here->dirdecode();
-		});
-		$key = ';' . $this->encode($key). '.';
-		$p = strpos($this->data, $key);
-		return $p != - 1 && $p !== false;
-	}
-	public function isvalue($value){
-		$value = '.' . $this->encode($value). ',';
-		$p = strpos($this->data, $key);
-		return $p != - 1 && $p !== false;
-	}
-	public function type($key){
-		return $this->iskey($key)? "key" : $this->isvalue($key)? "value" : false;
-	}
-	public function keys($value){
-		$this->direncode();
-		$here = &$this;
-		$dicd = new ThumbCode(
-		function()use($here){
-			$here->dirdecode();
-		});
-		$values = [];
-		$data = $this->data;
-		$value = '.' . $this->encode($value). ',';
-		$vallen = strlen($value)- 1;
-		while($data != ',') {
-			$p = strpos($data, $value);
-			if($p === false || $p == - 1)break;
-			$pp = $p;
-			$key = '';
-			while(($h = $data[$p--]) !== ':')$key = $h . $key;
-			$data = substr($data, $pp + $vallen);
-			$values[] = $this->decode($key);
-		}
-		return $values;
-	}
-	private function replace($key, $value){
-		$key = $this->encode($key);
-		$value = $this->encode($value);
-		$el2 = $this->elencode($key, $value);
-		$ky = ';' . $key . '.';
-		$p = strpos($this->data, $ky)+ strlen($ky);
-		$size = '';
-		while(($h = $this->data[$p++]) !== ':')$size.= $h;
-		$sizee = $size;
-		$size = $this->sizedecode($size);
-		$value = $sizee . ':' . substr($this->data, $p, $size);
-		$el1 = $this->elencode($key, $value);
-		$this->data = str_replace($el1, $el2, $this->data);
-		if($this->auto)$this->save();
-		return $this;
-	}
-	private function add($key, $value){
-		$key = $this->encode($key);
-		$value = $this->encode($value);
-		$el = $this->elencode($key, $value);
-		$this->data.= "$el,";
-		if($this->auto)$this->save();
-		return $this;
-	}
-	public function set($key, $value = null){
-		if(self::iskey($key))$this->replace($key, $value);
-		else $this->add($key, $value);
-		return $this;
-	}
-	public function delete($key){
-		$key = $this->encode($key);
-		$ky = ';' . $key . '.';
-		$p = strpos($this->data, $ky)+ strlen($ky);
-		$size = '';
-		while(($h = $this->data[$p++]) !== ':')$size.= $h;
-		$sizee = $size;
-		$size = $this->sizedecode($size);
-		$value = $sizee . ':' . substr($this->data, $p, $size);
-		$el = $this->elencode($key, $value);
-		$this->data = str_replace($el . ',', '', $this->data);
-		if($this->auto)$this->save();
-		return $this;
-	}
-	public function array(){
-		if($this->data == ',')return [];
-		$this->direncode();
-		$here = &$this;
-		$dicd = new ThumbCode(
-		function()use($here){
-			$here->dirdecode();
-		});
-		$data = explode(',', substr($this->data, 1, -1));
-		foreach($data as &$dat) {
-			$dat = $this->eldecode($dat);
-			$dat[0] = $this->decode($dat[0]);
-			if($dat[1][strlen($dat[1])- 1] == ">") {
-				$dat[1] = explode(':', $this->dirs['.' . $dat[1]]);
-				unset($dat[1][0]);
-				$dat[1] = implode(':', $dat[1]);
-				$dat[1] = (new XNDataString(substr($dat[1], 1, -1)))->array();
-			}
-			else $dat[1] = $this->decode($dat[1]);
-		}
-		return $data;
-	}
-	public function count(){
-		$this->direncode();
-		$here = &$this;
-		$dicd = new ThumbCode(
-		function()use($here){
-			$here->dirdecode();
-		});
-		return count(explode(',', $this->data))- 2;
-	}
-	public function list($list){
-		foreach((array)$list as $key => $value)$this->set($key, $value);
-		return $this;
-	}
-	public function all($func){
-		if($this->data == ',')return;
-		$this->direncode();
-		$here = &$this;
-		$dicd = new ThumbCode(
-		function()use($here){
-			$here->dirdecode();
-		});
-		foreach(explode(',', substr($this->data, 1, -1))as $dat) {
-			$dat = $this->eldecode($dat);
-			$dat[0] = $this->decode($dat[0]);
-			$dat[1] = $this->decode($dat[1]);
-			($func)($dat[0], $dat[1]);
-		}
-	}
-	public function number($number){
-		if($this->data == ',')return;
-		$this->direncode();
-		$here = &$this;
-		$dicd = new ThumbCode(
-		function()use($here){
-			$here->dirdecode();
-		});
-		$dat = explode(',', substr($this->data, 1, -1));
-		if(!isset($dat[$number]))return false;
-		$dat = $dat[$number];
-		$dat = $this->eldecode($dat);
-		$dat[0] = $this->decode($dat[0]);
-		$dat[1] = $this->decode($dat[1]);
-		return $dat;
-	}
-	public function size(){
-		return strlen($this->data);
-	}
-	private $dirs = [], $dirc = - 1;
-	private function direncode(){
-		$here = &$this;
-		$this->data = preg_replace_callback("/\.(?:[a-zA-Z\-_0-9]+):(?<x>\{(?:\g<x>|[^\{\}])*\})/",
-		function($x)use($here){
-			++$here->dirc;
-			$size = strlen($here->dirc)+ 2;
-			$size = base_convert($size, 10, 16);
-			if(strlen($size)% 2 == 1)$size = "0$size";
-			$size = base64url_encode(hex2bin($size));
-			$data = ".$size:<$here->dirc>";
-			$here->dirs[$data] = $x[0];
-			return $data;
-		}
-		, $this->data);
-		$this->dirc = - 1;
-	}
-	private function dirdecode(){
-		$this->data = strtr($this->data, $this->dirs);
-	}
-	public function make($name){
-		if($this->iskey($name))$this->delete($name);
-		$key = $this->encode($name);
-		$el = $this->elencode($key, "Ag:{}");
-		$this->data.= "$el,";
-		if($this->auto)$this->save();
-		return $this;
-	}
-	public function isdir($name){
-		$this->direncode();
-		$here = &$this;
-		$dicd = new ThumbCode(
-		function()use($here){
-			$here->dirdecode();
-		});
-		$key = ';' . $this->encode($name). '.';
-		$p = strpos($this->data, $key);
-		if($p === false || $p == - 1)return false;
-		$p+= strlen($key);
-		$size = '';
-		while(($h = $this->data[$p++]) !== ':')$size.= $h;
-		$size = $this->sizedecode($size);
-		return $this->data[$p] == '<';
-	}
-	public function dir($name){
-		$this->direncode();
-		$here = &$this;
-		$dicd = new ThumbCode(
-		function()use($here){
-			$here->dirdecode();
-		});
-		$key = ';' . $this->encode($name). '.';
-		$p = strpos($this->data, $key);
-		if($p === false || $p == - 1)return false;
-		$p+= strlen($key);
-		$size = '';
-		while(($h = $this->data[$p++]) !== ':')$size.= $h;
-		$size = $this->sizedecode($sizt = $size);
-		$data = substr($this->data, $p, $size);
-		$data = substr($this->dirs["." . $sizt . ":" . $data], 1, -1);
-		return new XNDataString($data, [$this, $name]);
-	}
-}
-class XNDataFile {
-	private $file, $limit = 999, $name = false, $parent = false;
-	public $math, $proMath, $auto = true;
-	public function __construct($file, int $limit = 999, $parent = false){
-		if(!is_string($file)) {
-			$this->file = $file;
-			if(fgetc($file) != ',') {
-				rewind($file);
-				ftruncate($this->file, 0);
-				fwrite($this->file, ',');
-			}
-			rewind($file);
-		}
-		else {
-			$this->name = $file;
-			if(!file_exists($file))file_put_contents($file, ',');
-			$this->file = fopen($file, 'rw+');
-		}
-		$this->limit = $limit;
-		$this->parent = $parent;
-		$this->math = new XNDataMath($this);
-		$this->proMath = new XNDataProMath($this);
-	}
-	public function save(){
-		if($this->parent) {
-			$here = &$this->parent[0];
-			$key = $this->encode($this->parent[1]). '.';
-			$f = &$here->file;
-			$ff = &$this->file;
-			$t = tmpfile();
-			fwrite($t, ',');
-			fseek($f, 1);
-			$l = strlen($key);
-			$p = '';
-			$m = 0;
-			$o = false;
-			while(($h = fgetc($f)) !== false) {
-				if($o) {
-					--$p;
-					if($m == $l - 1) {
-						$m = 0;
-						$ssff = fsize($ff);
-						$ssk = strlen($key)- 1;
-						$ssf = base_convert($ssff + 2, 10, 16);
-						if(strlen($ssf)% 2 == 1)$ssf = "0$ssf";
-						$ssf = base64url_encode(hex2bin($ssf));
-						$ssz = $ssff + strlen($ssf)+ $ssk + 4;
-						$ssz = base_convert($ssz, 10, 16);
-						if(strlen($ssz)% 2 == 1)$ssz = "0$ssz";
-						$ssz = base64url_encode(hex2bin($ssz));
-						fwrite($t, ',' . $ssz . ';' . $key . $ssf . ':{');
-						while(($h = fread($ff, $here->limit)) !== '')fwrite($t, $h);
-						fwrite($t, '}');
-						fseek($f, $p, SEEK_CUR);
-						break;
-					}
-					elseif($key[$m] == $h) {
-						++$m;
-					}
-					else {
-						$o = false;
-						fwrite($t, "," . $here->elencode(...explode('.', ($m > 0 ? substr($key, 0, $m): ''). $h . fread($f, $p))));
-						$m = 0;
-						$p = '';
-					}
-				}
-				else {
-					if($h == ';') {
-						$o = true;
-						$p = $this->sizedecode($p);
-					}
-					else {
-						$p.= $h;
-					}
-				}
-			}
-			$g = ftell($f);
-			fseek($f, 0, SEEK_END);
-			$u = ftell($f)- $g;
-			if($u > 0) {
-				fseek($f, $g);
-				fwrite($t, fread($f, $u));
-			}
-			rewind($f);
-			ftruncate($f, 0);
-			rewind($t);
-			while(($h = fgetc($t)) === ',');
-			fwrite($f, ",$h");
-			while(($h = fread($t, $this->limit)) !== '')fwrite($f, $h);
-			rewind($f);
-			fclose($t);
-			$this->parent[0]->save();
-		}
-	}
-	public function __destruct(){
-		$this->save();
-	}
-	public function convert(){
-		return new XNDataString(fget($this->file));
-	}
-	public function reset(){
-		ftruncate($this->file, 0);
-		fwrite($this->file, ',');
-		rewind($this->file);
-		return $this;
-	}
-	public function get(){
-		$g = fread($this->file, $this->name ? filesize($this->name): fsize($this->file));
-		rewind($this->file);
-		return $g;
-	}
-	public function close(){
-		$this->__destruct();
-		$this->file = null;
-		$this->limit = null;
-		$this->parent = null;
-		$this->math = null;
-		$this->proMath = null;
-	}
-	public function __toString(){
-		$g = fread($this->file, $this->name ? filesize($this->name): fsize($this->file));
-		rewind($this->file);
-		return $g;
-	}
-	public function getFile(){
-		return $this->file;
-	}
-	public function getFileName(){
-		return $this->name;
-	}
-	private function encode($data){
-		$type = gettype($data);
-		switch ($type) {
-		case "NULL":
-			$type = 1;
-			$data = '';
-			break;
-		case "boolean":
-			if($data)$type = 2;
-			else $type = 3;
-			$data = '';
-			break;
-		case "integer":
-			$type = 4;
-			break;
-		case "float":
-			$type = 5;
-			break;
-		case "double":
-			$type = 6;
-			break;
-		case "string":
-			$type = 7;
-			break;
-		case "array":
-		case "object":
-			$type = 8;
-			$data = serialize($data);
-			break;
-		default:
-			new XNError("XNData", "invalid data type");
-			return false;
-		}
-		$zdata = zlib_encode($data, 31);
-		if(strlen($zdata)< strlen($data)) {
-			$data = $zdata;
-			$type+= 8;
-		}
-		$data = base64url_encode(chr($type). $data);
-		$size = base_convert(strlen($data), 10, 16);
-		if(strlen($size)% 2 == 1)$size = "0$size";
-		$size = base64url_encode(hex2bin($size));
-		return $size . ':' . $data;
-	}
-	private function decode($data){
-		$data = explode(':', $data);
-		$data = end($data);
-		$data = base64url_decode($data);
-		$type = ord($data);
-		$data = substr($data, 1);
-		if($type > 8) {
-			$data = zlib_decode($data);
-			$type-= 8;
-		}
-		switch ($type) {
-		case 1:
-			return null;
-			break;
-		case 2:
-			return true;
-			break;
-		case 3:
-			return false;
-			break;
-		case 4:
-			return (int)$data;
-			break;
-		case 5:
-			return (float)$data;
-			break;
-		case 6:
-			return (double)$data;
-			break;
-		case 7:
-			return (string)$data;
-			break;
-		case 8:
-			return unserialize($data);
-			break;
-		}
-	}
-	private function elencode($key, $value){
-		$data = "$key.$value";
-		$size = base_convert(strlen($data), 10, 16);
-		if(strlen($size)% 2 == 1)$size = "0$size";
-		$size = base64url_encode(hex2bin($size));
-		return "$size;$data";
-	}
-	private function eldecode($code){
-		$code = explode(";", $code, 2);
-		unset($code[0]);
-		return explode('.', $code[1], 2);
-	}
-	private function sizedecode($size){
-		return base_convert(bin2hex(base64url_decode($size)), 16, 10);
-	}
-	public function key($value){
-		$f = &$this->file;
-		fseek($f, 1);
-		$value = $this->encode($value). ',';
-		$l = strlen($value);
-		$p = '';
-		$m = 0;
-		$o = 1;
-		$s = '';
-		while(($h = fgetc($f)) !== false) {
-			if($o == 2) {
-				--$p;
-				if($m == $l - 1)break;
-				if($value[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					fseek($f, $p, SEEK_CUR);
-					$o = 1;
-					$p = '';
-					$s = '';
-				}
-			}
-			elseif($o == 3) {
-				--$p;
-				if($h == ':') {
-					$o = 2;
-					$p-= ($s = $this->sizedecode($s))+ 1;
-					$key = ftell($f);
-					fseek($f, $s + 1, SEEK_CUR);
-				}
-				else {
-					$s.= $h;
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = 3;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		if($h === false)return false;
-		fseek($f, $key);
-		$key = fread($f, $s);
-		rewind($f);
-		return $this->decode($key);
-	}
-	public function value($key){
-		$f = &$this->file;
-		fseek($f, 1);
-		$key = $this->encode($key). '.';
-		$l = strlen($key);
-		$p = '';
-		$m = 0;
-		$o = false;
-		while(($h = fgetc($f)) !== false) {
-			if($o) {
-				--$p;
-				if($m == $l - 1)break;
-				if($key[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					$o = false;
-					fseek($f, $p, SEEK_CUR);
-					$p = '';
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = true;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		if($h === false)return false;
-		$value = fread($f, $p);
-		rewind($f);
-		return $this->decode($value);
-	}
-	public function keys($value){
-		$f = &$this->file;
-		fseek($f, 1);
-		$value = $this->encode($value). ',';
-		$l = strlen($value);
-		$p = '';
-		$m = 0;
-		$o = 1;
-		$s = '';
-		$keys = [];
-		while(($h = fgetc($f)) !== false) {
-			if($o == 2) {
-				--$p;
-				if($m == $l - 1) {
-					$m = 0;
-					$o = 1;
-					$p = '';
-					$s = '';
-					$keys[] = $this->decode($key);
-				}
-				elseif($value[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					@fseek($f, $p, SEEK_CUR);
-					$o = 1;
-					$p = '';
-					$s = '';
-				}
-			}
-			elseif($o == 3) {
-				if($h == ':') {
-					$o = 2;
-					$p-= ($s = $this->sizedecode($s))+ 1;
-					$key = fread($f, $s);
-					fseek($f, 1, SEEK_CUR);
-				}
-				else {
-					$s.= $h;
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = 3;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		rewind($f);
-		return $keys;
-	}
-	public function iskey($key){
-		$f = &$this->file;
-		fseek($f, 1);
-		$key = $this->encode($key). '.';
-		$l = strlen($key);
-		$p = '';
-		$m = 0;
-		$o = false;
-		while(($h = fgetc($f)) !== false) {
-			if($o) {
-				--$p;
-				if($m == $l - 1)break;
-				if($key[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					$o = false;
-					fseek($f, $p, SEEK_CUR);
-					$p = '';
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = true;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		if($h === false)return false;
-		rewind($f);
-		return true;
-	}
-	public function isvalue($value){
-		$f = &$this->file;
-		fseek($f, 1);
-		$value = $this->encode($value). ',';
-		$l = strlen($value);
-		$p = '';
-		$m = 0;
-		$o = 1;
-		$s = '';
-		while(($h = fgetc($f)) !== false) {
-			if($o == 2) {
-				--$p;
-				if($m == $l - 1)break;
-				if($value[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					fseek($f, $p, SEEK_CUR);
-					$o = 1;
-					$p = '';
-					$s = '';
-				}
-			}
-			elseif($o == 3) {
-				if($h == ':') {
-					$o = 2;
-					$p-= ($s = $this->sizedecode($s))+ 1;
-					fseek($f, $s + 1, SEEK_CUR);
-				}
-				else {
-					$s.= $h;
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = 3;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		if($h === false)return false;
-		rewind($f);
-		return true;
-	}
-	public function type($key){
-		return $this->iskey($key)? "key" : $this->isvalue($key)? "value" : false;
-	}
-	private function replace($key, $value){
-		$key = $this->encode($key). '.';
-		$value = $this->encode($value). ',';
-		$el = $this->elencode($key, $value);
-		$f = &$this->file;
-		$t = tmpfile();
-		fwrite($t, ',');
-		fseek($f, 1);
-		$l = strlen($key);
-		$p = '';
-		$m = 0;
-		$o = false;
-		while(($h = fgetc($f)) !== false) {
-			if($o) {
-				--$p;
-				if($m == $l - 1) {
-					$m = 0;
-					fwrite($t, ',' . $this->elencode(substr($key, 0, -1), substr($value, 0, -1)));
-					fseek($f, $p, SEEK_CUR);
-					break;
-				}
-				elseif($key[$m] == $h) {
-					++$m;
-				}
-				else {
-					$o = false;
-					fwrite($t, ',' . $this->elencode(...explode('.', ($m > 0 ? substr($key, 0, $m): ''). $h . fread($f, $p))));
-					$m = 0;
-					$p = '';
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = true;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		$g = ftell($f);
-		fseek($f, 0, SEEK_END);
-		$u = ftell($f)- $g;
-		if($u > 0) {
-			fseek($f, $g);
-			fwrite($t, fread($f, $u));
-		}
-		rewind($f);
-		ftruncate($f, 0);
-		rewind($t);
-		while(($h = fgetc($t)) === ',');
-		fwrite($f, ",$h");
-		while(($h = fread($t, $this->limit)) !== '')fwrite($f, $h);
-		rewind($f);
-		fclose($t);
-		if($this->auto)$this->save();
-		return $this;
-	}
-	private function add($key, $value){
-		$key = $this->encode($key);
-		$value = $this->encode($value);
-		$el = $this->elencode($key, $value);
-		$f = &$this->file;
-		fseek($f, 0, SEEK_END);
-		fwrite($f, "$el,");
-		rewind($f);
-		if($this->auto)$this->save();
-		return $this;
-	}
-	public function set($key, $value = null){
-		if($this->iskey($key))$this->replace($key, $value);
-		else $this->add($key, $value);
-		return $this;
-	}
-	public function delete($key){
-		$key = $this->encode($key). '.';
-		$f = &$this->file;
-		$t = tmpfile();
-		fwrite($t, ',');
-		fseek($f, 1);
-		$l = strlen($key);
-		$p = '';
-		$m = 0;
-		$o = false;
-		while(($h = fgetc($f)) !== false) {
-			if($o) {
-				--$p;
-				if($m == $l - 1) {
-					$m = 0;
-					fseek($f, $p, SEEK_CUR);
-					break;
-				}
-				elseif($key[$m] == $h) {
-					++$m;
-				}
-				else {
-					$o = false;
-					fwrite($t, ',' . $this->elencode(...explode('.', ($m > 0 ? substr($key, 0, $m): ''). $h . fread($f, $p))));
-					$m = 0;
-					$p = '';
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = true;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		$g = ftell($f);
-		fseek($f, 0, SEEK_END);
-		$u = ftell($f)- $g;
-		if($u > 0) {
-			fseek($f, $g);
-			fwrite($t, fread($f, $u));
-		}
-		rewind($f);
-		ftruncate($f, 0);
-		rewind($t);
-		while(($h = fgetc($t)) === ',');
-		fwrite($f, ",$h");
-		while(($h = fread($t, $this->limit)) !== '')fwrite($f, $h);
-		rewind($f);
-		fclose($t);
-		if($this->auto)$this->save();
-		return $this;
-	}
-	public function array(){
-		$f = &$this->file;
-		fseek($f, 1);
-		$arr = [];
-		$p = '';
-		while(($h = fgetc($f)) !== false) {
-			if($h == ';') {
-				$p = $this->sizedecode($p);
-				$ar = $this->eldecode(';' . fread($f, $p));
-				$ar[0] = $this->decode($ar[0]);
-				if($ar[1][strlen($ar[1])- 1] == "}") {
-					$ar[1] = explode(':', $ar[1]);
-					unset($ar[1][0]);
-					$ar[1] = implode(':', $ar[1]);
-					$ar[1] = (new XNDataString(substr($ar[1], 1, -1)))->array();
-				}
-				else $ar[1] = $this->decode($ar[1]);
-				$arr[] = $ar;
-				fseek($f, 1, SEEK_CUR);
-				$p = '';
-			}
-			else {
-				$p.= $h;
-			}
-		}
-		rewind($f);
-		return $arr;
-	}
-	public function count(){
-		$f = &$this->file;
-		fseek($f, 1);
-		$c = 0;
-		$p = '';
-		while(($h = fgetc($f)) !== false) {
-			if($h == ';') {
-				$p = $this->sizedecode($p);
-				fseek($f, $p + 1, SEEK_CUR);
-				++$c;
-				$p = '';
-			}
-			else {
-				$p.= $h;
-			}
-		}
-		rewind($f);
-		return $c;
-	}
-	public function list($list){
-		foreach((array)$list as $key => $value)$this->set($key, $value);
-		return $this;
-	}
-	public function all($func){
-		$f = &$this->file;
-		fseek($f, 1);
-		$p = '';
-		while(($h = fgetc($f)) !== false) {
-			if($h == ';') {
-				$p = $this->sizedecode($p);
-				$ar = $this->eldecode(';' . fread($f, $p));
-				$ar[0] = $this->decode($ar[0]);
-				$ar[1] = $this->decode($ar[1]);
-				($func)($ar[0], $ar[1]);
-				fseek($f, 1, SEEK_CUR);
-				$p = '';
-			}
-			else {
-				$p.= $h;
-			}
-		}
-		rewind($f);
-	}
-	public function number($number){
-		$f = &$this->file;
-		fseek($f, 1);
-		$p = '';
-		while(($h = fgetc($f)) !== false) {
-			if($h == ';') {
-				if($number == 0) {
-					$p = $this->sizedecode($p);
-					$ar = $this->eldecode(';' . fread($f, $p));
-					$ar[0] = $this->decode($ar[0]);
-					$ar[1] = $this->decode($ar[1]);
-					return $ar;
-				}
-				--$number;
-				fseek($f, 1, SEEK_CUR);
-				$p = '';
-			}
-			else {
-				$p.= $h;
-			}
-		}
-		rewind($f);
-		return false;
-	}
-	public function size(){
-		return $this->name ? filesize($this->name): fsize($this->file);
-	}
-	public function make($key){
-		if($this->iskey($key))$this->delete($key);
-		$key = $this->encode($key);
-		$el = $this->elencode($key, 'Ag:{}');
-		$f = &$this->file;
-		fseek($f, 0, SEEK_END);
-		fwrite($f, "$el,");
-		rewind($f);
-		if($this->auto)$this->save();
-		return $this;
-	}
-	public function isdir($key){
-		$f = &$this->file;
-		fseek($f, 1);
-		$key = $this->encode($key). '.';
-		$l = strlen($key);
-		$p = '';
-		$m = 0;
-		$o = false;
-		while(($h = fgetc($f)) !== false) {
-			if($o) {
-				--$p;
-				if($m == $l - 1)break;
-				if($key[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					$o = false;
-					fseek($f, $p, SEEK_CUR);
-					$p = '';
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = true;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		if($h === false)return false;
-		while(fgetc($f) !== ':');
-		$v = fgetc($f);
-		rewind($f);
-		return $v == '{';
-	}
-	public function dir($name, $limit = false){
-		if(!$limit)$limit = $this->limit;
-		$f = &$this->file;
-		fseek($f, 1);
-		$key = $this->encode($name). '.';
-		$l = strlen($key);
-		$p = '';
-		$m = 0;
-		$o = false;
-		while(($h = fgetc($f)) !== false) {
-			if($o) {
-				--$p;
-				if($m == $l - 1)break;
-				if($key[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					$o = false;
-					fseek($f, $p, SEEK_CUR);
-					$p = '';
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = true;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		if($h === false)return false;
-		$file = tmpfile();
-		$p = 0;
-		while(($h = fgetc($f)) !== '{');
-		if($h === false)return false;
-		while(($h = fgetc($f)) !== false) {
-			if($h == '{')++$p;
-			elseif($h == '}')--$p;
-			if($p < 0)break;
-			fwrite($file, $h);
-		}
-		rewind($f);
-		rewind($file);
-		return new XNDataFile($file, $limit, [$this, $name]);
-	}
-}
-class XNDataURL {
-	public $file, $limit = 999, $parent = false;
-	public function __construct($file, int $limit = 999, $parent = false){
-		$this->file = $file;
-		$this->limit = $limit;
-		$this->parent = $parent;
-	}
-	public function convert(){
-		return new XNDataString(fget($this->file));
-	}
-	public function reset(){
-		fput($this->file, ',');
-		return $this;
-	}
-	public function get(){
-		return fget($this->file);
-	}
-	public function close(){
-		$this->file = null;
-	}
-	public function __toString(){
-		return fget($this->file);
-	}
-	public function getURL(){
-		return $this->file;
-	}
-	private function encode($data){
-		$type = gettype($data);
-		switch ($type) {
-		case "NULL":
-			$type = 1;
-			$data = '';
-			break;
-		case "boolean":
-			if($data)$type = 2;
-			else $type = 3;
-			$data = '';
-			break;
-		case "integer":
-			$type = 4;
-			break;
-		case "float":
-			$type = 5;
-			break;
-		case "double":
-			$type = 6;
-			break;
-		case "string":
-			$type = 7;
-			break;
-		case "array":
-		case "object":
-			$type = 8;
-			$data = serialize($data);
-			break;
-		default:
-			new XNError("XNData", "invalid data type");
-			return false;
-		}
-		$zdata = zlib_encode($data, 31);
-		if(strlen($zdata)< strlen($data)) {
-			$data = $zdata;
-			$type+= 8;
-		}
-		$data = base64url_encode(chr($type). $data);
-		$size = base_convert(strlen($data), 10, 16);
-		if(strlen($size)% 2 == 1)$size = "0$size";
-		$size = base64url_encode(hex2bin($size));
-		return $size . ':' . $data;
-	}
-	private function decode($data){
-		$data = explode(':', $data);
-		$data = end($data);
-		$data = base64url_decode($data);
-		$type = ord($data);
-		$data = substr($data, 1);
-		if($type > 8) {
-			$data = zlib_decode($data);
-			$type-= 8;
-		}
-		switch ($type) {
-		case 1:
-			return null;
-			break;
-		case 2:
-			return true;
-			break;
-		case 3:
-			return false;
-			break;
-		case 4:
-			return (int)$data;
-			break;
-		case 5:
-			return (float)$data;
-			break;
-		case 6:
-			return (double)$data;
-			break;
-		case 7:
-			return (string)$data;
-			break;
-		case 8:
-			return unserialize($data);
-		}
-	}
-	private function elencode($key, $value){
-		$data = "$key.$value";
-		$size = base_convert(strlen($data), 10, 16);
-		if(strlen($size)% 2 == 1)$size = "0$size";
-		$size = base64url_encode(hex2bin($size));
-		return "$size;$data";
-	}
-	private function eldecode($code){
-		$code = explode(";", $code, 2);
-		unset($code[0]);
-		return explode('.', $code[1], 2);
-	}
-	private function sizedecode($size){
-		return base_convert(bin2hex(base64url_decode($size)), 16, 10);
-	}
-	public function key($value){
-		$f = fopen($this->file, 'r');
-		fgetc($f);
-		$value = $this->encode($value). ',';
-		$l = strlen($value);
-		$p = '';
-		$m = 0;
-		$o = 1;
-		$s = '';
-		while(($h = fgetc($f)) !== false) {
-			if($o == 2) {
-				--$p;
-				if($m == $l - 1)break;
-				if($value[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					fread($f, $p);
-					$o = 1;
-					$p = '';
-					$s = '';
-				}
-			}
-			elseif($o == 3) {
-				--$p;
-				if($h == ':') {
-					$o = 2;
-					$p-= ($s = $this->sizedecode($s))+ 1;
-					$key = fread($f, $s);
-					fgetc($f);
-				}
-				else {
-					$s.= $h;
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = 3;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		if($h === false)return false;
-		fclose($f);
-		return $this->decode($key);
-	}
-	public function value($key){
-		$f = fopen($this->file, 'r');
-		fgetc($f);
-		$key = $this->encode($key). '.';
-		$l = strlen($key);
-		$p = '';
-		$m = 0;
-		$o = false;
-		while(($h = fgetc($f)) !== false) {
-			if($o) {
-				--$p;
-				if($m == $l - 1)break;
-				if($key[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					$o = false;
-					fread($f, $p);
-					$p = '';
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = true;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		if($h === false)return false;
-		$value = fread($f, $p);
-		fclose($f);
-		return $this->decode($value);
-	}
-	public function keys($value){
-		$f = fopen($this->file, 'r');
-		fgetc($f);
-		$value = $this->encode($value). ',';
-		$l = strlen($value);
-		$p = '';
-		$m = 0;
-		$o = 1;
-		$s = '';
-		$keys = [];
-		while(($h = fgetc($f)) !== false) {
-			if($o == 2) {
-				--$p;
-				if($m == $l - 1) {
-					$m = 0;
-					$o = 1;
-					$p = '';
-					$s = '';
-					$keys[] = $this->decode($key);
-				}
-				elseif($value[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					@fread($f, $p);
-					$o = 1;
-					$p = '';
-					$s = '';
-				}
-			}
-			elseif($o == 3) {
-				if($h == ':') {
-					$o = 2;
-					$p-= ($s = $this->sizedecode($s))+ 1;
-					$key = fread($f, $s);
-					fgetc($f);
-				}
-				else {
-					$s.= $h;
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = 3;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		fclose($f);
-		return $keys;
-	}
-	public function iskey($key){
-		$f = fopen($this->file, 'r');
-		fgetc($f);
-		$key = $this->encode($key). '.';
-		$l = strlen($key);
-		$p = '';
-		$m = 0;
-		$o = false;
-		while(($h = fgetc($f)) !== false) {
-			if($o) {
-				--$p;
-				if($m == $l - 1)break;
-				if($key[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					$o = false;
-					fread($f, $p);
-					$p = '';
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = true;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		if($h === false)return false;
-		fclose($f);
-		return true;
-	}
-	public function isvalue($value){
-		$f = fopen($this->file, 'r');
-		fgetc($f);
-		$value = $this->encode($value). ',';
-		$l = strlen($value);
-		$p = '';
-		$m = 0;
-		$o = 1;
-		$s = '';
-		while(($h = fgetc($f)) !== false) {
-			if($o == 2) {
-				--$p;
-				if($m == $l - 1)break;
-				if($value[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					fread($f, $p);
-					$o = 1;
-					$p = '';
-					$s = '';
-				}
-			}
-			elseif($o == 3) {
-				if($h == ':') {
-					$o = 2;
-					$p-= ($s = $this->sizedecode($s))+ 1;
-					fread($f, $s + 1);
-				}
-				else {
-					$s.= $h;
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = 3;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		if($h === false)return false;
-		fclose($f);
-		return true;
-	}
-	public function type($key){
-		return $this->iskey($key)? "key" : $this->isvalue($key)? "value" : false;
-	}
-	public function array(){
-		$f = fopen($this->file, 'r');
-		fgetc($f);
-		$arr = [];
-		$p = '';
-		while(($h = fgetc($f)) !== false) {
-			if($h == ';') {
-				$p = $this->sizedecode($p);
-				$ar = $this->eldecode(';' . fread($f, $p));
-				$ar[0] = $this->decode($ar[0]);
-				if($dat[1][0] == "{")$dat[1] = (new XNDataString(substr($data[1], 1, -1)))->array();
-				else $dat[1] = $this->decode($dat[1]);
-				$arr[] = $ar;
-				fgetc($f);
-				$p = '';
-			}
-			else {
-				$p.= $h;
-			}
-		}
-		fclose($f);
-		return $arr;
-	}
-	public function count(){
-		$f = fopen($this->file, 'r');
-		fgetc($f);
-		$c = 0;
-		$p = '';
-		while(($h = fgetc($f)) !== false) {
-			if($h == ';') {
-				$p = $this->sizedecode($p);
-				fread($f, $p + 1);
-				++$c;
-				$p = '';
-			}
-			else {
-				$p.= $h;
-			}
-		}
-		fclose($f);
-		return $c;
-	}
-	public function list($list){
-		foreach((array)$list as $key => $value)$this->set($key, $value);
-		return $this;
-	}
-	public function all($func){
-		$f = fopen($this->file, 'r');
-		fgetc($f);
-		$p = '';
-		while(($h = fgetc($f)) !== false) {
-			if($h == ';') {
-				$p = $this->sizedecode($p);
-				$ar = $this->eldecode(';' . fread($f, $p));
-				$ar[0] = $this->decode($ar[0]);
-				$ar[1] = $this->decode($ar[1]);
-				($func)($ar[0], $ar[1]);
-				fgetc($f);
-				$p = '';
-			}
-			else {
-				$p.= $h;
-			}
-			fclose($f);
-		}
-	}
-	public function number($number){
-		$f = fopen($this->file, 'r');
-		fgetc($f);
-		$p = '';
-		while(($h = fgetc($f)) !== false) {
-			if($h == ';') {
-				if($number == 0) {
-					$p = $this->sizedecode($p);
-					$ar = $this->eldecode(';' . fread($f, $p));
-					$ar[0] = $this->decode($ar[0]);
-					$ar[1] = $this->decode($ar[1]);
-					return $ar;
-				}
-				--$number;
-				fgetc($f);
-				$p = '';
-			}
-			else {
-				$p.= $h;
-			}
-			fclose($f);
-		}
-		return false;
-	}
-	public function isdir($key){
-		$f = &$this->file;
-		fgetc($f);
-		$key = $this->encode($key). '.';
-		$l = strlen($key);
-		$p = '';
-		$m = 0;
-		$o = false;
-		while(($h = fgetc($f)) !== false) {
-			if($o) {
-				--$p;
-				if($m == $l - 1)break;
-				if($key[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					$o = false;
-					fread($f, $p);
-					$p = '';
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = true;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		if($h === false)return false;
-		while(fgetc($f) !== ':');
-		$v = fgetc($f);
-		rewind($f);
-		return $v == '{';
-	}
-	public function dir($name, $limit = false){
-		if(!$limit)$limit = $this->limit;
-		$f = &$this->file;
-		fgetc($f);
-		$key = $this->encode($name). '.';
-		$l = strlen($key);
-		$p = '';
-		$m = 0;
-		$o = false;
-		while(($h = fgetc($f)) !== false) {
-			if($o) {
-				--$p;
-				if($m == $l - 1)break;
-				if($key[$m] == $h) {
-					++$m;
-				}
-				else {
-					$m = 0;
-					$o = false;
-					fread($f, $p);
-					$p = '';
-				}
-			}
-			else {
-				if($h == ';') {
-					$o = true;
-					$p = $this->sizedecode($p);
-				}
-				else {
-					$p.= $h;
-				}
-			}
-		}
-		if($h === false)return false;
-		$file = tmpfile();
-		$p = 0;
-		while(($h = fgetc($f)) !== '{');
-		if($h === false)return false;
-		while(($h = fgetc($f)) !== false) {
-			if($h == '{')++$p;
-			elseif($h == '}')--$p;
-			if($p < 0)break;
-			fwrite($file, $h);
-		}
-		rewind($f);
-		rewind($file);
-		return new XNDataURL($file, $limit, [$this, $name]);
-	}
-}
 class XNData {
-	private $xnd = false;
-	public $type = false;
-	public $math = false, $proMath = false;
-	public $position = 0;
-	public static function file($file, int $limit = 999){
-		$here = new XNData;
-		$here->type = "file";
-		$here->xnd = new XNDataFile($file, $limit);
-		$here->math = $here->xnd->math;
-		$here->proMath = $here->xnd->proMath;
-		return $here;
-	}
-	public static function url($url, int $limit = 999){
-		$here = new XNData;
-		$here->type = "url";
-		$here->xnd = new XNDataURL($url, $limit);
-		$here->math = $here->xnd->math;
-		$here->proMath = $here->xnd->proMath;
-		return $here;
-	}
-	public static function string($str = ","){
-		$here = new XNData;
-		$here->type = "string";
-		$here->xnd = new XNDataString($str);
-		$here->math = $here->xnd->math;
-		$here->proMath = $here->xnd->proMath;
-		return $here;
-	}
-	public static function thumb($data = ',', int $limit = 999){
-		$f = tmpfile();
-		fwrite($f, $data);
-		rewind($f);
-		$here = new XNData;
-		$here->type = "thumb";
-		$here->xnd = new XNDataFile($f, $limit);
-		$here->math = $here->xnd->math;
-		$here->proMath = $here->xnd->proMath;
-		return $here;
-	}
-	public static function xnd($xnd, int $limit = 999){
-		if(isset($xnd->xnd))$xnd = $xnd->xnd;
-		$here = new XNData;
-		if($xnd instanceof XNDataString)$here->type = "string";
-		elseif($xnd instanceof XNDataURL)$here->type = "url";
-		elseif($xnd instanceof XNDataFile) {
-			if(!$xnd->getFileName() && fileformat(fname($xnd->getFile())) == "tmp")$here->type = "thumb";
-			else $here->type = "file";
-		}
-		else return false;
-		$here->xnd = $xnd;
-		$here->limit = $limit;
-		$here->math = $xnd->math;
-		$here->proMath = $xnd->proMath;
-		return $here;
-	}
-	public function close(){
-		$this->xnd->close();
-	}
-	public function save(){
-		$this->xnd->save();
-		return $this;
-	}
-	public function get(){
-		return $this->xnd->get();
-	}
-	public function __toString(){
-		return $this->xnd->get();
-	}
-	public function reset(){
-		$this->xnd->reset();
-		return $this;
-	}
-	public function value($key){
-		return $this->xnd->value($key);
-	}
-	public function key($value){
-		return $this->xnd->key($value);
-	}
-	public function type($x){
-		return $this->xnd->type($x);
-	}
-	public function set($key, $value){
-		return $this->xnd->set($key, $value);
-	}
-	public function iskey($x){
-		return $this->xnd->iskey($x);
-	}
-	public function isvalue($x){
-		return $this->xnd->isvalue($x);
-	}
-	public function isdir($x){
-		return $this->xnd->isdir($x);
-	}
-	public function make($name){
-		$this->xnd->make($name);
-		return $this;
-	}
-	public function delete($key){
-		$this->xnd->delete($key);
-		return $this;
-	}
-	public function dir($name){
-		$dir = $this->xnd->dir($name);
-		if($dir)return self::xnd($dir);
-		return false;
-	}
-	public function convert($to = "string", $file = null){
-		if($this->type == "string" && $to == "string") {
-			$this->xnd = new XNDataString($this->xnd->get());
-			return $this->xnd;
-		}
-		if($this->type == "string" && $to = "file") {
-			$this->type = "file";
-			if(!fput($file, $this->xnd->get()))return false;
-			$this->xnd = new XNDataFile($file);
-			$this->math = $this->xnd->math;
-			$this->proMath = $this->xnd->proMath;
-			return $this->xnd;
-		}
-		if($this->type == "string" && $to = "thumb") {
-			$this->type = "thumb";
-			$f = tmpfile();
-			fwrite($f, $this->xnd->get());
-			rewind($f);
-			$this->xnd = new XNDataFile($f);
-			$this->math = $this->xnd->math;
-			$this->proMath = $this->xnd->proMath;
-			return $this->xnd;
-		}
-		if(($this->type = "file" || $this->type = "url") && $to = "string") {
-			$this->type = "string";
-			fclose($this->xnd->getFile());
-			$this->xnd = new XNDataString(fget($this->xnd->getFileName()));
-			$this->math = $this->xnd->math;
-			$this->proMath = $this->xnd->proMath;
-			return $this->xnd;
-		}
-		if(($this->type = "file" || $this->type = "url") && $to = "file") {
-			$this->type = "thumb";
-			$f = fopen($file, 'rw+');
-			while(($h = fread($this->xnd->file, $this->limit)) !== '')fwrite($f, $h);
-			rewind($f);
-			$this->xnd = new XNDataFile($f);
-			$this->math = $this->xnd->math;
-			$this->proMath = $this->xnd->proMath;
-			return $this->xnd;
-		}
-		if(($this->type = "file" || $this->type = "url") && $to = "thumb") {
-			$this->type = "thumb";
-			$f = tmpfile();
-			$file = $this->xnd->getFile();
-			while(($h = fread($file, $this->limit)) !== '')fwrite($f, $h);
-			rewind($f);
-			$this->xnd = new XNDataFile($f);
-			$this->math = $this->xnd->math;
-			$this->proMath = $this->xnd->proMath;
-			return $this->xnd;
-		}
-		if($this->type == "thumb" && $to = "string") {
-			$this->type = "string";
-			$g = fread($this->xnd->file, fsize($this->xnd->file));
-			fclose($this->xnd->file);
-			$this->xnd = new XNDataString($g);
-			$this->math = $this->xnd->math;
-			$this->proMath = $this->xnd->proMath;
-			return $this->xnd;
-		}
-		if($this->type = "thumb" && $to = "file") {
-			$this->type = "thumb";
-			$f = fopen($file, 'rw+');
-			$file = $this->xnd->getFile();
-			while(($h = fread($file, $this->limit)) !== '')fwrite($f, $h);
-			rewind($f);
-			$this->xnd = new XNDataFile($f);
-			$this->math = $this->xnd->math;
-			$this->proMath = $this->xnd->proMath;
-			return $this->xnd;
-		}
-		if($this->type = "thumb" && $to = "thumb") {
-			$this->type = "thumb";
-			$f = tmpfile();
-			$file = $this->xnd->getFile();
-			while(($h = fread($file, $this->limit)) !== '')fwrite($f, $h);
-			rewind($f);
-			$this->xnd = new XNDataFile($f);
-			$this->math = $this->xnd->math;
-			$this->proMath = $this->xnd->proMath;
-			return $this->xnd;
-		}
-		return false;
-	}
-	public function getFile(){
-		return $this->type == "file" || $this->type == "thumb" ? $this->xnd->getFile(): $this->type == "url" ? fopen($this->xnd->getFileName(), 'r'): false;
-	}
-	public function getFileName(){
-		return $this->type == "file" || $this->type == "thumb" || $this->type == "url" ? $this->xnd->getFileName(): false;
-	}
-	public function size(){
-		return $this->xnd->size();
-	}
-	public function count(){
-		return $this->xnd->count();
-	}
-	public function array(){
-		return $this->xnd->array();
-	}
-	public function all($func){
-		$this->xnd->all($func);
-		return $this;
-	}
-	public function number($number = 0){
-		return $this->xnd->number($number);
-	}
-	public function random(){
-		return $this->xnd->number(rand(0, $this->xnd->count()));
-	}
-	public function current(){
-		return $this->xnd->number($this->position);
-	}
-	public function start(){
-		return $this->xnd->number($this->position = 0);
-	}
-	public function end(){
-		return $this->xnd->number($this->position = $this->xnd->count()- 1);
-	}
-	public function next(){
-		return $this->xnd->number(++$this->position);
-	}
-	public function prev(){
-		return $this->xnd->number(--$this->position);
-	}
+    public static function encodesz($l){
+        $s = '';
+        while($l>0){
+            $s .= chr($l%256);
+            $l = floor($l/256);
+        }
+        return $s;
+    }
+    public static function decodesz($l){
+        $s = 0;
+        for($c=0;isset($l[$c]);++$c)
+            $s = $s*256+ord($l[$c]);
+        return $s;
+    }
+    public static function encodeon($key){
+        switch(gettype($key)){
+            case "NULL":
+                $type = 1;
+                $key = '';
+            break;
+            case "boolean":
+                if($key)
+                    $type = 2;
+                else
+                    $type = 3;
+                $key = '';
+            break;
+            case "integer":
+            case "double":
+            case "float":
+                $type = 4;
+                $key = (string)$key;
+            break;
+            case "string":
+                $type = 5;
+            break;
+            case "array":
+                $type = 6;
+                $key = substr(serialize($key),2,-1);
+            break;
+            case "object":
+                if(is_closure($key)){
+                    $type = 8;
+                    $key = unce($key);
+                }else{
+                    $type = 7;
+                    $key = substr(serialize($key),2,-1);
+                }
+            break;
+            default:
+                new XNError("XNData","invalid data type");
+                return false;
+        }
+        $z = gzcompress($key,9,31);
+        if(strlen($z) <= strlen($key)){
+            $type += 9;
+            $key = $z;
+        }
+        $key = chr($type).$key;
+        $l = strlen($key);
+        $s = self::encodesz($l);
+        $l = strlen($s);
+        return chr($l).$s.$key;
+    }
+    public static function encodevw($key){
+        switch(gettype($key)){
+            case "NULL":
+                $type = 1;
+                $key = '';
+            break;
+            case "boolean":
+                if($key)
+                    $type = 2;
+                else
+                    $type = 3;
+                $key = '';
+            break;
+            case "integer":
+            case "double":
+            case "float":
+                $type = 4;
+                $key = (string)$key;
+            break;
+            case "string":
+                $type = 5;
+            break;
+            case "array":
+                $type = 6;
+                $key = substr(serialize($key),2,-1);
+            break;
+            case "object":
+                if(is_closure($key)){
+                    $type = 8;
+                    $key = unce($key);
+                }else{
+                    $type = 7;
+                    $key = substr(serialize($key),2,-1);
+                }
+            break;
+            default:
+                new XNError("XNData","invalid data type");
+                return false;
+        }
+        $z = gzcompress($key,9,31);
+        if(strlen($z) <= strlen($key)){
+            $type += 9;
+            $key = $z;
+        }
+        return chr($type).$key;
+    }
+    public static function decodeon($key){
+        $type = ord($key[0]);
+        $key = substr_replace($key,'',0,1);
+        if($type>9){
+            $type -= 9;
+            $key = gzuncompress($key);
+        }
+        switch($type){
+            case 1:
+                $key = null;
+            break;
+            case 2:
+                $key = true;
+            break;
+            case 3:
+                $key = false;
+            break;
+            case 4:
+                $key = tonumber($key);
+            break;
+            case 5:
+            break;
+            case 6:
+                $key = unserialize("a:$key}");
+            break;
+            case 7:
+                $key = unserialize("O:$key}");
+            break;
+            case 8:
+                $key = eval("return $key;");
+            break;
+            default:
+                new XNError("XNData","invalid data type");
+                return false;
+        }
+        return $key;
+    }
+    public static function encodeel($key,$value){
+        $key .= $value;
+        $l = strlen($key);
+        $s = self::encodesz($l);
+        $l = strlen($s);
+        return chr($l).$s.$key;
+    }
+    public static function decodeel($key){
+        $l = ord($key[0]);
+        $s = substr($key,0,$l);
+        $s = self::decodesz($s);
+        $value = substr($key,$l+$s+1);
+        $key = substr($key,$l+1,$s);
+        $l = ord($value[0]);
+        $s = substr($value,0,$l);
+        $s = self::decodesz($s);
+        $value = substr($value,$l+1,$s);
+        return [$key,$value];
+    }
+    public static function decodenz($key){
+        return self::decodeon(substr($key,ord($key[0])+1));
+    }
+    public static function decodeez($key){
+        return self::decodeel(substr($key,ord($key[0])+1));
+    }
+    public $xnd,$type;
+    public static function xnd($xnd){
+        $xndata = new XNData;
+        if($xnd instanceof XNDataString ||
+           $xnd instanceof XNDataFile   ||
+           $xnd instanceof XNDataURL)
+            $xndata->xnd = $xnd;
+        elseif($xnd instanceof XNData)
+            $xndata->xnd = $xnd->xnd;
+        elseif($xnd instanceof XNDataObject)
+            $xndata->xnd = $xnd->xnd->xnd;
+        else return false;
+        $xndata->setLastModified();
+        if($xndata->xnd instanceof XNDataString)
+            $xndata->type = "string";
+        elseif($xndata->xnd instanceof XNDataFile)
+            $xndata->type = "file";
+        elseif($xndata->xnd instanceof XNDataURL)
+            $xndata->type = "url";
+        return $xndata;
+    }
+    public static function string($data = ''){
+        $xnd = new XNData;
+        $xnd->xnd = new XNDataString($data);
+        $xnd->setLastModified();
+        $xnd->type = "string";
+        return $xnd;
+    }
+    public static function file($file){
+        $xnd = new XNData;
+        $xnd->xnd = new XNDataFile($file);
+        $xnd->setLastModified();
+        $xnd->type = "file";
+        return $xnd;
+    }
+    public static function url($url){
+        $xnd = new XNData;
+        $xnd->xnd = new XNDataURL($url);
+        $xnd->setLastModified();
+        $xnd->type = "url";
+        return $xnd;
+    }
+    public static function tmp(){
+        $xnd = new XNData;
+        $xnd->xnd = new XNDataFile();
+        $xnd->setLastModified();
+        $xnd->type = "file";
+        return $xnd;
+    }
+    
+    // size info
+    public function get(){
+        return $this->xnd->get();
+    }
+    public function __toString(){
+        return $this->xnd->get();
+    }
+    public function size(){
+        return $this->xnd->size();
+    }
+    public function count(){
+        return $this->xnd->count();
+    }
+
+    // savers
+    public $save = false;
+    public function save(){
+        return $this->xnd->save();
+    }
+    public function __destruct(){
+        if($this->save)
+            $this->save();
+    }
+
+    // get location
+    public function locate(){
+        return $this->xnd->locate();
+    }
+    public function stream(){
+        return $this->xnd->stream();
+    }
+
+    // information
+    public function setName($name){
+        $this->xnd->set("\x01\x02\x09n",self::encodeon($name));
+    }
+    public function getName(){
+        $name = $this->xnd->value("\x01\x02\x09n");
+        if(!$name)return;
+        return self::decodenz($name);
+    }
+    public function setDescription($desc){
+        $this->xnd->set("\x01\x02\x09d",self::encodeon($desc));
+    }
+    public function getDescription(){
+        $desc = $this->xnd->value("\x01\x02\x09d");
+        if(!$desc)return;
+        return self::decodenz($desc);
+    }
+    private function setLastModified(){
+        $this->xnd->set("\x01\x02\x09m",self::encodeon(floor(microtime(true)*1000)));
+    }
+    public function getLastModified(){
+        $modifi = $this->xnd->value("\x01\x02\x09m");
+        if(!$modifi)return;
+        return self::decodenz($modifi);
+    }
+
+    // convertor
+    public function convert(string $to = "string",$file = ''){
+        switch($this->type){
+            case "string":
+                switch($to){
+                    case "string":
+                    break;
+                    case "file":
+                        if(is_string($file)){
+                            if(!file_exists($file))
+                                return false;
+                            else $file = fopen($file,"r+b");
+                        }elseif(!is_resource($file) || !fmode($file))
+                            return false;
+                        if(fmode($file) != 'r+b')
+                            $file = fclone($file,'r+b');
+                        fwrite($file,$this->xnd->get());
+                        $this->type = "file";
+                        $this->xnd = new XNDataFile($file);
+                        $this->setLastModified();
+                    break;
+                    case "tmp":
+                        $file = tmpfile();
+                        fwrite($file,$this->xnd->get());
+                        $this->type = "file";
+                        $this->xnd = new XNDataFile($file);
+                        $this->setLastModified();
+                    break;
+                    default:
+                        return false;
+                }
+            break;
+            case "file":
+                switch($to){
+                    case "string":
+                        $this->type = "string";
+                        $this->xnd = new XNDataString($this->xnd->get());
+                    break;
+                    case "file":
+                        if(is_string($file)){
+                            if(!file_exists($file))
+                                return false;
+                            else $file = fopen($file,"r+b");
+                        }elseif(!is_resource($file) || !fmode($file))
+                            return false;
+                        if(fmode($file) != 'r+b')
+                            $file = fclone($file,'r+b');
+                        stream_copy_to_stream($this->xnd->stream(),$file);
+                        $this->xnd = new XNDataFile($file);
+                    break;
+                    case "tmp":
+                        $file = tmpfile();
+                        stream_copy_to_stream($this->xnd->stream(),$file);
+                        $this->xnd = new XNDataFile($file);
+                    break;
+                    default:
+                        return false;
+                }
+            break;
+            case "url":
+                switch($to){
+                    case "string":
+                        $this->type = "string";
+                        $this->xnd = new XNDataString($this->xnd->get());
+                    break;
+                    case "file":
+                        if(is_string($file)){
+                            if(!file_exists($file))
+                                return false;
+                            else $file = fopen($file,"r+b");
+                        }elseif(!is_resource($file) || !fmode($file))
+                            return false;
+                        if(fmode($file) != 'r+b')
+                            $file = fclone($file,'r+b');
+                        stream_copy_to_stream($this->xnd->stream(),$file);
+                        $this->xnd = new XNDataFile($file);
+                    break;
+                    case "tmp":
+                        $file = tmpfile();
+                        stream_copy_to_stream($this->xnd->stream(),$file);
+                        $this->xnd = new XNDataFile($file);
+                    break;
+                    default:
+                        return false;
+                }
+            break;
+            default:
+                return false;
+        }
+        $this->save();
+        return true;
+    }
+
+    // keys
+    public function iskey($key){
+        return $this->xnd->iskey(self::encodeon($key));
+    }
+    public function key($value){
+        $key = $this->xnd->key(self::encodeon($value));
+        if(!$key)return;
+        return self::decodeon($key);
+    }
+    public function keys($value){
+        $keys = $this->xnd->keys(self::encodeon($value));
+        return array_map("XNData::decodeon",$keys);
+    }
+
+    // values
+    public function isvalue($value){
+        return $this->xnd->isvalue(self::encodeon($value));
+    }
+    public function value($key){
+        $value = $this->xnd->value(self::encodeon($key));
+        if(!$value)return;
+        return self::decodenz($value);
+    }
+
+    // dirs
+    public function isdir($dir){
+        return $this->xnd->isdir(self::encodeon($dir));
+    }
+    public function dir($dir){
+        $dir = $this->xnd->dir(self::encodeon($dir));
+        if(!$dir)return false;
+        return self::xnd($dir);
+    }
+    public function make($dir){
+        $this->xnd->set(self::encodeon($dir),"\x01\x01\x09");
+        if($this->save)
+            $this->save();
+    }
+
+    // setters
+    public function set($key,$value){
+        $this->xnd->set(self::encodeon($key),self::encodeon($value));
+        if($this->save)
+            $this->save();
+    }
+    public function reset(){
+        $this->xnd->reset();
+        if($this->save)
+            $this->save();
+    }
+    public function delete($key){
+        $this->xnd->delete(self::encodeon($key));
+        if($this->save)
+            $this->save();
+    }
+
+    // Math
+    public function join($key,$value){
+        $this->set($key,$this->value($key).$value);
+    }
+    public function madd($key,$count = 1){
+        $this->set($key,$this->value($key) + $count);
+    }
+    public function mrem($key,$count = 1){
+        $this->set($key,$this->value($key) - $count);
+    }
+    public function mdiv($key,$count = 1){
+        $this->set($key,$this->value($key) / $count);
+    }
+    public function mmul($key,$count = 1){
+        $this->set($key,$this->value($key) * $count);
+    }
+    public function mres($key,$count = 1){
+        $this->set($key,$this->value($key) % $count);
+    }
+
+    // type
+    public function type($x){
+        return $this->iskey($x)?"key":($this->isvalue($x)?"value":false);
+    }
+    public function keytype($x){
+        $g = $this->value($x);
+        if(!$g)return false;
+        $g = substr_replace($g,'',0,ord($g[0])+1);
+        if($g == "\x0a")return "list";
+        if($g[0] == "\x09")return "dir";
+        return "value";
+    }
+    
+    // readers
+    public function list($data){
+        foreach($data as $key=>$value)
+            $this->set($key,$value);
+    }
+    public function allkeys(){
+        $keys = [];
+        $this->xnd->allkey(function($key)use(&$keys){
+            if($key[0] == "\x09")return;
+            $keys[] = self::decodeon($key);
+        });
+        return $keys;
+    }
+    public function all(){
+        $all = [];
+        $this->xnd->all(function($key,$value)use(&$all){
+            if($key[0] == "\x09")return;
+            if($value[ord($value[0])+1] == "\x09")
+                 $all[] = [self::decodeon($key),self::xnd(new XNDataString(substr_replace($value,'',0,ord($value[0])+2)))];
+            elseif(isset($value[2]) && $value[2] == "\x0a"){
+                $all[] = [unce(self::decodeon($key))];
+            }
+            else $all[] = [self::decodeon($key),self::decodenz($value)];
+        });
+        return $all;
+    }
+    public function readkeys(object $func){
+        $this->xnd->allkey(function($k,$v)use($func){
+            if($k[0] == "\x09")return;
+            ($func)(self::decodeon($k),self::decodenz($v));
+        });
+    }
+    public function read(object $func){
+        $this->xnd->all(function($k,$v)use($func){
+            if($k[0] == "\x09")return;
+            ($func)(self::decodeon($k),self::decodenz($v));
+        });
+    }
+
+    // query
 	public function query($query = ''){
 		$datas = [];
 		$codes = [];
@@ -6006,13 +4481,12 @@ class XNData {
 		}
 		, $query);
 		$cc = $cd = 0;
-		$result = null;
 		$finish = '';
 		$query = explode("\n", $query);
 		foreach($query as $q) {
 			$q = explode(" ", trim($q));
-			$q[0] = strtolower($q[0]);
-			if($q[0] == "set") {
+            $q[0] = strtolower($q[0]);
+            if($q[0] == "set") {
 				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->set($datas[$cd - 2], $datas[$cd - 1]);
 			}
 			elseif($q[0] == "make") {
@@ -6021,23 +4495,23 @@ class XNData {
 			elseif($q[0] == "delete") {
 				if(isset($datas[$cd]))$this->delete($datas[$cd++]);
 			}
-			elseif($q[0] == "add") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->math->add($datas[$cd - 2], $datas[$cd - 1]);
+			elseif($q[0] == "madd") {
+				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->madd($datas[$cd - 2], $datas[$cd - 1]);
 			}
-			elseif($q[0] == "rem") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->math->rem($datas[$cd - 2], $datas[$cd - 1]);
+			elseif($q[0] == "mrem") {
+				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->mrem($datas[$cd - 2], $datas[$cd - 1]);
 			}
-			elseif($q[0] == "mul") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->math->mul($datas[$cd - 2], $datas[$cd - 1]);
+			elseif($q[0] == "mmul") {
+				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->mmul($datas[$cd - 2], $datas[$cd - 1]);
 			}
-			elseif($q[0] == "div") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->math->div($datas[$cd - 2], $datas[$cd - 1]);
+			elseif($q[0] == "mdiv") {
+				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->mdiv($datas[$cd - 2], $datas[$cd - 1]);
 			}
-			elseif($q[0] == "res") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->math->res($datas[$cd - 2], $datas[$cd - 1]);
+			elseif($q[0] == "mres") {
+				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->mres($datas[$cd - 2], $datas[$cd - 1]);
 			}
 			elseif($q[0] == "join") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->math->join($datas[$cd - 2], $datas[$cd - 1]);
+				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->join($datas[$cd - 2], $datas[$cd - 1]);
 			}
 			elseif($q[0] == "dir") {
 				if(isset($datas[$cd]) && isset($codes[$cc]))$dir = $this->dir($datas[$cd++]);
@@ -6061,6 +4535,10 @@ class XNData {
 				if(isset($datas[$cd]) && isset($codes[$cc++]))
 				if($this->isdir($datas[$cd++]))$this->query($codes[$cc - 1]);
 			}
+			elseif($q[0] == "islist") {
+				if(isset($datas[$cd]) && isset($codes[$cc++]))
+				if($this->islist($datas[$cd++]))$this->query($codes[$cc - 1]);
+			}
 			elseif($q[0] == "notkey") {
 				if(isset($datas[$cd]) && isset($codes[$cc++]))
 				if(!$this->iskey($datas[$cd++]))$this->query($codes[$cc - 1]);
@@ -6072,6 +4550,10 @@ class XNData {
 			elseif($q[0] == "notvalue") {
 				if(isset($datas[$cd]) && isset($codes[$cc++]))
 				if(!$this->isdir($datas[$cd++]))$this->query($codes[$cc - 1]);
+			}
+			elseif($q[0] == "notlist") {
+				if(isset($datas[$cd]) && isset($codes[$cc++]))
+				if(!$this->islist($datas[$cd++]))$this->query($codes[$cc - 1]);
 			}
 			elseif($q[0] == "exit") {
 				return;
@@ -6111,67 +4593,1459 @@ class XNData {
 						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "notvalue" && !$this->notvalue($datas[$cd++]))$cs[] = $codes[$cc++];
 						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "isdir" && $this->isdir($datas[$cd++]))$cs[] = $codes[$cc++];
 						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "notdir" && !$this->isdir($datas[$cd++]))$cs[] = $codes[$cc++];
+						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "islist" && $this->islist($datas[$cd++]))$cs[] = $codes[$cc++];
+						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "notlist" && !$this->islist($datas[$cd++]))$cs[] = $codes[$cc++];
 						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "is" && $this->iskey($datas[$cd]) && $this->isvalue($datas[$cd++]))$cs[] = $codes[$cc++];
 						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "not" && !$this->iskey($datas[$cd]) && !$this->isvalue($datas[$cd++]))$cs[] = $codes[$cc++];
 					}
 					foreach($cs as $co)$this->query($co);
 				}
 			}
-			elseif($q[0] == "array") {
-				$result = $this->array();
-			}
 			elseif($q[0] == "dump") {
 				$this->_dump('');
-			}
+            }
+            elseif($q[0] == "add"){
+                if(isset($datas[$cd]))$this->add($datas[$cd++]);
+            }
+            elseif($q[0] == "setname"){
+                if(isset($datas[$cd]))$this->setName($datas[$cd++]);
+            }
+            elseif($q[0] == "setdescription"){
+                if(isset($datas[$cd]))$this->setDescription($datas[$cd++]);
+            }
 		}
 		if($finish)$this->query($finish);
-		return $result;
-	}
-	private function _compote($dir = "."){
-		$name = filename($dir);
-		if(is_file($dir))$this->set($name, file_get_contents($dir));
-		else {
-			$this->make($name);
-			$d = $this->dir($name);
-			foreach(scandir($dir)as $file)
-			if($file != '.' && $file != '..')$d->_compote($dir .DIRECTORY_SEPARATOR. $file);
-		}
-	}
-	public function compote($dir = "."){
-		$name = filename($dir);
-		if(is_file($dir))$this->set($name, file_get_contents($dir));
-		else {
-			foreach(scandir($dir)as $file)
-			if($file != '.' && $file != '..')$this->_compote($dir .DIRECTORY_SEPARATOR. $file);
-		}
-	}
-	public function extract($dir = "."){
-	}
-	private function _dump($k){
-		$c = 1;
-		$this->all(
-		function($key, $value)use(&$c, $k){
-			if($this->isdir($key)) {
-				print "$k #" . ($c++). " diractory $key\n";
-				$this->dir($key)->_dump("$k |");
-			}
-			else print "$k #" . ($c++). " $key : $value" . PHP_EOL;
-		});
-	}
-	public function dump(){
-		$this->_dump('');
-	}
-	const SEARCH_START = 1;
-	const SEARCH_MATCH = 2;
-	const SEARCH_IMATCH = 3;
-	const SEARCH_ISTART = 4;
-	const SEARCH_REGEX = 5;
-	public function keysearch($key, $type = 1){
-	}
-	public function valuesearch($value, $type = 1){
-	}
-	public function search($key, $type = 1){
-	}
+    }
+    
+    // dump
+    private function _dump($k){
+        $c = 0;
+        $this->xnd->all(function($key,$value)use(&$c,$k){
+            if($key[0] == "\x09")return;
+            ++$c;
+            if($value[ord($value[0])+1] == "\x09"){
+                print "$k#$c dir ".unce(self::decodeon($key))."\n";
+                self::xnd(new XNDataString(substr_replace($value,'',0,ord($value[0])+2)))->_dump("| $k");
+            }elseif(isset($value[2]) && $value[2] == "\x0a"){
+                print "$k#$c list ".unce(self::decodeon($key))."\n";
+            }
+            else print "$k#$c ".unce(self::decodeon($key))." : ".unce(self::decodenz($value))."\n";
+        });
+    }
+    public function dump(){
+        $this->_dump('');
+    }
+
+    // lists
+    public function add($key){
+        $this->xnd->set(self::encodeon($key),"\x01\x01\x0a");
+        if($this->save)
+            $this->save();
+    }
+    public function islist($key){
+        return $this->xnd->value(self::encodeon($key)) == "\x01\x01\x0a";
+    }
+    public function at(int $x){
+        $at = $this->xnd->numberat($x);
+        if($at[0][0] == "\x09")
+            switch($at[0][1]){
+                case 'n':
+                    return ['name',self::decodenz($at[1]),true];
+                break;
+                case 'd':
+                    return ['description',self::decodenz($at[1]),true];
+                break;
+                case 'm':
+                    return ['last_modified_time',self::decodenz($at[1]),true];
+                break;
+            }
+        if($at[1][$p = ord($at[1][0])+1] == "\x09")
+            return [self::decodeon($at[0]),self::xnd(new XNDataString(substr_replace($at[1],'',0,$p+1)))];
+        elseif($at[1][$p] == "\x0a")
+            return [self::decodeon($at[0])];
+        return [self::decodeon($at[0]),self::decodenz($at[1])];
+    }
+    public function of($key){
+        return $this->xnd->numberof(self::encodeon($key));
+    }
+    public function alllist(){
+        return $this->xnd->keys("\x01\x01\x0a");
+    }
+
+    // xndata json
+    public function json(){
+        $json = new XNDataJson($this);
+        $this->read(function($key,$value)use(&$json){
+            if($value instanceof XNData)
+                $json->$key = $value->json();
+            else $json->$key = $value;
+        });
+        return $json;
+    }
+
+    // random element
+    public function random(){
+        $count = $this->count();
+        if($count < 4){
+            if($count < 1)return false;
+            if($count == 1){
+                $at = $this->at(1);
+                if(isset($at[2]) && $at[2])
+                    return false;
+                return $at;
+            }
+            if($count == 2){
+                $at1 = $this->at(1);
+                $at2 = $this->at(2);
+                $at = [$at1,$at2];
+                if(isset($at1[2]) && $at1[2])unset($at[0]);
+                if(isset($at2[2]) && $at2[2])unset($at[1]);
+                if($at == [])
+                    return false;
+                return $at[array_rand($at)];
+            }
+            $at1 = $this->at(1);
+            $at2 = $this->at(2);
+            $at3 = $this->at(3);
+            $at = [$at1,$at2,$at3];
+            if(isset($at1[2]) && $at1[2])unset($at[0]);
+            if(isset($at2[2]) && $at2[2])unset($at[1]);
+            if(isset($at3[2]) && $at3[2])unset($at[2]);
+            if($at == [])
+                return false;
+            return $at[array_rand($at)];
+        }
+        if($count < 10){
+            $arr = $this->all();
+            return $arr[array_rand($arr)];
+        }
+        $random = $this->at(rand(1,$count));
+        while(isset($random[2]) && $random[2])
+            $random = $this->at(rand(1,$count));
+        return $random;
+    }
+
+    // search
+    const STARTED_BY = 0;
+    const HAVE_IN = 1;
+    const HAVE_OUT = 2;
+    const HAVE_IN_OUT = 3;
+    const MATCH_CHARS = 4;
+    const MATCH_REGEX = 5;
+    public function search(string $by,int $type = 0){
+        $keys = [];
+        $values = [];
+        switch($type){
+            case 0 :
+                $this->all(function($key,$value)use(&$keys,&$values,$by){
+                    if(strpos($key,$by) === 0)$keys[] = $key;
+                    if(strpos($value,$by) === 0)$values[] = $value;
+                });
+            break;
+            case 1:
+                $this->all(function($key,$value)use(&$keys,&$values,$by){
+                    if(strpos($key,$by) != -1)$keys[] = $key;
+                    if(strpos($value,$by) != -1)$values[] = $value;
+                });
+            break;
+            case 2:
+                $this->all(function($key,$value)use(&$keys,&$values,$by){
+                    if(strpos($by,$key) != -1)$keys[] = $key;
+                    if(strpos($by,$value) != -1)$values[] = $value;
+                });
+            break;
+            case 3:
+                $this->all(function($key,$value)use(&$keys,&$values,$by){
+                    if(strpos($key,$by) != -1 || strpos($by,$key) != -1)$keys[] = $key;
+                    if(strpos($value,$by) != -1 || strpos($by,$value) != -1)$values[] = $values;
+                });
+            break;
+            case 4:
+                $this->all(function($key,$value)use(&$keys,&$values,$by){
+                    if(preg_match("/".implode(' *',array_map(function($x){
+                        return preg_quote($x,'/');
+                    },str_split($key)))."/",$key))$keys[] = $key;
+                    if(preg_match("/".implode(' *',array_map(function($x){
+                        return preg_quote($x,'/');
+                    },str_split($value)))."/",$value))$values[] = $value;
+                });
+            break;
+            case 5:
+                $this->all(function($key,$value)use(&$keys,&$values,$by){
+                    if(preg_match($by,$key))$keys[] = $key;
+                    if(preg_match($by,$value))$values[] = $value;
+                });
+            break;
+            default:
+                new XNError("XNData $this->type search","invalid search type");
+                return false;
+        }
+        return [$keys,$values];
+    }
+}
+class XNDataJson {
+    private $xnd;
+    public function __construct(XNData $xnd){
+        $this->xnd = $xnd;
+    }
+    private function _save($x){
+        foreach($x as $k=>$v){
+            if(is_object($v) && ($v instanceof stdClass || $v instanceof XNDataJson)){
+                if(!$this->xnd->isdir($k))
+                    $this->xnd->make($k);
+                (new XNDataJson($this->xnd->dir($k)))->_save((array)$v);
+            }else
+            $this->xnd->set($k,$v);
+        }
+    }
+    public function xndata(){
+        return $this->xnd;
+    }
+    public function save(){
+        $arr = (array)$this;
+        unset($arr["\x00XNDataJson\x00xnd"]);
+        $this->_save($arr);
+    }
+    public function __destruct(){
+        $this->save();
+    }
+}
+class XNDataString {
+    private $data = '',$parent = false;
+    public function __construct(string $data = ''){
+        $this->data = $data;
+    }
+    public function setme(array $parent){
+        $this->parent = $parent;
+    }
+    public function save(){
+        if($this->parent){
+            $data = "\x09".$this->data;
+            $s = strlen($data);
+            $s = xndata::encodesz($s);
+            $l = strlen($s);
+            $data = chr($l).$s.$data;
+            $this->parent[0]->set($this->parent[1],$data);
+            $this->parent[0]->save();
+        }
+    }
+    public function reset(){
+        $this->data = '';
+    }
+    public function get(){
+        return $this->data;
+    }
+    public function size(){
+        return strlen($this->data);
+    }
+    public function iskey($key){
+        $data = $this->data;
+        $key = $key;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        for($c = 0;isset($data[$c]);){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            $l = ord($data[$c++]);
+            --$s;
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                $c+= $s;
+                continue;
+            }
+            $k = substr($data,$c,$h);
+            if($k == $key)
+                return true;
+            $c+= $s;
+        }
+        return false;
+    }
+    public function numberof($key){
+        $data = $this->data;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        $o = 1;
+        for($c = 0;isset($data[$c]);++$o){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            $l = ord($data[$c++]);
+            --$s;
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                $c+= $s;
+                continue;
+            }
+            $k = substr($data,$c,$h);
+            if($k == $key)
+                return $o;
+            $c+= $s;
+        }
+        return false;
+    }
+    public function value($key){
+        $data = $this->data;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        for($c = 0;isset($data[$c]);){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            $l = ord($data[$c++]);
+            --$s;
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                $c+= $s;
+                continue;
+            }
+            $k = substr($data,$c,$h);
+            if($k == $key){
+                $c+= $h;
+                $s-= $h;
+                return substr($data,$c,$s);
+            }
+            $c+= $s;
+        }
+        return false;
+    }
+    public function key($value){
+        $data = $this->data;
+        $value = substr($value,ord($value[0])+1);
+        $z = strlen($value);
+        for($c = 0;isset($data[$c]);){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            $l = ord($data[$c++]);
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $h = xndata::decodesz($h);
+            $k = substr($data,$c,$h);
+            $c+= $h;
+            $l = ord($data[$c++]);
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                $c+= $h;
+                continue;
+            }
+            $v = substr($data,$c,$h);
+            if($v == $value)
+                return $k;
+            $c+= $h;
+        }
+        return false;
+    }
+    public function keys($value){
+        $data = $this->data;
+        $value = substr($value,ord($value[0])+1);
+        $z = strlen($value);
+        $ks = [];
+        for($c = 0;isset($data[$c]);){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            $l = ord($data[$c++]);
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $h = xndata::decodesz($h);
+            $k = substr($data,$c,$h);
+            $c+= $h;
+            $l = ord($data[$c++]);
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                $c+= $h;
+                continue;
+            }
+            $v = substr($data,$c,$h);
+            if($v == $value)
+                $ks[] = $k;
+            $c+= $h;
+        }
+        return $ks;
+    }
+    public function isvalue($value){
+        $data = $this->data;
+        $value = xndata::encodeon($value);
+        $value = substr($value,ord($value[0])+1);
+        $z = strlen($value);
+        for($c = 0;isset($data[$c]);){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            $l = ord($data[$c++]);
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $h = xndata::decodesz($h);
+            $c+= $h;
+            $l = ord($data[$c++]);
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                $c+= $h;
+                continue;
+            }
+            $v = substr($data,$c,$h);
+            if($v == $value)
+                return true;
+            $c+= $h;
+        }
+        return false;
+    }
+    private function replace($key,$value){
+        $data = &$this->data;
+        $u = $key;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        for($c = 0;isset($data[$c]);){
+            $t = ord($data[$c++]);
+            $s = substr($data,$c,$t);
+            $c+= $t;
+            $s = xndata::decodesz($s);
+            $l = ord($data[$c++]);
+            --$s;
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                $c+= $s;
+                continue;
+            }
+            $k = substr($data,$c,$h);
+            if($k == $key){
+                $c+= $h;
+                $s-= $h;
+                $l = 2+$t+$l+$h;
+                $value = xndata::encodeel($u,$value);
+                $data = substr_replace($data,$value,$c-$l,$s+$l);
+                return true;
+            }
+            $c+= $s;
+        }
+        return false;
+    }
+    public function set($key,$value){
+        if(!$this->replace($key,$value))
+            $this->data .= xndata::encodeel($key,$value);
+    }
+    public function delete($key){
+        $data = &$this->data;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        for($c = 0;isset($data[$c]);){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            $l = ord($data[$c++]);
+            --$s;
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                $c+= $s;
+                continue;
+            }
+            $k = substr($data,$c,$h);
+            if($k == $key){
+                $c+= $h;
+                $s-= $h;
+                $l = 2+$t+$l+$h;
+                $data = substr_replace($data,'',$c-$l,$s+$l);
+                return true;
+            }
+            $c+= $s;
+        }
+        return false;
+    }
+    public function isdir($key){
+        $data = $this->data;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        for($c = 0;isset($data[$c]);){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            $l = ord($data[$c++]);
+            --$s;
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                $c+= $s;
+                continue;
+            }
+            $k = substr($data,$c,$h);
+            if($k == $key){
+                $c+= $h;
+                return $data[$c+ord($data[$c])+1] == "\x09";
+            }
+            $c+= $s;
+        }
+        return false;
+    }
+    public function dir($key){
+        $data = $this->data;
+        $j = $key;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        for($c = 0;isset($data[$c]);){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            $l = ord($data[$c++]);
+            --$s;
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                $c+= $s;
+                continue;
+            }
+            $k = substr($data,$c,$h);
+            if($k == $key){
+                $c+= $h;
+                if($data[$c+($u=ord($data[$c])+1)] != "\x09")
+                    return false;
+                $xnd = new XNDataString(substr($data,$c+$u+1,$s-$u-1));
+                $xnd->setme([$this,$j]);
+                return $xnd;
+            }
+            $c+= $s;
+        }
+        return false;
+    }
+    public function count(){
+        $data = $this->data;
+        $o = 0;
+        for($c = 0;isset($data[$c]);++$o){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            $c+= $s;
+        }
+        return $o;
+    }
+    public function allkey($func){
+        $data = $this->data;
+        for($c = 0;isset($data[$c]);){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            $l = ord($data[$c++]);
+            --$s;
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            $k = substr($data,$c,$h);
+            ($func)($k);
+            $c+= $s;
+        }
+    }
+    public function all($func){
+        $data = $this->data;
+        for($c = 0;isset($data[$c]);){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            $l = ord($data[$c++]);
+            --$s;
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            $k = substr($data,$c,$h);
+            $v = substr($data,$c+$h,$s-$h);
+            ($func)($k,$v);
+            $c+= $s;
+        }
+    }
+    public function numberat($o){
+        if($o < 1)return false;
+        $data = $this->data;
+        for($c = 0;isset($data[$c]);--$o){
+            $l = ord($data[$c++]);
+            $s = substr($data,$c,$l);
+            $c+= $l;
+            $s = xndata::decodesz($s);
+            if($o > 1){
+                $c+= $s;
+                continue;
+            }
+            $l = ord($data[$c++]);
+            --$s;
+            $h = substr($data,$c,$l);
+            $c+= $l;
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            $k = substr($data,$c,$h);
+            $v = substr($data,$c+$h,$s-$h);
+            return [$k,$v];
+        }
+    }
+}
+class XNDataFile {
+    private $file,$parent = false;
+    public function __construct($file = false){
+        if($file===false)$file = tmpfile();
+        elseif(is_string($file))$file = fopen($file,"r+b");
+        elseif(is_resource($file)&&fmode($file)=="r+b");
+        else return;
+        $this->file = $file;
+        rewind($file);
+    }
+    public function setme(array $parent){
+        $this->parent = $parent;
+    }
+    public function save(){
+        if($this->parent){
+            $file = $this->parent[0]->stream();
+            $fl = $this->file;
+            $a = tmpfile();
+            $key = $this->parent[1];
+            $u = $key;
+            $key = substr($key,ord($key[0])+1);
+            $z = strlen($key);
+            while(($t = fgetc($file)) !== false){
+                $d = $t;
+                $t = ord($t);
+                $s = fread($file,$t);
+                $d.= $s;
+                $s = xndata::decodesz($s);
+                $l = fgetc($file);
+                $d.= $l;
+                $l = ord($l);
+                --$s;
+                $h = fread($file,$l);
+                $d.= $h;
+                $s-= $l;
+                $h = xndata::decodesz($h);
+                if($h != $z){
+                    $d.= fread($file,$s);
+                    fwrite($a,$d);
+                    continue;
+                }
+                $k = fread($file,$h);
+                $d.= $k;
+                if($k == $key){
+                    fseek($file,$s-$h,SEEK_CUR);
+                    $s4 = $this->size();
+                    $s0 = $s4+1;
+                    $s1 = xndata::encodesz($s0);
+                    $s2 = strlen($s1);
+                    $s0 = chr($s2).$s1."\x09";
+                    $s1 = strlen($u)+strlen($s0)+$s4;
+                    $s1 = xndata::encodesz($s1);
+                    $s2 = strlen($s1);
+                    fwrite($a,chr($s2).$s1.$u);
+                    fwrite($a,chr($s1).$s2."\x09");
+                    stream_copy_to_stream($fl,$a);
+                    rewind($fl);
+                    stream_copy_to_stream($file,$a);
+                    rewind($file);
+                    rewind($a);
+                    stream_copy_to_stream($a,$file);
+                    fclose($a);
+                    ftruncate($file,ftell($file));
+                    rewind($file);
+                    return true;
+                }
+                $d.= fread($file,$s-$h);
+                fwrite($a,$d);
+            }
+            fclose($a);
+            rewind($file);
+            return false;
+        }
+    }
+    public function locate(){
+        return fname($this->file);
+    }
+    public function get(){
+        $r = stream_get_contents($this->file);
+        rewind($this->file);
+        return $r;
+    }
+    public function reset(){
+        ftruncate($this->file,0);
+        rewind($this->file);
+    }
+    public function size(){
+        $f = $this->file;
+        fseek($f,0,SEEK_END);
+        $s = ftell($f);
+        rewind($f);
+        return $s;
+    }
+    public function stream(){
+        return $this->file;
+    }
+    public function iskey($key){
+        $file = $this->file;
+        $key = $key;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$s,SEEK_CUR);
+                continue;
+            }
+            $k = fread($file,$h);
+            if($k == $key){
+                rewind($file);
+                return true;
+            }
+            fseek($file,$s-$h,SEEK_CUR);
+        }
+        rewind($file);
+        return false;
+    }
+    public function numberof($key){
+        $file = $this->file;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        $o = 1;
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$s,SEEK_CUR);
+                ++$o;
+                continue;
+            }
+            $k = fread($file,$h);
+            if($k == $key){
+                rewind($file);
+                return $o;
+            }
+            fseek($file,$s-$h,SEEK_CUR);
+            ++$o;
+        }
+        rewind($file);
+        return false;
+    }
+    public function value($key){
+        $file = $this->file;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$s,SEEK_CUR);
+                continue;
+            }
+            $k = fread($file,$h);
+            if($k == $key){
+                $s-= $h;
+                $r = fread($file,$s);
+                rewind($file);
+                return $r;
+            }
+            fseek($file,$s-$h,SEEK_CUR);
+        }
+        rewind($file);
+        return false;
+    }
+    public function key($value){
+        $file = $this->file;
+        $value = substr($value,ord($value[0])+1);
+        $z = strlen($value);
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            $h = fread($file,$l);
+            $h = xndata::decodesz($h);
+            $k = fread($file,$h);
+            $l = ord(fgetc($file));
+            $h = fread($file,$l);
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$h,SEEK_CUR);
+                continue;
+            }
+            $v = fread($file,$h);
+            if($v == $value){
+                rewind($file);
+                return $k;
+            }
+        }
+        rewind($file);
+        return false;
+    }
+    public function keys($value){
+        $file = $this->file;
+        $value = substr($value,ord($value[0])+1);
+        $z = strlen($value);
+        $ks = [];
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            $h = fread($file,$l);
+            $h = xndata::decodesz($h);
+            $k = fread($file,$h);
+            $l = ord(fgetc($file));
+            $h = fread($file,$l);
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$h,SEEK_CUR);
+                continue;
+            }
+            $v = fread($file,$h);
+            if($v == $value)
+                $ks[] = $k;
+        }
+        rewind($file);
+        return $ks;
+    }
+    public function isvalue($value){
+        $file = $this->file;
+        $value = xndata::encodeon($value);
+        $value = substr($value,ord($value[0])+1);
+        $z = strlen($value);
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            $h = fread($file,$l);
+            $h = xndata::decodesz($h);
+            $l = ord(fgetc($file));
+            $h = fread($file,$l);
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$h,SEEK_CUR);
+                continue;
+            }
+            $v = fread($file,$h);
+            if($v == $value){
+                rewind($file);
+                return true;
+            }
+        }
+        rewind($file);
+        return false;
+    }
+    private function replace($key,$value){
+        $file = $this->file;
+        $a = tmpfile();
+        $u = $key;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        while(($t = fgetc($file)) !== false){
+            $d = $t;
+            $t = ord($t);
+            $s = fread($file,$t);
+            $d.= $s;
+            $s = xndata::decodesz($s);
+            $l = fgetc($file);
+            $d.= $l;
+            $l = ord($l);
+            --$s;
+            $h = fread($file,$l);
+            $d.= $h;
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                $d.= fread($file,$s);
+                fwrite($a,$d);
+                continue;
+            }
+            $k = fread($file,$h);
+            $d.= $k;
+            if($k == $key){
+                fseek($file,$s-$h,SEEK_CUR);
+                $value = xndata::encodeel($u,$value);
+                fwrite($a,$value);
+                stream_copy_to_stream($file,$a);
+                rewind($file);
+                rewind($a);
+                stream_copy_to_stream($a,$file);
+                fclose($a);
+                ftruncate($file,ftell($file));
+                rewind($file);
+                return true;
+            }
+            $d.= fread($file,$s-$h);
+            fwrite($a,$d);
+        }
+        fclose($a);
+        rewind($file);
+        return false;
+    }
+    public function set($key,$value){
+        if(!$this->replace($key,$value)){
+            $file = fclone($this->file,'ab');
+            fwrite($file,xndata::encodeel($key,$value));
+            fclose($file);
+        }
+    }
+    public function delete($key){
+        $file = $this->file;
+        $a = tmpfile();
+        $u = $key;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        while(($t = fgetc($file)) !== false){
+            $d = $t;
+            $t = ord($t);
+            $s = substr($data,$c,$t);
+            $d.= $s;
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            $d.= $l;
+            --$s;
+            $h = fread($file,$l);
+            $d.= $h;
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                $d.= fread($file,$s);
+                fwrite($a,$d);
+                continue;
+            }
+            $k = fread($file,$h);
+            $d.= $k;
+            if($k == $key){
+                fseek($file,$s-$h,SEEK_CUR);
+                stream_copy_to_stream($file,$a);
+                rewind($file);
+                rewind($a);
+                stream_copy_to_stream($a,$file);
+                fclose($a);
+                ftruncate($file,ftell($file));
+                rewind($file);
+                return true;
+            }
+            $d.= fread($file,$s-$h);
+            fwrite($a,$d);
+        }
+        fclose($a);
+        rewind($file);
+        return false;
+    }
+    public function isdir($key){
+        $file = $this->file;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$s,SEEK_CUR);
+                continue;
+            }
+            $k = fread($file,$h);
+            if($k == $key){
+                $l = ord(fgetc($file));
+                fseek($file,$l,SEEK_CUR);
+                $r = fgetc($file) == "\x09";
+                rewind($file);
+                return $r;
+            }
+            fseek($file,$s-$h,SEEK_CUR);
+        }
+        rewind($file);
+        return false;
+    }
+    public function dir($key){
+        $file = $this->file;
+        $j = $key;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$s,SEEK_CUR);
+                continue;
+            }
+            $k = fread($file,$h);
+            if($k == $key){
+                $u = ord(fgetc($file));
+                fseek($file,$u,SEEK_CUR);
+                if(fgetc($file) != "\x09")
+                    return false;
+                $tmp = tmpfile();
+                $xnd = new XNDataFile($tmp);
+                $s = $s-$u-1;
+                $s0 = (int)($s / 1048576);
+                $s1 = $s - $s0;
+                while($s0 --> 0)
+                    fwrite($tmp,fread($file,1048576));
+                if($s1)fwrite($tmp,fread($file,$s1));
+                $xnd->setme([$this,$j]);
+                rewind($file);
+                return $xnd;
+            }
+            fseek($file,$s-$h,SEEK_CUR);
+        }
+        rewind($file);
+        return false;
+    }
+    public function count(){
+        $file = $this->file;
+        $o = 0;
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            fseek($file,$s,SEEK_CUR);
+            ++$o;
+        }
+        rewind($file);
+        return $o;
+    }
+    public function allkey($func){
+        $file = $this->file;
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            $k = fread($file,$h);
+            ($func)($k);
+            fseek($file,$s-$h,SEEK_CUR);
+        }
+        rewind($file);
+    }
+    public function all($func){
+        $file = $this->file;
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            $k = fread($file,$h);
+            $v = fread($file,$s-$h);
+            ($func)($k,$v);
+        }
+        rewind($file);
+    }
+    public function numberat($o){
+        if($o < 1)return false;
+        $file = $this->file;
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            if($o > 1){
+                fseek($file,$s,SEEK_CUR);
+                --$o;
+                continue;
+            }
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            $k = fread($file,$h);
+            $v = fread($file,$s-$h);
+            rewind($file);
+            return [$k,$v];
+        }
+        rewind($file);
+        return $o;
+    }
+}
+class XNDataURL {
+    private $url = '';
+    public function __construct(string $file){
+        $this->url = $file;
+    }
+    public function get(){
+        return fget($this->url);
+    }
+    public function size(){
+        return strlen($this->get());
+    }
+    public function iskey($key){
+        $file = fopen($this->url,'rb');
+        $key = $key;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$s,SEEK_CUR);
+                continue;
+            }
+            $k = fread($file,$h);
+            if($k == $key){
+                rewind($file);
+                return true;
+            }
+            fseek($file,$s-$h,SEEK_CUR);
+        }
+        fclose($file);
+        return false;
+    }
+    public function numberof($key){
+        $file = fopen($this->url,'rb');
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        $o = 1;
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$s,SEEK_CUR);
+                ++$o;
+                continue;
+            }
+            $k = fread($file,$h);
+            if($k == $key){
+                rewind($file);
+                return $o;
+            }
+            fseek($file,$s-$h,SEEK_CUR);
+            ++$o;
+        }
+        fclose($file);
+        return false;
+    }
+    public function value($key){
+        $file = fopen($this->url,'rb');
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$s,SEEK_CUR);
+                continue;
+            }
+            $k = fread($file,$h);
+            if($k == $key){
+                $s-= $h;
+                $r = fread($file,$s);
+                rewind($file);
+                return $r;
+            }
+            fseek($file,$s-$h,SEEK_CUR);
+        }
+        fclose($file);
+        return false;
+    }
+    public function key($value){
+        $file = fopen($this->url,'rb');
+        $value = substr($value,ord($value[0])+1);
+        $z = strlen($value);
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            $h = fread($file,$l);
+            $h = xndata::decodesz($h);
+            $k = fread($file,$h);
+            $l = ord(fgetc($file));
+            $h = fread($file,$l);
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$h,SEEK_CUR);
+                continue;
+            }
+            $v = fread($file,$h);
+            if($v == $value){
+                rewind($file);
+                return $k;
+            }
+        }
+        fclose($file);
+        return false;
+    }
+    public function keys($value){
+        $file = fopen($this->url,'rb');
+        $value = substr($value,ord($value[0])+1);
+        $z = strlen($value);
+        $ks = [];
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            $h = fread($file,$l);
+            $h = xndata::decodesz($h);
+            $k = fread($file,$h);
+            $l = ord(fgetc($file));
+            $h = fread($file,$l);
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$h,SEEK_CUR);
+                continue;
+            }
+            $v = fread($file,$h);
+            if($v == $value)
+                $ks[] = $k;
+        }
+        fclose($file);
+        return $ks;
+    }
+    public function isvalue($value){
+        $file = fopen($this->url,'rb');
+        $value = xndata::encodeon($value);
+        $value = substr($value,ord($value[0])+1);
+        $z = strlen($value);
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            $h = fread($file,$l);
+            $h = xndata::decodesz($h);
+            $l = ord(fgetc($file));
+            $h = fread($file,$l);
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$h,SEEK_CUR);
+                continue;
+            }
+            $v = fread($file,$h);
+            if($v == $value){
+                rewind($file);
+                return true;
+            }
+        }
+        fclose($file);
+        return false;
+    }
+    public function isdir($key){
+        $file = fopen($this->url,'rb');
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$s,SEEK_CUR);
+                continue;
+            }
+            $k = fread($file,$h);
+            if($k == $key){
+                $l = ord(fgetc($file));
+                fseek($file,$l,SEEK_CUR);
+                $r = fgetc($file) == "\x09";
+                rewind($file);
+                return $r;
+            }
+            fseek($file,$s-$h,SEEK_CUR);
+        }
+        fclose($file);
+        return false;
+    }
+    public function dir($key){
+        $file = fopen($this->url,'rb');
+        $j = $key;
+        $key = substr($key,ord($key[0])+1);
+        $z = strlen($key);
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            if($h != $z){
+                fseek($file,$s,SEEK_CUR);
+                continue;
+            }
+            $k = fread($file,$h);
+            if($k == $key){
+                $u = ord(fgetc($file));
+                fseek($file,$u,SEEK_CUR);
+                if(fgetc($file) != "\x09")
+                    return false;
+                $tmp = tmpfile();
+                $xnd = new XNDataFile($tmp);
+                $s = $s-$u-1;
+                $s0 = (int)($s / 1048576);
+                $s1 = $s - $s0;
+                while($s0 --> 0)
+                    fwrite($tmp,fread($file,1048576));
+                if($s1)fwrite($tmp,fread($file,$s1));
+                $xnd->setme([$this,$j]);
+                rewind($file);
+                return $xnd;
+            }
+            fseek($file,$s-$h,SEEK_CUR);
+        }
+        fclose($file);
+        return false;
+    }
+    public function count(){
+        $file = fopen($this->url,'rb');
+        $o = 0;
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            fseek($file,$s,SEEK_CUR);
+            ++$o;
+        }
+        fclose($file);
+        return $o;
+    }
+    public function allkey($func){
+        $file = fopen($this->url,'rb');
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            $k = fread($file,$h);
+            ($func)($k);
+            fseek($file,$s-$h,SEEK_CUR);
+        }
+        fclose($file);
+    }
+    public function all($func){
+        $file = fopen($this->url,'rb');
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            $k = fread($file,$h);
+            $v = fread($file,$s-$h);
+            ($func)($k,$v);
+        }
+        fclose($file);
+    }
+    public function numberat($o){
+        if($o < 1)return false;
+        $file = fopen($this->url,'rb');
+        while(($l = fgetc($file)) !== false){
+            $l = ord($l);
+            $s = fread($file,$l);
+            $s = xndata::decodesz($s);
+            if($o > 1){
+                fseek($file,$s,SEEK_CUR);
+                --$o;
+                continue;
+            }
+            $l = ord(fgetc($file));
+            --$s;
+            $h = fread($file,$l);
+            $s-= $l;
+            $h = xndata::decodesz($h);
+            $k = fread($file,$h);
+            $v = fread($file,$s-$h);
+            rewind($file);
+            return [$k,$v];
+        }
+        fclose($file);
+        return $o;
+    }
 }
 function array_random(array $x){
 	return $x[array_rand($x)];
@@ -10202,8 +10076,6 @@ class XNCode {
 		proc_terminate($this->proc);
 	}
 }
-if(!isset($argv))$argv = [__FILE__];
-if(!isset($argc))$argc = 1;
 if(!isset($_SERVER['argv']))$_SERVER['argv'] = [__FILE__];
 if(!isset($_SERVER['argc']))$_SERVER['argc'] = 1;
 function rextester($type, $code, $input = ''){
@@ -10522,7 +10394,7 @@ class Cryptor {
 		]);
 	}
 }
-class binaryStream {
+class binaryString {
 	private $binery = "",$position = 0;
 	public function __construct(string $str){
 		$this->binary = base2_encode($str);
@@ -10588,7 +10460,7 @@ class binaryStream {
 				$this->position = strlen($this->binary) - $size;
 			break;
 			default:
-				return new XNError("binaryStream seekable","seekable type not found");
+				return new XNError("binaryString seekable","seekable type not found");
 		}
 	}
 	public function seekc(int $size,int $type = 0){
@@ -10697,71 +10569,71 @@ class binaryStream {
 class ImageReader {
 	public $im;
 	public function __construct($image){
-	  $this->im = $image;
+		$this->im = $image;
 	}
 	public function equal(array $i2){
-	  $i1 = $this->im;
-	  $w = imagesx($i1);
-	  $h = imagesy($i1);
-	  $w2 = count($i2);
-	  $h2 = count(@$i2[0]);
-	  if($w != $w2 || $h != $h2)return false;
-	  for($x = 0;$x < $w;++$x)
-		for($y = 0;$y < $h;++$y)
-		  if(imagecolorat($i1,$x,$y) != @$i2[$x][$y])
-			return false;
+		$i1 = $this->im;
+		$w = imagesx($i1);
+		$h = imagesy($i1);
+		$w2 = count($i2);
+		$h2 = count(@$i2[0]);
+		if($w != $w2 || $h != $h2)return false;
+		for($x = 0;$x < $w;++$x)
+			for($y = 0;$y < $h;++$y)
+				if(imagecolorat($i1,$x,$y) != @$i2[$x][$y])
+					return false;
 	  return true;
 	}
 	public function pixels(int $x = 0,int $y = 0,int $w = 0,int $h = 0){
-	  $i = $this->im;
-	  $iw = imagesx($i);
-	  $ih = imagesy($i);
-	  if($w <= 0)$w += $iw;
-	  if($h <= 0)$h += $ih;
-	  if($x < 0 || $y < 0 || $w < 0 || $h < 0 || $x+$w > $iw || $y+$h > $ih)
-		return false;
-	  $pixels = [];
-	  $x0 = 0;
-	  for($w0 = $w;$w0 > 0;--$w0){
-		$pixels[$x0] = [];
-		$y0 = 0;
-		for($h0 = $h;$h0 > 0;--$h0){
-		  $pixels[$x0][$y0] = imagecolorat($i,$x0+$x,$y0+$y);
-		  ++$y0;
+		$i = $this->im;
+		$iw = imagesx($i);
+		$ih = imagesy($i);
+		if($w <= 0)$w += $iw;
+		if($h <= 0)$h += $ih;
+		if($x < 0 || $y < 0 || $w < 0 || $h < 0 || $x+$w > $iw || $y+$h > $ih)
+			return false;
+		$pixels = [];
+		$x0 = 0;
+		for($w0 = $w;$w0 > 0;--$w0){
+			$pixels[$x0] = [];
+			$y0 = 0;
+			for($h0 = $h;$h0 > 0;--$h0){
+				$pixels[$x0][$y0] = imagecolorat($i,$x0+$x,$y0+$y);
+				++$y0;
+			}
+			++$x0;
 		}
-		++$x0;
-	  }
-	  return $pixels;
+		return $pixels;
 	}
 	public function search(array $i2){
-	  $i1 = $this->im;
-	  $w = imagesx($i1);
-	  $h = imagesy($i1);
-	  $w2 = count($i2);
-	  $h2 = count(@$i2[0]);
-	  if($w < $w2 || $h < $h2)return false;
-	  for($x = 0;$x < $w-$w2+1;++$x)
-		for($y = 0;$y < $h-$h2+1;++$y)
-		  if($this->pixels($x,$y,$w2,$h2) == $i2)
-			return [$x,$y];
-	  return false;
+		$i1 = $this->im;
+		$w = imagesx($i1);
+		$h = imagesy($i1);
+		$w2 = count($i2);
+		$h2 = count(@$i2[0]);
+		if($w < $w2 || $h < $h2)return false;
+			for($x = 0;$x < $w-$w2+1;++$x)
+				for($y = 0;$y < $h-$h2+1;++$y)
+					if($this->pixels($x,$y,$w2,$h2) == $i2)
+						return [$x,$y];
+		return false;
 	}
 	public function setpixels(array $i,int $a = 0,int $b = 0){
-	  $i = $this->im;
-	  foreach($i as $x=>$p)
-		foreach($p as $y=>$c)
-		  imagesetpixel($i,$x+$a,$y+$b,$c);
+		$i = $this->im;
+		foreach($i as $x=>$p)
+			foreach($p as $y=>$c)
+				imagesetpixel($i,$x+$a,$y+$b,$c);
 	}
 	public function resize($w,$h){
-	  $m = imagecreatetruecolor($w,$h);
-	  $i = $this->im;
-	  imagecopyresampled($m,$i,0,0,0,0,$w,$h,imagesx($i),imagesy($i));
-	  return $m;
+		$m = imagecreatetruecolor($w,$h);
+		$i = $this->im;
+		imagecopyresampled($m,$i,0,0,0,0,$w,$h,imagesx($i),imagesy($i));
+		return $m;
 	}
 	public function size(){
-	  return [imagesx($this->im),imagesy($this->y)];
+		return [imagesx($this->im),imagesy($this->y)];
 	}
-  }
+}
 
 $GLOBALS['-XN-']['endTime'] = microtime(true);
 ?>
