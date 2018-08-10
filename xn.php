@@ -4060,7 +4060,7 @@ class XNData {
                 $key = false;
             break;
             case 4:
-                $key = tonumber($key);
+                $key = to_number($key);
             break;
             case 5:
             break;
@@ -4463,7 +4463,7 @@ class XNData {
 			if($x[0] == "o")$datas[$c] = (int)base_convert(substr($x, 1), 8, 10);
 			else {
 				if($x == '.')$x = '0';
-				$datas[$c] = tonumber($x);
+				$datas[$c] = to_number($x);
 			}
 			return $c++;
 		}
@@ -6057,15 +6057,41 @@ function chars_random(string $x){
 function array_clone(array $array){
 	return (array)(object)$array;
 }
-function tonumber($x){
-	if(!is_numeric($x)) {
-		if(strlen($x)> 20)$x = substr($x, 0, 15). '...' . substr($x, -5);
-		new XNError("tonumber", "can not convert '$x' to a number");
-		return false;
-	}
-	$int = (int)$x;
-	$float = (float)$x;
-	return $int != $float ? $float : $int;
+function to_number($x){
+	return (float)$x;
+}
+function to_string($x){
+	return (string)$x;
+}
+function to_integer($x){
+	return (int)$x;
+}
+function to_int($x){
+	return (int)$x;
+}
+function to_double($x){
+	return (double)$x;
+}
+function to_float($x){
+	return (float)$x;
+}
+function to_boolean($x){
+	return (bool)$x;
+}
+function to_bool($x){
+	return (bool)$x;
+}
+function is_floor($x){
+	return floor($x) == (float)$x;
+}
+function is_big_for_int($x){
+	return floor($x) != (int)$x;
+}
+function aclosure(){
+    return function(){};
+}
+function aobject(){
+    return new stdClass();
 }
 function calc($c){
 	$c = str_replace([' ', "\n", '×', '÷', 'π'], ['', '', '*', '/', 'PI'], $c);
@@ -6627,14 +6653,14 @@ class XNClosure {
 	public function parameters(){
 		$pars = $this->reflection->getParameters();
 		$p = [];
-		foreach($pars as $par) {
-			$par = (array)$par;
-			$p[] = ["name" => $par['name']];
-			if($par->isDefaultValueAvailable())$p["default"] = $par->getDefaultValue();
-			if($par->hasType())$p["type"] = $par->getType()->__toString();
-			$p["optional"] = $par->isOptional();
-			$p["variadic"] = $par->isVariadic();
-			$p["passed"] = $par->isPassedByReference();
+		foreach($pars as $c=>$par) {
+			$parr = (array)$par;
+			$p[$c] = ["name" => $parr['name']];
+			if($par->isDefaultValueAvailable())$p[$c]["default"] = $par->getDefaultValue();
+			if($par->hasType())$p[$c]["type"] = $par->getType()->__toString();
+			$p[$c]["optional"] = $par->isOptional();
+			$p[$c]["variadic"] = $par->isVariadic();
+			$p[$c]["passed"] = $par->isPassedByReference();
 		}
 		return $p;
 	}
@@ -6818,10 +6844,16 @@ function xncrypt($str, $k = ''){
 	$hash.= substr(md5($md5 . $c . $str . $k . $md5 . $hash . $sha256 . $a . $b . $str . $k . strlen($str)), 4, 3);
 	return $hash;
 }
-function set_bytes(string $data, int $bytes, string $byte = "\x00"){
+define("SET_BYTES_RIGHT",1);
+define("SET_BYTES_LEFT",2);
+function set_bytes(string $data,int $count,string $by = "\0",int $type = 2){
 	$l = strlen($data);
-	if($l % $bytes == 0)return $data;
-	else return str_repeat($byte, $bytes - ($l % $bytes)). $data;
+	if($l % $count == 0)return $data;
+	if($type == 1){
+		return $data.str_repeat($by,$count - $l % $count);
+	}else{
+		return str_repeat($by,$count - $l % $count).$data;
+	}
 }
 define("XNSERIALIZE_CLOSURE_ERROR", 46984309873349);
 define("XNSERIALIZE_TYPE_INVALID", 80430598870934);
@@ -8020,7 +8052,7 @@ class XNNumber {
 		return $a;
 	}
 	// convertor functions
-	public static function toNumber($a = '0'){
+	public static function to_number($a = '0'){
 		if(!self::_check($a))return false;
 		return $a * 1;
 	}
@@ -8220,7 +8252,7 @@ class XNBinary {
 	public function toInt($a){
 		return (int)base_convert($a, 2, 10);
 	}
-	public function toNumber($a){
+	public function to_number($a){
 		return XNNumber::base_convert($a, 2, 10);
 	}
 	public function toString($a){
@@ -10352,12 +10384,30 @@ function get_request_title(){
 	if(!$uri)$uri = '/';
 	return "$method $uri $http";
 }
-function get_request_header(){
+function get_request_headers_list(){
 	global $_SERVER;
 	$headers = [];
 	foreach($_SERVER as $header=>$value){
 		if(strpos($header,"HTTP_") !== 0)continue;
 		$headers[] = strtr(ucwords(strtr(strtolower(substr($header,5)),'_',' ')),' ','-').": ".$value;
+	}
+	return $headers;
+}
+function get_request_headers_string(){
+	global $_SERVER;
+	$headers = '';
+	foreach($_SERVER as $header=>$value){
+		if(strpos($header,"HTTP_") !== 0)continue;
+		$headers .= strtr(ucwords(strtr(strtolower(substr($header,5)),'_',' ')),' ','-').": ".$value."\r\n";
+	}
+	return $headers;
+}
+function get_request_headers(){
+	global $_SERVER;
+	$headers = [];
+	foreach($_SERVER as $header=>$value){
+		if(strpos($header,"HTTP_") !== 0)continue;
+		$headers[strtr(ucwords(strtr(strtolower(substr($header,5)),'_',' ')),' ','-')] = $value;
 	}
 	return $headers;
 }
@@ -10373,7 +10423,7 @@ function get_request_query(bool $array = false){
 	return $query;
 }
 function get_request_string(){
-	return get_request_title()."\r\n".implode("\r\n",get_request_header())."\r\n\r\n".get_request_query();
+	return get_request_title()."\r\n".get_request_headers_string()."\r\n".get_request_query();
 }
 class Cryptor {
 	public static function rot13(string $str){
