@@ -550,10 +550,20 @@ function findurls($s){
 function countin($str, $in){
 	return count(explode($in, $str));
 }
-function xndata($name){
-	if(file_exists($GLOBALS['-XN-']['dirNameDir'] . 'xndata.xnd'))$xnd = xndata::file($GLOBALS['-XN-']['dirNameDir'] . 'xndata.xnd');
+$GLOBALS['-XN-']['xndatafile'] = $GLOBALS['-XN-']['dirNameDir'] . 'xndata.xnd';
+if(!file_exists($GLOBALS['-XN-']['xndatafile']))
+	$GLOBALS['-XN-']['xndatafile'] = false;
+function xndata_setfile($file){
+	if(file_exists($file))
+		$GLOBALS['-XN-']['xndatafile'] = $file;
+	else
+		return false;
+	return true;
+}
+function xndata(string $name){
+	if($GLOBALS['-XN-']['xndatafile'])$xnd = xndata::file($GLOBALS['-XN-']['xndatafile']);
 	else $xnd = xndata::url("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.xnd");
-	
+	return $xnd->value($name);
 }
 class TelegramBotKeyboard {
 	private $btn = [], $button = [];
@@ -4144,7 +4154,7 @@ class XNData {
                 new XNError("XNData","invalid data type");
                 return false;
         }
-        $z = gzcompress($key,9,31);
+        $z = zlib_encode($key,31);
         if(strlen($z) <= strlen($key)){
             $type += 20;
             $key = $z;
@@ -4194,7 +4204,7 @@ class XNData {
                 new XNError("XNData","invalid data type");
                 return false;
         }
-        $z = gzcompress($key,9,31);
+        $z = zlib_encode($key,31);
         if(strlen($z) <= strlen($key)){
             $type += 20;
             $key = $z;
@@ -4206,7 +4216,7 @@ class XNData {
         $key = substr_replace($key,'',0,1);
         if($type > 20){
             $type -= 20;
-            $key = gzuncompress($key);
+            $key = zlib_decode($key);
         }
         switch($type){
             case 1:
@@ -4381,7 +4391,7 @@ class XNData {
 		$key = str_replace("\\\xff","\xff",$key);
         if($type > 20){
             $type -= 20;
-            $key = gzuncompress($key);
+            $key = zlib_decode($key);
         }
         switch($type){
             case 1:
@@ -4465,10 +4475,12 @@ class XNData {
     // savers
     public $save = false;
     public function save(){
-        return $this->xnd->save();
+		if($this->type != 'url')
+	        return $this->xnd->save();
     }
     public function __destruct(){
-		$this->setLastModified();
+		if($this->type != 'url')
+			$this->setLastModified();
         if(!$this->save)
             $this->save();
     }
@@ -9065,16 +9077,22 @@ class Finder {
 	const EMAIL = "/(?:[^ \n\r\t\/\\#?@]+)@(?:(?:[^ \n\r\t\.\/\\#?]+\.)*[^ \n\r\t\.\/\\#@?]{1,61}\.[^ \n\r\t\.\/\\#@?]{2,})/";
 	const FILE_NAME = "/[^ \n\r\t\/\\#@?]+/";
 	const DIRACTORY_NAME = "/(?:(?:(?:\/+)[^ \n\r\t\/\\#@?]+)*(?:\/*))/";
+	public static function get_emojis_regex(){
+		return xndata("emoji-regex");
+	}
+	public static function get_emojis_array(){
+		return explode("/",xndata("emoji"));
+	}
 	public static function exists($str, $regex){
 		return preg_match($regex, $str);
 	}
 	public static function find($str, $regex){
 		if(!preg_match($regex, $str, $find))return false;
-		return $find[0];
+		return $find;
 	}
 	public static function search($str, $regex){
 		if(!preg_match_all($regex, $str, $search))return false;
-		return $search[0];
+		return $search;
 	}
 	public static function token_exists($str){
 		return self::exists($str, self::TOKEN);
@@ -9147,6 +9165,15 @@ class Finder {
 	}
 	public static function diractory_name_search($str){
 		return self::search($str, self::DIRACTORY_NAME);
+	}
+	public static function emoji_exists($str){
+		return self::exists($str, self::get_emojis_regex());
+	}
+	public static function emoji_find($str){
+		return self::find($str, self::get_emojis_regex());
+	}
+	public static function emoji_search($str){
+		return self::search($str, self::get_emojis_regex());
 	}
 }
 class XNJson {
@@ -11155,7 +11182,7 @@ function to_web_visibly($file){
 }
 function get_web_file($file = false){
 	if(!$file)$file = getenv('REQUEST_URI');
-	return (getenv('HTTPS') ? 'https' : 'http').'://'.getenv('SERVER_NAME').':'.getenv('SERVER_PORT').'/'.strtr($file,'\\','/');
+	return (getenv('HTTPS') ? 'https' : 'http').'://'.getenv('SERVER_NAME').':'.getenv('SERVER_PORT').'/'.to_web_visibly($file);
 }
 function rle_decode(string $string){
     $new = '';
