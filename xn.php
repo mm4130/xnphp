@@ -9,9 +9,7 @@ $GLOBALS['-XN-']['dirName'] = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SE
 $GLOBALS['-XN-']['dirNameDir'] = $GLOBALS['-XN-']['dirName'] . DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['isf'] = file_exists($GLOBALS['-XN-']['dirNameDir'] . "xn.php");
 $GLOBALS['-XN-']['savememory'] = &$GLOBALS;
-define("STDIN", "php://input");
-define("STDOUT", "php://output");
-define("XN_VERSION", "1.7");
+define("XNVERSION", "1.7");
 class ThumbCode {
 	private $code = false;
 	public function __construct($func){
@@ -100,13 +98,19 @@ class XNError extends Error {
 		$th = end($debug);
 		$date = date("ca");
 		$console = "[$date]XN $type > $in : $text in {$th['file']} on line {$th['line']}\n";
-		$message = "<br />\n[$date]<b>XN $type</b> &gt; <i>$in</i> : " . str_replace("\n", "<br />", $text). " in <b>{$th['file']}</b> on line <b>{$th['line']}</b><br />\n";
+		$message = "<br />[$date]<b>XN $type</b> &gt; <i>$in</i> : " . str_replace("\n", "<br />", $text). " in <b>{$th['file']}</b> on line <b>{$th['line']}</b><br />";
 		$this->HTMLMessage = $message;
 		$this->consoleMessage = $console;
 		$this->message = "XN $type > $in : $text";
 		if(isset($GLOBALS['-XN-']['errorhandler']))
 			if(is_function($GLOBALS['-XN-']['errorHandler']))$GLOBALS['-XN-']['errorhandler']($this);
-		if($GLOBALS['-XN-']['errorShow'])print $message;
+		if($GLOBALS['-XN-']['errorShow']){
+			$headers = get_response_headers();
+			if(!isset($headers['Content-type']) || strpos($headers['Content-type'], 'text/html') !== false)
+				print $message;
+			else
+				print $console;
+		}
 		if($GLOBALS['-XN-']['errorShow'] && is_string($GLOBALS['-XN-']['errorShow']))fadd($GLOBALS['-XN-']['errorShow'], $console);
 		if($en)exit;
 	}
@@ -248,6 +252,17 @@ function printsc($k = true){
 function evalg($codeiuefhuisegbfyusegfrusbgtys){
 	foreach($GLOBALS as $xiuefhuisegbfyusegfrusbgtys => &$yiuefhuisegbfyusegfrusbgtys)$$xiuefhuisegbfyusegfrusbgtys = &$yiuefhuisegbfyusegfrusbgtys;
 	return eval($codeiuefhuisegbfyusegfrusbgtys);
+}
+function evale($codeiuefhuisegbfyusegfrusbgtys){
+	extract($GLOBALS);
+	eval($codeiuefhuisegbfyusegfrusbgtys);
+	exit;
+}
+function evall($codeiuefhuisegbfyusegfrusbgtys){
+	extract($GLOBALS);
+	foreach(explode(";",$codeiuefhuisegbfyusegfrusbgtys) as $codeiuefhuisegbfyusegfrusbgtys)
+		eval($codeiuefhuisegbfyusegfrusbgtys.';');
+	exit;
 }
 function evalc($code){
 	return eval('return ' . $code . ';');
@@ -1049,7 +1064,7 @@ class TelegramBot {
 	}
 	public function update($offset = - 1, $limit = 1, $timeout = 0){
 		if(isset($this->data->message_id))return $this->data;
-		elseif($this->data = json_decode(file_get_contents(STDIN)))return $this->data;
+		elseif($this->data = json_decode(file_get_contents("php://input")))return $this->data;
 		else $res = $this->data = $this->request("getUpdates", ["offset" => $offset, "limit" => $limit, "timeout" => $timeout], 3);
 		return (object)$res;
 	}
@@ -1801,12 +1816,6 @@ class TelegramBot {
 		if(isset($args['markup']))$args['reply_markup'] = $args['markup'];
 		if(isset($args['reply']))$args['reply_to_message_id'] = $args['reply'];
 		if(isset($args['from_chat']))$args['from_chat_id'] = $args['from_chat'];
-    $args['file'] = false;
-    if($args['file']) {
-			$gettype = TELAPICode::fileid($args['file'])['type'];
-			if(is_string($args['file']) && $gettype !== false && file_exists($args['file']))$args['file'] = new CURLFile($args['file']);
-
-		}
 		if(isset($args['phone']))$args['phone_number'] = $args['phone'];
 		if(isset($args['allowed_updates']) && (is_array($args['allowed_updates']) || is_object($args['allowed_updates'])))$args['allowed_updates'] = json_encode($args['allowed_updates']);
 		if(isset($args['reply_markup']) && is_string($args['reply_markup']) && $this->menu->exists($args['reply_markup']))$args['reply_markup'] = $this->menu->get($args['reply_markup']);
@@ -1873,6 +1882,101 @@ class TelegramBot {
 			}
 		}
 		return $args;
+	}
+}
+class TelAPIData {
+	public $xndata, $user, $group, $channel, $account;
+	public function __construct(XNData $xndata){
+		$this->xndata = $xndata;
+		$this->user = $xndata->mdir("user");
+		$this->group = $xndata->mdir("group");
+		$this->channel = $xndata->mdir("channel");
+	}
+	const USER = 1;
+	const GROUP = 2;
+	const CHANNEL = 3;
+	public function register(int $id,int $type = 1){
+		switch($type){
+			case self::USER:
+				$this->user->make($id);
+			break;
+			case self::GROUP:
+				$this->group->make($id);
+			break;
+			case self::CHANNEL:
+				$this->channel->make($id);
+			break;
+			default:
+				new XNError("TelAPIData","Chat Type '$type' invalid");
+				return false;
+		}
+		return true;
+	}
+	public function typeof(int $id){
+		return $this->user->iskey($id)?"user":(
+			   $this->group->iskey($id)?"group":(
+			   $this->channel->iskey($id)?"channel":
+			   false));
+	}
+	public function login(int $id,int $type = 1){
+		switch($type){
+			case self::USER:
+				$this->account = $this->user->mdir($id);
+			break;
+			case self::GROUP:
+				$this->account = $this->group->mdir($id);
+			break;
+			case self::CHANNEL:
+				$this->account = $this->channel->mdir($id);
+			break;
+			default:
+				new XNError("TelAPIData","Chat Type '$type' invalid");
+				return false;
+		}
+		return true;
+	}
+	public function registered(int $id,int $type = 1){
+		switch($type){
+			case self::USER:
+				return $this->user->iskey($id);
+			break;
+			case self::GROUP:
+				return $this->group->iskey($id);
+			break;
+			case self::CHANNEL:
+				return $this->channel->iskey($id);
+			break;
+			default:
+				new XNError("TelAPIData","Chat Type '$type' invalid");
+				return;
+		}
+	}
+	public function setCommand(string $command = ''){
+		$this->account->set(null,$command);
+	}
+	public function getCommand(){
+		return $this->account->value(null);
+	}
+	public function set(string $key,$value){
+		$this->account->set($key,$value);
+	}
+	public function add(string $key){
+		$this->account->madd($key);
+	}
+	public function join(string $key,$value){
+		$this->account->join($key,$value);
+	}
+	public function get(string $key){
+		return $this->account->value($key);
+	}
+	public function block(){
+		$this->account->set(false,null);
+	}
+	public function unblock(){
+		$this->account->delete(false);
+	}
+	public function isblock(){
+		return $this->account->value(false);
 	}
 }
 class TelegramLink {
@@ -2260,7 +2364,7 @@ class TelegramLink {
         return ['api_id'=>(int)$api_id, 'api_hash'=>$api_hash];
     }
 }
-class TELAPICode {
+class TelAPICode {
 	public static function unpack($code){
 		return rle_decode(base64url_decode($code));
 	}
@@ -3728,10 +3832,13 @@ function xnprint($text, $limit = 1, $sleep = 0){
 function xnprint_start(){
 	@ob_end_clean();
 	ob_implicit_flush(1);
+	$GLOBALS['-XN-']['xnprint']   = fopen("php://output",'wb');
+	$GLOBALS['-XN-']['xnprintin'] = fopen("php://input", 'rb');
 }
 function xnecho($d){
 	if(!isset($GLOBALS['-XN-']['xnprint'])) {
 		new XNError("xnprint", "one starting XNPrint");
+		return false;
 	}
 	fwrite($GLOBALS['-XN-']['xnprint'], $d);
 }
@@ -5219,6 +5326,65 @@ class XNDataJson {
         $this->save();
     }
 }
+function is_serialized($data){
+	return (@unserialize($data) !== false || $data == 'b:0;');
+}
+stream_register_wrapper("mystream","MyStream");
+$GLOBALS['-XN-']['mystream'] = [];
+class MyStream {
+	public $input,$file,$mode,$use_include_path,$context,$id,$object;
+	public function stream_open(...$data){
+		$file = explode('@',substr($data[0],11),2);
+		$id = (int)$file[0];
+		if(!isset($file[1]) || $id != $file[0] || isset($GLOBALS['-XN-']['mystream'][$id]))
+			return false;
+		$this->id = $id;
+		$this->input = $data[0];
+		$this->file = $file[1];
+		$this->mode = $data[1];
+		$this->use_include_path = $data[2];
+		$this->context = &$data[3];
+		$GLOBALS['-XN-']['mystream'][$id] = &$this;
+		return true;
+	}
+	public static function set(int $id,object $class){
+		if(!isset($GLOBALS['-XN-']['mystream'][$id])){
+			new XNError("MyStream","MyStream id invalid");
+			return false;
+		}
+		$GLOBALS['-XN-']['mystream'][$id]->object = $class;
+	}
+	public static function get(int $id){
+		if(!isset($GLOBALS['-XN-']['mystream'][$id])){
+			new XNError("MyStream","MyStream id invalid");
+			return false;
+		}
+		return $GLOBALS['-XN-']['mystream'][$id];
+	}
+	public static function exists(int $id){
+		if(!isset($GLOBALS['-XN-']['mystream'][$id]))
+			return false;
+		return true;
+	}
+	public function __call($x,$y){
+		if($this->object && method_exists($this->object,$x))
+			return $this->object->$x(...$y);
+		return false;
+	}
+}
+function mystream(string $file, string $mode, &$stream, object $object, bool $use_include_path = null, $context = null) {
+    do{
+        $id = rand(0, PHP_INT_MAX);
+    }while(MyStream::exists($id));
+    if($context !== null)
+        $stream = fopen("mystream://$id@$file", $mode, $use_include_path, $context);
+    elseif($use_include_path !== null)
+        $stream = fopen("mystream://$id@$file", $mode, $use_include_path);
+    else
+        $stream = fopen("mystream://$id@$file", $mode);
+    MyStream::set($id, $object);
+    return MyStream::get($id);
+}
 class XNDataString {
     private $data = '',$parent = false;
     public function __construct(string $data = ''){
@@ -5632,9 +5798,12 @@ class XNDataFile {
 				touch($file);
 			$file = fopen($file,"r+b");
 		}elseif(is_resource($file)&&fmode($file)=="r+b");
-        else return;
-        $this->file = $file;
-        rewind($file);
+		else return;
+		if($file){
+        	$this->file = $file;
+			rewind($file);
+		}else
+			fclose($file);
     }
     public function setme(array $parent){
         $this->parent = $parent;
@@ -7899,6 +8068,9 @@ class XNNumber {
 		$a = explode('.', "$a");
 		return isset($a[1]) && $a[1][0] >= 5 ? self::add($a[0], '1'): $a[0];
 	}
+	public static function is_floor($a){
+		return strpos($a,'.') > 0;
+	}
 	// calc functions
 	public static function _add0($a, $b){
 		$a = str_split($a, 13);
@@ -8302,7 +8474,7 @@ class XNNumber {
 			}
 		return $str;
 	}
-	public function unpack(string $format,string $data){
+	public static function unpack(string $format,string $data){
 		$l = strlen($data);
 		$type = explode('@',$format);
 		$formats = explode(';',$type[0]);
@@ -8392,7 +8564,7 @@ class XNNumber {
 		}
 		return "$r";
 	}
-	public function base_convert($str, $from, $to = 10){
+	public static function base_convert($str, $from, $to = 10){
 		if($from == 1) {
 			$str = (string)strlen($str);
 			$from = 10;
@@ -8405,6 +8577,9 @@ class XNNumber {
 		$to = $to == "0123456789" ? false : $to;
 		$from = $from == "0123456789" ? false : $from;
 		return self::baseconvert($str, $from, $to);
+	}
+	// calc function
+	public static function calc(string $x,array $variables = []){
 	}
 }
 class XNNumberObject {
@@ -8430,7 +8605,15 @@ class XNNumberObject {
 	}
 }
 function xnnumber(string $number,$base = 10){
-	return new XNNumberObject($number,$base);
+	$l = $number;
+	if($base == 10)
+		$number = XNNumber::toXNNumber($number);
+	else $number = XNNumber::init($number,$base);
+	if(XNNumber::_check($number))
+		return new XNNumberObject($number,10);
+	elseif($l)
+		return XNNumber::calc($l);
+	return false;
 }
 class XNBinary {
 	// validator
@@ -8682,6 +8865,9 @@ class XNString {
 		for($c = 0; isset($chars[$c]); ++$c)
 		if(($h = ord($chars[$c]))< $l)$l = $h;
 		return $l;
+	}
+	public static function range(...$chars){
+		return range(self::min(...$chars),self::max(...$chars));
 	}
 	public static function end(string $str, string $im){
 		return substr($str, strrpos($str, $im)+ 1);
@@ -9185,7 +9371,7 @@ class XNJson {
 		if($data == "true")return true;
 		if($data == "false")return false;
 		if($data[0] == '"')return str_replace(["\\\"", "\\\\"], ["\"", "\\"], substr($data, 1, -1));
-		if($data[0] == "f")return evalg("return $data;");
+		if($data[0] == "f")return evalc("return $data;");
 		if($data[0] == "[") {
 		}
 		if($data[0] == "{") {
@@ -9385,853 +9571,6 @@ class AXBA {
 		$crypt2 = $this->decrypt($crypt2, substr($key, $y1, $y2));
 		return $this->decrypt($crypt2 . $crypt1, $key);
 	}
-}
-class BrainFuck2 {
-	private $memory = [[1, 0], [1, 0], [1, 0], [1, [1, 0]], [1, [1, 0]], [1, 0]], $save = [], $locate = 0;
-	private function addone(){
-		$memory = &$this->memory[$this->locate];
-		while(true) {
-			if(isset($memory[0]))$memory = &$memory[$memory[0]];
-			else break;
-		}
-		++$memory;
-	}
-	private function remone(){
-		$memory = &$this->memory[$this->locate];
-		while(true) {
-			if(isset($memory[0]))$memory = &$memory[$memory[0]];
-			else break;
-		}
-		--$memory;
-	}
-	private function setmemory($num){
-		$memory = &$this->memory[$this->locate];
-		while(true) {
-			if(isset($memory[0]))$memory = &$memory[$memory[0]];
-			else break;
-		}
-		$memory = @(int)$num;
-	}
-	private function setmemorys($str){
-		$memory = &$this->memory[$this->locate];
-		while(true) {
-			if(isset($memory[$memory[0]][0]))$memory = &$memory[$memory[0]];
-			else break;
-		}
-		$str = str_split($str);
-		foreach($str as $k => $s)$memory[$k + 1] = ord($s);
-	}
-	private function resetMemorys($c){
-		$memory = &$this->memory[$this->locate];
-		$l = $this->getcount()- $c;
-		$l = $l < 0 ? 0 : $l;
-		while($l--) {
-			if(isset($memory[0]))$memory = &$memory[$memory[0]];
-			else break;
-		}
-		$memory = $this->createnew($c);
-	}
-	private function printmemory($c){
-		$memory = $this->memory[$this->locate];
-		$l = $this->getcount()- $c;
-		$l = $l < 0 ? 0 : $l;
-		while($l--) {
-			if(isset($memory[0]))$memory = $memory[$memory[0]];
-			else break;
-		}
-		$memory = $this->getsub([0, $memory]);
-		foreach($memory as $m)echo chr($m);
-	}
-	private function printnumber(){
-		echo $this->getMemoryOne();
-	}
-	private function savelocate(){
-		$save = [$this->locate];
-		$memory = &$this->memory[$this->locate];
-		while(true) {
-			if(isset($memory[0])) {
-				$save[] = $memory[0];
-				$memory = &$memory[$memory[0]];
-			}
-			else break;
-		}
-		$this->save = $save;
-	}
-	private function setsave($type){
-		if(!isset($this->save[0]))return false;
-		$save = &$this->save;
-		$memory2 = &$this->memory;
-		foreach($save as $i)$memory2 = &$memory2[$i];
-		$c = $this->getcount()- 1;
-		if($c) {
-			$save = $this->save;
-			$memory2 = &$this->memory2[$this->save[0]];
-			while($c--)$memory2 = &$memory2[$memory2[0]];
-			if($type == 22) {
-				$this->locate = $save[0];
-				unset($save[0]);
-				foreach($save as $i) {
-					$memory2[0] = $i[0];
-					$memory2 = &$memory2[$i[0]];
-				}
-				return;
-			}
-			unset($save[0]);
-			foreach($save as $i)$memory2 = &$memory2[$i];
-		}
-		$save = &$memory2;
-		$memory = &$this->memory[$this->locate];
-		while(true) {
-			if(isset($memory[0]))$memory = &$memory[$memory[0]];
-			else break;
-		}
-		switch ($type) {
-		case 0:
-			$memory = $save;
-			break;
-		case 1:
-			$memory+= $save;
-			break;
-		case 2:
-			$memory-= $save;
-			break;
-		case 3:
-			$memory*= $save;
-			break;
-		case 4:
-			$memory = $memory / $save;
-			break;
-		case 5:
-			$memory%= $save;
-			break;
-		case 6:
-			$memory = $memory ** $save;
-			break;
-		case 7:
-			$memory = $memory ** (1 / $save);
-			break;
-		case 8:
-			$memory = $memory &$save;
-			break;
-		case 9:
-			$memory = $memory | $save;
-			break;
-		case 10:
-			$memory = $memory && $save ? 1 : 0;
-			break;
-		case 11:
-			$memory = $memory || $save ? 1 : 0;
-			break;
-		case 12:
-			$memory = $memory > $save ? 1 : 0;
-			break;
-		case 13:
-			$memory = $memory < $save ? 1 : 0;
-			break;
-		case 14:
-			$memory = $memory >= $save ? 1 : 0;
-			break;
-		case 15:
-			$memory = $memory <= $save ? 1 : 0;
-			break;
-		case 16:
-			$meomry = $memory == $save ? 1 : 0;
-			break;
-		case 17:
-			$memory = $memory != $save ? 1 : 0;
-			break;
-		case 18:
-			$memory = $memory >> $save;
-			break;
-		case 19:
-			$memory = $memory << $save;
-			break;
-		case 20:
-			$memory = $memory ^ $save;
-			break;
-		case 21:
-			$memory = $memory xor $save;
-			break;
-		case 23:
-			$o = $memory;
-			$memory = $save;
-			$save = $o;
-			break;
-		case 24:
-			$save = $memory;
-			break;
-		case 25:
-			$memory = &$save;
-			break;
-		case 26:
-			$save = &$memory;
-			break;
-		}
-	}
-	private function nextmemory($c = 1){
-		$p = $this->getcount();
-		if($p == $c) {
-			$memory = &$this->memory[$this->locate];
-			++$memory[0];
-			if(!isset($memory[$memory[0]]))$memory[$memory[0]] = $this->createnew($c - 2);
-		}
-		elseif($p > $c) {
-			$memory = &$this->memory[$this->locate];
-			$o = $p - $c;
-			while($o--) {
-				if(isset($memory[$memory[0]][0]))$memory = &$memory[$memory[0]];
-				else break;
-			}
-			++$memory[0];
-			if(!isset($memory[$memory[0]]))$memory[$memory[0]] = $this->createnew($c - 2);
-		}
-		else {
-			$memory = &$this->memory[$this->locate];
-			$o = $c - $p;
-			while($o--)$memory = [1, $memory];
-			++$memory[0];
-			if(!isset($memory[$memory[0]]))$memory[$memory[0]] = $this->createnew($c - 2);
-		}
-	}
-	private function prevmemory($c = 1){
-		$p = $this->getcount();
-		if($p == $c) {
-			$memory = &$this->memory[$this->locate];
-			--$memory[0];
-			if(!isset($memory[$memory[0]]))$memory[$memory[0]] = $this->createnew($c - 2);
-		}
-		elseif($p > $c) {
-			$memory = &$this->memory[$this->locate];
-			$o = $p - $c;
-			while($o--) {
-				if(isset($memory[$memory[0]][0]))$memory = &$memory[$memory[0]];
-				else break;
-			}
-			--$memory[0];
-			if(!isset($memory[$memory[0]]))$memory[$memory[0]] = $this->createnew($c - 2);
-		}
-		else {
-			$memory = &$this->memory[$this->locate];
-			$o = $c - $p;
-			while($o--)$memory = [1, $memory];
-			--$memory[0];
-			if(!isset($memory[$memory[0]]))$memory[$memory[0]] = $this->createnew($c - 2);
-		}
-	}
-	private function memoryReset(){
-		$this->memory[$this->locate] = [1, 0];
-	}
-	private function getsub($array){
-		$arr = [];
-		unset($array[0]);
-		foreach($array as $a) {
-			if(is_array($a))$arr[] = $this->getsub($a);
-			else $arr[] = [$a];
-		}
-		return array_values(array_merge(...$arr));
-		return array_values($arr);
-	}
-	private function getsubs($array){
-		$arr = [];
-		unset($array[0]);
-		foreach($array as $a) {
-			if(is_array($a))$arr[] = $this->getsub($a);
-			else $arr[] = [$a];
-		}
-		return array_values($arr);
-	}
-	private function getcount(){
-		$memory = &$this->memory[$this->locate];
-		$p = 0;
-		while(true) {
-			if(isset($memory[0]))$memory = &$memory[$memory[0]];
-			else break;
-			++$p;
-		}
-		return $p;
-	}
-	private function getstring($arr){
-		$str = '';
-		foreach($arr as $a)$str.= chr($a);
-		return $str;
-	}
-	private function createnew($c){
-		$array = [1];
-		if($c > 0)$array[] = $this->createnew(--$c);
-		elseif($c == 0)$array[] = 0;
-		else return 0;
-		return $array;
-	}
-	public function getMemory(){
-		return $this->memory[0];
-	}
-	public function getMemoryOne(){
-		$memory = &$this->memory[$this->locate];
-		while(true) {
-			if(isset($memory[0]))$memory = &$memory[$memory[0]];
-			else break;
-		}
-		return $memory;
-	}
-	public function getMemoryString($c = 1){
-		$memory = $this->memory[$this->locate];
-		$l = $this->getcount()- $c;
-		$l = $l < 0 ? 0 : $l;
-		while($l--) {
-			if(isset($memory[0]))$memory = $memory[$memory[0]];
-			else break;
-		}
-		$memory = $this->getsub([0, $memory]);
-		return $this->getstring($memory);
-	}
-	public function getInput(){
-		return $this->memory[1];
-	}
-	public function getInputString(){
-		$input = $this->memory[1];
-		$input = $this->getsub($input);
-		return $this->getstring($input);
-	}
-	public function getOutput(){
-		return $this->memory[2];
-	}
-	public function getOutputString(){
-		$output = $this->memory[2];
-		$output = $this->getsub($output);
-		return $this->getstring($output);
-	}
-	public function getReturn(){
-		return $this->memory[2];
-	}
-	public function getReturnString(){
-		$return = $this->memory[2];
-		$return = $this->getsub($return);
-		return $this->getstring($return);
-	}
-	public function getNames(){
-		return $this->memory[3];
-	}
-	public function getNamesString(){
-		$names = $this->memory[3];
-		$names = $this->getsubs($names);
-		foreach($names as &$name)$name = $this->getstring($name);
-		return $names;
-	}
-	public function getDefines(){
-		return $this->memory[4];
-	}
-	public function getDefinesString(){
-		$defines = $this->memory[4];
-		$defines = $this->getsubs($defines);
-		foreach($defines as &$define)$define = $this->getstring($define);
-		return $defines;
-	}
-	private function setEndMemory(){
-		$memory = &$this->memory[$this->locate];
-		while(true) {
-			if(isset($memory[$memory[0]][0]))$memory = &$memory[$memory[0]];
-			else break;
-		}
-		$memory[0] = count($memory)- 1;
-	}
-	private function getEndMemory(){
-		$memory = &$this->memory[$this->locate];
-		while(true) {
-			if(isset($memory[$memory[0]][0]))$memory = &$memory[$memory[0]];
-			else break;
-		}
-		return $memory[0];
-	}
-	public function setInput(string $input = ''){
-		$input = str_split($input);
-		$memory = [$this->memory[1][0]];
-		foreach($input as $c)$memory[] = ord($c);
-		$this->memory[1] = $memory;
-	}
-	public function setOuput(string $output = ''){
-		$output = str_split($output);
-		$memory = [$this->memory[2][0]];
-		foreach($output as $c)$memory[] = ord($c);
-		$this->memory[2] = $memory;
-	}
-	public function setReturn(string $return = ''){
-		$return = str_split($return);
-		$memory = [$this->memory[5][0]];
-		foreach($return as $c)$memory[] = ord($c);
-		$this->memory[5] = $memory;
-	}
-	private $lcs = false, $exit = true, $gkp = [false, 0, 1, 1, 0, 1], $ssv = 0, $fto = '', $sve = 0, $code = '';
-	public function subrun(&$code){
-		$lcs = &$this->lcs;
-		$exit = &$this->exit;
-		$gkp = &$this->gkp;
-		$ssv = &$this->ssv;
-		$fto = &$this->fto;
-		$sve = &$this->sve;
-		$ext = true;
-		$phy = 0;
-		$tui = "";
-		for($c = 0; (isset($code[$c]) && $exit && $ext) || $gkp[0]; ++$c) {
-			if($gkp[0]) {
-				if(--$gkp[2] < 0) {
-					if(--$gkp[3] < 0) {
-						$code = substr_replace($code, '', $gkp[4] + $gkp[1], $c - $gkp[4] - $gkp[1]);
-						$c = $gkp[4];
-						$gkp = [false, 0, 1, 1, $c, 1];
-					}
-					else {
-						$c = $gkp[4] + $gkp[1];
-						$gkp[2] = $gkp[5];
-					}
-				}
-			}
-			if(!isset($code[$c]))continue;
-			switch ($code[$c]) {
-			case "+":
-				$this->addone();
-				break;
-			case "-":
-				$this->remone();
-				break;
-			case "&":
-				$this->savelocate();
-				break;
-			case "'":
-				$p = '';
-				while($code[++$c] != "'")$p.= $code[$c];
-				$this->setmemory($p);
-				break;
-			case '"':
-				$p = '';
-				while($code[++$c] != '"')$p.= $code[$c] != '\\' ? $code[$c] : $code[++$c] == '"' || $code[$c] == '\\' ? $code[$c] : '\\' . $code[$c];
-				$this->setmemorys($p);
-				break;
-			case ",":
-				$this->printnumber();
-				break;
-			case ".":
-				$p = 0;
-				while(@$code[++$c] == '.')++$p;
-				--$c;
-				$this->printmemory($p);
-				break;
-			case "":
-				$this->locate = 0;
-				break;
-			case 1:
-				$this->locate = 1;
-				break;
-			case 2:
-				$this->locate = 2;
-				break;
-			case 3:
-				$this->locate = 3;
-				break;
-			case 4:
-				$this->locate = 4;
-				break;
-			case 5:
-				$this->locate = 5;
-				break;
-			case ">":
-				$p = 1;
-				while(@$code[++$c] == '>')++$p;
-				--$c;
-				$this->nextmemory($p);
-				break;
-			case "<":
-				$p = 1;
-				while(@$code[++$c] == '<')++$p;
-				--$c;
-				$this->prevmemory($p);
-				break;
-			case "a":
-				$this->setsave(0);
-				break;
-			case "b":
-				$this->setsave(1);
-				break;
-			case "c":
-				$this->setsave(2);
-				break;
-			case "d":
-				$this->setsave(3);
-				break;
-			case "e":
-				$this->setsave(4);
-				break;
-			case "f":
-				$this->setsave(5);
-				break;
-			case "g":
-				$this->setsave(6);
-				break;
-			case "h":
-				$this->setsave(7);
-				break;
-			case "i":
-				$this->setsave(8);
-				break;
-			case "j":
-				$this->setsave(9);
-				break;
-			case "k":
-				$this->setsave(10);
-				break;
-			case "l":
-				$this->setsave(11);
-				break;
-			case "m":
-				$this->setsave(12);
-				break;
-			case "n":
-				$this->setsave(13);
-				break;
-			case "o":
-				$this->setsave(14);
-				break;
-			case "p":
-				$this->setsave(15);
-				break;
-			case "q":
-				$this->setsave(16);
-				break;
-			case "r":
-				$this->setsave(17);
-				break;
-			case "s":
-				$this->setsave(18);
-				break;
-			case "t":
-				$this->setsave(19);
-				break;
-			case "u":
-				$this->setsave(20);
-				break;
-			case "v":
-				$this->setsave(21);
-				break;
-			case "w":
-				$this->setsave(22);
-				break;
-			case "x":
-				$this->setsave(23);
-				break;
-			case "y":
-				$this->setsave(24);
-				break;
-			case "z":
-				$this->setmemory(0);
-				break;
-			case "_":
-				$c = $this->getMemoryOne();
-				break;
-			case "$":
-				$this->setReturn(substr($code, $c, $this->getMemoryOne()));
-				break;
-			case "[":
-			case "{":
-				$start = $code[$c] == '[' ? 1 : 0;
-				$d = '';
-				$p = 1;
-				while($p > 0) {
-					$d.= $h = $code[++$c];
-					if($h == '{' || $h == '[')++$p;
-					elseif($h == '}' || $h == ']')--$p;
-				}
-				$end = $code[$c] == ']' ? 1 : 0;
-				$d = substr($d, 0, -1);
-				if($start) {
-					if($end) {
-						while($this->getMemoryOne())$this->subrun($d);
-					}
-					else {
-						if($this->getMemoryOne())$this->subrun($d);
-					}
-				}
-				else {
-					if($end) {
-						do {
-							$this->subrun($d);
-						}
-						while($this->getMemoryOne());
-					}
-					else $this->subrun($d);
-				}
-				break;
-			case "@":
-				$this->setMemory(rand(0, 999999999));
-				break;
-			case "#":
-				$this->subrun(ord($this->getMemoryOne()));
-				break;
-			case "!":
-				$this->setReturn(str_replace('.', '', microtime(true)));
-				break;
-			case "?":
-				if(@$code[$c + 1] == '?') {
-					$co = &$this->code;
-					$l = '';
-					$names = $this->getNamesString();
-					$defines = $this->getDefinesString();
-					$x = substr($co, 0, $c);
-					$y = substr($co, $c);
-					while($l != $co) {
-						$l = $co;
-						foreach($names as $num => $name) {
-							if($name == "\x00")continue;
-							$define = @$defines[$num];
-							$z = strlen($x);
-							$x = str_replace($name, $define, $x);
-							$c+= strlen($x)- $z;
-							$y = str_replace($name, $define, $y);
-							$co = $x . $y;
-						}
-					}
-					++$c;
-				}
-				else {
-					$l = '';
-					$names = $this->getNamesString();
-					$defines = $this->getDefinesString();
-					$x = substr($code, 0, $c);
-					$y = substr($code, $c);
-					while($l != $code) {
-						$l = $code;
-						foreach($names as $num => $name) {
-							if($name == "\x00")continue;
-							$define = @$defines[$num];
-							$z = strlen($x);
-							$x = str_replace($name, $define, $x);
-							$c+= strlen($x)- $z;
-							$y = str_replace($name, $define, $y);
-							$code = $x . $y;
-						}
-					}
-				}
-				break;
-			case "(":
-				$memory = $this->memory[$this->locate];
-				$d = '';
-				$p = 1;
-				while($p > 0) {
-					$d.= $h = $code[++$c];
-					if($h == '(')++$p;
-					if($h == ')')--$p;
-				}
-				$d = substr($d, 0, -1);
-				$this->subrun($d);
-				$this->memory[$this->locate] = $memory;
-				break;
-			case "^":
-				$this->memoryReset();
-				break;
-			case ")":
-				$memory = $this->memory;
-				$d = '';
-				$p = 1;
-				while($p > 0) {
-					$d.= $h = $code[++$c];
-					if($h == ')')++$p;
-					if($h == '(')--$p;
-				}
-				$d = substr($d, 0, -1);
-				$this->subrun($d);
-				$this->memory = $memory;
-				break;
-			case "^":
-				$this->memoryReset();
-				break;
-			case "|":
-				if($lcs === false)$lcs = $this->locate;
-				else {
-					$this->locate = $lcs;
-					$lcs = false;
-				}
-				break;
-			case ";":
-				$exit = false;
-				break;
-			case "~":
-				$exi = false;
-				break;
-			case ":":
-				$this->runFile($this->getMemoryString());
-				break;
-			case "`":
-				$this->setmemory(ord(@$code[++$c]));
-				break;
-			case "A":
-				$this->setmemory(!$this->getMemoryOne());
-				break;
-			case "B":
-				$this->setmemory(~$this->getMemoryOne());
-				break;
-			case "C":
-				$this->setmemory($this->getMemoryString());
-				break;
-			case "D":
-				$this->setmemorys((string)$this->getMemoryOne());
-				break;
-			case "E":
-				$this->setEndMemory();
-				break;
-			case "F":
-				$this->setmemory($this->getEndMemory());
-				break;
-			case "%":
-				$this->setmemory($this->locate);
-				break;
-			case "G":
-				$gkp[1] = $this->getMemoryOne();
-				break;
-			case "H":
-				$gkp[5] = $gkp[2] = $this->getMemoryOne();
-				break;
-			case "I":
-				$gkp[3] = $this->getMemoryOne();
-				break;
-			case "J":
-				if($gkp[0])$gkp[0] = false;
-				else $gkp[0] = true;
-				$gkp[4] = $c + 1;
-				$c+= $gkp[1];
-				break;
-			case "K":
-				$ssv = $this->getMemoryOne();
-				break;
-			case "L":
-				$this->setmemory($ssv);
-				break;
-			case "M":
-				$fto = $this->getMemoryString();
-				break;
-			case "N":
-				$this->setmemorys($fto);
-				break;
-			case "O":
-				$this->subrun(@$code[$c + $this->getMemoryOne()]);
-				break;
-			case "P":
-				$this->setmemory($c);
-				break;
-			case "Q":
-				$sve = $c;
-				break;
-			case "R":
-				$c = $sve;
-				break;
-			case "S":
-				$this->setmemory(strlen($code));
-				break;
-			case "T":
-				$code = $this->getMemoryString();
-				break;
-			case "U":
-				$this->setmemory(rand(0, 1));
-				break;
-			case "V":
-				$phy = $this->getMemoryOne();
-				break;
-			case "W":
-				$this->setmemory($phy);
-				break;
-			case "X":
-				$tui = $this->getMemoryString();
-				break;
-			case "Y":
-				$this->setmemorys($tui);
-				break;
-			case "Z":
-				$c = 0;
-				break;
-			case "*":
-				$this->setsave(25);
-				break;
-			case 6:
-				$this->setsave(26);
-				break;
-			case 7:
-				return;
-				break;
-			case 8:
-				$this->setmemory($this->getcount());
-				break;
-			case 9:
-				if(isset($this->modules[$o = $this->getMemoryOne()]))$this->subrun($this->modules[$o]);
-				break;
-			case "/":
-				$p = 0;
-				while(@$code[++$c] == '.')++$p;
-				--$c;
-				$this->resetMemorys($p);
-				break;
-			case "\x01":
-				$this->setmemory(ord(@$code[$this->getMemoryOne()]));
-				break;
-			case "\x02":
-				$this->setmemory(isset($code[$this->getMemoryOne()])? 1 : 0);
-				break;
-			case "]":
-				$memory = $this->getMemoryOne();
-				$d = '';
-				$p = 1;
-				while($p > 0) {
-					$d.= $h = $code[++$c];
-					if($h == ']')++$p;
-					if($h == '[')--$p;
-				}
-				$d = substr($d, 0, -1);
-				$this->subrun($d);
-				$this->setmemory($memory);
-			}
-		}
-		return $this->getOutputString();
-	}
-	public function run($code){
-		$x = "";
-		$y = "";
-		foreach($GLOBALS as $key => $val)
-		if(is_string($val) || is_numeric($val)) {
-			$x.= '"${' . str_replace(["\\", "\""], ["\\\\", "\\\""], $key). '}">>';
-			$y.= '"\"' . str_replace(["\\", "\""], ["\\\\", "\\\""], $val). '\"">>';
-		}
-		if(isset($GLOBALS['_GET']))
-		foreach($GLOBALS['_GET'] as $key => $val)
-		if(is_string($val) || is_numeric($val)) {
-			$x.= '"GET{' . str_replace(["\\", "\""], ["\\\\", "\\\""], $key). '}">>';
-			$y.= '"\"' . str_replace(["\\", "\""], ["\\\\", "\\\""], $val). '\"">>';
-		}
-		if(isset($GLOBALS['_POST']))
-		foreach($GLOBALS['_POST'] as $key => $val)
-		if(is_string($val) || is_numeric($val)) {
-			$x.= '"POST{' . str_replace(["\\", "\""], ["\\\\", "\\\""], $key). '}">>';
-			$y.= '"\"' . str_replace(["\\", "\""], ["\\\\", "\\\""], $val). '\"">>';
-		}
-		if(isset($GLOBALS['_COOKIE']))
-		foreach($GLOBALS['_COOKIE'] as $key => $val)
-		if(is_string($val) || is_numeric($val)) {
-			$x.= '"COOKIE{' . str_replace(["\\", "\""], ["\\\\", "\\\""], $key). '}">>';
-			$y.= '"\"' . str_replace(["\\", "\""], ["\\\\", "\\\""], $val). '\"">>';
-		}
-		$this->modules[1] = "|3{$x}4{$y}|??";
-		$this->code = &$code;
-		$this->subrun($code);
-	}
-	public function __construct(string $code = '', string $input = ''){
-		$this->setInput($input);
-		return $this->run($code);
-	}
-	public function runFile(string $file, string $input = ''){
-		$this->setInput($input);
-		$f = @file_get_contents($file);
-		if($f === false)return false;
-		return $this->run($f);
-	}
-	private $modules = ["+9+9+9", '', '|3"print ">>"echo">>"view">>4"+++G--J..//">>"..//">>",">>|??', '|3"rand">>"math">>"equal">>"add">>"rem">>"mul">>"div">>"res">>"pow">>"sqr">>4"&>@fxz<">>"&>">>"ax<">>"bx<">>"cx<">>"dx<">>"xex<">>"xfx<">>"xgx<">>"(xhx)<">>|??', "|3\"ch.by\">>\"ch.next\">>\"ch.prev\">>\"ch.the\">>\"ch.get\">>\"ch.exists\">>\"ch.set\">>\"ch.add\">>4\">P&<b>'13'&<b\x01\">>\"P>'9'&<b\x01\">>\"P-\x01\">>\"P\">>\"\x01\">>\"\x02\">>\"_\">>\">P&<b>'12'&<b_\">>|??"];
-}
-function brainfuck2($code, $input = ''){
-	return (new BrainFuck2($code, $input))->getOutputString();
 }
 class XNObject {
 	private $var = null, $call = [], $static = [], $destruct = null, $wakeup = null, $tostring = null, $callmethod = null, $callstatic = null, $invoke = null, $clone = null;
@@ -10755,6 +10094,118 @@ function get_request_query(bool $array = false){
 function get_request_string($file = false){
 	return get_request_title($file)."\r\n".get_request_headers_string()."\r\n".get_request_query();
 }
+function http_response_status(int $code = null){
+	if(!$code)$code = http_response_code();
+	$codes = [
+		100 => 'Continue',
+		101 => 'Switching Protocols',
+		102 => 'Processing',
+		200 => 'OK',
+		201 => 'Created',
+		202 => 'Accepted',
+		203 => 'Non-Authoritative Information',
+		204 => 'No Content',
+		205 => 'Reset Content',
+		206 => 'Partial Content',
+		207 => 'Multi-Status',
+		208 => 'Already Reported',
+		226 => 'IM Used',
+		300 => 'Multiple Choices',
+		301 => 'Moved Permanently',
+		302 => 'Found',
+		303 => 'See Other',
+		304 => 'Not Modified',
+		305 => 'Use Proxy',
+		306 => 'Switch Proxy',
+		307 => 'Temporary Redirect',
+		308 => 'Permanent Redirect',
+		400 => 'Bad Request',
+		401 => 'Unauthorized',
+		402 => 'Payment Required',
+		403 => 'Forbidden',
+		404 => 'Not Found',
+		405 => 'Method Not Allowed',
+		406 => 'Not Acceptable',
+		407 => 'Proxy Authentication Required',
+		408 => 'Request Timeout',
+		409 => 'Conflict',
+		410 => 'Gone',
+		411 => 'Length Required',
+		412 => 'Precondition Failed',
+		413 => 'Request Entity Too Large',
+		414 => 'Request-URI Too Long',
+		415 => 'Unsupported Media Type',
+		416 => 'Requested Range Not Satisfiable',
+		417 => 'Expectation Failed',
+		418 => 'I\'m a teapot',
+		419 => 'Authentication Timeout',
+		420 => 'Enhance Your Calm',
+		420 => 'Method Failure',
+		422 => 'Unprocessable Entity',
+		423 => 'Locked',
+		424 => 'Failed Dependency',
+		424 => 'Method Failure',
+		425 => 'Unordered Collection',
+		426 => 'Upgrade Required',
+		428 => 'Precondition Required',
+		429 => 'Too Many Requests',
+		431 => 'Request Header Fields Too Large',
+		444 => 'No Response',
+		449 => 'Retry With',
+		450 => 'Blocked by Windows Parental Controls',
+		451 => 'Redirect',
+		451 => 'Unavailable For Legal Reasons',
+		494 => 'Request Header Too Large',
+		495 => 'Cert Error',
+		496 => 'No Cert',
+		497 => 'HTTP to HTTPS',
+		499 => 'Client Closed Request',
+		500 => 'Internal Server Error',
+		501 => 'Not Implemented',
+		502 => 'Bad Gateway',
+		503 => 'Service Unavailable',
+		504 => 'Gateway Timeout',
+		505 => 'HTTP Version Not Supported',
+		506 => 'Variant Also Negotiates',
+		507 => 'Insufficient Storage',
+		508 => 'Loop Detected',
+		509 => 'Bandwidth Limit Exceeded',
+		510 => 'Not Extended',
+		511 => 'Network Authentication Required',
+		598 => 'Network read timeout error',
+		599 => 'Network connect timeout error',
+	];
+	return isset($codes[$code])?$codes[$code]:'Unknown';
+}
+function get_response_title(){
+	$protocol = getenv('SERVER_PROTOCOL');
+	if(!$protocol)
+		$protocol = 'HTTP/1.0';
+	$code = http_response_code();
+	$status = http_response_status();
+	return "$protocol $code $status";
+}
+function get_response_headers(){
+	$arr = [];
+	$hdrs = headers_list();
+	foreach($hdrs as $hdr){
+		$hdr = explode(':',$hdr);
+		$arr[$hdr[0]] = trim($hdr[1]);
+	}
+	return $arr;
+}
+function get_response_headers_list(){
+	return headers_list();
+}
+function get_response_headers_string(){
+	return implode("\r\n",headers_list());
+}
+function get_response_content(){
+	return ob_get_contents();
+}
+function get_response_string(){
+	return get_response_title()."\r\n".get_response_headers_string()."\r\n\r\n".get_response_content();
+}
 class Cryptor {
 	public static function rot13(string $str){
 		return strtr($str,[
@@ -11146,32 +10597,36 @@ function socket_connect_socks5($socket,string $username = '',string $password = 
 	$port = ord(fgetc($socket)) * 256 + ord(fgetc($socket));
 	return "$ip:$port";
 }
-function xnloop($file = false,$close = false){
-	if(!$file)$file = getenv('REQUEST_URI');
-	if(!is_web_visibly($file)){
-		new XNError("xnloop","Can not looping file '$file'");
-		return false;
-	}
+function xnloop(int $loop = -1,string $file = null,bool $wait = false,bool $close = false){
+	if(!$file)$file = thefile();
 	$file = to_web_visibly($file);
+	$headers = get_request_headers();
+	if(!isset($headers["Xnloop-Now"]) && $loop != -1)
+		$headers["Xnloop-Now"] = $loop;
+	elseif(isset($headers["Xnloop-Now"])){
+		--$headers["Xnloop-Now"];
+		if($headers["Xnloop-Now"] == 0)
+			return 2;
+	}
 	$loop = @fsockopen((getenv('HTTPS') ? 'tls' : 'tcp').'://'.getenv('SERVER_NAME'),getenv('SERVER_PORT'));
 	if(!$loop){
 		new XNError("xnloop","Can not looping file $file");
 		return false;
 	}
-	fwrite($loop,get_request_string($file));
+	$header = '';
+	foreach($headers as $key=>$value)
+		$header .= "$key: $value\r\n";
+	fwrite($loop,get_request_title()."\r\n".$header."\r\n".get_request_query());
+	if($wait){
+		fgetc($loop);
+		fclose($loop);
+	}
 	if($close)
-		return fclose($loop);
-	return true;
+		exit;
+	return 1;
 }
 function publicdir(){
 	return substr(thefile(),0,-strlen(getenv('REQUEST_URI')));
-}
-function is_web_visibly($file){
-	$home = str_ireplace("file://",'',publicdir());
-	$file = str_ireplace("file://",'',$file);
-	if(strpos($file,$home) === 0 && is_readable($file))return true;
-	if(is_readable('.' . DIRECTORY_SEPARATOR . $file))return true;
-	return false;
 }
 function to_web_visibly($file){
 	$home = str_ireplace("file://",'',publicdir());
@@ -11230,6 +10685,89 @@ function is_xnnumber($x){
 }
 function is_incomplete_class($x){
 	return $x instanceof __PHP_Incomplete_Class;
+}
+define("SYS_64BIT",PHP_INT_SIZE === 8);
+define("SYS_32BIT",PHP_INT_SIZE === 4);
+function xnprompt_line(string $q = null,int $max = 0){
+	if(!isset($GLOBALS['-XN-']['xnprintin'])) {
+		new XNError("xnprint", "one starting XNPrint");
+		return false;
+	}
+	if($max > 0)$line = rtrim(fgets($GLOBALS['-XN-']['xnprintin'], $max));
+	else $line = rtrim(fgets($GLOBALS['-XN-']['xnprintin']));
+	return $line;
+}
+function xnprompt(string $q = null,int $max = 0){
+	if(!isset($GLOBALS['-XN-']['xnprintin'])) {
+		new XNError("xnprint", "one starting XNPrint");
+		return false;
+	}
+	if($max > 0)$read = rtrim(fread($GLOBALS['-XN-']['xnprintin'], $max));
+	else $read = rtrim(fgetc($GLOBALS['-XN-']['xnprintin']));
+	return $read;
+}
+function flseek($handle,int $seek,int $type = 0){
+	if(!is_resource($handle))
+		return false;
+	switch($type){
+		case 0:
+			fseek($handle,0);
+			while($seek --> 0)
+				fgets($handle);
+		break;
+		case 1:
+			while($seek --> 0)
+				fgets($handle);
+		break;
+		case 2:
+			fseek($handle,0);
+			$l = [];
+			$c = 0;
+			while(fgets($handle) !== '')
+				$l[++$c] = ftell($handle);
+			if(isset($l[$c - $seek]))
+				fseek($handle,$l[$c - $seek]);
+			elseif($c - $seek < 0)
+				fseek($handle,0);
+			else
+				fseek($handle,0,SEEK_END);
+		break;
+		default:
+			new XNError("binaryString seekable","seekable type not found");
+			return false;
+	}
+}
+function stream_code_pointer(bool $now = true){
+	$file = fopen(thefile(),'rb');
+	if($now) {
+		$line = theline();
+		while($line --> 1)
+			fgets($file);
+	}
+	return $file;
+}
+function code_pointer_go($stream){
+	if(!is_resource($stream))
+		return false;
+	$code = stream_get_contents($stream);
+	fclose($stream);
+	evale($code);
+}
+function go_line(int $x){
+	$stream = stream_code_pointer(false);
+	flseek($stream,$x);
+	code_pointer_go($stream);
+}
+define("XNBLOCK",'',true);
+function xnblock($block){
+	$stream = stream_code_pointer(false);
+	$code = stream_get_contents($stream);
+	fclose($stream);
+	$block = stripos($code,"XNBLOCK> $block");
+	if($block === false)
+		return false;
+	$code = substr($code,$block + strlen("XNBLOCK> $block"));
+	evall($code);
 }
 
 $GLOBALS['-XN-']['endTime'] = microtime(true);
