@@ -8670,8 +8670,7 @@ class XNMath {
 		$x = $x < 0 ? -$x : $x;
 		if($x == 0)return [0];
 		$r = [];
-		$y = (int)$x ** 0.5;
-		for($c = 2; $c <= $y; ++$c)
+		for($c = 1; $c <= $x; ++$c)
 		if($x % $c == 0)$r[] = $c;
 		return $r;
 	}
