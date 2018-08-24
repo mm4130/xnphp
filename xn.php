@@ -5558,9 +5558,6 @@ class XNDataFile {
     }
     private function replace($key,$value){
 		$file = $this->file;
-		if($key == 'test'){
-			debug_print_backtrace();
-		}
         $a = tmpfile();
         $u = $key;
         $key = substr($key,ord($key[0])+1);
@@ -5724,10 +5721,10 @@ class XNDataFile {
                 $s = $s-$u-1;
                 $s0 = (int)($s / 1048576);
 				$s1 = $s - $s0;
-				fseek($file, -$s1, SEEK_CUR);
                 while($s0 --> 0)
                     fwrite($tmp,fread($file,1048576));
 				if($s1)fwrite($tmp,fread($file,$s1));
+				rewind($tmp);
 				rewind($tmp);
                 $xnd->setme([$this,$j]);
 				rewind($file);
@@ -8924,11 +8921,11 @@ class Finder {
 	}
 	public static function find($str, $regex){
 		if(!preg_match($regex, $str, $find))return false;
-		return $find;
+		return $find[0];
 	}
 	public static function search($str, $regex){
 		if(!preg_match_all($regex, $str, $search))return false;
-		return $search;
+		return $search[0];
 	}
 	public static function token_exists($str){
 		return self::exists($str, self::TOKEN);
@@ -11359,6 +11356,39 @@ function readout(object $func,...$params){
 	$read->closure = $func;
 	$read->arguments = $params;
 	return $read;
+}
+function lsort(&$array){
+    $arr = $ar = [];
+    foreach($array as $x => $y)
+        $arr[$x] = length($y).'-'.$x;
+    sort($arr);
+    foreach($arr as $x => $y)
+        $ar[$x] = $array[substr($y, strpos($y, '-') + 1)];
+    $array = $ar;
+}
+function array_add($array){
+	$res = 0;
+	foreach($array as $x)
+		$res += $x;
+	return $res;
+}
+function array_mul($array){
+	$res = 1;
+	foreach($array as $x)
+		$res *= $x;
+	return $res;
+}
+function println(string $data){
+	if(!($out = ob_get_contents()) || $out[strlen($out) - 1] == "\n")
+		print $data;
+	print "\n" . $data;
+}
+function echoln(string ...$datas){
+	foreach($datas as $data){
+		if(!($out = ob_get_contents()) || $out[strlen($out) - 1] == "\n")
+			print $data;
+		print "\n" . $data;
+	}
 }
 
 /* tbot game cheat
