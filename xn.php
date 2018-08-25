@@ -4006,14 +4006,20 @@ class XNData {
 
     // get location
     public function locate(){
+		if($this->type === 'string')
+			throw new XNError("XNDataString", "String data not have locate", XNError::WARNING);
         return $this->xnd->locate();
     }
     public function stream(){
+		if($this->type === 'string')
+			throw new XNError("XNDataString", "String data not have locate", XNError::WARNING);
         return $this->xnd->stream();
     }
 
     // information
     public function setName($name){
+		if($this->type === 'url')
+			throw new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING);
 		$this->xnd->set("\x01\x02\x09n",self::encodeon($name));
 		return $this;
     }
@@ -4023,6 +4029,8 @@ class XNData {
         return self::decodenz($name);
     }
     public function setDescription($desc){
+		if($this->type === 'url')
+			throw new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING);
         $this->xnd->set("\x01\x02\x09d",self::encodeon($desc));
 		return $this;
     }
@@ -4032,6 +4040,8 @@ class XNData {
         return self::decodenz($desc);
     }
     private function setLastModified(){
+		if($this->type === 'url')
+			return false;
         $this->xnd->set("\x01\x02\x09m",self::encodeon(floor(microtime(true)*1000)));
     }
     public function getLastModified(){
@@ -4040,6 +4050,8 @@ class XNData {
         return self::decodenz($modifi) / 1000;
 	}
 	private function setCreatedTime(){
+		if($this->type === 'url')
+			return false;
 		$this->xnd->set("\x01\x02\x09c",self::encodeon(floor(microtime(true)*1000)));
 		$this->xnd->set("\x01\x02\x09m",self::encodeon(0));
     }
@@ -4179,6 +4191,8 @@ class XNData {
         return self::xnd($dir);
     }
     public function make($dir,bool $ret = false){
+		if($this->type === 'url')
+			throw new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING);
 		$dir = self::encodeNS($dir);
         $this->xnd->set($dir,"\x01\x01\x09");
         if($this->save)
@@ -4197,6 +4211,8 @@ class XNData {
 		$name = self::encodeNS($dir);
 		$dir = $this->xnd->dir($name);
         if(!$dir){
+			if($this->type === 'url')
+				throw new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING);
 			$this->xnd->add($name,"\x01\x01\x09");
 			if($this->save)
 				$this->save();
@@ -4212,18 +4228,24 @@ class XNData {
 
     // setters
     public function set($key,$value){
+		if($this->type === 'url')
+			throw new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING);
         $this->xnd->set(self::encodeNS($key),self::encodeon($value));
         if($this->save)
 			$this->save();
 		return $this;
     }
     public function reset(){
+		if($this->type === 'url')
+			throw new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING);
         $this->xnd->reset();
         if($this->save)
 			$this->save();
 		return $this;
     }
     public function delete($key){
+		if($this->type === 'url')
+			throw new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING);
         $this->xnd->delete(self::encodeNS($key));
         if($this->save)
 			$this->save();
@@ -4526,13 +4548,29 @@ class XNData {
     private function _dump($k){
         $c = 0;
         $this->xnd->all(function($key,$value)use(&$c,$k){
-			if($key[0] == "\x09")return;
+			if($key[0] == "\x09"){
+				switch($key[1]){
+					case 'n':
+						print "$k# name : ".unce(self::decodenz($value))."\n";
+					return;
+					case 'd':
+						print "$k# description : ".unce(self::decodenz($value))."\n";
+					return;
+					case 'm':
+						print "$k# modified time : ".unce(self::decodenz($value))."\n";
+					return;
+					case 'c':
+						print "$k# created time : ".unce(self::decodenz($value))."\n";
+					return;
+				}
+				return;
+			}
 			$key = self::decodeNS($key);
 			if(!$key)return;
             ++$c;
             if($value[ord($value[0])+1] == "\x09"){
                 print "$k#$c dir ".unce($key)."\n";
-                self::xnd(new XNDataString(substr_replace($value,'',0,ord($value[0])+2)))->_dump("| $k");
+                self::xnd(new XNDataString(substr_replace($value,'',0,ord($value[0])+2)))->_dump("$k| ");
             }elseif(isset($value[2]) && $value[2] == "\x0a"){
                 print "$k#$c list ".unce($key)."\n";
             }
@@ -4545,6 +4583,8 @@ class XNData {
 
     // lists
     public function add($key){
+		if($this->type === 'url')
+			throw new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING);
         $this->xnd->set(self::encodeNS($key),"\x01\x01\x0a");
         if($this->save)
             $this->save();
@@ -4559,13 +4599,12 @@ class XNData {
             switch($at[0][1]){
                 case 'n':
                     return ['name',self::decodenz($at[1]),true];
-                break;
                 case 'd':
                     return ['description',self::decodenz($at[1]),true];
-                break;
                 case 'm':
-                    return ['last_modified_time',self::decodenz($at[1]),true];
-                break;
+					return ['last_modified_time',self::decodenz($at[1]),true];
+				case 'c':
+                    return ['created_time',self::decodenz($at[1]),true];
 			}
 		$at[0] = self::decodeNS($at[0]);
 		if(!$at[0])return;
@@ -4726,16 +4765,16 @@ class XNData {
 	}
 
 	// password
-	public function password_encode($password,int $limit = 4096){
+	public function password_encode($password,int $limit = 5242880){
+		if($this->type === 'url')
+			throw new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING);
 		$password = self::encodeon($password);
-		if($this->type == 'url')
-			return false;
 		return $this->xnd->password_encode($password,$limit);
 	}
 	public function password_decode($password){
+		if($this->type === 'url')
+			throw new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING);
 		$password = self::encodeon($password);
-		if($this->type == 'url')
-			return false;
 		return $this->xnd->password_decode($password);
 	}
 }
@@ -5806,7 +5845,49 @@ class XNDataFile {
         }
         rewind($file);
         return $o;
-    }
+	}
+	public function password_encode($password, $limit = 5242880){
+		if($limit === 0)$limit = $this->size();
+		$file = $this->file;
+		$tmp = tmpfile();
+		$iv = $password . sha1($password) . $password;
+		$iv = substr(md5($password), 0, 16);
+		while(($content = fread($file,$limit)) !== ''){
+			$content = openssl_encrypt($content,'AES-192-CTR',$password,1,$iv);
+			$s = xndata::encodesz(strlen($content));
+			$l = strlen($s);
+			$content = chr($l).$s.$content;
+			fwrite($tmp,$content);
+		}
+		rewind($file);
+		rewind($tmp);
+		stream_copy_to_stream($tmp,$file);
+		rewind($file);
+		fclose($tmp);
+		return true;
+	}
+	public function password_decode($password){
+		$file = $this->file;
+		$tmp = tmpfile();
+		$iv = $password . sha1($password) . $password;
+		$iv = substr(md5($password), 0, 16);
+		while(($l = fgetc($file)) !== false){
+			$l = ord($l);
+			$s = fread($file,$l);
+			$s = xndata::decodesz($s);
+			$data = fread($file,$s);
+			$data = openssl_decrypt($data,'AES-192-CTR',$password,1,$iv);
+			if($data === false)
+				return false;
+			fwrite($tmp,$data);
+		}
+		rewind($file);
+		rewind($tmp);
+		stream_copy_to_stream($tmp,$file);
+		rewind($file);
+		fclose($tmp);
+		return true;
+	}
 }
 class XNDataURL {
     private $url = '';
@@ -5818,7 +5899,13 @@ class XNDataURL {
     }
     public function size(){
         return strlen($this->get());
-    }
+	}
+	public function locate(){
+		return $this->url;
+	}
+	public function stream(){
+		return fopen($this->url,'rb');
+	}
     public function iskey($key){
         $file = fopen($this->url,'rb');
         $key = $key;
@@ -6008,15 +6095,15 @@ class XNDataURL {
             }
             $k = fread($file,$h);
             if($k == $key){
-                $l = ord(fgetc($file));
-                fread($file,$l);
-                $r = fgetc($file) == "\x09";
-                fclose($file);
+				$l = ord(fgetc($file));
+				fread($file,$l);
+				$r = fgetc($file) == "\x09";
+                close($file);
                 return $r;
             }
             fread($file,$s-$h);
         }
-        fclose($file);
+        close($file);
         return false;
     }
     public function dir($key){
@@ -6037,27 +6124,31 @@ class XNDataURL {
                 fread($file,$s);
                 continue;
             }
-            $k = fread($file,$h);
+			$k = fread($file,$h);
             if($k == $key){
                 $u = ord(fgetc($file));
-                fread($file,$u);
-                if(fgetc($file) != "\x09")
-                    return false;
+				fread($file,$u);
+                if(fgetc($file) != "\x09"){
+					close($file);
+					return false;
+				}
                 $tmp = tmpfile();
-                $xnd = new XNDataFile($tmp);
+				$xnd = new XNDataFile($tmp);
                 $s = $s-$u-1;
                 $s0 = (int)($s / 1048576);
-                $s1 = $s - $s0;
+				$s1 = $s - $s0;
                 while($s0 --> 0)
                     fwrite($tmp,fread($file,1048576));
-                if($s1)fwrite($tmp,fread($file,$s1));
+				if($s1)fwrite($tmp,fread($file,$s1));
+				rewind($tmp);
+				rewind($tmp);
                 $xnd->setme([$this,$j]);
-                fclose($file);
+				close($file);
                 return $xnd;
             }
             fread($file,$s-$h);
         }
-        fclose($file);
+		close($file);
         return false;
     }
     public function count(){
@@ -6537,11 +6628,10 @@ class XNClosure {
 		return substr($code, $start + 1, $end - $start - 2);
 	}
 	public function eval($variables = false){
-		$code = $this->getCode();
-		if(!$code)return false;
-		if($variables == false)$variables = &$GLOBALS;
-		foreach($variables as $var => &$val)$$var = &$val;
-		return eval($code);
+		$coderfhxhtrdfzeszrdfyghjmhvg34647u6hzdrtd = $this->getCode();
+		if(!$coderfhxhtrdfzeszrdfyghjmhvg34647u6hzdrtd)return false;
+		extract($GLOBALS);
+		return eval($coderfhxhtrdfzeszrdfyghjmhvg34647u6hzdrtd);
 	}
 	public function getRunCode($variables = false){
 		$code = $this->getCode();
