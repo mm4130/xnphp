@@ -5613,7 +5613,7 @@ class XNDataFile {
             --$s;
             $h = fread($file,$l);
             $d.= $h;
-            $s-= $l;
+			$s-= $l;
             $h = xndata::decodesz($h);
             if($h != $z){
                 $d.= fread($file,$s);
@@ -5757,13 +5757,12 @@ class XNDataFile {
 				}
                 $tmp = tmpfile();
 				$xnd = new XNDataFile($tmp);
-                $s = $s-$u-1;
+                $s = $s-$u-6;
                 $s0 = (int)($s / 1048576);
 				$s1 = $s - $s0;
                 while($s0 --> 0)
                     fwrite($tmp,fread($file,1048576));
 				if($s1)fwrite($tmp,fread($file,$s1));
-				rewind($tmp);
 				rewind($tmp);
                 $xnd->setme([$this,$j]);
 				rewind($file);
