@@ -1,27 +1,43 @@
 <?php // xn php v1.7
-if(PHP_VERSION < 7.0) {
-	throw new Error("<b>xn library</b> needs more than or equal to 7.0 version");
-	exit;
+
+if(defined('XNLIB')){
+	new XNError('xnInclude', 'library before loaded', XNError::WARNING);
+	return;
 }
+
 $GLOBALS['-XN-'] = [];
 $GLOBALS['-XN-']['startTime'] = microtime(true);
 $GLOBALS['-XN-']['dirName'] = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir'] = $GLOBALS['-XN-']['dirName'] . DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['isf'] = file_exists($GLOBALS['-XN-']['dirNameDir'] . "xn.php");
 $GLOBALS['-XN-']['savememory'] = [];
+
 define("XNVERSION", "1.7");
+define("XNLIB", true);
+
+if(!defined('STDOUTPUT' ))define('STDOUTPUT' , 'php://output');
+if(!defined('STDINPUT'  ))define('STDINPUT'  , 'php://input' );
+if(!defined('STDOUT'    ))define('STDOUT'    , 'php://stdout');
+if(!defined('STDIN'     ))define('STDIN'     , 'php://stdin' );
+if(!defined('STDMEMORY' ))define('STDMEMORY' , 'php://memory');
+if(!defined('STDERR'    ))define('STDERR'    , 'php://stderr');
+if(!defined('STDINPUTED'))define('STDINPUTED', file_get_contents('php://input'));
+
 class ThumbCode {
 	private $code = false;
 	public function __construct($func){
 		$this->code = $func;
 	}
 	public function __destruct(){
-		if($this->code)($this->code)();
+		if($this->code){
+		    $code = $this->code;
+		    $code();
+		}
 	}
 	public function close(){
 		$this->code = false;
 	}
-	public function clone(){
+	public function __clone(){
 		return new ThumbCode($this->code);
 	}
 }
@@ -80,6 +96,54 @@ function xnupdate(){
 	file_put_contents("xn.php", $code);
 	set_last_update_nter();
 }
+
+/*
+\Throwable
+├── \Exception (implements \Throwable)
+│   ├── \LogicException (extends \Exception)
+│   │   ├── \BadFunctionCallException (extends \LogicException)
+│   │   │   └── \BadMethodCallException (extends \BadFunctionCallException)
+│   │   ├── \DomainException (extends \LogicException)
+│   │   ├── \InvalidArgumentException (extends \LogicException)
+│   │   ├── \LengthException (extends \LogicException)
+│   │   └── \OutOfRangeException (extends \LogicException)
+│   └── \RuntimeException (extends \Exception)
+│       ├── \OutOfBoundsException (extends \RuntimeException)
+│       ├── \OverflowException (extends \RuntimeException)
+│       ├── \RangeException (extends \RuntimeException)
+│       ├── \UnderflowException (extends \RuntimeException)
+│       └── \UnexpectedValueException (extends \RuntimeException)
+└── \Error (implements \Throwable)
+    ├── \XNError (extends \Error)
+    ├── \AssertionError (extends \Error)
+    ├── \ParseError (extends \Error)
+    └── \TypeError (extends \Error)
+        └── \ArgumentCountError (extends \TypeError)
+    └── \ArithmeticError (extends \Error)
+        └── \DivisionByZeroError extends \ArithmeticError)
+        */
+
+if(!class_exists('Error')){class Error extends Exception {}}
+if(!class_exists('LogicException')){class LogicException extends Exception {}}
+if(!class_exists('BadFunctionCallException')){class BadFunctionCallException extends LogicException {}}
+if(!class_exists('BadMethodCallException')){class BadMethodCallException extends BadFunctionCallException {}}
+if(!class_exists('DomainException')){class DomainException extends LogicException {}}
+if(!class_exists('InvalidArgumentException')){class InvalidArgumentException extends LogicException {}}
+if(!class_exists('LengthException')){class LengthException extends LogicException {}}
+if(!class_exists('OutOfRangeException')){class OutOfRangeExcpetion extends LogicException {}}
+if(!class_exists('RuntimeException')){class RuntimeException extends Exception {}}
+if(!class_exists('OutOfBoundException')){class OutOfBoundException extends RuntimeException {}}
+if(!class_exists('OverflowException')){class OverflowException extends RuntimeException {}}
+if(!class_exists('RangeException')){class RangeException extends RuntimeException {}}
+if(!class_exists('UnderflowException')){class UnderflowException extends RuntimeException {}}
+if(!class_exists('UnexpectedValueException')){class UnexceptedValueException extends RuntimeException {}}
+if(!class_exists('AssertionError')){class AssertionError extends Error {}}
+if(!class_exists('ParseError')){class ParseError extends Error {}}
+if(!class_exists('TypeError')){class TypeError extends Error {}}
+if(!class_exists('ArgumentCountError')){class ArgumentCountError extends TypeError {}}
+if(!class_exists('ArithmeticError')){class ArithmeticError extends Error {}}
+if(!class_exists('DivisionByZeroError')){class DivisionByZeroError extends ArithmeticError {}}
+
 if(@$XNUPDATE === 2 || (@$XNUPDATE === 1 && substr($GLOBALS['-XN-']['lastUpdate'], 0, -14)+ 10000 <= time()))xnupdate();
 $GLOBALS['-XN-']['errorShow'] = true;
 $GLOBALS['-XN-']['errorTypeShow'] = [
@@ -89,11 +153,11 @@ class XNError extends Error {
 	protected $message;
 	public $HTMLMessage, $consoleMessage, $type, $from;
 
-	const NONE = 0;
-	const EXIT = 1;
-	const THROW = 2;
+	const T_NONE = 0;
+	const T_EXIT = 1;
+	const T_THROW = 2;
 
-	const TYPES = [
+	public static $TYPES = [
 		0  => "Notic            ",
 		1  => "Warning          ",
 		2  => "Log              ",
@@ -138,59 +202,66 @@ class XNError extends Error {
 			else $GLOBALS['-XN-']['errorTypeShow'][$type] = !$GLOBALS['-XN-']['errorTypeShow'][$type];
 		}else{
 			if($type === false)
-				$GLOBALS['-XN-']['errorShow'] = (bool)$sh;
-			else $GLOBALS['-XN-']['errorTypeShow'][$type] = (bool)$sh;
+				$GLOBALS['-XN-']['errorShow'] = $sh;
+			else $GLOBALS['-XN-']['errorTypeShow'][$type] = $sh;
 		}
 	}
 	public static function handler($func){
 		$GLOBALS['-XN-']['errorhandler'] = $func;
 	}
-	public function __construct(string $from, string $text, int $level = 0, int $type = null){
+	public function __construct(string $from, string $text, int $level = null, int $type = null){
 		if((!@$GLOBALS['-XN-']['errorTypeShow'][$level] && $level != 16) && $type === null)return;
-		$level = @self::TYPES[$level];
+		$level = @self::$TYPES[$level];
 		if($GLOBALS['-XN-']['errorTypeShow'][16])
 			$level = rtrim($level, ' ');
 		$this->from = $from;
 		$debug = debug_backtrace();
 		$debug = end($debug);
 		$date = date("Y-n-j G:i:s");
-		$console = "\n[$date]XN $level > $from: $text in {$debug['file']} on line {$debug['line']}\n";
-		$message = "<br/>[$date]<b>XN $level</b> &gt; <i>$from</i>: " . nl2br($text). " in <b>{$debug['file']}</b> on line <b>{$debug['line']}</b><br/>";
+		$this->file = $debug['file'];
+		$this->line = $debug['line'];
+		$console = "[$date]XN $level > $from: $text in {$debug['file']} on line {$debug['line']}";
+		$message = "<br />[$date]<b>XN $level</b> &gt; <i>$from</i>: " . nl2br($text). " in <b>{$debug['file']}</b> on line <b>{$debug['line']}</b><br />";
 		$this->HTMLMessage = $message;
 		$this->consoleMessage = $console;
 		$this->message = "XN $type > $from: $text";
+		$GLOBALS['-XN-']['lasterr'] = $this->message;
 		if(isset($GLOBALS['-XN-']['errorhandler']))
-			if(is_callable($GLOBALS['-XN-']['errorHandler']))($GLOBALS['-XN-']['errorhandler'])($this);
+			if(is_callable($GLOBALS['-XN-']['errorHandler']))$GLOBALS['-XN-']['errorhandler']($this);
 		$errorsh = $GLOBALS['-XN-']['errorShow'];
 		if($errorsh && !$type){
 			$headers = get_response_headers();
 			if(!isset($headers['Content-type']) || strpos($headers['Content-type'], 'text/html') !== false)
 				print $message;
 			else
-				print $console;
+				println($console);
 		}
 		if($errorsh && is_string($errorsh) && (file_exists($errorsh) || touch($errorsh)))
-			fadd($errorsh, $console);
+			faddln($errorsh, $console);
 		if($type !== null)
 			switch($type){
-				case self::NONE:
+				case self::T_NONE:
 				break;
-				case self::EXIT:
+				case self::T_EXIT:
 				exit;
-				case self::THROW:
+				case self::T_THROW:
 				throw $this;
 			}
 	}
 	public function __toString(){
 		return $this->message;
 	}
+	public static function lasterror(){
+		return isset($GLOBALS['-XN-']['lasterr']) ? $GLOBALS['-XN-']['lasterr'] : false;
+	}
 }
+
 
 // -----------------------------------------------------
 
-function var_read(...$var){
+function var_read(){
 	ob_start();
-	var_dump(...$var);
+    call_user_func_array('var_dump', func_get_args());
 	$r = ob_get_contents();
 	ob_end_clean();
 	return $r;
@@ -200,8 +271,10 @@ function swap(&$var1, &$var2){
 	$var1 = $var2;
 	$var2 = $var3;
 }
-function varadd($to,...$args){
+function varadd($to){
 	$t = gettype($to);
+	$args = func_get_args();
+	unset($args[0]);
 	switch ($t) {
 	case "NULL":
 		return null;
@@ -429,8 +502,8 @@ function equal($a, $b, $c = '==', $d = 0){
 		foreach($b as &$x)$x = (string)$x;
 		else $b = (string)$b;
 	}
-	if($c == '!===' || $c == '!>' || $c == '!<' || $c == '!>=' || $c == '!<=')$c = ['===' => '!==', '!<' => '>=', '!>' => '<=', '!>=' => '<', '!<=' => '>'][substr($c, 1)];
-	if(is_numeric($c))$c = @['==', '!=', '>=', '<=', '>', '<', '!==', '==='][$c];
+	if($c == '!===' || $c == '!>' || $c == '!<' || $c == '!>=' || $c == '!<=')$c = array_key(['===' => '!==', '!<' => '>=', '!>' => '<=', '!>=' => '<', '!<=' => '>'], substr($c, 1));
+	if(is_numeric($c))$c = @array_key(['==', '!=', '>=', '<=', '>', '<', '!==', '==='], $c);
 	$cv = $c[0] == '.' || $c[0] == '$' ? substr($c, 1): $c;
 	if($c != '$' && $c != '.' && $cv != '==' && $cv != '!=' && $cv != '>=' && $cv != '<=' && $cv != '<' && $cv != '>' && $cv != '!==' && $cv != '===') {
 		throw new XNError("equal", "equal action invalid", XNError::WARNING);
@@ -654,7 +727,8 @@ class TelegramBotKeyboard {
 		$this->size = false;
 		return $this;
 	}
-	public function parse(string $str,string $space = '||'){
+	public function parse(string $str,string $space = null){
+	    if($space === null)$space = '||';
 		return ['keyboard' => array_map(function($x)use($space){
 			return array_map(function($x){
 				return ['text'=>$x];
@@ -780,7 +854,8 @@ class TelegramBotButtonSave {
 	public function exists(string $name){
 		return isset($this->btn[$name]);
 	}
-	public function parse(string $str,string $space = '||'){
+	public function parse(string $str,string $space = null){
+	    if($space === null)$space = '||';
 		return array_map(function($x)use($space){
 			return array_map(function($x){
 				return ['text'=>$x];
@@ -1089,6 +1164,13 @@ class TelegramBotSends {
 			$this->bot->editInlineText($this->chat, $message, $text, $args, $this->level);
 		return $this;
 	}
+	public function editbtn($message,$id = false, $keyboard, $args = []){
+		if($id)
+			$this->bot->editMessageInlineKeyboard($this->chat, $message, $id, $keyboard, $args, $this->level);
+		else
+			$this->bot->editInlineInlineKeyboard($this->chat, $message, $keyboard, $args, $this->level);
+		return $this;
+	}
 	public function editlive($message, $id, $live, $args = []){
 		$this->bot->editMessageLiveLocation($this->chat, $message, $id, $live, $args, $this->level);
 		return $this;
@@ -1134,9 +1216,12 @@ class TelegramBot {
 	const FORCE_REPLY = 'force_reply';
 	const RESIZE_KEYBOARD = 'resize_keyboard';
 	const BTN_TEXT = 'text';
+	const BTN_URL = 'url';
 	const BTN_DATA = 'callback_data';
 	const BTN_SWITCH = 'switch_inline_query';
 	const BTN_SWITCH_CURRENT = 'switch_inline_query_current_chat';
+	const HTML = 'HTML';
+	const MARK_DOWN = 'MarkDown';
 
 
 	public function send($chat = null, $level = null){
@@ -1166,7 +1251,7 @@ class TelegramBot {
 	}
 	public function update($offset = - 1, $limit = 1, $timeout = 0){
 		if(isset($this->data->message_id))return $this->data;
-		elseif($this->data = json_decode(file_get_contents("php://input")))return $this->data;
+		elseif($this->data = json_decode(STDINPUTED))return $this->data;
 		else $res = $this->data = $this->request("getUpdates", ["offset" => $offset, "limit" => $limit, "timeout" => $timeout], 3);
 		return (object)$res;
 	}
@@ -1179,37 +1264,41 @@ class TelegramBot {
 			$func((object)["method" => $method, "arguments" => $args, "result" => $res, "level" => $level]);
 		}): false;
 		if($this->autoaction && isset($args['chat_id'])) {
-			switch (strtolower($method)) {
+			switch(strtolower($method)) {
 			case "sendmessage":
 				$action = "typing";
-				break;
+			break;
 			case "sendphoto":
 				$action = "upload_photo";
-				break;
+			break;
 			case "sendvoice":
 				$action = "record_audio";
-				break;
+			break;
 			case "sendvideo":
 				$action = "upload_video";
-				break;
+			break;
 			case "sendvideonote":
 				$action = "uplaod_video_note";
-				break;
+			break;
 			case "sendaudio":
 				$action = "upload_audio";
-				break;
+			break;
 			case "senddocument":
 				$action = "upload_document";
-				break;
+			break;
 			default:
 				$action = false;
-				break;
 			}
-			if($action)$this->request("sendChatAction", ["chat_id" => $args['chat_id'], "action" => $action]);
+			if($action)
+				$this->request("sendChatAction", [
+					"chat_id" => $args['chat_id'],
+					"action" => $action
+				]);
 		}
 		if($level == 1) {
 			$args['method'] = $method;
 			print json_encode($args);
+			ob_flush();
 			$res = true;
 		}
 		elseif($level == 2) {
@@ -1234,7 +1323,7 @@ class TelegramBot {
 		if($res === false)return false;
 		if($res === true)return true;
 		if(!$res) {
-			$server = ["OUTPUT", "api.telegram.org", "api.telegram.org"][$level - 1];
+			$server = array_key(["OUTPUT", "api.telegram.org", "api.telegram.org"], $level - 1);
 			new XNError("TelegramBot", "can not Connect to $server", XNError::NETWORK);
 			return false;
 		}
@@ -1266,7 +1355,10 @@ class TelegramBot {
 		$this->queryResult = null;
 		$this->send = null;
 		$this->menu = null;
-		if($this->notresponse)($this->notresponse)();
+		if($this->notresponse){
+		    $notr = $this->notresponse;
+		    $notr();
+		}
 	}
 	public function sendMessage($chat, $text, $args = [], $level = 3){
 		$args['chat_id'] = $chat;
@@ -1494,17 +1586,6 @@ class TelegramBot {
 	public function deleteMessage($chat, $message, $level = 3){
 		return $this->request("deleteMessage", ["chat_id" => $chat, "message_id" => $message], $level);
 	}
-	public function deleteMessages($chat, $messages, $level = 3){
-		if($level > 5) {
-			$level-= 5;
-			$from = min(...$messages);
-			$to = max(...$messages);
-			for(; $from <= $to; ++$from)$this->request("deleteMessage", ["chat_id" => $chat, "message_id" => $from], $level);
-		}
-		else {
-			foreach($messages as $message)$this->request("deleteMessage", ["chat_id" => $chat, "message_id" => $message], $level);
-		}
-	}
 	public function sendMedia($chat, $type, $file, $args = [], $level = 3){
 		$type = strtolower($type);
 		if($type == "videonote")$type = "video_note";
@@ -1610,7 +1691,7 @@ class TelegramBot {
 		if($speed)$func = "fget";
 		else $func = "file_get_contents";
 		if($level == 3) {
-			return ($func)("https://api.telegram.org/file/bot$this->token/$path");
+			return $func("https://api.telegram.org/file/bot$this->token/$path");
 		}
 		else return false;
 	}
@@ -1689,7 +1770,8 @@ class TelegramBot {
 		return "unknow_update";
 	}
 	public function getUpdateInType($update = false){
-		return ($update ? $update : $this->lastUpdate())->{$this->updateType()};
+		$update = $update ? $update : $this->lastUpdate();
+		return $update->{$this->updateType()};
 	}
 	public function readUpdates($func, $while = 0, $limit = 1, $timeout = 0){
 		if($while == 0)$while = - 1;
@@ -1840,17 +1922,40 @@ class TelegramBot {
 	public function sendMessageFromUpdate($chat, $update = false, $args = [], $level = 3){
 		if($update)$update = $this->update->message;
 		elseif(isset($update->message))$update = $update->message;
-		$args['file'] = isset($args['file'])? $args['file'] : isset($args['document'])? $args['document'] : isset($args['video'])? $args['video'] : isset($args['voice'])? $args['voice'] : isset($args['video_note'])? $args['video_note'] : isset($args['audio'])? $args['audio'] : isset($args['sticker'])? $args['sticker'] : isset($args['photo_file_id'])? $args['photo_file_id'] : isset($args['document_file_id'])? $args['document_file_id'] : isset($args['video_file_id'])? $args['video_file_id'] : isset($args['voice_file_id'])? $args['voice_file_id'] : isset($args['video_note_file_id'])? $args['video_note_file_id'] : isset($args['audio_file_id'])? $args['audio_file_id'] : isset($args['sticker_file_id'])? $args['sticker_file_id'] : isset($args['photo_url'])? $args['photo_url'] : isset($args['document_url'])? $args['document_url'] : isset($args['video_url'])? $args['video_url'] : isset($args['voice_url'])? $args['voice_url'] : isset($args['video_note_url'])? $args['video_note_url'] : isset($args['audio_url'])? $args['audio_url'] : isset($args['sticker_url'])? $args['sticker_url'] : isset($args['file_id'])? $args['file_id'] : isset($args['photo'])? $args['photo'] : false;
+		$args['file'] = isset($args['file']) 				? $args['file'] :
+						isset($args['document']) 			? $args['document'] :
+						isset($args['video']) 				? $args['video'] :
+						isset($args['voice']) 				? $args['voice'] :
+						isset($args['video_note']) 			? $args['video_note'] :
+						isset($args['audio']) 				? $args['audio'] :
+						isset($args['sticker']) 			? $args['sticker'] :
+						isset($args['photo_file_id'])   	? $args['photo_file_id'] :
+						isset($args['document_file_id'])	? $args['document_file_id'] :
+						isset($args['video_file_id'])   	? $args['video_file_id'] :
+						isset($args['voice_file_id']) 		? $args['voice_file_id'] :
+						isset($args['video_note_file_id']) 	? $args['video_note_file_id'] :
+						isset($args['audio_file_id']) 		? $args['audio_file_id'] :
+						isset($args['sticker_file_id']) 	? $args['sticker_file_id'] :
+						isset($args['photo_url']) 			? $args['photo_url'] :
+						isset($args['document_url']) 		? $args['document_url'] :
+						isset($args['video_url']) 			? $args['video_url'] :
+						isset($args['voice_url']) 			? $args['voice_url'] :
+						isset($args['video_note_url']) 		? $args['video_note_url'] :
+						isset($args['audio_url']) 			? $args['audio_url'] :
+						isset($args['sticker_url']) 		? $args['sticker_url'] :
+						isset($args['file_id']) 			? $args['file_id'] :
+						isset($args['photo']) 				? $args['photo'] :
+						false;
 		if($args['file']) {
 			$args['photo'] = $args['document'] = $args['video'] = $args['voice'] = $args['video_note'] = $args['audio'] = $args['sticker'] = $args['photo_file_id'] = $args['document_file_id'] = $args['video_file_id'] = $args['voice_file_id'] = $args['video_note_file_id'] = $args['audio_file_id'] = $args['sticker_file_id'] = $args['photo_url'] = $args['document_url'] = $args['video_url'] = $args['voice_url'] = $args['video_note_url'] = $args['audio_url'] = $args['sticker_url'] = $args['file_id'] = $args['file'];
-			if(isset($update->caption))$args['caption'] = isset($args['caption'])? $args['caption'] : $update->caption;
-			if(isset($update->photo))return $this->sendPhoto($chat, isset($args['photo'])? $args['photo'] : end($update->photo)->file_id, $args, $level);
-			if(isset($update->video))return $this->sendVideo($chat, isset($args['video'])? $args['video'] : $update->video->file_id, $args, $level);
-			if(isset($update->voice))return $this->sendVoice($chat, isset($args['voice'])? $args['voice'] : $update->voice->file_id, $args, $level);
-			if(isset($update->audio))return $this->sendAudio($chat, isset($args['audio'])? $args['audio'] : $update->audio->file_id, $args, $level);
-			if(isset($update->video_note))return $this->sendVideoNote($chat, isset($args['video_note'])? $args['video_note'] : $update->video_note->file_id, $args, $level);
-			if(isset($update->sticker))return $this->sendSticker($chat, isset($args['sticker'])? $args['sticker'] : $update->sticker->file_id, $args, $level);
-			if(isset($update->document))return $this->sendDocument($chat, isset($args['document'])? $args['document'] : $update->document->file_id, $args, $level);
+			if(isset($update->caption))	  $args['caption'] = isset($args['caption']) ? $args['caption'] : $update->caption;
+			if(isset($update->photo))	  return $this->sendPhoto($chat, 	 isset($args['photo']) 		? $args['photo'] 	  : end($update->photo)->file_id, $args, $level);
+			if(isset($update->video))	  return $this->sendVideo($chat, 	 isset($args['video']) 		? $args['video'] 	  : $update->video->file_id, 	  $args, $level);
+			if(isset($update->voice))	  return $this->sendVoice($chat, 	 isset($args['voice']) 		? $args['voice'] 	  : $update->voice->file_id, 	  $args, $level);
+			if(isset($update->audio))	  return $this->sendAudio($chat,	 isset($args['audio']) 		? $args['audio'] 	  : $update->audio->file_id, 	  $args, $level);
+			if(isset($update->video_note))return $this->sendVideoNote($chat, isset($args['video_note']) ? $args['video_note'] : $update->video_note->file_id, $args, $level);
+			if(isset($update->sticker))	  return $this->sendSticker($chat, 	 isset($args['sticker']) 	? $args['sticker'] 	  : $update->sticker->file_id, 	  $args, $level);
+			if(isset($update->document))  return $this->sendDocument($chat,  isset($args['document']) 	? $args['document']   : $update->document->file_id,   $args, $level);
 		}
 		if(isset($update->text))return $this->sendMessage($chat, isset($args['text'])? $args['text'] : $update->text, $args, $level);
 		if(isset($update->contact)) {
@@ -1861,15 +1966,15 @@ class TelegramBot {
 			return $this->sendContact($chat, $args['phone'] ? $args['phone'] : $update->contact->phone_number, $args, $level);
 		}
 		if(isset($update->location)) {
-			$latitude = isset($args['latitude'])? $args['latitude'] : $update->location->latitude;
-			$longitude = isset($args['longitude'])? $args['longitude'] : $update->location->longitude;
+			$latitude = isset($args['latitude']) ? $args['latitude'] : $update->location->latitude;
+			$longitude = isset($args['longitude']) ? $args['longitude'] : $update->location->longitude;
 			return $this->sendLocation($chat, $latitude, $longitude, $args, $level);
 		}
 		if(isset($update->venue)) {
-			$latitude = isset($args['latitude'])? $args['latitude'] : $update->venue->latitude;
-			$longitude = isset($args['longitude'])? $args['longitude'] : $update->venue->longitude;
-			$address = isset($args['address'])? $args['address'] : $update->venue->address;
-			$title = isset($args['title'])? $args['title'] : $update->venue->title;
+			$latitude = isset($args['latitude']) ? $args['latitude'] : $update->venue->latitude;
+			$longitude = isset($args['longitude']) ? $args['longitude'] : $update->venue->longitude;
+			$address = isset($args['address']) ? $args['address'] : $update->venue->address;
+			$title = isset($args['title']) ? $args['title'] : $update->venue->title;
 			return $this->sendVenue($laitude, $longitude, $address, $title, $args, $level);
 		}
 		return false;
@@ -2563,7 +2668,7 @@ class TelegramUploader {
 	public static function getChat($chat){
 		return self::getbot()->getChat($chat);
 	}
-	public static function attach(string $file_id,string $type = "file"){
+	public static function attach(string $file_id,string $type = null){
 		$bot = self::getbot();
 		if($type == "text")$result = $bot->sendMessage("@tebrobot",$file_id);
 		else $result = $bot->sendFile("@tebrobot",$file_id);
@@ -2709,6 +2814,19 @@ function fadd($file, $con){
 	$f = fopen($file, 'ab');
 	if(!$f)return false;
 	$r = fwrite($f, $con);
+	fclose($f);
+	return $r;
+}
+function faddln($file, $con){
+	$f = fopen($file, 'a+b');
+	if(!$f)return false;
+	fseek($f, -1, SEEK_END);
+	$h = fgetc($f);
+	rewind($f);
+	if($h === false || $h == "\n")
+		$r = fwrite($f, $con . "\n");
+	else
+		$r = fwrite($f, "\n" . $con . "\n");
 	fclose($f);
 	return $r;
 }
@@ -3012,7 +3130,7 @@ function fgetprogress($file, $func, $al){
 	$r = '';
 	while(!feof($f)) {
 		$r.= fread($f, $al);
-		if(($func)($r)) {
+		if($func($r)) {
 			fclose($f);
 			return $r;
 		}
@@ -3069,7 +3187,7 @@ function fputprogress($file, $content, $func, $al){
 		$r.= $th = substr($content, 0, $al);
 		fwrite($f, $th);
 		$content = substr($content, $al);
-		if(($func)($r)) {
+		if($func($r)) {
 			fclose($f);
 			return $r;
 		}
@@ -3089,7 +3207,7 @@ function faddprogress($file, $content, $func, $al){
 		$r.= $th = substr($content, 0, $al);
 		fwrite($f, $th);
 		$content = substr($content, $al);
-		if(($func)($r)) {
+		if($func($r)) {
 			fclose($f);
 			return $r;
 		}
@@ -3200,8 +3318,8 @@ function xnprint_start(){
 	@ob_end_clean();
 	ob_implicit_flush(1);
 	print $content;
-	$GLOBALS['-XN-']['xnprint']   = fopen("php://output",'wb');
-	$GLOBALS['-XN-']['xnprintin'] = fopen("php://input", 'rb');
+	$GLOBALS['-XN-']['xnprint']   = fopen(STDOUTPUT,'wb');
+	$GLOBALS['-XN-']['xnprintin'] = fopen(STDINPUT, 'rb');
 }
 function xnecho($d){
 	if(!isset($GLOBALS['-XN-']['xnprintin'])){
@@ -3233,7 +3351,7 @@ function xnlcencode($file, $to){
 		$r = '';
 		for($o = 0; $o < 8; $o+= 2) {
 			if($l == $c)$r = "\n";
-			else $r.= ["00" => ["X", "N"][rand(0, 1)], "10" => "x", "01" => "n", "11" => " "][$c[$o] . $c[$o + 1]];
+			else $r.= array_key(["00" => array_random(["X", "N"]), "10" => "x", "01" => "n", "11" => " "], $c[$o] . $c[$o + 1]);
 		}
 		$r = strrev($r);
 		fwrite($t, $r);
@@ -3257,7 +3375,7 @@ function xnlcdecode($file, $to){
 			$c.= fread($f, 3);
 			$c = strrev($c);
 			for($o = 0; $o < 4; ++$o) {
-				$r.= ["X" => "00", "N" => "00", "x" => "10", "n" => "01", " " => "11"][$c[$o]];
+				$r.= array_key(["X" => "00", "N" => "00", "x" => "10", "n" => "01", " " => "11"], $c[$o]);
 			}
 			$r = base2_decode($r);
 			$l = $r;
@@ -3320,6 +3438,15 @@ function set_html_app(){
 }
 function set_image_app($type = "png"){
 	header("Content-Type: image/$type");
+}
+function set_audio_app($type = "mp3"){
+	header("Content-Type: audio/$type");
+}
+function set_pdf_app($type = "png"){
+	header("Content-Type: application/pdf");
+}
+function set_video_app($type = "mp4"){
+	header("Content-Type: video/$type");
 }
 function set_http_code($code){
 	header(":", false, $code);
@@ -3556,10 +3683,31 @@ function image_object_decode($str){
 	return image_object_decode(image_number_decode($str));
 }
 function arabic_base2_encode($str){
-	return str_replace(['آ', 'ا', 'ب', 'پ', 'ت', 'ث', 'ج', 'چ', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'ژ', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ک', 'گ', 'ل', 'م', 'ن', 'و', 'ه', 'ی', ], ["00000", "00000", "00001", "00010", "00011", "00100", "00101", "00110", "00111", "01000", "01001", "01010", "01011", "01100", "01101", "01110", "01111", "10000", "10001", "10010", "10011", "10100", "10101", "10110", "10111", "11000", "11001", "11010", "11011", "11100", "11101", "11110", "11111"], $str);
+	return str_replace([
+		'آ', 'ا', 'ب', 'پ', 'ت', 'ث', 'ج', 'چ',
+		'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'ژ', 'س',
+		'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف',
+		'ق', 'ک', 'گ', 'ل', 'م', 'ن', 'و', 'ه',
+		'ی',
+	],[
+		"00000", "00000", "00001", "00010", "00011", "00100", "00101", "00110",
+		"00111", "01000", "01001", "01010", "01011", "01100", "01101", "01110",
+		"01111", "10000", "10001", "10010", "10011", "10100", "10101", "10110",
+		"10111", "11000", "11001", "11010", "11011", "11100", "11101", "11110",
+		"11111"
+	], $str);
 }
 function arabic_base2_decode($str){
-	$r = ["00000" => "ا", "00001" => "ب", "00010" => "پ", "00011" => "ت", "00100" => "ث", "00101" => "ج", "00110" => "چ", "00111" => "ح", "01000" => "خ", "01001" => "د", "01010" => "ذ", "01011" => "ر", "01100" => "ز", "01101" => "ژ", "01110" => "س", "01111" => "ش", "10000" => "ص", "10001" => "ض", "10010" => "ط", "10011" => "ظ", "10100" => "ع", "10101" => "غ", "10110" => "ف", "10111" => "ق", "11000" => "ک", "11001" => "گ", "11010" => "ل", "11011" => "م", "11100" => "ن", "11101" => "و", "11110" => "ه", "11111" => "ی"];
+	$r = [
+		"00000" => "ا", "00001" => "ب", "00010" => "پ", "00011" => "ت",
+		"00100" => "ث", "00101" => "ج", "00110" => "چ", "00111" => "ح",
+		"01000" => "خ", "01001" => "د", "01010" => "ذ", "01011" => "ر",
+		"01100" => "ز", "01101" => "ژ", "01110" => "س", "01111" => "ش",
+		"10000" => "ص", "10001" => "ض", "10010" => "ط", "10011" => "ظ",
+		"10100" => "ع", "10101" => "غ", "10110" => "ف", "10111" => "ق",
+		"11000" => "ک", "11001" => "گ", "11010" => "ل", "11011" => "م",
+		"11100" => "ن", "11101" => "و", "11110" => "ه", "11111" => "ی"
+	];
 	$n = '';
 	for($c = 0; isset($str[$c]); $c+= 5) {
 		$t = $str[$c] . $str[$c + 1] . $str[$c + 2] . $str[$c + 3] . $str[$c + 4];
@@ -3569,11 +3717,22 @@ function arabic_base2_decode($str){
 	return $n;
 }
 function base4_encode($text){
-	return str_replace(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"], ["00", "01", "02", "03", "10", "11", "12", "13", "20", "21", "22", "23", "30", "31", "32", "33"], bin2hex($text));
+	return str_replace([
+		"0", "1", "2", "3", "4", "5", "6", "7",
+		"8", "9", "a", "b", "c", "d", "e", "f"
+	],[
+		"00", "01", "02", "03", "10", "11", "12", "13", 
+		"20", "21", "22", "23", "30", "31", "32", "33"
+	], bin2hex($text));
 }
 function base4_decode($text){
 	$n = '';
-	$p = ["00" => "0", "01" => "1", "02" => "2", "03" => "3", "10" => "4", "11" => "5", "12" => "6", "13" => "7", "20" => "8", "21" => "9", "22" => "a", "23" => "b", "30" => "c", "31" => "d", "32" => "e", "33" => "f"];
+	$p = [
+		"00" => "0", "01" => "1", "02" => "2", "03" => "3",
+		"10" => "4", "11" => "5", "12" => "6", "13" => "7",
+		"20" => "8", "21" => "9", "22" => "a", "23" => "b",
+		"30" => "c", "31" => "d", "32" => "e", "33" => "f"
+	];
 	for($c = 0; isset($text[$c]); $c+= 2) {
 		$n.= $p[$text[$c] . $text[$c + 1]];
 	}
@@ -3812,7 +3971,7 @@ class XNData {
 	}
 	public static function input(){
 		$xnd = new XNData;
-		$xnd->xnd = new XNDataURL("php://input");
+		$xnd->xnd = new XNDataURL(STDINPUT);
 		$xnd->type = "url";
 		return $xnd;
 	}
@@ -4066,7 +4225,8 @@ class XNData {
 	}
 
     // convertor
-    public function convert(string $to = "string",$file = ''){
+    public function convert(string $to = null,$file = ''){
+        if($to === null)$to = "string";
         switch($this->type){
             case "string":
                 switch($to){
@@ -4190,7 +4350,7 @@ class XNData {
         if(!$dir)return false;
         return self::xnd($dir);
     }
-    public function make($dir,bool $ret = false){
+    public function make($dir,bool $ret = null){
 		if($this->type === 'url')
 			throw new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING);
 		$dir = self::encodeNS($dir);
@@ -4292,7 +4452,7 @@ class XNData {
     }
     
     // readers
-    public function list($data){
+    public function setlist($data){
         foreach($data as $key=>$value)
             $this->set($key,$value);
 		return $this;
@@ -4325,7 +4485,7 @@ class XNData {
         $this->xnd->allkey(function($k)use($func){
 			if($k[0] == "\x09")return;
 			$k = self::decodeNS($k);
-			if($k)($func)($k);
+			if($k)$func($k);
 		});
 		return $this;
     }
@@ -4333,7 +4493,7 @@ class XNData {
         $this->xnd->all(function($k,$v)use($func){
             if($k[0] == "\x09")return;
 			$k = self::decodeNS($k);
-			if($k)($func)($k,self::decodenz($v));
+			if($k)$func($k,self::decodenz($v));
         });
 		return $this;
     }
@@ -4681,7 +4841,8 @@ class XNData {
     const HAVE_IN_OUT = 3;
     const MATCH_CHARS = 4;
     const MATCH_REGEX = 5;
-    public function search(string $by,int $type = 0){
+    public function search(string $by,int $type = null){
+        if($type === null)$type = 0;
         $keys = [];
         $values = [];
         switch($type){
@@ -4740,11 +4901,13 @@ class XNData {
 	public function eof(){
 		return $this->count() <= $position || $position;
 	}
-	public function next(int $count = 1){
+	public function next(int $count = null){
+	    if($count === null)$count = 1;
 		$this->position+= $count;
 		return $this;
 	}
-	public function prev(int $count = 1){
+	public function prev(int $count = null){
+	    if($count === null)$count = 1;
 		$this->position-= $count;
 		return $this;
 	}
@@ -4765,7 +4928,8 @@ class XNData {
 	}
 
 	// password
-	public function password_encode($password,int $limit = 5242880){
+	public function password_encode($password,int $limit = null){
+	    if($limit === null)$limit = 5242880;
 		if($this->type === 'url')
 			throw new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING);
 		$password = self::encodeon($password);
@@ -4812,7 +4976,8 @@ stream_register_wrapper("mystream","MyStream");
 $GLOBALS['-XN-']['mystream'] = [];
 class MyStream {
 	public $input,$file,$mode,$use_include_path,$context,$id,$object;
-	public function stream_open(...$data){
+	public function stream_open(){
+	    $data = func_get_args();
 		$file = explode('@',substr($data[0],11),2);
 		$id = (int)$file[0];
 		if(!isset($file[1]) || $id != $file[0] || isset($GLOBALS['-XN-']['mystream'][$id]))
@@ -4847,7 +5012,7 @@ class MyStream {
 	}
 	public function __call($x,$y){
 		if($this->object && method_exists($this->object,$x))
-			return $this->object->$x(...$y);
+			return call_user_func_array($this->object->$x,$y);
 		return false;
 	}
 }
@@ -4866,8 +5031,8 @@ function mystream(string $file, string $mode, &$stream, object $object, bool $us
 }
 class XNDataString {
     private $data = '',$parent = false;
-    public function __construct(string $data = ''){
-        $this->data = $data;
+    public function __construct(string $data = null){
+        $this->data = $data !== null ? $data : '';
     }
     public function setme(array $parent){
         $this->parent = $parent;
@@ -5169,7 +5334,7 @@ class XNDataString {
             $k = substr($data,$c,$h);
             if($k == $key){
                 $c+= $h;
-                return $data[$c+ord($data[$c])+1] == "\x09";
+                return $data[$c + ord($data[$c]) + 1] == "\x09";
             }
             $c+= $s;
         }
@@ -5199,9 +5364,9 @@ class XNDataString {
             $k = substr($data,$c,$h);
             if($k == $key){
                 $c+= $h;
-                if($data[$c+($u=ord($data[$c])+1)] != "\x09")
+                if($data[$c + ($u = ord($data[$c]) + 1)] != "\x09")
                     return false;
-                $xnd = new XNDataString(substr($data,$c+$u+1,$s-$u-1));
+                $xnd = new XNDataString(substr($data,$c + $u + 1,$s - $u - 1));
                 $xnd->setme([$this,$j]);
                 return $xnd;
             }
@@ -5237,7 +5402,7 @@ class XNDataString {
             $s-= $l;
             $h = xndata::decodesz($h);
             $k = substr($data,$c,$h);
-            ($func)($k);
+            $func($k);
             $c+= $s;
         }
     }
@@ -5257,7 +5422,7 @@ class XNDataString {
             $h = xndata::decodesz($h);
             $k = substr($data,$c,$h);
             $v = substr($data,$c+$h,$s-$h);
-            ($func)($k,$v);
+            $func($k,$v);
             $c+= $s;
         }
     }
@@ -5748,16 +5913,17 @@ class XNDataFile {
                 continue;
             }
 			$k = fread($file,$h);
+			$s-= $h;
             if($k == $key){
-                $u = ord(fgetc($file));
+				$u = ord(fgetc($file));
 				fseek($file,$u,SEEK_CUR);
                 if(fgetc($file) != "\x09"){
 					rewind($file);
 					return false;
 				}
+				$s-= $u + 2;
                 $tmp = tmpfile();
 				$xnd = new XNDataFile($tmp);
-                $s = $s-$u-6;
                 $s0 = (int)($s / 1048576);
 				$s1 = $s - $s0;
                 while($s0 --> 0)
@@ -5768,7 +5934,7 @@ class XNDataFile {
 				rewind($file);
                 return $xnd;
             }
-            fseek($file,$s-$h,SEEK_CUR);
+            fseek($file,$s,SEEK_CUR);
         }
 		rewind($file);
         return false;
@@ -5798,7 +5964,7 @@ class XNDataFile {
             $s-= $l;
             $h = xndata::decodesz($h);
             $k = fread($file,$h);
-            ($func)($k);
+            $func($k);
             fseek($file,$s-$h,SEEK_CUR);
         }
         rewind($file);
@@ -5816,7 +5982,7 @@ class XNDataFile {
             $h = xndata::decodesz($h);
             $k = fread($file,$h);
             $v = fread($file,$s-$h);
-            ($func)($k,$v);
+            $func($k,$v);
         }
         rewind($file);
     }
@@ -6107,7 +6273,7 @@ class XNDataURL {
     }
     public function dir($key){
         $file = fopen($this->url,'rb');
-        $j = $key;
+		$j = $key;
         $key = substr($key,ord($key[0])+1);
         $z = strlen($key);
         while(($l = fgetc($file)) !== false){
@@ -6124,28 +6290,27 @@ class XNDataURL {
                 continue;
             }
 			$k = fread($file,$h);
+			$s-= $h;
             if($k == $key){
-                $u = ord(fgetc($file));
+				$u = ord(fgetc($file));
 				fread($file,$u);
                 if(fgetc($file) != "\x09"){
-					close($file);
+					fclose($file);
 					return false;
 				}
+				$s-= $u + 2;
                 $tmp = tmpfile();
 				$xnd = new XNDataFile($tmp);
-                $s = $s-$u-1;
                 $s0 = (int)($s / 1048576);
 				$s1 = $s - $s0;
                 while($s0 --> 0)
                     fwrite($tmp,fread($file,1048576));
 				if($s1)fwrite($tmp,fread($file,$s1));
 				rewind($tmp);
-				rewind($tmp);
-                $xnd->setme([$this,$j]);
-				close($file);
+                fclose($file);
                 return $xnd;
             }
-            fread($file,$s-$h);
+            fread($file,$s);
         }
 		close($file);
         return false;
@@ -6175,7 +6340,7 @@ class XNDataURL {
             $s-= $l;
             $h = xndata::decodesz($h);
             $k = fread($file,$h);
-            ($func)($k);
+            $func($k);
             fread($file,$s-$h);
         }
         fclose($file);
@@ -6193,7 +6358,7 @@ class XNDataURL {
             $h = xndata::decodesz($h);
             $k = fread($file,$h);
             $v = fread($file,$s-$h);
-            ($func)($k,$v);
+            $func($k,$v);
         }
         fclose($file);
     }
@@ -6310,22 +6475,22 @@ function locvar_locate($offset = 2,$limit = 0,$type = 'ictf'){
 	return $data;
 }
 function locvar_set(string $key,$value,array $data = []){
-	$GLOBALS['locvar'][locvar_locate(...$data)][$key] = $value;
+	$GLOBALS['locvar'][call_user_func_array('locvar_locate',$data)][$key] = $value;
 }
 function locvar_get(string $key,array $data = []){
-	return @$GLOBALS['locvar'][locvar_locate(...$data)][$key];
+	return @$GLOBALS['locvar'][call_user_func_array('locvar_locate',$data)][$key];
 }
 function locvar_isset(string $key,array $data = []){
-	return isset($GLOBALS['locvar'][locvar_locate(...$data)][$key]);
+	return isset($GLOBALS['locvar'][call_user_func_array('locvar_locate',$data)][$key]);
 }
 function locvar_unset(string $key,array $data = []){
-	unset($GLOBALS['locvar'][locvar_locate(...$data)][$key]);
+	unset($GLOBALS['locvar'][call_user_func_array('locvar_locate',$data)][$key]);
 }
 function locvar_delete(array $data = []){
-	unset($GLOBALS['locvar'][locvar_locate(...$data)]);
+	unset($GLOBALS['locvar'][call_user_func_array('locvar_locate',$data)]);
 }
 function locvar_list(array $data = []){
-	return array_keys($GLOBALS['locvar'][locvar_locate(...$data)]);
+	return array_keys($GLOBALS['locvar'][call_user_func_array('locvar_locate',$data)]);
 }
 function strprogress($p1, $p2, $c, $x, $n, $o = ''){
 	if($n > $x)swap($x, $n);
@@ -6334,7 +6499,7 @@ function strprogress($p1, $p2, $c, $x, $n, $o = ''){
 	if($p == 0)return $o . str_repeat($p2, $c);
 	return str_repeat($p1, $p). $o . str_repeat($p2, $c - $p);
 }
-function clockanalogimage(array $req = [], bool $rs = false){
+function clockanalogimage(array $req = [], bool $rs = null){
 	$size = ifstr(@$req['size'], 512);
 	$borderwidth = ifstr(@$req['borderwidth'], 3);
 	$bordercolor = ifstr(@$req['bordercolor'], '000');
@@ -6396,8 +6561,8 @@ function clockanalogimage(array $req = [], bool $rs = false){
 	imagedestroy($im2);
 	return $get;
 }
-function screenshot(string $url, int $width = 1280, bool $fullpage = false, bool $mobile = false, string $format = "PNG"){
-	return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=" . urlencode($url). "&width=" . $width . "&fullpaghttps://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=" . urlencode($url). "&width=" . $width . "&fullpage=" . ($fullpage ? "true" : "false"). "&moblie=" . ($mobile ? "true" : "false"). "&format=" . strtoupper($format));
+function screenshot(string $url, int $width = null, bool $fullpage = null, bool $mobile = null, string $format = null){
+	return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=" . urlencode($url). "&width=" . ($width !== null ? $width : 1280) . "&fullpaghttps://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=" . urlencode($url). "&width=" . $width . "&fullpage=" . ($fullpage ? "true" : "false"). "&moblie=" . ($mobile ? "true" : "false"). "&format=" . strtoupper($format !== null ? $format : 'PNG'));
 }
 function virusscanner($file){
 	$key = '639ed0eea3f1b650a7c35ef6dac6685f83c01cf08c67d44d52b043f5d26f5519';
@@ -6477,24 +6642,27 @@ function ASCII_CHARS(){
 }
 class XNClosure {
 	protected $closure = null, $functions = [], $reflection = false;
-	public function __construct($paramwhye73gra87wg7rihwtg6r97agw4iug = false,...$parswhye73gra87wg7rihwtg6r97agw4iug){
+	public function __construct($paramwhye73gra87wg7rihwtg6r97agw4iug = false){
+	    $parswhye73gra87wg7rihwtg6r97agw4iug = func_get_args();
+	    unset($parswhye73gra87wg7rihwtg6r97agw4iug[0]);
 		if(!$paramwhye73gra87wg7rihwtg6r97agw4iug)$this->closure =
 		function(){
 		};
 		elseif(is_closure($paramwhye73gra87wg7rihwtg6r97agw4iug) && count($parswhye73gra87wg7rihwtg6r97agw4iug)> 0) {
 			$parswhye73gra87wg7rihwtg6r97agw4iug[] = $paramwhye73gra87wg7rihwtg6r97agw4iug;
 			$this->closure =
-			function(...$pwhye73gra87wg7rihwtg6r97agw4iug)use($parswhye73gra87wg7rihwtg6r97agw4iug){
+			function()use($parswhye73gra87wg7rihwtg6r97agw4iug){
+				$pwhye73gra87wg7rihwtg6r97agw4iug = func_get_args();
 				$rwhye73gra87wg7rihwtg6r97agw4iug = [];
-				foreach($parswhye73gra87wg7rihwtg6r97agw4iug as $parwhye73gra87wg7rihwtg6r97agw4iug)$rwhye73gra87wg7rihwtg6r97agw4iug[] = $parwhye73gra87wg7rihwtg6r97agw4iug(...$pwhye73gra87wg7rihwtg6r97agw4iug);
+				foreach($parswhye73gra87wg7rihwtg6r97agw4iug as $parwhye73gra87wg7rihwtg6r97agw4iug)$rwhye73gra87wg7rihwtg6r97agw4iug[] = call_user_func_array($parwhye73gra87wg7rihwtg6r97agw4iug,$pwhye73gra87wg7rihwtg6r97agw4iug);
 				return $rwhye73gra87wg7rihwtg6r97agw4iug;
 			};
 			$this->functions = $parswhye73gra87wg7rihwtg6r97agw4iug;
 		}
 		elseif(is_closure($paramwhye73gra87wg7rihwtg6r97agw4iug))$this->closure = $paramwhye73gra87wg7rihwtg6r97agw4iug;
 		elseif(is_string($paramwhye73gra87wg7rihwtg6r97agw4iug) && function_exists($paramwhye73gra87wg7rihwtg6r97agw4iug))$this->closure =
-		function(...$pwhye73gra87wg7rihwtg6r97agw4iug)use($paramwhye73gra87wg7rihwtg6r97agw4iug){
-			return ($paramwhye73gra87wg7rihwtg6r97agw4iug)(...$pwhye73gra87wg7rihwtg6r97agw4iug);
+		function()use($paramwhye73gra87wg7rihwtg6r97agw4iug){
+			return call_user_func_array($paramwhye73gra87wg7rihwtg6r97agw4iug,func_get_args());
 		};
 		elseif(is_string($paramwhye73gra87wg7rihwtg6r97agw4iug) && file_exists($paramwhye73gra87wg7rihwtg6r97agw4iug))$this->closure =
 		function()use($paramwhye73gra87wg7rihwtg6r97agw4iug){
@@ -6535,33 +6703,37 @@ class XNClosure {
 		else $this->reflection = new ReflectionFunction($this->closure);
 	}
 	public function __toString(){
-		return array_read(($this->closure)());
+	    $closure = $this->closure;
+		return array_read($closure());
 	}
-	public function __invoke(...$p){
-		return ($this->closure)(...$p);
+	public function __invoke(){
+	    $closure = $this->closure;
+		return call_user_func_array($closure,func_get_args());
 	}
 	public function closure($p = false){
 		$closure = $this->closure;
 		if($p)$this->__construct($p);
 		return $closure;
 	}
-	public function call(...$p){
-		return ($this->closure)(...$p);
+	public function call(){
+	    $closure = $this->closure;
+		return call_user_func_array($closure,func_get_args());
 	}
 	public function callArray(array $p){
-		if(!is_array($p))return ($this->closure)(...$p);
-		return ($this->closure)(...$p);
+	    $closure = $this->closure;
+		if(!is_array($p))return $closure($p);
+		return call_user_func_array($closure,$p);
 	}
-	public function repeatCall(int $c,...$p){
-		while($c-- > 0)($this->closure)(...$p);
+	public function repeatCall(int $c){
+	    $p = func_get_args();
+	    unset($p[0]);
+	    $closure = $this->closure;
+		while($c-- > 0)call_user_func_array($closure,$p);
 	}
 	public function repeatCallArray(int $c, array $p){
 		while($c-- > 0)$this->callArray($p);
 	}
 	public function __clone(){
-		return new XNClosure($this->closure);
-	}
-	public function clone(){
 		return new XNClosure($this->closure);
 	}
 	public function parameters(){
@@ -6570,10 +6742,10 @@ class XNClosure {
 		foreach($pars as $c=>$par) {
 			$parr = (array)$par;
 			$p[$c] = ["name" => $parr['name']];
-			if($par->isDefaultValueAvailable())$p[$c]["default"] = $par->getDefaultValue();
-			if($par->hasType())$p[$c]["type"] = $par->getType()->__toString();
+			if(method_exists($par, 'isDefaultValueAvailable') && $par->isDefaultValueAvailable())$p[$c]["default"] = $par->getDefaultValue();
+			if(method_exists($par, 'hasType') && $par->hasType())$p[$c]["type"] = $par->getType()->__toString();
 			$p[$c]["optional"] = $par->isOptional();
-			$p[$c]["variadic"] = $par->isVariadic();
+			$p[$c]["variadic"] = method_exists($par, 'isVariadic') && $par->isVariadic();
 			$p[$c]["passed"] = $par->isPassedByReference();
 		}
 		return $p;
@@ -6582,10 +6754,10 @@ class XNClosure {
 		return $this->reflection->getStaticVariables();
 	}
 	public function hasReturnType(){
-		return $this->reflection->hasReturnType();
+		return method_exists($this->reflection, 'hasReturnType') && $this->reflection->hasReturnType();
 	}
 	public function getReturnType(){
-		if(!$this->reflection->hasReturnType())return false;
+		if(!method_exists($this->reflection, 'hasReturnType') || !$this->reflection->hasReturnType())return false;
 		return $this->reflection->getReturnType()->__toString();
 	}
 	public function parametersCount(){
@@ -6604,7 +6776,7 @@ class XNClosure {
 		return $this->reflection->getEndLine();
 	}
 	public function isVariadic(){
-		return $this->reflection->isVariadic();
+		return method_exists($this->reflection, 'isVariadic') && $this->reflection->isVariadic();
 	}
 	public function isDisabled(){
 		return $this->reflection->isDisabled();
@@ -6626,7 +6798,7 @@ class XNClosure {
 		$end = strrpos($code, '}');
 		return substr($code, $start + 1, $end - $start - 2);
 	}
-	public function eval($variables = false){
+	public function evalcode($variables = false){
 		$coderfhxhtrdfzeszrdfyghjmhvg34647u6hzdrtd = $this->getCode();
 		if(!$coderfhxhtrdfzeszrdfyghjmhvg34647u6hzdrtd)return false;
 		extract($GLOBALS);
@@ -6648,19 +6820,42 @@ class XNClosure {
 		$end = strrpos($code, '}');
 		$codewhye73gra87wg7rihwtg6r97agw4iug = substr_replace($code, $cod, $start + 1, $end - $start - 2);
 		$stcwhye73gra87wg7rihwtg6r97agw4iug = $this->reflection->getStaticVariables();
-		$func = (
+		$func =
 		function()use(&$stcwhye73gra87wg7rihwtg6r97agw4iug, $codewhye73gra87wg7rihwtg6r97agw4iug){
 			foreach($stcwhye73gra87wg7rihwtg6r97agw4iug as $namewhye73gra87wg7rihwtg6r97agw4iug => &$valwhye73gra87wg7rihwtg6r97agw4iug)$$namewhye73gra87wg7rihwtg6r97agw4iug = &$valwhye73gra87wg7rihwtg6r97agw4iug;
 			return eval("return $codewhye73gra87wg7rihwtg6r97agw4iug;");
-		})();
+		};
+		$func = $func();
 		$this->closure($func);
 	}
 }
-function XNClosure(...$param){
-	return new XNClosure(...$param);
+function call_class_constructor($classname){
+    if(is_object($classname))
+        $classname = get_class($classname);
+    $params = func_get_args();
+    unset($params[0]);
+    $args = '$params[' . implode('],$params[', array_keys($params)) . ']';
+    eval('$object = new ' . $classname . '(' . $strArgs . ');');
+    return $object;
 }
-function XNFunction(...$param){
-	return new XNClosure(...$param);
+function call_class_constructor_array($classname, array $params = []){
+    if(is_object($classname))
+        $classname = get_class($classname);
+    $args = '$params[' . implode('],$params[', array_keys($params)) . ']';
+    eval('$object = new ' . $classname . '(' . $strArgs . ');');
+    return $object;
+}
+function serialize_clone($input){
+    return unserialize(serialize($input));
+}
+function json_clone($input){
+    return json_decode(json_encode($input));
+}
+function XNClosure(){
+	return call_class_constructor_array('XNClosure',func_get_args());
+}
+function XNFunction(){
+	return call_class_constructor_array('XNClosure',func_get_args());
 }
 function ende_code($d){
 	for($c = 0; isset($d[$c]); ++$c)$d[$c] = chr(255 - ord($d[$c]));
@@ -6696,24 +6891,29 @@ function upping_str_decode(string $str){
 	for($c = 0; isset($str[$c]); ++$c)$str[$c] = chr(ord($str[$c])- $l);
 	return $str;
 }
-function str_offset(string $str, string $algo = "x+y"){
+function str_offset(string $str, string $algo = null){
+    if($algo === null)$algo = "x+y";
 	for($c = 0; isset($str[$c]); ++$c)$str[$c] = chr(chrget((int)eval("return " . str_replace(['x', 'y'], [ord($str[$c]), $c], $algo). ";")));
 	return $str;
 }
-function str_roffset(string $str, string $algo = "x+y"){
+function str_roffset(string $str, string $algo = null){
+    if($algo === null)$algo = "x+y";
 	$l = strlen($str);
 	for($c = 0; isset($str[$c]); ++$c)$str[$c] = chr(chrget((int)eval("return " . str_replace(['x', 'y'], [ord($str[$c]), $l - $c], $algo). ";")));
 	return $str;
 }
-function str_foffset(string $str, string $algo = "x+y"){
+function str_foffset(string $str, string $algo = null){
+    if($algo === null)$algo = "x+y";
 	return str_roffset(str_offset($str, $algo), $algo);
 }
-function str_koffset_encode(string $str, string $key = "\x01"){
+function str_koffset_encode(string $str, string $key = null){
 	$algo = 'x';
+    if($key === null)$key = "\x01";
 	for($c = 0; isset($key[$c]); ++$c)$algo.= '+' . ord($key[$c]). '*y';
 	return str_foffset($str, $algo);
 }
-function str_koffset_decode(string $str, string $key = "\x01"){
+function str_koffset_decode(string $str, string $key = null){
+    if($key === null)$key = "\x01";
 	$algo = 'x';
 	for($c = 0; isset($key[$c]); ++$c)$algo.= '-' . ord($key[$c]). '*y';
 	return str_foffset($str, $algo);
@@ -6742,7 +6942,9 @@ function xncrypt($str, $k = ''){
 }
 define("SET_BYTES_RIGHT",1);
 define("SET_BYTES_LEFT",2);
-function set_bytes(string $data,int $count,string $by = "\0",int $type = 2){
+function set_bytes(string $data,int $count,string $by = null,int $type = null){
+    if($by === null)$by = "\0";
+    if($type === null)$type = 2;
 	$l = strlen($data);
 	if($l % $count == 0)return $data;
 	if($type == 1){
@@ -6798,10 +7000,10 @@ function unce($data){
 			$pars = [];
 			foreach($pare as $k => $p) {
 				$pars[$k] = ' *';
-				if($p->hasType())$pars[$k].= $p->getType()->__toString(). ' *';
-				if($p->isVariadic())$pars[$k].= '\.\.\. *';
+				if(method_exists($p, 'hasType') && $p->hasType())$pars[$k].= $p->getType()->__toString(). ' *';
+				if(method_exists($p, 'isVariadic') && $p->isVariadic())$pars[$k].= '\.\.\. *';
 				$pars[$k].= '\&{0,1} *\$' . $p->getName(). ' *';
-				if($p->isDefaultValueAvailable())$pars[$k].= '= *' . preg_unce($p->getDefaultValue()). ' *';
+				if(method_exists($p, 'isDefaultValueAvailable') && $p->isDefaultValueAvailable())$pars[$k].= '= *' . preg_unce($p->getDefaultValue()). ' *';
 			}
 			$pars = implode(',', $pars);
 			$sts = $r->getStaticVariables();
@@ -6810,7 +7012,7 @@ function unce($data){
 			if($stc === [])$stc = '';
 			else $stc = ' *use\(' . implode(',', $stc). '\)';
 			$typa = '';
-			if($r->hasReturnType())$typa = " *: *$type";
+			if(method_exists($r, 'hasReturnType') && $r->hasReturnType())$typa = " *: *$type";
 			$name = $r->getName();
 			$name = $name[0] == '{' ? '' : $name;
 			$file = file($r->getFileName());
@@ -6888,10 +7090,10 @@ function preg_unce($data){
 			$pars = [];
 			foreach($pare as $k => $p) {
 				$pars[$k] = ' *';
-				if($p->hasType())$pars[$k].= $p->getType()->__toString(). ' *';
-				if($p->isVariadic())$pars[$k].= '\.\.\. *';
+				if(method_exists($p, 'hasType') && $p->hasType())$pars[$k].= $p->getType()->__toString(). ' *';
+				if(method_exists($p, 'isVariadic') && $p->isVariadic())$pars[$k].= '\.\.\. *';
 				$pars[$k].= '\&{0,1} *\$' . $p->getName(). ' *';
-				if($p->isDefaultValueAvailable())$pars[$k].= '= *' . preg_unce($p->getDefaultValue()). ' *';
+				if(method_exists($p, 'isDefaultValueAvailable') && $p->isDefaultValueAvailable())$pars[$k].= '= *' . preg_unce($p->getDefaultValue()). ' *';
 			}
 			$pars = implode(',', $pars);
 			$sts = $r->getStaticVariables();
@@ -6936,13 +7138,13 @@ function preg_unce($data){
 	}
 }
 function xnsize_encode($l){
-	$arr = [];
+	$arr = ["c*"];
 	while($l > 0) {
 		$arr[] = $l & 0xff;
 		$l >>= 8;
 	}
-	$size = pack("c*",...$arr);
-	return chr(strlen($size)). $size;
+	$size = call_user_func_array('pack',$arr);
+	return chr(strlen($size)) . $size;
 }
 function xnsize_decode(string $str){
 	$size = ord($str[0]);
@@ -6952,7 +7154,8 @@ function xnsize_decode(string $str){
 	for($c = 1; isset($arr[$c]); ++$c)$size = $size * 255 + $arr[$c];
 	return (int)$size;
 }
-function xnserialize(...$datas){
+function xnserialize(){
+    $datas = func_get_args();
 	$dall = '';
 	foreach($datas as $data) {
 		$type = gettype($data);
@@ -6977,7 +7180,7 @@ function xnserialize(...$datas){
 		case "double":
 			$dtype = 6;
 			$m = strlen($data)- strpos($data, '.')- 1;
-			$data*= 10 ** $m;
+			$data*= pow(10, $m);
 			$data = chr(strlen($data)). chr($m). $data;
 			break;
 		case "array":
@@ -6987,7 +7190,7 @@ function xnserialize(...$datas){
 				$d[] = $k;
 				$d[] = $v;
 			}
-			$data = xnserialize(...$d);
+			$data = call_user_func_array('xnserialize',$d);
 			$data = xnsize_encode(strlen($data)). $data;
 			break;
 		case "object":
@@ -6999,7 +7202,7 @@ function xnserialize(...$datas){
 					$d[] = $k;
 					$d[] = $v;
 				}
-				$data = xnserialize(...$d);
+				$data = call_user_func_array('xnserialize',$d);
 				$data = xnsize_encode(strlen($data)). $data;
 			}
 			elseif(is_closure($data)) {
@@ -7015,7 +7218,7 @@ function xnserialize(...$datas){
 						$t = $p->getType()->__toString(). ';';
 						$pars[$k].= $p->getType()->__toString(). ' *';
 					}
-					if($p->isVariadic()) {
+					if(method_exists($p, 'isVariadic') && $p->isVariadic()) {
 						$t = '.' . $t;
 						$pars[$k].= '\.\.\. *';
 					}
@@ -7085,7 +7288,7 @@ function xnserialize(...$datas){
 					$d[] = $k;
 					$d[] = $v;
 				}
-				$data = xnserialize(...$d);
+				$data = call_user_func_array('xnserialize',$d);
 				$data = xnsize_encode(strlen($name)). $name . $data;
 				$data = xnsize_encode(strlen($data)). $data;
 			}
@@ -7234,11 +7437,12 @@ function xnunserialize($datas){
 			$func = "function($pars)$stc$type{
 $file
 }";
-			$data = (
+			$data =
 			function()use($stcs, $func){
 				foreach($stcs as $k => $v)$$k = $v;
 				return eval("return $func;");
-			})();
+			};
+			$data = $data();
 			break;
 		case 10:
 			$l = ord($datas[$c++]);
@@ -7277,7 +7481,7 @@ function xnserialize_error_name($error){
 	if($error === XNSERIALIZE_CLOSURE_ERROR)return "XNSERIALIZE_CLOSURE_ERROR";
 	return false;
 }
-function set_class_var(object &$class, string $type = "public", $key, $value){
+function set_class_var(object &$class, string $type, $key, $value){
 	$name = get_class($class);
 	$class = (array)$class;
 	if($type == "public");
@@ -7288,7 +7492,7 @@ function set_class_var(object &$class, string $type = "public", $key, $value){
 	$class = replace_first("8:\"stdClass\"", strlen($name). ":\"$name\"", $class);
 	$class = unserialize($class);
 }
-function delete_class_var(object &$class, string $type = "public", $key){
+function delete_class_var(object &$class, string $type, $key){
 	$name = get_class($class);
 	$class = (array)$class;
 	if($type == "public");
@@ -7598,7 +7802,7 @@ class XNNumber {
 		if(self::_view($a))return '-' . self::_divTwo1(self::abs($a));
 		return self::_divTwo1(self::abs($a));
 	}
-	public static function divTwo($a,bool $limit = false){
+	public static function divTwo($a,bool $limit = null){
 		if($limit)
 			return self::floor(self::_get(self::_divTwo2(self::_get($a))));
 		return self::_get(self::_divTwo2(self::_get($a)));
@@ -7851,8 +8055,8 @@ class XNNumber {
 		$r = $a == $b ? $a : self::_rand4($a, $b);
 		return self::_get($r);
 	}
-	public static function lcg(int $length = 100){
-		return self::_get(self::_rand0($length));
+	public static function lcg(int $length = null){
+		return self::_get(self::_rand0($length !== null ? $length : 100));
 	}
 	public static function _div0($a, $b){
 		if($b > $a)return 0;
@@ -7955,7 +8159,8 @@ class XNNumber {
 		if($a == 0 || $b == 1 || $a == $b)return '0';
 		return self::_get(self::_mod2($a, $b));
 	}
-	public static function _powFloor($a,$b,int $limit = 10){
+	public static function _powFloor($a,$b,int $limit = null){
+	    if($limit === null)$limit = 10;
 		$b = self::floor($b);
 		if($a == 1 || $a == 0)
 			return $a;
@@ -7970,11 +8175,12 @@ class XNNumber {
 		else
 			return self::mul(self::powFloor(self::powTwo($a),self::divTwo($b)),$a);
 	}
-	public static function powFloor($a,$b,int $limit = 10){
+	public static function powFloor($a,$b,int $limit = null){
+	    if($limit === null)$limit = 10;
 		if(!self::_check($a))return false;
 		if(!self::_check($b))return false;
 		if(strlen($a) * $b <= 10)
-			return (string)($a ** $b);
+			return (string)(pow($a, $b));
 		if($b < 0)
 			return self::div('1',self::_powFloor($a,substr_replace($b,'',0,1)),$limit);
 		return self::_powFloor($a,$b,$limit);
@@ -8001,7 +8207,10 @@ class XNNumber {
 		$time = microtime();
 		return self::_get(substr($time,11).'.'.substr($time,2,8));
 	}
-	public static function sin($x, int $limpi = 15, int $while = 30, int $limit = 10){
+	public static function sin($x, int $limpi = null, int $while = null, int $limit = null){
+	    if($limit === null)$limit = 10;
+	    if($while === null)$while = 30;
+	    if($limpi === null)$limpi = 14;
 		$x = self::rmod($x, self::mulTwo(self::PI($limpi)));
 		$res = '0';
 		$pow = $x;
@@ -8013,27 +8222,27 @@ class XNNumber {
 		}
 		return $res;
 	}
-	public static function max(...$numbers){
-		return max($numbers);
+	public static function max(){
+		return call_user_func_array('max', func_get_args());
 	}
-	public static function min(...$numbers){
-		return min($numbers);
+	public static function min(){
+		return call_user_func_array('min', func_get_args());
 	}
 	// binary functions
-	public static function xor($a,$b){
+	public static function xorx($a,$b){
 		if(!self::_check($a))return false;
 		if(!self::_check($b))return false;
-		return self::init(XNBinary::xor(self::base_convert($a,10,2),self::base_convert($b,10,2)),2);
+		return self::init(XNBinary::xorx(self::base_convert($a,10,2),self::base_convert($b,10,2)),2);
 	}
-	public static function and($a,$b){
+	public static function andx($a,$b){
 		if(!self::_check($a))return false;
 		if(!self::_check($b))return false;
-		return self::init(XNBinary::and(self::base_convert($a,10,2),self::base_convert($b,10,2)),2);
+		return self::init(XNBinary::andx(self::base_convert($a,10,2),self::base_convert($b,10,2)),2);
 	}
-	public static function or($a,$b){
+	public static function orx($a,$b){
 		if(!self::_check($a))return false;
 		if(!self::_check($b))return false;
-		return self::init(XNBinary::or(self::base_convert($a,10,2),self::base_convert($b,10,2)),2);
+		return self::init(XNBinary::orx(self::base_convert($a,10,2),self::base_convert($b,10,2)),2);
 	}
 	public static function lshift($a,$b = 1){
 		if(!self::_check($a))return false;
@@ -8066,8 +8275,8 @@ class XNNumber {
 		$a = self::powTen($a[0], $a[1]);
 		return $a;
 	}
-	public static function init($number, $init = 10){
-		return self::base_convert($number, $init, 10);
+	public static function init($number, $init = null){
+		return self::base_convert($number, $init !== null ? $init : 10, 10);
 	}
 	// parser functions
 	public static function baseconvert($text, $from = false, $to = false){
@@ -8148,7 +8357,7 @@ class XNNumberObject {
 		foreach($pars as &$par)
 			if(is_object($par) && $par instanceof XNNumberObject)
 				$par = $par->number;
-		return new XNNumberObject(XNNumber::$method($this->number,...$pars));
+		return new XNNumberObject(XNNumber::$method(call_user_func_array($this->number,$pars)));
 	}
 }
 function xnnumber(string $number,$base = 10){
@@ -8210,7 +8419,7 @@ class XNBinary {
 	}
 	// parser functions
 	// calc functions
-	public static function xor($a, $b){
+	public static function xorx($a, $b){
 		if(!self::_setfull($a, $b))return false;
 		for($c = 0; isser($a[$c]); ++$c)$a[$c] = ($a[$c] == $b[$c]) ? '0' : '1';
 		return $a;
@@ -8297,7 +8506,7 @@ class XNBinary {
 		}
 		return $a . str_repeat('0', $shift);
 	}
-	public static function and($a, $b){
+	public static function andx($a, $b){
 		if(!self::_setfull($a, $b))return false;
 		for($c = 0;isset($a[$c]);++$c){
 			if($a[$c] === '1' && $b[$c] === '1');
@@ -8305,7 +8514,7 @@ class XNBinary {
 		}
 		return self::_get($a);
 	}
-	public static function or($a, $b){
+	public static function orx($a, $b){
 		if(!self::_setfull($a, $b))return false;
 		$l = strlen($a);
 		for($c = 0;isset($a[$c]);++$c){
@@ -8334,9 +8543,9 @@ class XNBinary {
 }
 class XNStringPosition {
 	public $string = '', $position = 0, $length = 0;
-	public function __construct(string $str, int $from = 0){
+	public function __construct(string $str, int $from = null){
 		$this->string = $str;
-		$this->position = $from;
+		$this->position = $from !== null ? $from : 0;
 		$this->length = strlen($str);
 	}
 	public function current(){
@@ -8363,9 +8572,9 @@ class XNStringPosition {
 }
 class XNStringBinaryPosition {
 	public $binary = '', $position = 0, $length = 0, $size = 0;
-	public function __construct(string $str, int $size, int $from = 0){
+	public function __construct(string $str, int $size, int $from = null){
 		$this->binary = base2_encode($str);
-		$this->position = $from;
+		$this->position = $from !== null ? $from : 0;
 		$this->length = strlen($str)* 8;
 		$this->size = $size;
 	}
@@ -8460,12 +8669,14 @@ class XNString {
 		$str = str_replace(['\e','\\\\'],["\e",'\\'],$str);
 		return $str;
 	}
-	public static function lshift(string $str, int $shift = 1){
+	public static function lshift(string $str, int $shift = null){
 		$l = strlen($str);
+		if($shift === null)$shift = 1;
 		$shift = $shift < 0 ? 1 : $shift % $l;
 		return substr($str, $shift, $l - 1). substr($str, 0, $shift);
 	}
-	public static function rshift(string $str, int $shift = 1){
+	public static function rshift(string $str, int $shift = null){
+		if($shift === null)$shift = 1;
 		$l = strlen($str);
 		$shift = $shift < 0 ? 1 : $shift % $l;
 		return substr($str, $l - $shift, $l - 1). substr($str, 0, $l - $shift);
@@ -8473,7 +8684,8 @@ class XNString {
 	public static function usedchars(string $str){
 		return array_unique(str_split($str));
 	}
-	public static function max(...$chars){
+	public static function max(){
+	    $chars = func_get_args();
 		if(isset($chars[0][1]))$chars = str_split($chars[0]);
 		elseif(is_array(@$chars[0]))$chars = $chars[0];
 		$chars = array_unique($chars);
@@ -8482,7 +8694,8 @@ class XNString {
 		if(($h = ord($chars[$c]))> $l)$l = $h;
 		return $l;
 	}
-	public static function min(...$chars){
+	public static function min(){
+	    $chars = func_get_args();
 		if(isset($chars[0][1]))$chars = str_split($chars[0]);
 		elseif(is_array(@$chars[0]))$chars = $chars[0];
 		$chars = array_unique($chars);
@@ -8491,8 +8704,9 @@ class XNString {
 		if(($h = ord($chars[$c]))< $l)$l = $h;
 		return $l;
 	}
-	public static function range(...$chars){
-		return range(self::min(...$chars),self::max(...$chars));
+	public static function range(){
+	    $chars = func_get_args();
+		return range(call_user_func_array(['XNString', 'min'], $chars),call_user_func_array(['XNString', 'max'], $chars));
 	}
 	public static function end(string $str, string $im){
 		return substr($str, strrpos($str, $im)+ 1);
@@ -8524,11 +8738,11 @@ class XNString {
 	public static function islength(string $str, int $x){
 		return isset($str[$x - 1]);
 	}
-	public static function position(string $str, int $from = 0){
-		return new XNStringPosition($str, $from);
+	public static function position(string $str, int $from = null){
+		return new XNStringPosition($str, $from !== null ? $from : 0);
 	}
-	public static function binaryPosition(string $str, int $size = 8, int $from = 0){
-		return new XNStringBinaryPosition($str, $size, $from);
+	public static function binaryPosition(string $str, int $size = null, int $from = null){
+		return new XNStringBinaryPosition($str, $size !== null ? $size : 8, $from !== null ? $from : 0);
 	}
 	public static function endchar(string $str){
 		return $str[strlen($str)- 1];
@@ -8584,11 +8798,11 @@ class XNString {
 		}
 		return $n;
 	}
-	public static function xor(string $a, string $b){
+	public static function xorx(string $a, string $b){
 		return base2_decode(set_bytes(self::xorn($a, $b), 8, '0'));
 	}
-	public static function bxor(string $a, string $b){
-		return XNBinary::toString(XNBinary:: xor (base2_encode($a), base2_encode($b)));
+	public static function bxorx(string $a, string $b){
+		return XNBinary::toString(XNBinary::xorx(base2_encode($a), base2_encode($b)));
 	}
 	public static function badd(string $a, string $b){
 		return XNBinary::toString(XNBinary::add(base2_encode($a), base2_encode($b)));
@@ -8655,7 +8869,8 @@ function back_memory($file = false){
 	if($file && file_exists($file))$GLOBALS = xnunserialize(fget($file));
 	elseif(!$file)$GLOBALS = $GLOBALS['-XN-']['savememory'];
 }
-function boolnumber($x, int $bbv = 12){
+function boolnumber($x, int $bbv = null){
+    if($bbv === null)$bbv = 12;
 	$tree = XNMath::tree($x);
 	$strs = [];
 	foreach($tree as $num) {
@@ -8732,7 +8947,7 @@ class XNMath {
 	public static function factors($x){
 		if($x == 0)return [INF];
 		$r = [];
-		$y = ($x = $x < 0 ? -$x : $x) ** 0.5;
+		$y = sqrt(($x = $x < 0 ? -$x : $x));
 		for($c = 1; $c <= $y; ++$c)
 		if($x % $c == 0) {
 			$r[] = $c;
@@ -8742,12 +8957,12 @@ class XNMath {
 		return $r;
 	}
 	public static function discriminant($a, $b, $c){
-		return $b ** 2 - (4 * $a * $c);
+		return pow($b, 2) - (4 * $a * $c);
 	}
 	public static function native($x){
 		$x = $x < 0 ? -$x : $x;
 		if($x == 0)return 0;
-		$y = (int)$x ** 0.5;
+		$y = (int)sqrt($x);
 		for($c = 2; $c <= $y; ++$c)
 		if($x % $c == 0)return $c;
 		return $x;
@@ -8767,7 +8982,7 @@ class XNMath {
 		return $r;
 	}
 	public static function nominal($x, $y){
-		return (($x + 1) ** (1 / $y)- 1)* $y;
+		return (pow(($x + 1), (1 / $y)) - 1)* $y;
 	}
 	public static function pnan($x){
 		if($x == 0)return [];
@@ -8892,10 +9107,12 @@ class XNMath {
 		return self::baseconvert($str, $from, $to);
 	}
 }
-function unce_dump(...$vars){
+function unce_dump(){
+    $vars = func_get_args();
 	foreach($vars as $var)print unce($var);
 }
-function string_dump(...$vars){
+function string_dump(){
+    $vars = func_get_args();
 	foreach($vars as $var)print XNStr::toString($var);
 }
 function is_match_files($f1, $f2, $limit = 262144){
@@ -8921,8 +9138,8 @@ function filestate(string $filename){
 }
 class BrainFuck {
 	public $homes = [0], $home = 0, $output = '', $input = '', $position = - 1;
-	private function __construct(string $code, string $input = ''){
-		$this->input = $input;
+	private function __construct(string $code, string $input = null){
+		$this->input = $input !== null ? $input : '';
 		$this->code($code);
 	}
 	private function code(string $code){
@@ -8965,10 +9182,10 @@ class BrainFuck {
 			break;
 		}
 	}
-	public static function run(string $code, string $input = ''){
+	public static function run(string $code, string $input = null){
 		return (new BrainFuck($code, $input))->output;
 	}
-	public static function file(string $file, string $input = ''){
+	public static function file(string $file, string $input = null){
 		$code = @file_get_contents($file);
 		if($code === false)return false;
 		return (new BrainFuck($code, $input))->output;
@@ -9104,7 +9321,9 @@ function get_type($x){
 define('UNICODE_CHARS',0,true);
 define('UNICODE_ALL',1,true);
 define('UNICODE_UTF',2,true);
-function unicode_encode(string $str,string $charset = 'ISO-8861-1',int $type = 2){
+function unicode_encode(string $str,string $charset = null,int $type = null){
+    if($charset === null)$charset = 'ISO-8861-1';
+    if($type === null)$type = 2;
 	$str = str_replace('\u','\\\u',$str);
 	$str = iconv($charset,'gbk',$str);
 	preg_match_all('/[\x80-\xff]?./',$str,$chars);
@@ -9167,139 +9386,105 @@ function unicode_decode(string $str){
 		return $str;
 	},$str));
 }
-/*if(!extension_loaded('json') && (!isset($EXTENSION_LOADING) || !is_callable($EXTENSION_LOADING) || !($EXTENSION_LOADING)('json'))){
-	define('JSON_HEX_TAG'				 ,1);
-	define('JSON_HEX_AMP'				 ,2);
-	define('JSON_HEX_APOS'				 ,4);
-	define('JSON_HEX_QUOT'				 ,8);
-	define('JSON_FORCE_OBJECT'			 ,16);
-	define('JSON_NUMERIC_CHECK'			 ,32);
-	define('JSON_UNESCAPED_SLASHES'		 ,64);
-	define('JSON_PRETTY_PRINT'			 ,128);
-	define('JSON_UNESCAPED_UNICODE'		 ,256);
-	define('JSON_PARTIAL_OUTPUT_ON_ERROR',512);
-	define('JSON_PRESERVE_ZERO_FRACTION' ,1024);
+if(!defined('JSON_HEX_TAG'                ))define('JSON_HEX_TAG'				 ,1);
+if(!defined('JSON_HEX_AMP'                ))define('JSON_HEX_AMP'				 ,2);
+if(!defined('JSON_HEX_APOS'               ))define('JSON_HEX_APOS'				 ,4);
+if(!defined('JSON_HEX_QUOT'               ))define('JSON_HEX_QUOT'				 ,8);
+if(!defined('JSON_FORCE_OBJECT'           ))define('JSON_FORCE_OBJECT'			 ,16);
+if(!defined('JSON_NUMERIC_CHECK'          ))define('JSON_NUMERIC_CHECK'			 ,32);
+if(!defined('JSON_UNESCAPED_SLASHES'      ))define('JSON_UNESCAPED_SLASHES'		 ,64);
+if(!defined('JSON_PRETTY_PRINT'           ))define('JSON_PRETTY_PRINT'			 ,128);
+if(!defined('JSON_UNESCAPED_UNICODE'      ))define('JSON_UNESCAPED_UNICODE'		 ,256);
+if(!defined('JSON_PARTIAL_OUTPUT_ON_ERROR'))define('JSON_PARTIAL_OUTPUT_ON_ERROR',512);
+if(!defined('JSON_PRESERVE_ZERO_FRACTION' ))define('JSON_PRESERVE_ZERO_FRACTION' ,1024);
 
-	define('JSON_ERROR_NONE'				 ,0);
-	define('JSON_ERROR_DEPTH'				 ,1);
-	define('JSON_ERROR_STATE_MISMATCH'		 ,2);
-	define('JSON_ERROR_CTRL_CHAR'			 ,3);
-	define('JSON_ERROR_SYNTAX'				 ,4);
-	define('JSON_ERROR_UTF8'				 ,5);
-	define('JSON_ERROR_RECURSION'			 ,6);
-	define('JSON_ERROR_INF_OR_NAN'			 ,7);
-	define('JSON_ERROR_UNSUPPORTED_TYPE'	 ,8);
-	define('JSON_ERROR_INVALID_PROPERTY_NAME',9);
-	define('JSON_ERROR_UTF16'				 ,10);
-	
-	define('JSON_OBJECT_AS_ARRAY' ,1);
-	define('JSON_BIGINT_AS_STRING',2);
-	define('JSON_PARSE_JAVASCRIPT',4);*/
+if(!defined('JSON_ERROR_NONE'                 ))define('JSON_ERROR_NONE'				 ,0);
+if(!defined('JSON_ERROR_DEPTH'                ))define('JSON_ERROR_DEPTH'				 ,1);
+if(!defined('JSON_ERROR_STATE_MISMATCH'       ))define('JSON_ERROR_STATE_MISMATCH'		 ,2);
+if(!defined('JSON_ERROR_CTRL_CHAR'            ))define('JSON_ERROR_CTRL_CHAR'			 ,3);
+if(!defined('JSON_ERROR_SYNTAX'               ))define('JSON_ERROR_SYNTAX'				 ,4);
+if(!defined('JSON_ERROR_UTF8'                 ))define('JSON_ERROR_UTF8'				 ,5);
+if(!defined('JSON_ERROR_RECURSION'            ))define('JSON_ERROR_RECURSION'			 ,6);
+if(!defined('JSON_ERROR_INF_OR_NAN'           ))define('JSON_ERROR_INF_OR_NAN'			 ,7);
+if(!defined('JSON_ERROR_UNSUPPORTED_TYPE'     ))define('JSON_ERROR_UNSUPPORTED_TYPE'	 ,8);
+if(!defined('JSON_ERROR_INVALID_PROPERTY_NAME'))define('JSON_ERROR_INVALID_PROPERTY_NAME',9);
+if(!defined('JSON_ERROR_UTF16'                ))define('JSON_ERROR_UTF16'				 ,10);
 
-	$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_NONE;
-	function xnjson_last_error():int {
-		return $GLOBALS['-XN-']['jsonerror'];
-	}
-	function xnjson_last_error_msg():string {
-		return [
-			'No error',
-			'Maximum stack depth exceeded',
-			'Invalid or malformed JSON',
-			'Control character error, possibly incorrectly encoded',
-			'Syntax error',
-			'Malformed UTF-8 characters, possibly incorrectly encoded',
-			'One or more recursive references in the value to be encoded',
-			'Inf and NaN cannot be JSON encoded',
-			'A value of a type that cannot be encoded was given',
-			'A property name that cannot be encoded was given',
-			'Malformed UTF-16 characters, possibly incorrectly encoded'
-		][$GLOBALS['-XN-']['jsonerror']];
-	}
-	function _xnjson_encode($value, $options = 0, $depth = 512){
-		if($value === null)
-			return 'null';
-		if($value === false)
-			return 'false';
-		if($value === true)
-			return 'true';
-		switch(gettype($value)){
-			case 'string':
-				if($options & JSON_NUMERIC_CHECK && is_numeric($value)){
-					return ($value + 0).'';
-				}
-				if(~$options & JSON_UNESCAPED_UNICODE)
-					$value = unicode_encode($value);
-				$value = '"'.str_replace(['\\','"',"\n","\r","\t"],['\\\\','\"','\n','\r','\t'],$value).'"';
-				if($options & JSON_HEX_TAG)
-					$value = str_replace(['<','>'],['\u003C','\u003E'],$value);
-				if($options & JSON_HEX_AMP)
-					$value = str_replace('&','\u0026',$value);
-				if($options & JSON_HEX_APOS)
-					$value = str_replace("'",'\u0027',$value);
-				if($options & JSON_HEX_QUOT)
-					$value = str_replace('"','\u0022',$value);
-				if(~$options & JSON_UNESCAPED_SLASHES)
-					$value = str_replace('/','\/',$value);
-				return $value;
-			break;
-			case 'integer':
-			case 'double':
-			case 'float':
-				if(is_infinite($value) || is_nan($value)){
-					$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_INF_OR_NAN;
-					if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return false;
-					return '0';
-				}
-				if($options & JSON_PRESERVE_ZERO_FRACTION && !is_int($value))
-					return $value.'.0';
-				return (string)$value;
-			break;
-			case 'array':
-			case 'object':
-				if($depth <= 0){
-					$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_INF_OR_NAN;
-					if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return false;
-				}
-				if($options & JSON_PRETTY_PRINT){
-					if(is_array($value) && ~$options & JSON_FORCE_OBJECT){
-						$str = "[\n    ";
-						$c = 0;
-						foreach($value as $key => $val){
-							if($key == $c++)
-								$str .= str_replace("\n","\n    ",_xnjson_encode($val,$options,$depth - 1)) . ",\n    ";
-							else{
-								$str = '';
-								break;
-							}
-							if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return false;
-						}
-					}else $str = '';
-					if($str){
-						if($str == "[\n    ")
-							$str = '[]';
-						else
-							$str = substr_replace($str,"\n]",-6,6);
-						return $str;
-					}
-					if(is_object($value))
-						$value = get_object_vars($value);
-					$str = "{\n    ";
-					foreach($value as $key => $val){
-						$str .= _xnjson_encode((string)$key,$options,$depth - 1) . ': ' . str_replace("\n","\n    ",_xnjson_encode($val,$options,$depth - 1)) . ",\n    ";
-						if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return false;
-					}
-					if($str == "{\n    ")
-						$str = '{}';
-					else
-						$str = substr_replace($str,"\n}",-6,6);
-					return $str;
-				}
+if(!defined('JSON_OBJECT_AS_ARRAY' ))define('JSON_OBJECT_AS_ARRAY' ,1);
+if(!defined('JSON_BIGINT_AS_STRING'))define('JSON_BIGINT_AS_STRING',2);
+if(!defined('JSON_PARSE_JAVASCRIPT'))define('JSON_PARSE_JAVASCRIPT',4);
+
+$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_NONE;
+function fjson_last_error() {
+	return $GLOBALS['-XN-']['jsonerror'];
+}
+function fjson_last_error_msg() {
+	return array_key([
+		'No error',
+		'Maximum stack depth exceeded',
+		'Invalid or malformed JSON',
+		'Control character error, possibly incorrectly encoded',
+		'Syntax error',
+		'Malformed UTF-8 characters, possibly incorrectly encoded',
+		'One or more recursive references in the value to be encoded',
+		'Inf and NaN cannot be JSON encoded',
+		'A value of a type that cannot be encoded was given',
+		'A property name that cannot be encoded was given',
+		'Malformed UTF-16 characters, possibly incorrectly encoded'
+	],$GLOBALS['-XN-']['jsonerror']);
+}
+function _fjson_encode($value, $options = 0, $depth = 512){
+	if($value === null)
+		return 'null';
+	if($value === false)
+		return 'false';
+	if($value === true)
+		return 'true';
+	switch(gettype($value)){
+		case 'string':
+			if($options & JSON_NUMERIC_CHECK && is_numeric($value)){
+				return ($value + 0).'';
+			}
+			if(~$options & JSON_UNESCAPED_UNICODE)
+				$value = unicode_encode($value);
+			$value = '"'.str_replace(['\\','"',"\n","\r","\t"],['\\\\','\"','\n','\r','\t'],$value).'"';
+			if($options & JSON_HEX_TAG)
+				$value = str_replace(['<','>'],['\u003C','\u003E'],$value);
+			if($options & JSON_HEX_AMP)
+				$value = str_replace('&','\u0026',$value);
+			if($options & JSON_HEX_APOS)
+				$value = str_replace("'",'\u0027',$value);
+			if($options & JSON_HEX_QUOT)
+				$value = str_replace('"','\u0022',$value);
+			if(~$options & JSON_UNESCAPED_SLASHES)
+				$value = str_replace('/','\/',$value);
+			return $value;
+		break;
+		case 'integer':
+		case 'double':
+		case 'float':
+			if(is_infinite($value) || is_nan($value)){
+				$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_INF_OR_NAN;
+				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return false;
+				return '0';
+			}
+			if($options & JSON_PRESERVE_ZERO_FRACTION && !is_int($value))
+				return $value.'.0';
+			return (string)$value;
+		break;
+		case 'array':
+		case 'object':
+			if($depth <= 0){
+				$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_INF_OR_NAN;
+				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return false;
+			}
+			if($options & JSON_PRETTY_PRINT){
 				if(is_array($value) && ~$options & JSON_FORCE_OBJECT){
-					$str = '[';
+					$str = "[\n    ";
 					$c = 0;
 					foreach($value as $key => $val){
 						if($key == $c++)
-							$str .= _xnjson_encode($val,$options,$depth - 1) . ',';
+							$str .= str_replace("\n","\n    ",_fjson_encode($val,$options,$depth - 1)) . ",\n    ";
 						else{
 							$str = '';
 							break;
@@ -9308,52 +9493,114 @@ function unicode_decode(string $str){
 					}
 				}else $str = '';
 				if($str){
-					if($str == '[')
+					if($str == "[\n    ")
 						$str = '[]';
-					else $str[strlen($str) - 1] = ']';
+					else
+						$str = substr_replace($str,"\n]",-6,6);
 					return $str;
 				}
 				if(is_object($value))
 					$value = get_object_vars($value);
-				$str = '{';
+				$str = "{\n    ";
 				foreach($value as $key => $val){
-					$str .= _xnjson_encode((string)$key,$options,$depth - 1) . ':' . _xnjson_encode($val,$options,$depth - 1) . ',';
+					$str .= _fjson_encode((string)$key,$options,$depth - 1) . ': ' . str_replace("\n","\n    ",_fjson_encode($val,$options,$depth - 1)) . ",\n    ";
 					if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return false;
 				}
-				if($str == '{')
+				if($str == "{\n    ")
 					$str = '{}';
 				else
-					$str[strlen($str) - 1] = '}';
+					$str = substr_replace($str,"\n}",-6,6);
 				return $str;
-			break;
-			default:
-				$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_UNSUPPORTED_TYPE;
-				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return false;
-				return '';
-		}
+			}
+			if(is_array($value) && ~$options & JSON_FORCE_OBJECT){
+				$str = '[';
+				$c = 0;
+				foreach($value as $key => $val){
+					if($key == $c++)
+						$str .= _fjson_encode($val,$options,$depth - 1) . ',';
+					else{
+						$str = '';
+						break;
+					}
+					if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return false;
+				}
+			}else $str = '';
+			if($str){
+				if($str == '[')
+					$str = '[]';
+				else $str[strlen($str) - 1] = ']';
+				return $str;
+			}
+			if(is_object($value))
+				$value = get_object_vars($value);
+			$str = '{';
+			foreach($value as $key => $val){
+				$str .= _fjson_encode((string)$key,$options,$depth - 1) . ':' . _fjson_encode($val,$options,$depth - 1) . ',';
+				if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return false;
+			}
+			if($str == '{')
+				$str = '{}';
+			else
+				$str[strlen($str) - 1] = '}';
+			return $str;
+		break;
+		default:
+			$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_UNSUPPORTED_TYPE;
+			if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return false;
+			return '';
 	}
-	function xnjson_encode($value, $options = 0, $depth = 512){
-		$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_NONE;
-		return _xnjson_encode($value, $options, $depth);
+}
+function fjson_encode($value, int $options = null, int $depth = null){
+    if($options === null)$options = 0;
+    if($depth === null)$depth = 512;
+	$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_NONE;
+	return _fjson_encode($value, $options, $depth);
+}
+function _fjson_decode($value, bool $assoc = null, int $depth = null, int $options = null){
+    if($assoc === null)$assoc = false;
+    if($depth === null)$depth = 512;
+    if($options === null)$options = 0;
+	if($value == 'null')
+		return null;
+	if($value == 'false')
+		return false;
+	if($value == 'true')
+		return true;
+	if($value[0] == '"'){
+		$value = unicode_decode(substr($value,1,-1));
+		$value = str_replace(['\"','\/','\\\\'],['"','/','\\'],$value);
+		echo $value;
 	}
-	function _xnjson_decode($value, bool $assoc = false, int $depth = 512, int $options = 0){
-		if($value == 'null')
-			return null;
-		if($value == 'false')
-			return false;
-		if($value == 'true')
-			return true;
-		if($value[0] == '"'){
-			$value = unicode_decode(substr($value,1,-1));
-			$value = str_replace(['\"','\/','\\\\'],['"','/','\\'],$value);
-			echo $value;
-		}
-	}
-	function xnjson_decode($value, bool $assoc = false, int $depth = 512, int $options = 0){
-		$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_NONE;
-		return _xnjson_decode($value, $assoc, $depth, $options);
-	}
-//}
+}
+function fjson_decode($value, bool $assoc = null, int $depth = null, int $options = null){
+    if($assoc === null)$assoc = false;
+    if($depth === null)$depth = 512;
+    if($options === null)$options = 0;
+	$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_NONE;
+	return _fjson_decode($value, $assoc, $depth, $options);
+}
+
+if(!function_exists('json_last_error')){
+    function json_last_error(){
+        return fjson_last_error();
+    }
+}
+if(!function_exists('json_last_error_msg')){
+    function json_last_error_msg(){
+        return fjson_last_error_msg();
+    }
+}
+if(!function_exists('json_encode')){
+    function json_encode($value, int $options = null, int $depth = null){
+        return fjson_encode($value, $options, $depth);
+    }
+}
+if(!function_exists('json_decode')){
+    function json_decode($value, bool $assoc = null, int $depth = null, int $options = null){
+        return fjson_decode($value, $assoc, $depth, $options);
+    }
+}
+
 function xnmicrotime(){
 	$time = explode(" ", microtime());
 	return $time[1] . substr($time[0], 2, -2);
@@ -9394,10 +9641,10 @@ class AXBA {
 				$h-= ord($key[(ord($key[$h % $lk])* (--$ck))% $lk]);
 				if($time) {
 					$h-= $time;
-					$h+= floor((54723587387253 % $time) ** (78942389724972 % $time / $time));
+					$h+= floor(pow((54723587387253 % $time), (78942389724972 % $time / $time)));
 					$h-= 78945897423879 % 79483978437298 % $nw;
-					$h+= 48738970039781 % floor((27384879234873 % $nw) ** (84731894397898 % $nw / $nw));
-					$h+= 84398423897894 % floor(($nw * $time) ** 0.1 + 1);
+					$h+= 48738970039781 % floor(pow((27384879234873 % $nw), (84731894397898 % $nw / $nw)));
+					$h+= 84398423897894 % floor(pow(($nw * $time), 0.1 + 1));
 					$h = floor($h / ($nw % 100));
 				}
 				--$lim;
@@ -9447,10 +9694,10 @@ class AXBA {
 				$h-= ord($key[(ord($key[$h % $lk])* (--$ck))% $lk]);
 				if($time) {
 					$h-= $time;
-					$h+= floor((54723587387253 % $time) ** (78942389724972 % $time / $time));
+					$h+= floor(pow((54723587387253 % $time), (78942389724972 % $time / $time)));
 					$h-= 78945897423879 % 79483978437298 % $nw;
-					$h+= 48738970039781 % floor((27384879234873 % $nw) ** (84731894397898 % $nw / $nw));
-					$h+= 84398423897894 % floor(($nw * $time) ** 0.1 + 1);
+					$h+= 48738970039781 % floor(pow((27384879234873 % $nw), (84731894397898 % $nw / $nw)));
+					$h+= 84398423897894 % floor(pow(($nw * $time), 0.1 + 1));
 					$h = floor($h / ($nw % 100));
 				}
 				--$lim;
@@ -9499,7 +9746,7 @@ class AXBA {
 			$lim = $limt;
 			$h = ord($message[$c]);
 			$a = $h + 1;
-			$h+= floor($h ** 1.1 / ($h ** 0.7 + 1)+ $lm ** 0.5);
+			$h+= floor(pow($h, 1.1) / (pow($h, 0.7) + 1) + sqrt($lm));
 			while($lim > 0) {
 				$h+= $a;
 				$a = ord($message[$h % $lm]);
@@ -9543,9 +9790,9 @@ class AXBA {
 	}
 }
 class XNObject {
-	private $var = null, $call = [], $static = [], $destruct = null, $wakeup = null, $tostring = null, $callmethod = null, $callstatic = null, $invoke = null, $clone = null;
-	public function var(&$var){
-		$this->var = &$var;
+	private $variable = null, $call = [], $varstatic = [], $destruct = null, $wakeup = null, $tostr = null, $callmethod = null, $callstatic = null, $invoke = null, $cloned = null;
+	public function variable(&$var){
+		$this->variable = &$var;
 		$var = $this;
 	}
 	public function __construct(&$var = null){
@@ -9555,23 +9802,24 @@ class XNObject {
 		$object = serialize((object)$object);
 		$object = replace_first("8:\"stdClass\"", "8:\"XNObject\"", $object);
 		$object = unserialize($object);
-		$object->var($object);
+		$var = $object->variable;
+		$var($object);
 		return $object;
 	}
 	public function set(string $var, string $type, $value){
-		set_class_var($this->var, $type, $var, $value);
+		set_class_var($this->variable, $type, $var, $value);
 	}
 	public function get(string $var){
-		return get_class_var($this->var, get_class_var_type($this->var, $var), $var);
+		return get_class_var($this->variable, get_class_var_type($this->variable, $var), $var);
 	}
 	public function type(string $var){
-		return get_class_var_type($this->var, $var);
+		return get_class_var_type($this->variable, $var);
 	}
 	public function setMethod(string $method, object $value){
 		$this->call[$method] = $value;
 	}
 	public function setStaticMethod(string $method, object $value){
-		$this->static[$method] = $value;
+		$this->varstatic[$method] = $value;
 	}
 	public function setDestruct(object $value){
 		$this->destruct = $value;
@@ -9580,49 +9828,55 @@ class XNObject {
 		$this->wakeup = $value;
 	}
 	public function setTostring(object $value){
-		$this->tostring = $value;
+		$this->tostr = $value;
 	}
 	public function setInvoke(object $value){
 		$this->invoke = $value;
 	}
 	public function setClone(object $value){
-		$this->clone = $value;
+		$this->cloned = $value;
 	}
-	public function clone(){
-		return $this->__clone();
+	public function cloneObject(){
+		return clone $this;
 	}
 	public function __destruct(){
-		if($this->destruct)($this->destruct)();
+	    $dest = $this->destruct;
+		if($dest)$dest();
 	}
 	public function __toString(){
-		if($this->tostring)($this->tostring)();
+	    $tostring = $this->tostring();
+		if($string)$tostring();
 		return function_exists("json_encode")?json_encode($this):unce($this);
 	}
 	public function __clone(){
-		if($this->clone)
-		if(($r = ($this->clone)()) && is_object($r))return $r;
+	    $cloned = $this->cloned;
+		if($cloned)
+		    if(($r = $cloned()) && is_object($r))return $r;
 		$object = $this->object;
 		return new XNObject($object);
 	}
 	public function __call($x, $y){
-		if($this->callmethod)$r = ($this->callmethod)($x, $y);
-		if(isset($this->call[$x]))return ($this->call[$x])(...$y);
+	    $callmethod = $this->callmethod;
+		if($callmethod)$r = $callmethod($x, $y);
+		if(isset($this->call[$x]))return call_user_func_array($this->call[$x], $y);
 		if(isset($r))return $r;
 	}
 	public static function __callStatic($x, $y){
-		if($this->callstatic)$r = ($this->callstatic)($x, $y);
-		if(isset($this->static[$x]))return ($this->static[$x])(...$y);
+	    $call = $this->callstatic;
+	    $static = $this->varstatic;
+		if($call)$r = $call($x, $y);
+		if(isset($static[$x]))return call_user_func_array($static[$x], $y);
 		if(isset($r))return $r;
 	}
 	public function all(){
-		return get_class_all_vars($this->var);
+		return get_class_all_vars($this->variable);
 	}
 }
 function xnobject($object = null){
 	return $object = new XNObject($object);
 }
 class XNCode {
-	private $code, $errorfile = "error_log", $wait = false, $proc, $pipes, $php = "php", $timer = 0, $global = false, $response;
+	private $code, $errorfile = "error_log", $wait = false, $proc, $pipes, $php = "php", $timer = 0, $globaling = false, $response;
 	public function setCode($code){
 		if($code instanceof XNClosure) {
 			$code = $code->getCode();
@@ -9663,16 +9917,16 @@ class XNCode {
 		$this->timer = $time;
 		return true;
 	}
-	public function global(bool $global = null){
-		if($global === null)$global = !$this->global;
-		$this->global = $global;
+	public function globaling(bool $global = null){
+		if($global === null)$global = !$this->globaling;
+		$this->globaling = $global;
 	}
-	private function setErrorFile(string $file = ''){
-		$this->errorfile = $file;
+	private function setErrorFile(string $file = null){
+		$this->errorfile = $file !== null ? $file : '';
 	}
 	private function compile(){
 		$code = $this->code;
-		if($this->global) {
+		if($this->globaling) {
 			$variables = array_clone($GLOBALS);
 			foreach($variables as $key => $val)
 			if($key == "GLOBALS" || $key == "-XN-")unset($variables[$key]);
@@ -9820,7 +10074,9 @@ define("XNDEFINE_STRING",         2);
 define("XNDEFINE_NUMBER",         3);
 define("XNDEFINE_CODE",           4);
 $GLOBALS['-XN-']['xndefine'] = zlib_encode(file_get_contents(thefile()),31);
-function xndefine(string $from, string $to, int $type = 1, int $locate = 1){
+function xndefine(string $from, string $to, int $type = null, int $locate = null){
+    if($type === null)$type = 1;
+    if($locate === null)$locate = 1;
 	$source = gzuncompress($GLOBALS['-XN-']['xndefine']);
 	$source = implode("\n", array_slice(explode("\n", $source), theline()));
 	if($type == XNDEFINE_CONST) {
@@ -9987,9 +10243,11 @@ function replace_last($from, $to, $str){
 function ireplace_last($from, $to, $str){
 	return substr_replace($str, $to, strripos($str, $from), strlen($from));
 }
-function bytexor($x, $y){
+function bytexorx($x, $y){
 	return chr(ord($x)^ ord($y));
-}function content_stream(string $string,string $mode,string $mime_type = "text/plan",bool $use_include_path = false,resource $context = null){
+}function content_stream(string $string,string $mode,string $mime_type = null,bool $use_include_path = null,resource $context = null){
+    if($mime_type === null)$mime_type = "text/plan";
+    if($use_include_path === null)$use_include_path = false;
     if($context)return fopen("data://$mime_type,$string",$mode,$use_include_path,$context);
     return fopen("data://$mime_type,$string",$mode,$use_include_path);
 }
@@ -10061,7 +10319,7 @@ function get_request_headers(){
 	}
 	return $headers;
 }
-function get_request_query(bool $array = false){
+function get_request_query(bool $array = null){
 	global $_REQUEST;
 	$query = @getenv("QUERY_STRING");
 	if(!$query && $_REQUEST){
@@ -10077,85 +10335,7 @@ function get_request_string($file = false){
 }
 function http_response_status(int $code = null){
 	if(!$code)$code = http_response_code();
-	$codes = [
-		100 => 'Continue',
-		101 => 'Switching Protocols',
-		102 => 'Processing',
-		200 => 'OK',
-		201 => 'Created',
-		202 => 'Accepted',
-		203 => 'Non-Authoritative Information',
-		204 => 'No Content',
-		205 => 'Reset Content',
-		206 => 'Partial Content',
-		207 => 'Multi-Status',
-		208 => 'Already Reported',
-		226 => 'IM Used',
-		300 => 'Multiple Choices',
-		301 => 'Moved Permanently',
-		302 => 'Found',
-		303 => 'See Other',
-		304 => 'Not Modified',
-		305 => 'Use Proxy',
-		306 => 'Switch Proxy',
-		307 => 'Temporary Redirect',
-		308 => 'Permanent Redirect',
-		400 => 'Bad Request',
-		401 => 'Unauthorized',
-		402 => 'Payment Required',
-		403 => 'Forbidden',
-		404 => 'Not Found',
-		405 => 'Method Not Allowed',
-		406 => 'Not Acceptable',
-		407 => 'Proxy Authentication Required',
-		408 => 'Request Timeout',
-		409 => 'Conflict',
-		410 => 'Gone',
-		411 => 'Length Required',
-		412 => 'Precondition Failed',
-		413 => 'Request Entity Too Large',
-		414 => 'Request-URI Too Long',
-		415 => 'Unsupported Media Type',
-		416 => 'Requested Range Not Satisfiable',
-		417 => 'Expectation Failed',
-		418 => 'I\'m a teapot',
-		419 => 'Authentication Timeout',
-		420 => 'Enhance Your Calm',
-		420 => 'Method Failure',
-		422 => 'Unprocessable Entity',
-		423 => 'Locked',
-		424 => 'Failed Dependency',
-		424 => 'Method Failure',
-		425 => 'Unordered Collection',
-		426 => 'Upgrade Required',
-		428 => 'Precondition Required',
-		429 => 'Too Many Requests',
-		431 => 'Request Header Fields Too Large',
-		444 => 'No Response',
-		449 => 'Retry With',
-		450 => 'Blocked by Windows Parental Controls',
-		451 => 'Redirect',
-		451 => 'Unavailable For Legal Reasons',
-		494 => 'Request Header Too Large',
-		495 => 'Cert Error',
-		496 => 'No Cert',
-		497 => 'HTTP to HTTPS',
-		499 => 'Client Closed Request',
-		500 => 'Internal Server Error',
-		501 => 'Not Implemented',
-		502 => 'Bad Gateway',
-		503 => 'Service Unavailable',
-		504 => 'Gateway Timeout',
-		505 => 'HTTP Version Not Supported',
-		506 => 'Variant Also Negotiates',
-		507 => 'Insufficient Storage',
-		508 => 'Loop Detected',
-		509 => 'Bandwidth Limit Exceeded',
-		510 => 'Not Extended',
-		511 => 'Network Authentication Required',
-		598 => 'Network read timeout error',
-		599 => 'Network connect timeout error',
-	];
+	$codes = XNNet::http_status_code();
 	return isset($codes[$code])?$codes[$code]:'Unknown';
 }
 function get_response_title(){
@@ -10211,16 +10391,18 @@ class binaryString {
 	public function __construct(string $str){
 		$this->binary = base2_encode($str);
 	}
-	public function bfput(int $size = 8){
-		if($size < 1)$size = 1;
+	public function bfput(int $size = null){
+	    if($size === null)$size = 8;
+		else if($size < 1)$size = 1;
 		$length = strlen($this->binary);
 		$this->binary .= '1'.str_repeat('0',($size - ($length + 1) % $size) % $size);
 	}
 	public function bfunput(){
 		$this->binary = substr_replace(rtrim($this->binary,'0'),'',-1,1);
 	}
-	public function blocks(int $size = 0){
+	public function blocks(int $size = null){
 		$bfputed = false;
+		if($size === null)$size = null;
 		if(strlen($this->binary) % $size != 0){
 			$this->bfput($size);
 			$bfputed = true;
@@ -10229,8 +10411,8 @@ class binaryString {
 		if($bfputed)$this->bfunput();
 		return $blocks;
 	}
-	public function get(int $size = 0){
-		$blocks = $this->blocks($size);
+	public function get(int $size = null){
+		$blocks = $this->blocks($size !== null ? $size : 0);
 		return array_merge(function($block){
 			return base_convert($block,2,10);
 		},$blocks);
@@ -10254,13 +10436,14 @@ class binaryString {
 	public function put(string $binary,int $size){
 		$this->binary = substr_replace($this->binary,$binary,$this->position,$size);
 	}
-	public function read(int $size = 8){
-		return substr($this->binary,$this->position,$size);
+	public function read(int $size = null){
+		return substr($this->binary,$this->position,$size !== null ? $size : 8);
 	}
 	const SET = 0;
 	const CUR = 1;
 	const END = 2;
-	public function seek(int $size,int $type = 0){
+	public function seek(int $size,int $type = null){
+	    if($type === null)$type = 0;
 		switch($type){
 			case 0:
 				$this->position = $size;
@@ -10275,13 +10458,14 @@ class binaryString {
 				return new XNError("binaryString seekable", "seekable type not found", XNError::NOTIC);
 		}
 	}
-	public function seekc(int $size,int $type = 0){
+	public function seekc(int $size,int $type = null){
 		return $this->seek($size * 8,$type);
 	}
 	public function tell(){
 		return $this->position;
 	}
-	public function size(int $size = 8){
+	public function size(int $size = null){
+	    if($size === null)$size = 8;
 		return ceil(strlen($this->binary) / $size);
 	}
 	public function writec(string $data){
@@ -10290,8 +10474,8 @@ class binaryString {
 	public function putc(string $data,int $size){
 		$this->put(base2_encode($data),$size);
 	}
-	public function readc(int $size = 1){
-		$read = $this->read($size * 8);
+	public function readc(int $size = null){
+		$read = $this->read($size !== null ? $size * 8 : 8);
 		if(strlen($read) % 8 != 0){
 			$read .= '1'.str_repeat('0',(8 - (strlen($read) + 1) % 8) % 8);
 		}
@@ -10303,8 +10487,8 @@ class binaryString {
 	public function puti(int $data,int $size){
 		$this->binary = substr_replace($this->binary,base_convert($data,10,2),$this->position,$size);
 	}
-	public function readi(int $size = 1){
-		return base_convert($this->read($size),2,10);
+	public function readi(int $size = null){
+		return base_convert($this->read($size !== null ? $size : 1),2,10);
 	}
 	public function next(){
 		++$this->position;
@@ -10335,37 +10519,40 @@ class binaryString {
 	public function eof(){
 		return $this->position < 0 || $this->position >= strlen($this->binary);
 	}
-	public function geti(int $size = 8){
-		$read = $this->readi($size);
+	public function geti(int $size = null){
+		$read = $this->readi($size !== null ? $size : 8);
 		$this->position += $size;
 		return $read;
 	}
-	public function run(object $func,int $size = 8){
+	public function run(object $func,int $size = null){
+	    if($size !== null)$size = 8;
 		$n = strlen($this->binary);
 		for($c = 0;$c < $l = $n;++$c){
-			($func)($this->read($size),$this);
+			$func($this->read($size),$this);
 			$n = strlen($this->binary);
 			$this->position += $n - $l + $size;
 		}
 	}
-	public function runc(object $func,int $size = 1){
+	public function runc(object $func,int $size = null){
+	    if($size !== null)$size = 8;
 		$n = strlen($this->binary);
 		for($c = 0;$c < $l = $n;++$c){
-			($func)($this->readc($size),$this);
+			$func($this->readc($size),$this);
 			$n = strlen($this->binary);
 			$this->position += $n - $l + $size;
 		}
 	}
-	public function runi(object $func,int $size = 8){
+	public function runi(object $func,int $size = null){
+	    if($size !== null)$size = 8;
 		$n = strlen($this->binary);
 		for($c = 0;$c < $l = $n;++$c){
-			($func)($this->readi($size),$this);
+			$func($this->readi($size),$this);
 			$n = strlen($this->binary);
 			$this->position += $n - $l + $size;
 		}
 	}
-	public function delete(int $size = 8){
-		$this->binary = substr_replace($this->binary,'',$this->position,$size);
+	public function delete(int $size = null){
+		$this->binary = substr_replace($this->binary,'',$this->position,$size !== null ? $size : 8);
 	}
 	public function rewind(){
 		$this->position = 0;
@@ -10373,9 +10560,9 @@ class binaryString {
 	public function end(){
 		$this->position = strlen($this->binary);
 	}
-	public function reverse(int $size = 8){
+	public function reverse(int $size = null){
 		if($size == 1)$this->binary = strrev($this->binary);
-		else $this->binary = implode('',array_reverse(str_split($this->binary,$size)));
+		else $this->binary = implode('',array_reverse(str_split($this->binary,$size !== null ? $size : 8)));
 	}
 }
 class ImageReader {
@@ -10396,7 +10583,11 @@ class ImageReader {
 					return false;
 	  return true;
 	}
-	public function pixels(int $x = 0,int $y = 0,int $w = 0,int $h = 0){
+	public function pixels(int $x = null,int $y = null,int $w = null,int $h = null){
+	    if($x !== null)$x = 0;
+	    if($y !== null)$y = 0;
+	    if($w !== null)$w = 0;
+	    if($h !== null)$h = 0;
 		$i = $this->im;
 		$iw = imagesx($i);
 		$ih = imagesy($i);
@@ -10430,8 +10621,10 @@ class ImageReader {
 						return [$x,$y];
 		return false;
 	}
-	public function setpixels(array $i,int $a = 0,int $b = 0){
+	public function setpixels(array $i,int $a = null,int $b = null){
 		$i = $this->im;
+		if($a === null)$a = 0;
+		if($b === null)$b = 0;
 		foreach($i as $x=>$p)
 			foreach($p as $y=>$c)
 				imagesetpixel($i,$x+$a,$y+$b,$c);
@@ -10447,7 +10640,8 @@ class ImageReader {
 	}
 }
 
-function xnfread($stream,int $length = 1){
+function xnfread($stream,int $length = null){
+    if($length === null)$length = 1;
 	if(!is_resource($stream))return false;
 	$read = '';
 	for($c = 0;($l = strlen($read)) < $length;++$c){
@@ -10486,8 +10680,8 @@ function xnfgetss($stream){
 	}
 	return $r;
 }
-function xnfwrite($stream,$content = '',int $length = -1){
-	if($length == -1)
+function xnfwrite($stream,$content = '',int $length = null){
+	if($length == -1 || $length === null)
 		$length = strlen($content);
 	else $content = substr($content,$length);
 	if($length === 0)return 0;
@@ -10511,7 +10705,7 @@ if(!extension_loaded("sockets")){
 	define('SO_RCVTIMEO', 4);
 	define('SO_SNDTIMEO', 5);
 }
-function socket_connect_socks5($socket,string $username = '',string $password = ''){
+function socket_connect_socks5($socket,string $username = null,string $password = null){
 	if(!is_resource($socket))return false;
 	if($username && $password)
 		fwrite($socket,"\x05\x02\x00\x02");
@@ -10578,7 +10772,8 @@ function socket_connect_socks5($socket,string $username = '',string $password = 
 	$port = ord(fgetc($socket)) * 256 + ord(fgetc($socket));
 	return "$ip:$port";
 }
-function xnloop(int $loop = -1,string $file = null,bool $wait = false,bool $close = false){
+function xnloop(int $loop = null,string $file = null,bool $wait = null,bool $close = null){
+    if($loop === null)$loop = -1;
 	if(!$file)$file = thefile();
 	$file = to_web_visibly($file);
 	$headers = get_request_headers();
@@ -10609,6 +10804,7 @@ function xnloop(int $loop = -1,string $file = null,bool $wait = false,bool $clos
 function publicdir(){
 	return substr(thefile(),0,-strlen(getenv('REQUEST_URI')));
 }
+if(!defined("PUBLICDIR"))define('PUBLICDIR', publicdir());
 function to_web_visibly($file){
 	$home = str_ireplace("file://",'',publicdir());
 	$file = str_ireplace("file://",'',$file);
@@ -10650,16 +10846,22 @@ function rle_encode(string $string){
 	}
 	return $new;
 }
-function open_class(string $name,&$return = 53348987487374,...$input){
+function open_class(string $name,&$return = 53348987487374){
+    $input = func_get_args();
+    unset($input[0]);
+    unset($input[1]);
 	$class = unserialize("O:".strlen($name).":\"$name\":0:{}");
 	if($input === [] && $return === 53348987487374)
 		return $class;
-	$return = call_constructor($class,...$input);
+	$input[1] = $class;
+	$return = call_user_func_array('call_constructor', $input);
 	return $class;
 }
-function call_constructor(object $class,...$methods){
+function call_constructor(object $class){
+    $args = func_get_args($class);
+    unset($args[0]);
 	if(method_exists($class,"__construct"))
-		return $class->__construct(...$methods);
+		return call_user_method_array('__construct', $class, $args);
 }
 function is_xnnumber($x){
 	return $x instanceof XNNumberObject;
@@ -10671,7 +10873,8 @@ define("SYS_64BIT",PHP_INT_SIZE === 8);
 define("SYS_32BIT",PHP_INT_SIZE === 4);
 define("SYS_16BIT",PHP_INT_SIZE === 2);
 define("SYS_8BIT" ,PHP_INT_SIZE === 1);
-function xnprompt_line(string $q = null,int $max = 0){
+function xnprompt_line(string $q = null,int $max = null){
+    if($max === null)$max = 0;
 	if(!isset($GLOBALS['-XN-']['xnprintin'])){
 		xnprint_start();
 		new XNError("xnprint", "xnprint not started for last, now started", XNError::LOG);
@@ -10680,7 +10883,8 @@ function xnprompt_line(string $q = null,int $max = 0){
 	else $line = rtrim(fgets($GLOBALS['-XN-']['xnprintin']));
 	return $line;
 }
-function xnprompt(string $q = null,int $max = 0){
+function xnprompt(string $q = null,int $max = null){
+    if($max === null)$max = 0;
 	if(!isset($GLOBALS['-XN-']['xnprintin'])){
 		xnprint_start();
 		new XNError("xnprint", "xnprint not started for last, now started", XNError::LOG);
@@ -10689,38 +10893,9 @@ function xnprompt(string $q = null,int $max = 0){
 	else $read = rtrim(fgetc($GLOBALS['-XN-']['xnprintin']));
 	return $read;
 }
-function flseek($handle,int $seek,int $type = 0){
-	if(!is_resource($handle))
-		return false;
-	switch($type){
-		case 0:
-			fseek($handle,0);
-			while($seek --> 0)
-				fgets($handle);
-		break;
-		case 1:
-			while($seek --> 0)
-				fgets($handle);
-		break;
-		case 2:
-			fseek($handle,0);
-			$l = [];
-			$c = 0;
-			while(fgets($handle) !== '')
-				$l[++$c] = ftell($handle);
-			if(isset($l[$c - $seek]))
-				fseek($handle,$l[$c - $seek]);
-			elseif($c - $seek < 0)
-				fseek($handle,0);
-			else
-				fseek($handle,0,SEEK_END);
-		break;
-		default:
-			new XNError("binaryString seekable","seekable type not found");
-			return false;
-	}
-}
-function create_stream_content(string $content, string $mime_type = "text/plan", string $mode = 'rw+b'){
+function create_stream_content(string $content, string $mime_type = null, string $mode = null){
+    if($mime_type === null)$mime_type = "text/plan";
+    if($mode === null)$mode = "rw+b";
 	return fopen("data://$mime_type," . urlencode($content),$mode);
 }
 function go_line(int $x){
@@ -10739,10 +10914,24 @@ function xnblock($block){
 function get_source(){
 	return zlib_decode($GLOBALS['-XN-']['xndefine']);
 }
-if(file_exists('.autoinclude.php'))
+if(file_exists('autoinclude.php')){
 	try{
-		require '.autoinclude.php';
-	}catch(Error $e){}
+		require 'autoinclude.php';
+	}catch(Error $e){
+		$msg = $e->getMessage() . ' in line ' . $e->getLine() . ' on file ' . $e->getFile();
+		$msg = "\n\t" . str_replace("\n", "\n\t", $msg) . "\n";
+		new XNError("XNAutoLoadFile", "error {$msg}");
+	}
+}
+if(file_exists($GLOBALS['-XN-']['dirNameDir'] . 'autoincludeall.php')){
+	try{
+		require $GLOBALS['-XN-']['dirNameDir'] . 'autoincludeall.php';
+	}catch(Error $e){
+		$msg = $e->getMessage() . ' in line ' . $e->getLine() . ' on file ' . $e->getFile();
+		$msg = "\n\t" . str_replace("\n", "\n\t", $msg) . "\n";
+		new XNError("XNAutoLoadFileAll", "error {$msg}");
+	}
+}
 function substring(string $str, int $from, int $to = null){
 	if($to === null)
 		return substr($str, $from);
@@ -10768,7 +10957,11 @@ define('MAKEPASS_BASE64',2);
 define('MAKEPASS_BASE64_URL',3);
 define('MAKEPASS_HEX',4);
 
-function makepass(int $length = 64, int $type = 4, int $make = 32, string $salt = ''){
+function makepass(int $length = null, int $type = null, int $make = null, string $salt = null){
+    if($length === null)$length = 64;
+    if($type === null)$type = 4;
+    if($make === null)$make = 32;
+    if($salt === null)$salt = '';
 	if($type < 0 || $type > 4 || $make > 8191 || $make < 1 || $length < 1)
 		return false;
 	$data = '$';
@@ -10916,7 +11109,8 @@ class XNTelegram {
     const CONSTRUCTOR = 2;
     const PREDICATE = 3;
     const AUTO = 4;
-    public function find_id(string $id, int $type = 4){
+    public function find_id(string $id, int $type = null){
+		if($id === null)$id = 4;
         if(!is_numeric($id))
             $id = XNMath::ascii2string($id);
         if(isset($flush['ids'])){
@@ -11179,10 +11373,10 @@ class XNTelegram {
 
     // peer id
     public function to_supergroup($id){
-        return -($id + 10 ** floor(log($id, 10) + 3));
+        return -($id + pow(10, floor(log($id, 10) + 3)));
     }
     public function from_supergroup($id){
-        return 10 ** floor(log(-$id, 10) - 3) - $id;
+        return pow(10, floor(log(-$id, 10) - 3)) - $id;
     }
     public function is_supergroup($id){
         $id = log(-$id, 10);
@@ -11431,10 +11625,12 @@ class ReadOutResult {
 		return $this->$x;
 	}
 }
-function readout(object $func,...$params){
+function readout(object $func){
+    $params = func_get_args();
+    unset($params[0]);
 	ob_start();
 	$mc = microtime(true);
-	$ret = ($func)(...$params);
+	$ret = call_user_func_array($func, $params);
 	$mc = microtime(true)-$mc;
 	$res = ob_end_clean($func);
 	ob_end_clean();
@@ -11467,30 +11663,1292 @@ function array_mul($array){
 		$res *= $x;
 	return $res;
 }
-function println(string $data){
+function println($data){
 	if(!($out = ob_get_contents()) || $out[strlen($out) - 1] == "\n")
 		print $data;
-	print "\n" . $data;
+	else print "\n" . $data;
 }
-function echoln(string ...$datas){
+function echoln(){
+    $datas = func_get_args();
 	foreach($datas as $data){
 		if(!($out = ob_get_contents()) || $out[strlen($out) - 1] == "\n")
 			print $data;
-		print "\n" . $data;
+		else print "\n" . $data;
 	}
 }
+function tbotGetHighScores($data){
+	$ch = curl_init("https://tbot.xyz/api/getHighScores");
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, "data=" . urlencode($data));
+	$res = curl_exec($ch);
+	curl_close($ch);
+	$res = json_decode($res, true);
+	return isset($res['scores']) ? $res['scores'] : false;
+}
+function tbotSetScore($data, int $score){
+	$ch = curl_init("https://tbot.xyz/api/setScore");
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, "data=" . urlencode($data) . "&score=" . $score);
+	$res = curl_exec($ch);
+	curl_close($ch);
+	$res = json_decode($res, true);
+	return isset($res['scores']) ? $res['scores'] : false;
+}
+function tbotGetSelf($data){
+	$scores = tbotGetHighScores($data);
+	if($scores === false)
+		return false;
+	$self = false;
+	foreach($scores as $user)
+		if(isset($user['current']))
+			return [
+				'pos' => $user['pos'],
+				'score' => $user['score'],
+				'name' => $user['name']
+			];
+}
+function tbotInfoData($data){
+	$data = json_decode(substr(base64_decode($data), 0, -32), true);
+	if($data === false)
+		return false;
+	return [
+		'game' => $data['g'],
+		'id' => $data['u'],
+		'name' => $data['n']
+	];
+}
+function array_key(array $array, string $key){
+	return $array[$key];
+}
+$GLOBALS['-XN-']['currenttmpfiles'] = [];
+function current_tmpfile(){
+	do{
+		$file = 'php.'.rand(0, 999999999).rand(0, 999999999).rand(0, 999999999).'.tmp';
+	}while(file_exists($file));
+	$GLOBALS['-XN-']['currenttmpfile'][] = new ThumbCode(function()use($file){
+		unlink($file);
+	});
+	return fopen($file,'r+b');
+}
+function variables_memory_usage(){
+	return fulllength($GLOBALS);
+}
+function _dirvar(array $var, $now){
+	if((!is_array($now) && !is_object($now)) || $var === [])
+		return $now;
+	if(is_object($now))
+		$now = (array)$now;
+	$now = @$now[current($var)];
+	unset($var[key($var)]);
+	return _dirvar($var, $now);
+}
+function dirvar(string $var){
+	$var = explode('/', trim(strtr($var, '.', '/'),'/'));
+	return _dirvar($var, $GLOBALS);
+}
+function is_base64(string $content){
+	return rtrim(base64_encode(base64_decode($content)), '=') == rtrim($content, '=');
+}
+function is_base2(string $content){
+	return (int)strtr($content, '1', '0') === 0;
+}
+function is_base2int(string $content){
+	return (int)strtr($content, '1', '0') === 0 && strpos($content, '.') === false;
+}
 
-/* tbot game cheat
-https://tbot.xyz/api/getHighScores
-data : string
-https://tbot.xyz/api/setScore
-data : string
-score : integer
-*/
-/*$ch = curl_init('https://tbot.xyz/api/setScore');
-curl_setopt($ch, CURLOPT_POSTFIELDS, 'data=eyJ1IjoyMDk2NDk1MDEsIm4iOiJBdmlkICIsImciOiJMdW1iZXJKYWNrIiwiY2kiOiI4MjA0MDkyMzY4MTYzNjA4OTM3IiwiaSI6IkJBQUFBSDEwQVFBckJkYThYMTZ2bzJ0a3Y3ZyJ9MTQ4N2UzMTg3NmIxYTE2MDE0YmM4YzVkNzg0YTRjY2Y%3D&score=666');
-curl_exec($ch);
-curl_close($ch);*/
+if(!defined('DATE_ATOM'   ))define('DATE_ATOM'   ,'Y-m-d\TH:i:sP'   );
+if(!defined('DATE_COOKIE' ))define('DATE_COOKIE' ,'l, d-M-Y H:i:s T');
+if(!defined('DATE_ISO8601'))define('DATE_ISO8601','Y-m-d\TH:i:sO'   );
+if(!defined('DATE_RFC822' ))define('DATE_RFC822' ,'D, d M y H:i:s O');
+if(!defined('DATE_RFC850' ))define('DATE_RFC850' ,'l, d-M-y H:i:s T');
+if(!defined('DATE_RFC1036'))define('DATE_RFC1036','D, d M y H:i:s O');
+if(!defined('DATE_RFC1123'))define('DATE_RFC1123','D, d M Y H:i:s O');
+if(!defined('DATE_RFC2822'))define('DATE_RFC2822','D, d M Y H:i:s O');
+if(!defined('DATE_RFC3339'))define('DATE_RFC3339','Y-m-d\TH:i:sP'   );
+if(!defined('DATE_RSS'	  ))define('DATE_RSS'	 ,'D, d M Y H:i:s O');
+if(!defined('DATE_W3C'	  ))define('DATE_W3C'	 ,'Y-m-d\TH:i:sP'   );
+
+function adler32(string $data, int $mod = null){
+	if($mod === null)$mod = 65521;
+	$a = 1;
+	$b = 0;
+	$c = strlen($data);
+	for ($i = 0 ;$i < $c;){
+		$a = ($a + ord($data[$i++])) % $mod;
+		$b = ($b + $a) % $mod;
+	}
+	return ($b << 16) | $a;
+}
+
+class XNNet {
+    private $socket, $host, $path = '/', $port, $protocol, $scheme, $connected = false, $headers = [], $method = 'GET', $http_version, $cookie = [], $panel_cookies = false, $redirect = false, $timeout, $redirect_referer = true, $header_date = true, $header_origin = true, $header_cookie = true, $query = '', $content = ['scan' => true, 'type' => 'application/x-www-form-urlencoded', 'length' => 0, 'coding' => ''], $response = ['http_version' => '', 'code' => -1, 'status' => '', 'headers' => [], 'content' => ''];
+    private $ports = [
+        ['ftp', 20, 'tcp'],
+        ['ftp', 21, 'tcp'],
+        ['ssh', 22, 'tcp'],
+        ['rap', 38, 'udp'],
+        ['rlp', 39, 'udp'],
+        ['dns', 53, 'tcp'],
+        ['tftp', 69, 'udp'],
+        ['http', 80, 'tcp'],
+        ['tsap', 102, 'tcp'],
+        ['sna', 108, 'tcp'],
+        ['pop2', 109, 'tcp'],
+        ['pop3', 110, 'tcp'],
+        ['sql', 118, 'tcp'],
+        ['sql', 156, 'tcp'],
+        ['imap', 143, 'tcp'],
+        ['imap', 220, 'tcp'],
+        ['nntp', 119, 'tcp'],
+        ['ntp', 123, 'udp'],
+        ['bftp', 152, 'tcp'],
+        ['sgmp', 153, 'tcp'],
+        ['snmp', 161, 'udp'],
+        ['ipx', 213, 'tcp'],
+        ['mpp', 218, 'tcp'],
+        ['esro', 259, 'tcp'],
+        ['bgmp', 264, 'tcp'],
+        ['tsp', 318, 'tcp'],
+        ['ptp', 319, 'udp'],
+        ['ptp', 320, 'udp'],
+        ['odmr', 366, 'tcp'],
+        ['ldap', 389, 'tcp'],
+        ['ups', 401, 'tcp'],
+        ['slp', 427, 'tcp'],
+        ['https', 443, 'ssl'],
+        ['snpp', 444, 'tcp'],
+        ['smtps', 465, 'ssl'],
+        ['fcp', 510, 'tcp'],
+        ['lpd', 515, 'tcp'],
+        ['rip', 520, 'udp'],
+        ['ncp', 524, 'tcp'],
+        ['rpc', 530, 'tcp'],
+        ['uucp', 540, 'tcp'],
+        ['afp', 548, 'tcp'],
+        ['rtsp', 554, 'tcp'],
+        ['nntps', 563, 'ssl'],
+        ['9p', 564, 'tcp'],
+        ['smtp', 587, 'tls'],
+        ['imaps', 585, 'ssl'],
+        ['cups', 631, 'tcp'],
+        ['ldaps', 636, 'ssl'],
+        ['ldp', 646, 'tcp'],
+        ['dhcp', 647, 'tcp'],
+        ['rrp', 648, 'tcp'],
+        ['mms', 654, 'tcp'],
+        ['mmp', 654, 'tcp'],
+        ['acap', 674, 'tcp'],
+        ['vatp', 690, 'tcp'],
+        ['olsr', 698, 'udp'],
+        ['epp', 700, 'tcp'],
+        ['lmp', 701, 'tcp'],
+        ['silc', 706, 'tcp'],
+        ['rrh', 753, 'tcp'],
+        ['ftps', 989, 'ssl'],
+        ['ftps', 990, 'ssl'],
+        ['nas', 991, 'tcp'],
+        ['imaps', 993, 'ssl'],
+        ['ircs', 994, 'ssl'],
+        ['pop3s', 995, 'ssl'],
+        ['nfs', 1023, 'tcp'],
+        ['http', 8080, 'tcp'],
+        ['oftp', 6619, 'ssl'],
+        ['mftp', 5042, 'tcp'],
+        ['xmapp', 5269, 'tcp'],
+        ['xmapp', 5280, 'tcp'],
+        ['xmapp', 5281, 'tcp'],
+        ['xmapp', 5298, 'tcp'],
+        ['stt', 7471, 'tcp'],
+        ['mssql', 1433, 'tcp'],
+        ['mssql', 1434, 'tcp'],
+        ['mysql', 3306, 'tcp'],
+        ['dbgp', 9001, 'tcp'],
+        ['odproxy', 625, 'tcp'],
+        ['socks', 1080, 'tcp'],
+        ['qotd', 17, 'tcp'],
+        ['chargen', 19, 'tcp'],
+        ['mqtt', 1883, 'tcp'],
+        ['ssdp', 1900, 'udp'],
+        ['*', -1, '*'],
+    ];
+    public function __construct(string $address = null, int $timeout = null, int &$errno = null, int &$errstr = null){
+        if(!$address)
+            return;
+        return $this->connect($address, $timeout, $errno, $errstr);
+    }
+    public function connect(string $address, int $timeout = null, int &$errno = null, int &$errstr = null){
+        $address = parse_url($address);
+        if(isset($address['path']) && !isset($address['host'])){
+            $address['host'] = $address['path'];
+            unset($address['path']);
+        }
+        if(!isset($address['host'])){
+            throw new XNError('XNNet', 'invalid server', XNError::WARNING);
+        }
+        if(strpos($address['host'], '/') !== false){
+            $address['path'] = substr($address['host'], strpos($address['host'], '/'));
+            $address['host'] = substr($address['host'], 0, strpos($address['host'], '/'));
+        }
+        if(!isset($address['scheme']) && !isset($address['port'])){
+            $address['shecme'] = '';
+            $address['port'] = 80;
+        }
+        if(!isset($address['port'])){
+            foreach($this->ports as $port)
+                if($port[0] == $address['scheme']){
+                    $address['scheme'] = $port[2];
+                    $address['port'] = $port[1];
+                    $scheme = $port[0];
+                    break;
+                }
+        }elseif(!isset($address['scheme']) || !in_array($address['scheme'], ['tcp', 'udp', 'ssl', 'tls', 'sslv2', 'sslv3'])){
+            foreach($this->ports as $port)
+                if($port[1] == $address['port']){
+                    $address['scheme'] = $port[2];
+                    $scheme = $port[0];
+                    break;
+                }
+        }elseif(isset($address['scheme']) && isset($address['port']) && in_array($address['scheme'], ['tcp', 'udp', 'ssl', 'tls', 'sslv2', 'sslv3'])){
+            foreach($this->ports as $port)
+                if($port[1] === $address['port']){
+                    $scheme = $port[0];
+                    break;
+                }
+        }else{
+            throw new XNError('XNNet', 'address invalid', XNError::WARNING);
+            return false;
+        }
+        if($port[0] == '*' && (!isset($address['scheme']) || !isset($address['port']))){
+            throw new XNError('XNNet', 'address invalid', XNError::WARNING);
+            return false;
+        }
+        if(!isset($scheme))
+            $scheme = false;
+        $caddress = isset($address['scheme']) && $address['scheme'] ? strtolower($address['scheme']) . '://' : '';
+        $caddress.= $address['host'];
+        if(!$timeout && !$this->timeout){
+            $timeout = ini_get('defaultt_socket_timeout');
+            $tde = null;
+            $this->timeout = $timeout;
+        }
+        if(false && extension_loaded('sockets')){
+        }
+        else{
+            $socket = @fsockopen($caddress, $address['port'], $errno, $errstr, $timeout);
+            $stream = true;
+        }
+        if(!$socket){
+            if($scheme !== false)
+                $address = $scheme . '://' . $address['host'];
+            else
+                $address = $address['host'] . ':' . $address['port'];
+            throw new XNError('XNNet', "Can not connect to $address - " . rtrim($errstr) . " [$errno]", XNError::NETWORK);
+            return false;
+        }
+        $this->protocol = isset($address['scheme']) ? $address['scheme'] : '';
+        $this->scheme = $scheme;
+        $this->host = $address['host'];
+        $this->port = $address['port'] ? $address['port'] : '/';
+        $this->socket = $socket;
+        $this->path = isset($address['path']) ? rtrim($address['path'], '/') : '';
+        $this->connected = true;
+        if(!isset($tde))
+            $this->setTimeout($timeout);
+        return true;
+    }
+    public function getAddressInfo(){
+        return [
+            'protocol' => $this->protocol,
+            'scheme' => $this->scheme,
+            'host' => $this->host,
+            'port' => $this->port,
+            'path' => $this->path
+        ];
+    }
+    public function getAddressSocket(){
+        return "$this->protocol://$this->host:$this->port$this->path";
+    }
+    public function getAddress(){
+        return ($this->scheme === false ? $this->protocol : $this->scheme) . '://' . $this->host . ($this->scheme === false ? ':' . $this->port : '') . $this->path;
+    }
+    public function getOrigin(){
+        return ($this->scheme === false ? $this->protocol : $this->scheme) . '://' . $this->host . ($this->scheme === false ? ':' . $this->port : '');
+    }
+    public function getStream(){
+        if(!$this->connected)
+        return $this->socket;
+    }
+    public function connect_socks5(string $username = null, string $password = null){
+        return socket_connect_socks5($this->socket);
+    }
+    public function opt_status(string $method = null, string $httpv = null, string $path = null){
+        if($method === null)$method = $this->method;
+        else $method = strtoupper($method);
+        if(!in_array($method, $this->request_methods())){
+            new XNError('XNNet Status', 'Method invalid', XNError::WARNING);
+            return false;
+        }
+        if($httpv === null)$httpv = $this->http_version ? $this->http_version : ($this->protocol == 'udp' || $this->protocol == 'tcp' || $this->protocol === '' ? 'HTTP/1.0' : 'HTTP/1.1');
+        if(!$path)
+            $path = $this->path;
+        if(!$path || $path[0] != '/')
+            $path = '/' . $path;
+        $path = rtrim($path, '/');
+        $this->headers[0] = $method . ' ' . str_replace('%2F', '/', urlencode($path)) . ' ' . $httpv;
+        $this->method = $method;
+        $this->path = $path;
+        $this->http_version = $httpv;
+    }
+    public function opt_status_proxy(string $address, string $method = null, string $httpv = null, string $path = null){
+        if(!$path)
+            $path = $this->path;
+        if(!$path || $path[0] != '/')
+            $path = '/' . $path;
+        $path = rtrim($path, '/');
+        if($path !== '')
+            $path .= '/';
+        $path = $path . $address;
+        $this->opt_status($method, $httpv, $path);
+    }
+    public function set_header(string $header, $value){
+        if(!isset($this->headers[0]))
+            $this->opt_status();
+        if(is_array($value))
+            $value = implode(';', $value);
+        $value = trim((string)$value);
+        $header = strtr(ucwords(strtr(trim($header), '_-', '  ')), ' ', '-');
+        $this->headers[] = $header . ': ' . $value;
+    }
+    public function set_only_header(string $header, $value){
+        $this->delete_header($header);
+        $this->set_header($header, $value);
+    }
+    public function opt_header(string $header){
+        $header = explode(':', $header, 2);
+        $this->set_header($header[0], $header[1]);
+    }
+    public function opt_only_header(string $header){
+        $header = explode(':', $header, 2);
+        $this->set_only_header($header[0], $header[1]);
+    }
+    public function set_headers(array $headers){
+        foreach($array as $header => $value)
+            $this->set_header($header, $value);
+    }
+    public function set_only_headers(array $headers){
+        foreach($array as $header => $value)
+            $this->set_only_header($header, $value);
+    }
+    public function opt_headers(array $headers){
+        foreach($array as $header)
+            $this->opt_header($header);
+    }
+    public function opt_only_headers(array $headers){
+        foreach($array as $header)
+            $this->opt_only_header($header);
+    }
+    public function delete_header(string $header){
+        $header = strtr(ucwords(strtr(trim($header), '_-', '  ')), ' ', '-') . ':';
+        foreach($this->headers as $x => $y)
+            if(strpos($y, $header) === 0){
+                unset($this->headers[$x]);
+                return true;
+            }
+        return false;
+    }
+    public function exists_header(string $header){
+        $header = strtr(ucwords(strtolower(strtr(trim($header), '_-', '  '))), ' ', '-') . ':';
+        foreach($this->headers as $x => $y)
+            if(strpos($y, $header) === 0)
+                return true;
+        return false;
+    }
+    public function get_header(string $header){
+        $header = strtr(ucwords(strtr(trim($header), '_-', '  ')), ' ', '-') . ':';
+        foreach($this->headers as $x => $y)
+            if(strpos($y, $header) === 0)
+                return ltrim(substr($x, strlen($header)), ' ');
+        return false;
+    }
+    public function add_header(string $header){
+        if(!isset($this->headers[0]))
+            $this->opt_status();
+        $this->headers[] = $header;
+    }
+    public function get_headers(){
+        if(!isset($this->headers[0]))
+            $this->opt_status();
+        $headers = [];
+        foreach($this->headers as $header){
+            $header = explode(':', $header,2);
+            if(isset($header[1]))
+                $headers[$header[0]] = ltrim($header[1], ' ');
+            else
+                $headers[] = $header[0];
+        }
+    }
+    public function get_headers_string(){
+        if(!isset($this->headers[0]))
+            $this->opt_status();
+        return implode("\r\n", $this->headers) . "\r\n";
+    }
+    public function reset_headers(){
+        if(!isset($this->headers[1]))
+            return;
+        $this->headers = [];
+        $this->opt_status();
+    }
+    public function opt_method(string $method = null){
+        if($method === null)
+            return $this->method;
+        return $this->method = strtoupper($method);
+    }
+    public function opt_http_version(string $httpv = null){
+        if($method === null && $this->http_version)
+            return $this->http_version;
+        if(!$httpv || $httpv === true)
+            $httpv = $this->protocol == 'udp' || $this->protocol == 'tcp' || $this->protocol === '' ? 'HTTP/1.0' : 'HTTP/1.1';
+        if(is_numeric($httpv))
+            $httpv = 'HTTP/' . ((float)$httpv);
+        return $this->http_version = $httpv;
+    }
+    public function opt_path(string $path = null){
+        if($path === null)
+            return $this->path;
+        if($path === '' || $path[0] != '/')
+            $path = '/' . $path;
+        $path = rtrim($path, '/');
+        return $this->path = $path;
+    }
+    public function opt_path_proxy(string $address, string $path = null){
+        if($path === null)
+            return $this->path;
+        if(!$path || $path[0] != '/')
+            $path = '/' . $path;
+        $path = rtrim($path, '/');
+        if($path !== '')
+            $path .= '/';
+        return $this->path = $path . $address;
+    }
+    public function opt_connection(string $connection = null){
+        if($connection === null)
+            $connection = 'keep-alive';
+        $this->set_only_header('Connection', $connection);
+    }
+    public function opt_useragent(string $useragent){
+        $this->set_header('User-Agent', $useragent);
+    }
+    public function opt_host(string $host = null){
+        if($host === null)
+            $host = $this->host;
+        $this->set_only_header('Host', $host);
+        return $host;
+    }
+    public function opt_referer(string $address){
+        if($address != $this->getAddress())
+            $this->set_only_header('Referer', $address);
+        else return false;
+        return true;
+    }
+    public function opt_proxy_client(string $client = null){
+        if($client === null)
+            $client = ($client = getenv('SERVER_NAME') ? $client : getenv('HTTP_HOST'));
+        $this->set_only_header('Client-Ip', $client);
+        return $client;
+    }
+    public function redirect_to(string $address){
+        $last = $this->getAddress();
+        $parse = parse_url($address);
+        if(isset($parse['host']) && (
+            $parse['host'] != $this->host ||
+            (!isset($parse['port']) && isset($parse['scheme']) && $parse['scheme'] != $this->scheme && $parse['scheme'] != $this->protocol) ||
+            (isset($parse['port']) && $parse['port'] != $this->port && !isset($parse['scheme'])) ||
+            (isset($parse['port']) && $parse['port'] != $this->port && isset($parse['scheme']) && $parse['scheme'] != $this->protocol)
+        ))
+            $res = $this->connect($address);
+        else{
+            if(!isset($parse['path']) || $parse['path'] === '' || $parse['path'][0] != '/')
+                $this->path = '/' . (isset($parse['path']) ? $parse['path'] : '');
+            else
+                $this->path = '/';
+            $res = true;
+        }
+        if($res === false)
+            return false;
+        if($this->redirect_referer)
+            $this->opt_referer($last);
+        return $this->send();
+    }
+    public function enable_redirect(){
+        $this->redirect = true;
+    }
+    public function disable_redirect(){
+        $this->redirect = false;
+    }
+    public function enable_redirect_referer(){
+        $this->redirect_referer = true;
+    }
+    public function disable_redirect_referer(){
+        $this->redirect_referer = false;
+    }
+    public function enable_save_cookie(){
+        $this->panel_cookie = true;
+    }
+    public function disable_save_cookie(){
+        $this->panel_cookie = false;
+    }
+    public function enable_cookie(){
+        $this->header_cookie = true;
+    }
+    public function disable_cookie(){
+        $this->header_cookie = false;
+    }
+    public function opt_cookie(string $cookie){
+        $this->cookie[] = $cookie;
+    }
+    public function set_cookie(string $key, string $value = '', int $expire = null, int $path = null, string $domain = null, bool $secury = null, bool $httponly = null){
+        $key = urlencode($key);
+        if(in_array(strtolower($key), ['expires', 'path', 'domain', 'secure', 'httponly']))
+            $key = '%' . bin2hex($key[0]) . substr($key, 1);
+        $this->delete_cookie($key);
+        $cookie = $key . '=' . urlencode($value) . '; ';
+        if($expire){
+            $expire = date(DATE_COOKIE, $expire);
+            $cookie.= 'Expires=' . $expire . '; ';
+        }
+        if($path)
+            $cookie.= 'Path=' . urlencode($path) . '; ';
+        if($domain)
+            $cookie.= 'Domain=' . urlencode($domain) . '; ';
+        if($secury)
+            $cookie.= 'Secure; ';
+        if($httponly)
+            $cookie.= 'HttpOnly;';
+        $this->cookie[] = rtrim($cookie, ' ');
+    }
+    public function delete_cookie(string $key){
+        $key = urlencode($key);
+        if(in_array(strtolower($key), ['expires', 'path', 'domain', 'secure', 'httponly']))
+            $key = '%' . bin2hex($key[0]) . substr($key, 1);
+        $key.= '=';
+        foreach($this->cookie as $x => $cookie)
+            if(strpos($cookie, $key) === 0){
+                unset($this->cookie[$x]);
+                return true;
+            }
+        return false;
+    }
+    public function exists_cookie(string $key){
+        $key = urlencode($key);
+        if(in_array(strtolower($key), ['expires', 'path', 'domain', 'secure', 'httponly']))
+            $key = '%' . bin2hex($key[0]) . substr($key, 1);
+        $key.= '=';
+        foreach($this->cookie as $cookie)
+            if(strpos($cookie, $key) === 0)
+                return true;
+        return false;
+    }
+    public function get_cookie(string $key){
+        $key = urlencode($key);
+        if(in_array(strtolower($key), ['expires', 'path', 'domain', 'secure', 'httponly']))
+            $key = '%' . bin2hex($key[0]) . substr($key, 1);
+        $key.= '=';
+        foreach($this->cookie as $cookie)
+            if(strpos($cookie, $key) === 0){
+                $value = substr($cookie, strlen($key));
+                $value = explode(';', $value);
+                $key = [];
+                $key['value'] = urldecode($value[0]);
+                for($c = 1;isset($value[$c]);){
+                    $now = explode('=', $value[$c++], 2);
+                    switch(strtolower($now[0])){
+                        case 'expires':
+                            $key['expires'] = strtotime($now[1]);
+                        break;
+                        case 'path':
+                            $key['path'] = $now[1];
+                        break;
+                        case 'domain':
+                            $key['domain'] = $now[1];
+                        break;
+                        case 'secure':
+                            $key['secury'] = true;
+                        break;
+                        case 'httponly':
+                            $key['httponly'] = true;
+                        break;
+                    }
+                }
+                if(!isset($key['secury']))
+                    $key['secury'] = false;
+                if(!isset($key['httponly']))
+                    $key['httponly'] = false;
+                return $key;
+            }
+        return false;
+    }
+    public function get_cookies(){
+        $cookies = [];
+        foreach($this->cookie as $cookie){
+            $value = substr($cookie, strlen($key));
+            $value = explode(';', $value);
+            $key = [];
+            $key['key'] = explode('=', $value[0],2);
+            $key['value'] = urldecode($key['key'][1]);
+            $key['key'] = urlencode($key['key'][0]);
+            for($c = 1;isset($value[$c]);){
+                $now = explode('=', $value[$c++], 2);
+                switch(strtolower($now[0])){
+                    case 'expires':
+                        $key['expires'] = strtotime($now[1]);
+                    break;
+                    case 'path':
+                        $key['path'] = $now[1];
+                    break;
+                    case 'domain':
+                        $key['domain'] = $now[1];
+                    break;
+                    case 'secure':
+                        $key['secury'] = true;
+                    break;
+                    case 'httponly':
+                        $key['httponly'] = true;
+                    break;
+                }
+                if(!isset($key['secury']))
+                    $key['secury'] = false;
+                if(!isset($key['httponly']))
+                    $key['httponly'] = false;
+                return $key;
+            }
+            if(!isset($key['secury']))
+                $key['secury'] = false;
+            if(!isset($key['httponly']))
+                $key['httponly'] = false;
+            $cookies[] = $key;
+        }
+        return $cookies;
+    }
+    public function add_cookie(string $cookie){
+        $this->cookie[] = $cookie;
+    }
+    public function opt_origin(string $address = null){
+        if($address === null)
+            $address = $this->getOrigin();
+        $this->set_header('Origin', $address);
+        return $address;
+    }
+    public function opt_dnt(bool $dnt = null){
+        $dnt = $dnt === null || $dnt === true ? '1' : '0';
+        $this->add_header('DNT: ' . $dnt);
+        return $dnt == '1';
+    }
+    public function opt_date(int $date = null){
+        if($date === null)
+            $date = time();
+        $date = date(DATE_COOKIE, $date);
+        $this->set_header('Date', $date);
+        return $date;
+    }
+    public function enable_date(){
+        $this->header_date = true;
+    }
+    public function disable_date(){
+        $this->header_date = false;
+    }
+    public function enable_origin(){
+        $this->header_origin = true;
+    }
+    public function disable_origin(){
+        $this->header_origin = false;
+    }
+    public function cookies_header(){
+        return rtrim(implode('; ', $this->cookie), ' ');
+    }
+    public function enable_all(){
+        $this->header_date =
+        $this->header_origin =
+        $this->header_cookie =
+        $this->panel_cookie =
+        $this->redirect_referer =
+        $this->content['scan'] =
+        true;
+    }
+    public function disable_all(){
+        $this->header_date =
+        $this->header_origin =
+        $this->header_cookie =
+        $this->panel_cookie =
+        $this->redirect_referer =
+        $this->content['scan'] =
+        false;
+    }
+    public function enable_content_scan(){
+        $this->content['scan'] = true;
+    }
+    public function disable_content_scan(){
+        $this->content['scan'] = false;
+    }
+    public function opt_auth(string $type, string $content){
+        $type = ucfirst(strtolower(strtr($type, ' ', '-')));
+        if($type === 'Basic' && !is_base64($content))
+            $content = base64_encode($content);
+        $bot->set_header('Authorization', $content = $type . ' ' . $content);
+        return $content;
+    }
+    public function opt_allow($methods){
+        if(is_string($methods))
+            $methods = explode(',', $methods);
+        $methods = array_map(function($x){
+            return strtoupper(trim($x));
+        }, $methods);
+        $methods = implode(', ', $method);
+        $bot->set_header('Allow', $methods);
+        return $methods;
+    }
+    public function opt_content_type(string $mime_type, string $charset = null){
+        $this->content['type'] = $mime_type;
+        $type = $mime_type . '; ';
+        if($charset)
+            $type .= 'charset=' . $charset . '; ';
+        $this->set_header('Content-Type', $type);
+    }
+    public function opt_content_length(int $length = null){
+        if($length === null)
+            $length = strlen($this->query);
+        $this->content['length'] = $length;
+        $this->set_header('Content-Length', $length);
+    }
+    public function opt_content_encoding($encoding){
+        if(is_array($encoding))
+            $encoding = rtrim(implode('; ', $encoding));
+        $this->content['coding'] = $encoding;
+        $this->set_header('Content-Encoding', $encoding);
+    }
+    public function opt_content_location(string $address){
+        $this->set_header('Content-Location', $address);
+    }
+    public function request_methods(){
+        return [
+            'CONNECT',
+            'DELETE',
+            'GET',
+            'HEAD',
+            'OPTIONS',
+            'PATCH',
+            'POST',
+            'PUT',
+            'TRACE'
+        ];
+    }
+    public function opt_content_description(string $type = null, string $name = null, string $filename = null){
+        $type = strtr(strtolower($type), '_ ', '-');
+        if($type == 'fromdata' || $type === null)
+            $type = 'from-data';
+        if(!is_array($type, [
+            'attachment',
+            'inline',
+            'from-data'
+        ])){
+            new XNError('XNNet Content', 'Content Description type invalid', XNError::WARNING);
+            return false;
+        }
+        $desc = $type . '; ';
+        if($name)
+            $desc .= 'name="' . str_replace(['"', '\\'], ['\"', '\\\\'], $name) . '"; ';
+        if($filename)
+            $desc .= 'filename="' . str_replace(['"', '\\'], ['\"', '\\\\'], $filename) . '";';
+        $desc = ltrim($desc, ' ');
+        $this->set_header('Content-Description', $desc);
+        return true;
+    }
+    public function set_query(string $query){
+        $this->query = $query;
+    }
+    public function add_query(string $query){
+        $this->query.= $query;
+    }
+    public function get_query(){
+        return $this->query;
+    }
+    public function set_fields($query){
+        if(is_object($query))
+            $query = object2array($query);
+        if(strpos($this->content['type'], 'urlencoded') !== false)
+            $this->query = http_build_query($query);
+        elseif(strpos($this->content['type'], 'json') !== false)
+            $this->query = json_encode($query);
+        else $this->query = $query;
+    }
+    public function add_fields($query){
+        if(is_object($query))
+            $query = object2array($query);
+        if(strpos($this->content['type'], 'urlencoded') !== false){
+            parse_str($this->query, $last);
+            $this->query = http_build_query(array_merge((array)$query, $last));
+        }
+        elseif(strpos($this->content['type'], 'json') !== false)
+            $this->query = json_encode(array_merge((array)$query, json_decode($this->query, 1)));
+        else $this->query .= $query;
+    }
+    public function get_fields(){
+        if(strpos($this->content['type'], 'urlencoded') !== false)
+            parse_str($this->query, $res);
+        elseif(strpos($this->content['type'], 'json') !== false)
+            $res = json_encode($this->query, true);
+        else $res = $this->query;
+        return $res;
+    }
+    public function opt_warning(int $code, string $text = null, string $agent = null, int $date = null){
+        if($date === 0)
+            $date = time();
+        if($date)
+            $date = date(DATE_COOKIE, $date);
+        if($agent === null)
+            $agent = '-';
+        else
+            $agent = '"' . $agent . '"';
+        if(!in_array($code, [110, 111, 112, 113, 199, 214, 299])){
+            new XNError('XNNet WarnHdr', 'Warning code invalid', XNError::WARNING);
+            return false;
+        }
+        if($text === null)
+            $text = array_key([
+                110 => 'Response is Stale',
+                111 => 'Revalidation Failed',
+                112 => 'Disconnected Operation',
+                113 => 'Heuristic Expiration',
+                199 => 'Miscellaneous Warning',
+                214 => 'Transformation Applied',
+                299 => 'Miscellaneous Warning'
+            ], $code);
+        $warn = $code . ' ' . str_replace(['"', '\\'], ['\"', '\\\\'], $agent) . '"' . str_replace(['"', '\\'], ['\"', '\\\\'], $text) . '"';
+        if($date)
+            $warn .= ' ' . '"' . $date . '"';
+        $this->set_header('Warning', $warn);
+        return $warn;
+    }
+    public function opt_source_map(string $address){
+        $this->add_header("SourceMap: $address");
+    }
+    public function opt_expires(int $date = null){
+        if($date === null)
+            $date = time();
+        $date = date(DATE_COOKIE, $date);
+        $this->set_header('Expires', $date);
+        return $date;
+    }
+    public function opt_etag(string $value, bool $W = null){
+        $etag = ($W ? 'W/' : '') . '"' . str_replace(['"', '\\'], ['\"', '\\\\'], $value) . '"';
+        $this->add_header("ETag: $etag");
+        return $etag;
+    }
+    public static function http_status_code(){
+        return $codes = [
+            100 => 'Continue',
+            101 => 'Switching Protocols',
+            102 => 'Processing',
+            200 => 'OK',
+            201 => 'Created',
+            202 => 'Accepted',
+            203 => 'Non-Authoritative Information',
+            204 => 'No Content',
+            205 => 'Reset Content',
+            206 => 'Partial Content',
+            207 => 'Multi-Status',
+            208 => 'Already Reported',
+            226 => 'IM Used',
+            300 => 'Multiple Choices',
+            301 => 'Moved Permanently',
+            302 => 'Found',
+            303 => 'See Other',
+            304 => 'Not Modified',
+            305 => 'Use Proxy',
+            306 => 'Switch Proxy',
+            307 => 'Temporary Redirect',
+            308 => 'Permanent Redirect',
+            400 => 'Bad Request',
+            401 => 'Unauthorized',
+            402 => 'Payment Required',
+            403 => 'Forbidden',
+            404 => 'Not Found',
+            405 => 'Method Not Allowed',
+            406 => 'Not Acceptable',
+            407 => 'Proxy Authentication Required',
+            408 => 'Request Timeout',
+            409 => 'Conflict',
+            410 => 'Gone',
+            411 => 'Length Required',
+            412 => 'Precondition Failed',
+            413 => 'Request Entity Too Large',
+            414 => 'Request-URI Too Long',
+            415 => 'Unsupported Media Type',
+            416 => 'Requested Range Not Satisfiable',
+            417 => 'Expectation Failed',
+            418 => 'I\'m a teapot',
+            419 => 'Authentication Timeout',
+            420 => 'Enhance Your Calm',
+            420 => 'Method Failure',
+            422 => 'Unprocessable Entity',
+            423 => 'Locked',
+            424 => 'Failed Dependency',
+            424 => 'Method Failure',
+            425 => 'Unordered Collection',
+            426 => 'Upgrade Required',
+            428 => 'Precondition Required',
+            429 => 'Too Many Requests',
+            431 => 'Request Header Fields Too Large',
+            444 => 'No Response',
+            449 => 'Retry With',
+            450 => 'Blocked by Windows Parental Controls',
+            451 => 'Redirect',
+            451 => 'Unavailable For Legal Reasons',
+            494 => 'Request Header Too Large',
+            495 => 'Cert Error',
+            496 => 'No Cert',
+            497 => 'HTTP to HTTPS',
+            499 => 'Client Closed Request',
+            500 => 'Internal Server Error',
+            501 => 'Not Implemented',
+            502 => 'Bad Gateway',
+            503 => 'Service Unavailable',
+            504 => 'Gateway Timeout',
+            505 => 'HTTP Version Not Supported',
+            506 => 'Variant Also Negotiates',
+            507 => 'Insufficient Storage',
+            508 => 'Loop Detected',
+            509 => 'Bandwidth Limit Exceeded',
+            510 => 'Not Extended',
+            511 => 'Network Authentication Required',
+            598 => 'Network read timeout error',
+            599 => 'Network connect timeout error',
+        ];
+    }
+    public function opt_expect($code){
+        $codes = self::http_status_code();
+        if(is_numeric($code)){
+            if(!isset($codes[$code])){
+                new XNError('XNNet', "HTTP Status Code [$code] invalid", XNError::WARNING);
+                return false;
+            }
+            $status = strtolower(strtr($codes[$code], ' ', '-'));
+            $this->set_header('Expect', $code . '-' . $status);
+            return $code . '-' . $status;
+        }
+        $status = substr($code, 0, 40);
+        $code = array_search($codes, ucwords(strtolower(strtr($code, '-_', '  '))));
+        if($code === false){
+            new XNError('XNNet', "HTTP Status Text [$status] invalid");
+            return false;
+        }
+        $status = strtolower(strtr($codes[$code], ' ', '-'));
+        $this->set_header('Expect', $code . '-' . $status);
+        return $code . '-' . $status;
+    }
+    public function opt_last_modified(int $date){
+        if($date === null)
+            $date = time();
+        $date = date(DATE_COOKIE, $date);
+        $this->set_only_header('Last-Modified', $date);
+        return $date;
+    }
+    public function opt_load_cookie(){
+        $cookie = $this->cookies_header();
+        if($this->header_cookie && $cookie)
+            $this->set_only_header('Cookie', $cookie);
+        return $cookie;
+    }
+    public function load_header(string $header, array $options = null){
+        $header = explode(':', $header, 2);
+        $value = $header[1];
+        $header = strtolower($header[0]);
+        if($options === null)
+            $options = [];
+        switch($header){
+            case 'set-cookie':
+                if($this->panel_cookie && !in_array('cookie', $options))
+                    $this->add_cookie($value);
+            break;
+            case 'location':
+                if($this->redirect && !in_array('redirect', $options))
+                    $this->redirect_to($value);
+            break;
+        }
+    }
+    public function setTimeout(int $timeout){
+        $this->timeout = $timeout;
+        stream_set_timeout($this->socket, $ft = floor($timeout), ($timeout - $ft) * 1000000);
+    }
+    public function getTimeout(){
+        return $this->timeout;
+    }
+    public function accept(int $timeout = null, string $peername = null){
+        if($timeout === null)
+            $timeout = $this->timeout;
+        if($peername)
+            return stream_socket_accept($this->socket, $timeout, $peername);
+        else
+            return stream_socket_accept($this->socket, $timeout);
+    }
+    public function blocking(bool $mode){
+        stream_set_blocking($this->socket, $mode);
+    }
+    public function select(array $read, array $write, array $except, int $tv_sec, int $tv_usec = null){
+        if($tv_usec === null)$tv_usec = 0;
+    }
+    public function shutdown(int $how){
+        stream_socket_shutdown($this->socket, $how);
+    }
+    public function close(){
+        fclose($this->socket);
+    }
+    public function wait(){
+        stream_get_contents($this->socket, 0);
+    }
+    public function read(int $length){
+        return fread($this->socket, $length);
+    }
+    public function getc(){
+        return fgetc($this->socket);
+    }
+    public function getcc(){
+        return ord(fgetc($this->socket));
+    }
+    public function getshort(){
+        return fread($this->socket, 2);
+    }
+    public function getint(){
+        return fread($this->socket, 4);
+    }
+    public function getdouble(){
+        return fread($this->socket, 8);
+    }
+    public function getlong(){
+        return fread($this->socket, 8);
+    }
+    public function getshortc(){
+        return unpack('s', fread($this->socket, 2))[1];
+    }
+    public function getintc(){
+        return unpack('l', fread($this->socket, 4))[1];
+    }
+    public function getdoublec(){
+        return unpack('d',fread($this->socket, 8))[1];
+    }
+    public function getlongc(){
+        return unpack('q',fread($this->socket, 8))[1];
+    }
+    public function write(string $content, int $length = null){
+        if($length === null)$length = strlen($content);
+        return fwrite($this->scoket, $content, $length);
+    }
+    public function writec(int $char){
+        return fwrite($this->socket, chr($char), 1) === 1;
+    }
+    public function gets(int $length = null){
+        if($length !== null)
+            return fgets($this->socket, $length);
+        else
+            return fgets($this->socket);
+    }
+    public function nextc(string $byte = null){
+        if(!$byte)
+            $byte = "\0";
+        else $byte = $byte[0];
+        while(($h = fgetc($this->socket)) === $byte);
+        return $h;
+    }
+    public function lread(int $length = null, int $offset = null){
+        if($length === null)$length = -1;
+        if($offset === null)$offset = -1;
+        return stream_get_contents($this->socket, $length, $offset);
+    }
+    public function reconnect(){
+        $this->connect($this->getAddress());
+    }
+    public function get_files_header(){
+        return '';
+    }
+    public function get_files_content(){
+        return '';
+    }
+    public function get_full_header(){
+        return $this->get_headers_string() . $this->get_files_header() . "\r\n" . $this->query . $this->get_files_content();
+    }
+    public function send(){
+        if($this->header_date){
+            $this->opt_date();
+            $date = null;
+        }
+        if($this->header_cookie){
+            $this->opt_load_cookie();
+            $cookie = null;
+        }
+        if($this->content['scan']){
+            if(!$this->exists_header('Content-Type')){
+                $this->opt_content_type($this->content['type']);
+                $content_type = null;
+            }
+            if(!$this->exists_header('Content-Length')){
+                $this->opt_content_length($this->content['length'] = strlen($this->query));
+                $content_length = null;
+            }
+        }
+        if($this->header_origin){
+            if(!$this->exists_header('Host')){
+                $this->opt_host();
+                $host = null;
+            }
+            if(!$this->exists_header('Origin')){
+                $this->opt_origin();
+                $origin = null;
+            }
+        }
+        $header = $this->get_full_header();
+        if(isset($date))
+            $this->delete_header('Date');
+        if(isset($cookie))
+            $this->delete_header('Cookie');
+        if(isset($content_type))
+            $this->delete_header('Content-Type');
+        if(isset($content_length))
+            $this->delete_header('Content-Length');
+        if(isset($host))
+            $this->delete_header('Host');
+        if(isset($origin))
+            $this->delete_header('Origin');
+        fwrite($this->socket, $header);
+    }
+    public function reading(){
+        $read = stream_get_contents($this->socket);
+        $read = explode("\r\n\r\n", $read, 2);
+        $headers = $read[0];
+        $read = isset($read[1]) ? $read[1] : '';
+        $p = strpos($headers, "\r\n");
+        $status = substr($headers, 0, $p);
+        $headers = substr($headers, $p + 2);
+        $headers = explode("\r\n", $headers);
+        $status = explode(' ', $status, 3);
+        $this->response['http_version'] = $status[0] ? $status[0] : $this->http_version;
+        $this->response['code'] = isset($status[1]) ? $status[1] : 0;
+        $this->response['status'] = isset($status[2]) ? $status[2] : '';
+        $this->response['headers'] = $headers;
+        $this->response['content'] = $read;
+        foreach($headers as $header)
+            $this->load_header($header, ['redirect']);
+        foreach($headers as $header)
+            $this->load_header($header, ['cookie']);
+    }
+    public function reading_header(){
+        $headers = [];
+        $r = fgets($this->socket);
+        $status = explode(' ', $r);
+        while(($r = fgets($this->socket)) != "\r\n")
+            $headers[] = rtrim($r, "\r");
+        $this->response['http_version'] = $status[0];
+        $this->response['code'] = $status[1];
+        $this->response['status'] = $status[2];
+        $this->response['headers'] = $headers;
+        foreach($headers as $header)
+            $this->load_header($header, ['redirect']);
+        foreach($headers as $header)
+            $this->load_header($header, ['cookie']);
+    }
+    public function reading_content(){
+        if(!$this->execed())
+            return false;
+        $content = stream_get_contents($this->socket);
+        $this->response['content'] = $read;
+    }
+    public function get_content_info(){
+        return $this->content;
+    }
+    public function exec(){
+        $this->send();
+        $this->reading();
+    }
+    public function execed(){
+        return $this->response['code'] != -1;
+    }
+    public function response_full_header(){
+        $header = $this->response['headers'];
+        if($header === [])
+            $header = "\r\n";
+        else
+            $header = implode("\r\n", $header) . "\r\n";
+        return $this->response['http_version'] . ' ' . $this->response['code'] . ' ' . $this->respnse['status'] . "\r\n" . $header . $this->response['content'];
+    }
+    public function get_response(){
+        return $this->response;
+    }
+    public function get_response_http_version(){
+        return $this->response['http_version'];
+    }
+    public function get_response_code(){
+        return $this->response['code'];
+    }
+    public function get_response_status(){
+        return $this->response['status'];
+    }
+    public function get_response_headers(){
+        return $this->response['headers'];
+    }
+    public function get_response_content(){
+        return $this->response['content'];
+    }
+    public function get_response_header(string $header){
+        $header = strtr(ucwords(strtr(trim($header), '_-', '  ')), ' ', '-') . ':';
+        foreach($this->response['headers'] as $x => $y)
+            if(strpos($y, $header) === 0)
+                return ltrim(substr($x, strlen($header)), ' ');
+        return false;
+    }
+    public function exists_response_header(string $header){
+        $header = strtr(ucwords(strtr(trim($header), '_-', '  ')), ' ', '-') . ':';
+        foreach($this->response['headers'] as $x => $y)
+            if(strpos($y, $header) === 0)
+                return true;
+        return false;
+    }
+    public function get_response_content_type(){
+        $type = $this->get_reponse_header('Content-Type');
+        return substr($type, 0, strpos($type, ';'));
+    }
+    public function get_response_content_length(){
+        return $this->get_response_length('Content-Length');
+    }
+    public function get_response_content_size(){
+        return strlen($this->response['content']);
+    }
+    public function clienthtml(){
+        return new XNClientHTML($this->response['content']);
+    }
+}
+class XNClientHTML {
+    public $dom, $xpath, $length = 0, $html = '';
+    public function load(string $code){
+        $this->html = $code;
+        $this->dom = new DOMDocument;
+        $this->dom->loadHTML($code);
+        $this->xpath = new DOMXPath($this->dom);
+    }
+    public function loadFile(string $file){
+        $code = @file_get_contents($file);
+        if($code === false){
+            new XNError('XNClientHTML', 'HTML File not is exists', XNError::WARNING);
+            return false;
+        }
+        $this->load($code);
+        return true;
+    }
+    public function __construct(string $code = null){
+        if($code !== null)
+            $this->load($code);
+    }
+}
+function xnclient_html($code){
+    return new XNClientHTML($code);
+}
 
 $GLOBALS['-XN-']['endTime'] = microtime(true);
 
