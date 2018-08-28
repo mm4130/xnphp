@@ -23,6 +23,46 @@ if(!defined('STDMEMORY' ))define('STDMEMORY' , 'php://memory');
 if(!defined('STDERR'    ))define('STDERR'    , 'php://stderr');
 if(!defined('STDINPUTED'))define('STDINPUTED', file_get_contents('php://input'));
 
+if(!function_exists('call_user_method_array')){
+	eval('function call_user_method_array($method, $class, $params){
+		return eval("return $class::$method(...".unce($params).");");
+	}');
+}
+if(!function_exists('call_user_method')){
+	eval('function call_user_method($method, $class, ...$params){
+		return eval("return $class::$method(...".unce($params).");");
+	}');
+}
+if(!function_exists('call_user_func')){
+	eval('function call_user_func($func, ...$params){
+		return eval("return $func(...".unce($params).");");
+	}');
+}
+if(!function_exists('call_user_func')){
+	eval('function call_user_func($func, ...$params){
+		if(is_array($func)){
+			$funct = $func[0];
+			unset($fun[0]);
+			foreach($func as $f)
+				$funct = $funct->$f;
+			$func = $funct;
+		}
+		return eval("return $func(...".unce($params).");");
+	}');
+}
+if(!function_exists('call_user_func_array')){
+	eval('function call_user_func_array($func, $params){
+		if(is_array($func)){
+			$funct = $func[0];
+			unset($fun[0]);
+			foreach($func as $f)
+				$funct = $funct->$f;
+			$func = $funct;
+		}
+		return eval("return $func(...".unce($params).");");
+	}');
+}
+
 class ThumbCode {
 	private $code = false;
 	public function __construct($func){
@@ -153,9 +193,9 @@ class XNError extends Error {
 	protected $message;
 	public $HTMLMessage, $consoleMessage, $type, $from;
 
-	const T_NONE = 0;
-	const T_EXIT = 1;
-	const T_THROW = 2;
+	const TNONE = 0;
+	const TEXIT = 1;
+	const TTHROW = 2;
 
 	public static $TYPES = [
 		0  => "Notic            ",
@@ -240,11 +280,11 @@ class XNError extends Error {
 			faddln($errorsh, $console);
 		if($type !== null)
 			switch($type){
-				case self::T_NONE:
+				case 0:
 				break;
-				case self::T_EXIT:
+				case 1:
 				exit;
-				case self::T_THROW:
+				case 2:
 				throw $this;
 			}
 	}
@@ -8786,6 +8826,63 @@ class XNString {
 	public static function toregex(string $str){
 		return str_replace("\Q\E", '', "\Q" . str_replace('\E', '\E\\\E\Q', $str). "\E");
 	}
+	const NUMBER_RANGE = '0123456789';
+	const ALPHBA_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	const ALPHBA_LOWER_RANGE = 'abcdefghijklmnopqrstuvwxyz';
+	const ALPHBA_UPPER_RANGE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	const FA_ALPHBA_RANGE = 'ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی';
+	const AR_ALPHBA_RANGE = 'ابتثجحخدذرزسشصضطظعغفقکلمنوهی';
+	const SPACE_RANGE = "\n\r\t ";
+	const NUL_BYTE = "\0";
+	const ASCII_RANGE = "\0\1\2\3\4\5\6\7\x8\x9\xa\xb\xc\xd\xe\xf\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4a\x4b\x4c\x4d\x4e\x4f\x50\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5a\x5b\x5c\x5d\x5e\x5f\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6a\x6b\x6c\x6d\x6e\x6f\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7a\x7b\x7c\x7d\x7e\x7f\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff";
+	const BASE2_RANGE = '01';
+	const HEXA_RANGE = '0123456789abcdefABCDEF';
+	const HEX_RANGE  = '0123456789abcdef';
+	const HEXU_RANGE = '0123456789ABCDEF';
+	const BASE4_RANGE = '01234';
+	const BASE64_RANGE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+	const ALPHBA_NUMBERS_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+	const TELEGRAM_USERNAME_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_';
+	const GMAIL_USERNAME_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_';
+	public static function char_in_range(string $char, string $range){
+		if($char === '')return false;
+		return strpos($range, $char[0]) !== false;
+	}
+	public static function str_in_range(string $str, string $range){
+		for($c = 0;isset($str[$c]);++$c)
+			if(strpos($range, $str[$c]) === false)
+				return false;
+		return true;
+	}
+	public static function get_in_range(string $str, string $range){
+		$string = '';
+		for($c = 0;isset($str[$c]);++$c)
+			if(strpos($range, $str[$c]) !== false)
+				$string .= $str[$c];
+		return $string;
+	}
+	public static function random($range, int $length = null){
+		if($length === null || $length < 1)
+			$length = 1;
+		if(is_string($range))
+			$range = str_split($range);
+		if(is_object($range))
+			$range = (array)$range;
+		if(!is_array($range))
+			return false;
+		$str = '';
+		while($length --> 0)
+			$str .= $range[array_rand($range)];
+		return $str;
+	}
+	public static function append(string $string, string $child, int $index = null){
+		return substr_replace($string, $child, $index !== null ? $index : 0, 0);
+	}
+	public static function remove(string $string, int $index = null, int $length = null){
+		if($length === null)
+			return substr_replace($string, '', $index !== null ? $index : 0);
+		return substr_replace($string, '', $index !== null ? $index : 0, $length);
+	}
 	// calc functions
 	public static function xorn(string $a, string $b){
 		$al = strlen($a);
@@ -8932,6 +9029,11 @@ class XNMath {
 	const PHI = 1.6180339887498;
 	const G = 9.80665;
 	const E = 2.718281828459;
+	public static function average(){
+		$nums = func_get_args();
+		$c = count($nums);
+		return array_add($nums) / $c;
+	}
 	public static function fact($n){
 		$n = (int)$n;
 		$r = 1;
@@ -12948,6 +13050,99 @@ class XNClientHTML {
 }
 function xnclient_html($code){
     return new XNClientHTML($code);
+}
+function rrand($x, $y, $z = 0){
+    if($z == 0)
+        return rand($x, $y);
+    if($z > 0)
+        return rrand(rand($x, $y), $y, $z - 1);
+    if($z < 0)
+        return rrand($x, rand($x, $y), $z + 1);
+}
+function prand($x, $y, $z){
+    if($y < $x)
+        swap($x, $y);
+    return rand(rand($x, $z), rand($y, $z));
+}
+function rprand($x, $y, $z = 0, $j = null){
+    if($j === null)
+        $j = ($x + $y) / 2;
+    if($z == 0)
+        return prand($x, $y, $j);
+    if($z > 0)
+        return rprand(prand($x, $y, $j), $y, $z - 1);
+    if($z < 0)
+        return rprand($x, prand($x, $y, $j), $z + 1);
+}
+function prrand($x, $y, $z, $j = 0){
+    if($y < $x)
+        swap($x, $y);
+    return rand(rrand($x, $z, $j), rrand($y, $z, $j));
+}
+function rprrand($x, $y, $z = 0, $j = null, $k = 0){
+    if($j === null)
+        $j = ($x + $y) / 2;
+    if($z == 0)
+        return prrand($x, $y, $j, $k);
+    if($z > 0)
+        return rprrand(prrand($x, $y, $j, $k), $y, $z - 1);
+    if($z < 0)
+        return rprrand($x, prrand($x, $y, $j, $k), $z + 1);
+}
+function brand($x = 1){
+	if($x == 0){
+		new XNError('boolean random', 'Can not give boolean random by 0');
+		return;
+	}
+	if($x < 0)
+		return rand(0, -$x) == 0;
+	return rand(0, $x) != 0;
+}
+function proposal_username(string $username, array $options = []){
+    $l = strlen($username);
+    $ll = floor(pow($l, 0.2));
+    $s = $username;
+    if(!isset($options['ander']))
+        $options['ander'] = '_';
+    if(!isset($options['space']))
+        $options['space'] = '.';
+    if(!isset($options['from_space']))
+        $options['from_space'] = ' ';
+    if(!isset($options['random']))
+        $options['random'] = XNString::NUMBER_RANGE;
+    if(!isset($options['max_rand']))
+        $options['max_rand'] = 9999;
+    if(!isset($options['min_rand']))
+        $options['min_rand'] = 0;
+    if(!isset($options['limit_rand']))
+        $options['limit_rand'] = -4;
+    for($c = 0;isset($username[$c]);$c += rrand(1, $ll, -4)){
+        if(brand(-2) && $c > 0 && XNString::char_in_range(@$username[$c], XNString::ALPHBA_UPPER_RANGE) && !XNString::char_in_range(@$username[$c - 1], XNString::ALPHBA_UPPER_RANGE)){
+            $username = substr_replace($username, XNString::random($options['ander'],1 ), $c, 0);
+            ++$l;++$c;
+        }
+        if(brand(-8) && $c > 0 && XNString::char_in_range(@$username[$c], XNString::ALPHBA_UPPER_RANGE . XNString::NUMBER_RANGE . $options['from_space'])){
+            $username = substr_replace($username, $p = rrand($options['min_rand'], $options['max_rand'], $options['limit_rand']), $c,0);
+            $l += $p;$c += $p;
+        }
+        elseif(brand(-15) && XNString::char_in_range(@$username[$c], $options['space'] . $options['ander'] . $options['from_space']) && XNString::char_in_range(@$username[$c + 1], $options['space'] . $options['ander'] . $options['from_space'])){
+            $username = substr_replace($username, XNString::random($options['random'], $p = rrand(1, 7, $options['limit_rand'])), $c, 0);
+            $l += $p;$c += $p;
+        }
+        if(brand(-10) && XNString::char_in_range(@$username[$c], $options['from_space'])){
+            $username = substr_replace($username, brand() ? $options['space'] : $options['ander'], $c, 1);
+            ++$l;++$c;
+        }
+        if(brand(-30) && isset($options['changein']))
+            $username = substr_replace($username, XNString::random($username . $s, 1), $c, 1);
+    }
+    if($s === $username){
+        if(brand(-5))
+            $username .= XNString::random($options['random'], rrand(1, 7, $options['limit_rand']));
+        else
+            $username .= rrand($options['min_rand'], $options['max_rand'], $options['limit_rand']);
+    }
+    return $username;
 }
 
 $GLOBALS['-XN-']['endTime'] = microtime(true);
