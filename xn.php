@@ -363,27 +363,6 @@ function varadd($to){
 	}
 	new XNError("var_add", "unsuported type $t", XNError::TYPE, XNError::TTHROW);
 }
-function xneval($code, &$save = 5636347437634){
-	$p = strpos($code, "<?");
-	if($p === false || $p == - 1)$code = "<?php " . $code;
-	$random = rand(0, 99999999). rand(0, 99999999);
-	fput("xn$random.log", $code);
-	$z = new thumbCode(
-	function()use($random){
-		unlink("xn$random.log");
-	});
-	if($save === 5636347437634) {
-		$r = @require "xn$random.log";
-	}
-	else {
-		ob_start();
-		$r = @require "xn$random.log";
-		if($save === true)$r = ob_get_contents();
-		else $save = ob_get_contents();
-		ob_end_clean();
-	}
-	return $r;
-}
 function theline(){
 	$t = debug_backtrace();
 	$t = end($t);
@@ -416,20 +395,20 @@ function evale($codeiuefhuisegbfyusegfrusbgtys){
 	eval($codeiuefhuisegbfyusegfrusbgtys);
 	exit;
 }
-function evall($codeiuefhuisegbfyusegfrusbgtys){
-	extract($GLOBALS);
-	foreach(explode(";",$codeiuefhuisegbfyusegfrusbgtys) as $codeiuefhuisegbfyusegfrusbgtys)
-		eval($codeiuefhuisegbfyusegfrusbgtys.';');
-	exit;
-}
 function evalc($code){
 	return eval('return ' . $code . ';');
 }
 function evald($code){
 	return eval($code);
 }
-function evaln($namespace, $code){
-	return xneval("<?php\nnamespace $namespace;\n$code");
+function evalf($file){
+	return ($get = file_get_contents($file)) !== false ? eval($get) : false;
+}
+function evali($code){
+	include "data://application/php,$code";
+}
+function evalio($code){
+	include_once "data://application/php,$code";
 }
 function is_function($f){
 	return function_exists($f) || $f instanceof Closure || $f instanceof XNClosure;
@@ -6735,13 +6714,6 @@ function base2_hide_encode($str){
 function base2_hide_decode($str){
 	return base2_decode(str_replace(["\x0c", "\xe2\x80\x8c"], ['0', '1'], $str));
 }
-function mb_strrev($str){
-	$n = '';
-	$l = - 1;
-	$m = mb_strlen($str);
-	while($l >= - $m)$n.= mb_substr($str, $l--, 1);
-	return $n;
-}
 define("xnclosure", "XNClosure");
 define("xnfunction", "XNFunction");
 define("\xd8\xa2\xd9\x88\xdb\x8c\xd8\xaf", "\x6d\x79\x20\x74e\x6ceg\x72\x61\x6d\x20:\x20\x40\x41\x76\x5f\x69\x64\n\x6d\x79 \x70\x68\x6f\x6e\x65\x20\x6e\x75m\x62\x65\x72 :\x20+\x39\x38\x390\x3336\x36\x31\x30\x39\x30\n\x74\x68a\x6eks\x20\x66\x6f\x72 y\x6fu \x66\x6fr\x20\x73\x65\x65 \x74hi\x73\x20:)");
@@ -6964,10 +6936,6 @@ function XNClosure(){
 }
 function XNFunction(){
 	return call_class_constructor_array('XNClosure',func_get_args());
-}
-function ende_code($d){
-	for($c = 0; isset($d[$c]); ++$c)$d[$c] = chr(255 - ord($d[$c]));
-	return $d;
 }
 function chrget(int $chr){
 	$chr%= 256;
@@ -8066,6 +8034,14 @@ class XNNumber {
 		if(!self::_check($b))return false;
 		if(strlen($a) <= 13 && strlen($b) <= 13)
 			return (string)($a + $b);
+		if(function_exists('bcadd')){
+			$c = 0;
+			if(($p = strpos($a, '.')) !== false)
+				$c = strlen($a) - $p;
+			if(($p = strpos($b, '.')) !== false)
+				$c = max($c, strlen($b) - $p);
+			return self::_get3(bcadd($a, $b, $c));
+		}
 		self::_setfull($a, $b);
 		if($a == 0)return $b;
 		if($b == 0)return $a;
@@ -8114,6 +8090,14 @@ class XNNumber {
 		if(!self::_check($b))return false;
 		if(strlen($a) <= 13 && strlen($b) <= 13)
 			return (string)($a - $b);
+		if(function_exists('bcsub')){
+			$c = 0;
+			if(($p = strpos($a, '.')) !== false)
+				$c = strlen($a) - $p;
+			if(($p = strpos($b, '.')) !== false)
+				$c = max($c, strlen($b) - $p);
+			return self::_get3(bcsub($a, $b, $c));
+		}
 		self::_setfull($a, $b);
 		$r = $a == 0 ? self::_change($b): $b == 0 ? $a : self::_sub3($a, $b);
 		return self::_pl(self::_get3($r));
@@ -8165,6 +8149,14 @@ class XNNumber {
 		if(!self::_check($b))return false;
 		if(strlen($a) + strlen($b) <= 12)
 			return (string)($a * $b);
+		if(function_exists('bcadd')){
+			$c = 0;
+			if(($p = strpos($a, '.')) !== false)
+				$c+= strlen($a) - $p;
+			if(($p = strpos($b, '.')) !== false)
+				$c+= strlen($b) - $p;
+			return self::_get3(bcmul($a, $b, $c));
+		}
 		self::_setfull($a, $b);
 		if($a == 0 || $b == 0)return '0';
 		if($a == 1)return "$b";
@@ -8279,6 +8271,14 @@ class XNNumber {
 			new XNError("XNNumber", "not can div by Ziro", XNError::ARITHMETIC);
 			return false;
 		}
+		if(function_exists('bcdiv')){
+			$c = 0;
+			if(($p = strpos($a, '.')) !== false)
+				$c+= strlen($a) - $p;
+			if(($p = strpos($b, '.')) !== false)
+				$c+= strlen($b) - $p;
+			return self::_get3(bcdiv($a, $b, $c));
+		}
 		if($a == 0)return '0';
 		if($b == 1)return "$a";
 		if($a == $b)return '1';
@@ -8317,11 +8317,18 @@ class XNNumber {
 			new XNError("XNNumber", "not can div by Ziro", XNError::ARITHMETIC);
 			return false;
 		}
+		if(function_exists('bcmod')){
+			$c = 0;
+			if(($p = strpos($a, '.')) !== false)
+				$c+= strlen($a) - $p;
+			if(($p = strpos($b, '.')) !== false)
+				$c+= strlen($b) - $p;
+			return self::_get3(bcmod($a, $b, $c));
+		}
 		if($a == 0 || $b == 1 || $a == $b)return '0';
 		return self::_get(self::_mod2($a, $b));
 	}
-	public static function _powFloor($a,$b,int $limit = null){
-	    if($limit === null)$limit = 10;
+	public static function _powFloor($a,$b){
 		$b = self::floor($b);
 		if($a == 1 || $a == 0)
 			return $a;
@@ -8336,15 +8343,21 @@ class XNNumber {
 		else
 			return self::mul(self::powFloor(self::powTwo($a),self::divTwo($b)),$a);
 	}
-	public static function powFloor($a,$b,int $limit = null){
-	    if($limit === null)$limit = 10;
+	public static function powFloor($a,$b){
 		if(!self::_check($a))return false;
 		if(!self::_check($b))return false;
 		if(strlen($a) * $b <= 10)
 			return (string)(pow($a, $b));
+		if(function_exists('bcpow')){
+			$c = 0;
+			if(($p = strpos($a, '.')) !== false)
+				$c+= strlen($a) - $p;
+			$c*= $b;
+			return self::_get3(bcpow($a, $b, $c));
+		}
 		if($b < 0)
-			return self::div('1',self::_powFloor($a,substr_replace($b,'',0,1)),$limit);
-		return self::_powFloor($a,$b,$limit);
+			return self::div('1',self::_powFloor($a,substr_replace($b,'',0,1)));
+		return self::_powFloor($a,$b);
 	}
 	// algo functions
 	public static function fact($a){
@@ -8368,23 +8381,12 @@ class XNNumber {
 		$time = microtime();
 		return self::_get(substr($time,11).'.'.substr($time,2,8));
 	}
-	public static function sin($x, int $limpi = null, int $while = null, int $limit = null){
-	    if($limit === null)$limit = 10;
-	    if($while === null)$while = 30;
-	    if($limpi === null)$limpi = 14;
-		$x = self::rmod($x, self::mulTwo(self::PI($limpi)));
-		$res = '0';
-		$pow = $x;
-		$fact = '1';
-		for($i = 1;$i < $while;++$i){
-			$res = self::add($res,self::div($pow,$fact,$limit));
-			$pow = self::mul($pow,self::_change(self::powTwo($x)));
-			$fact = self::mul($fact,self::mul(self::mulTwo($i),self::add(self::mulTwo($i),1)));
-		}
-		return $res;
-	}
 	public static function sqrt($n, int $limit = null){
 		if($limit === null)$limit = 10;
+		if(strlen($n) < 9)
+			return (string)sqrt($n);
+		if(function_exists('bcsqrt'))
+			return self::_get3(bcsqrt($n, $limit));
 		$x = $n;
 		$y = '1';
 		while(self::sub($x, $y) > 0) {
@@ -8412,20 +8414,23 @@ class XNNumber {
 	public static function decimals($x){
 		return explode('.', $x . '.0', 3)[1];
 	}
+	public static function hypot($x, $y){
+		return self::sqrt(self::add(self::powFloor($x, '2'), self::powFloor($y, '2')));
+	}
 	// address calc functions
-	public static function adda(&$a, $b){
+	public static function adda(&$a, $b = 1){
 		$a = self::add($a, $b);
 	}
-	public static function suba(&$a, $b){
+	public static function suba(&$a, $b = 1){
 		$a = self::sub($a, $b);
 	}
 	public static function mula(&$a, $b){
 		$a = self::mul($a, $b);
 	}
-	public static function diva(&$a, $b, int $c = null){
+	public static function diva(&$a, $b = 1, int $c = null){
 		$a = self::div($a, $b, $c === null ? -1 : $c);
 	}
-	public static function moda(&$a, $b){
+	public static function moda(&$a, $b = 1){
 		$a = self::mod($a, $b);
 	}
 	public static function xora(&$a, $b){
@@ -8509,6 +8514,9 @@ class XNNumber {
 		if(!self::_check($a))return false;
 		if(!self::_check($b))return false;
 		return self::init(XNBinary::shift(self::base_convert($a,10,2),$b),2);
+	}
+	public static function neg($x){
+		return self::init(XNBinary::neg(self::base_convert($x,10,2)),2);
 	}
 	// convertor functions
 	public static function tonumber($a = '0'){
@@ -8789,6 +8797,9 @@ class XNBinary {
 			else $a[$c] = '0';
 		}
 		return self::_get($a);
+	}
+	public static function neg($x){
+		return strtr($x, '01', '10');
 	}
 	// convertors
 	public function toInt($a){
@@ -9235,7 +9246,7 @@ function boolnumber($x, int $bbv = null){
 				$r = rand(1, rand(1, rand(1, rand(1, $bbv))));
 				$r = $r < 1 ? 1 : $r;
 				$n-= $r % 2;
-				$s[] = ($r ? str_repeat('!', $r): ''). '[]';
+				$s[] = ($r ? str_repeat('!', $r): '') . '[]';
 			}
 			$s = implode('+', $s);
 			$strs[$num] = ["($s)", 1];
@@ -9289,6 +9300,11 @@ class XNMath {
 		$nums = func_get_args();
 		$c = count($nums);
 		return array_add($nums) / $c;
+	}
+	public static function averagesqrt(){
+		$nums = func_get_args();
+		$c = count($nums);
+		return pow(array_mul($nums), 1 / $c);
 	}
 	public static function pre($x, $y, $z = 100){
 		return $x === 0 ? 0 : $z / ($y / $x);
@@ -9404,8 +9420,33 @@ class XNMath {
 		$a -= floor($a/$b);
 		return $a < 0 ? $a + ($b < 0 ? -$b : $b) : $a;
 	}
-	public static function ascii2number($x){
-		return base_convert(bin2hex($x),16,10) + 0;
+	public static function onebits($x){
+		if($x == 0)return 0;
+		if($x < 0)$x = -$x;
+		$y = 0;
+		$l = floor(log($x, 2));
+		while($l > 0)
+			$y += ($x >> $l--) & 1;
+		return $y + 1;
+	}
+	public static function zerobits($x){
+		if($x == 0)return 1;
+		if($x < 0)$x = -$x;
+		$y = 0;
+		$c = $l = floor(log($x, 2));
+		while($l > 0)
+			$y += ($x >> $l--) & 1;
+		return $c - $y + 1;
+	}
+	public static function bitscount($x){
+		if($x == 0)return 1;
+		return floor(log($x > 0 ? $x : ~$x, 2)) + 1;
+	}
+	public static function neg($x){
+		return (2 ** (floor(log($x, 2)) + 1) - 1) - $x;
+	}
+	public static function revbits($x){
+		return base_convert(strrev(base_convert($x, 10, 2)), 2, 10);
 	}
 	public static function number2ascii($x){
 		$x = base_convert($x,10,16);
@@ -9414,12 +9455,6 @@ class XNMath {
 	}
 	public static function heightpos($x1, $y1, $x2, $y2){
 		return hypot($x2 - $x1, $y2 - $y1);
-	}
-	public static function degpos($x1, $y1, $x2, $y2, $d1, $d2){
-		return [$x1 * cos($r = $r2 - $r1) - $y1 * sin($r), $x1 * sin($r) + $y1 * cos($r)];
-	}
-	public static function degrpos($x1, $y1, $x2, $y2, $d1, $r1, $d2, $r2){
-		return [$x1 - $r1 * cos($d1) + $r2 * cos($d2), $y1 - $r1 * sin($d1) + $r2 * sin($d2)];
 	}
 	public static function digitsadd($x){
 		if(strlen($x = floor($x)) === 1)return $x;
@@ -9439,6 +9474,21 @@ class XNMath {
 	}
 	public static function decimal($x){
 		return $x < 0 ? $x ^ -1 : $x;
+	}
+	public static function bezier($x, $y, $z){
+		return (((1 - 3 * $z + 3 * $y) * $x + (3 * $z - 6 * $y)) * $x + 3 * $y) * $x;
+	}
+	public static function slope($x, $y, $z){
+		return 3 * (1 - 3 * $z + 3 * $y) * $x * $x + 5 * ($z - 2 * $y) * $x + 3 * $y;
+	}
+	public static function treeadd($x){
+		return array_add(self::tree($x));
+	}
+	public static function hypot($x, $y, $d = 90){
+		return sqrt(pow($x, 2) + pow($y, 2) - 2 * $x * $y * cos(deg2rad($d)));
+	}
+	public static function shl64(int $x, int $shift){
+		return ($x << $shift) | (($x >> (64 - $shift)) & ((1 << $shift) - 1));
 	}
 	public static function baseconvert($text, $from = false, $to = false){
 		if(is_string($from) && strtolower($from) == "ascii")return self::baseconvert(bin2hex($text), "0123456789abcdef", $to);
@@ -9996,187 +10046,6 @@ function xnmicrotime(){
 }
 function militime(){
 	return floor(microtime(true)* 1000);
-}
-class AXBA {
-	public $time = 0;
-	public function setTime(int $time = null){
-		if(!$time)$time = 0;
-		$this->time = $time;
-	}
-	public function encrypt($message, $key = '.', $limt = 1){
-		$limt = $limt < 1 ? 1 : $limt > 255 ? 255 : $limt;
-		$lk = strlen($key);
-		$now = "";
-		$time = $this->time;
-		if(!$time)$time = 0;
-		if($time)$nw = floor(microtime(true)* 1000 / $time);
-		$ntime = $time;
-		while($time > 0) {
-			$now.= chr($time % 256);
-			$time = floor($time / 256);
-		}
-		$time = $ntime;
-		$now = chr(strlen($now)). $now;
-		if(!$message)return $now;
-		for($c = 0; isset($message[$c]); ++$c) {
-			$lim = $limt;
-			$h = $ck = ord($key[$c % $lk]);
-			for($p = 0; $p < $lk; ++$p)$h+= $c < $p ? ord($key[$lk % ($p * 2 - $c + 1)- 1]): ord($key[$lk % ($c * $p + 1)- 1]);
-			$h+= 7 + $c;
-			while($lim > 0) {
-				$h+= ord($key[$h % $lk]);
-				$h-= ord($key[$h % $lk]);
-				$h+= ord($key[(ord($key[$h % $lk])* (--$ck))% $lk]);
-				$h-= ord($key[(ord($key[$h % $lk])* (--$ck))% $lk]);
-				if($time) {
-					$h-= $time;
-					$h+= floor(pow((54723587387253 % $time), (78942389724972 % $time / $time)));
-					$h-= 78945897423879 % 79483978437298 % $nw;
-					$h+= 48738970039781 % floor(pow((27384879234873 % $nw), (84731894397898 % $nw / $nw)));
-					$h+= 84398423897894 % floor(pow(($nw * $time), 0.1 + 1));
-					$h = floor($h / ($nw % 100));
-				}
-				--$lim;
-			}
-			$h+= 74328897548798 % (++$ck ? $ck : ++$ck);
-			$h+= 87942397087943 % $ck;
-			$h+= 47388973497853 % $ck;
-			$h+= 89470974982370 % $ck;
-			$h-= 10472109438758 % $ck;
-			$h+= 19874623974023 % $ck;
-			$h+= 24731088438908 % (ord($key[$h % $lk])+ 1);
-			$h+= 12093802101304 % $ck;
-			$h+= 89743879349718 % (ord($key[$h % $lk])+ 1);
-			$h+= 11948904100409 % (ord($key[$h % $lk])+ 1);
-			$h-= 12409721374821 % (ord($key[$h % $lk])+ 1);
-			$h+= 94874870929741 % (ord($key[$h % $lk])+ 1);
-			$h+= 84731090791187 % (ord($key[$h % $lk])+ 1);
-			$h+= 89412879328432 % (ord($key[$h % $lk])+ 1);
-			$h+= 5370912357253 % (ord($key[$h % $lk])+ 1);
-			$h+= 2 % $ck;
-			$now.= chr($h + ord($message[$c]));
-		}
-		return $now . chr($limt);
-	}
-	public function decrypt($message, $key = '.'){
-		if(!$message)return '';
-		$limt = ord($message[strlen($message)- 1]);
-		$size = ord($message[0]);
-		$stime = strrev(substr($message, 1, $size));
-		$message = substr($message, $size + 1, -1);
-		$time = 0;
-		if($stime)
-		for($c = 0; isset($stime[$c]); ++$c)$time = $time * 256 + ord($stime[$c]);
-		if($time)$nw = floor(microtime(true)* 1000 / $time);
-		$lm = strlen($message);
-		$lk = strlen($key);
-		$now = "";
-		for($c = 0; isset($message[$c]); ++$c) {
-			$lim = $limt;
-			$h = $ck = ord($key[$c % $lk]);
-			for($p = 0; $p < $lk; ++$p)$h+= $c < $p ? ord($key[$lk % ($p * 2 - $c + 1)- 1]): ord($key[$lk % ($c * $p + 1)- 1]);
-			$h+= 7 + $c;
-			while($lim > 0) {
-				$h+= ord($key[$h % $lk]);
-				$h-= ord($key[$h % $lk]);
-				$h+= ord($key[(ord($key[$h % $lk])* (--$ck))% $lk]);
-				$h-= ord($key[(ord($key[$h % $lk])* (--$ck))% $lk]);
-				if($time) {
-					$h-= $time;
-					$h+= floor(pow((54723587387253 % $time), (78942389724972 % $time / $time)));
-					$h-= 78945897423879 % 79483978437298 % $nw;
-					$h+= 48738970039781 % floor(pow((27384879234873 % $nw), (84731894397898 % $nw / $nw)));
-					$h+= 84398423897894 % floor(pow(($nw * $time), 0.1 + 1));
-					$h = floor($h / ($nw % 100));
-				}
-				--$lim;
-			}
-			$h+= 74328897548798 % (++$ck ? $ck : ++$ck);
-			$h+= 87942397087943 % $ck;
-			$h+= 47388973497853 % $ck;
-			$h+= 89470974982370 % $ck;
-			$h-= 10472109438758 % $ck;
-			$h+= 19874623974023 % $ck;
-			$h+= 24731088438908 % (ord($key[$h % $lk])+ 1);
-			$h+= 12093802101304 % $ck;
-			$h+= 89743879349718 % (ord($key[$h % $lk])+ 1);
-			$h+= 11948904100409 % (ord($key[$h % $lk])+ 1);
-			$h-= 12409721374821 % (ord($key[$h % $lk])+ 1);
-			$h+= 94874870929741 % (ord($key[$h % $lk])+ 1);
-			$h+= 84731090791187 % (ord($key[$h % $lk])+ 1);
-			$h+= 89412879328432 % (ord($key[$h % $lk])+ 1);
-			$h+= 5370912357253 % (ord($key[$h % $lk])+ 1);
-			$h+= 2 % $ck;
-			$now.= chr(256 - $h + ord($message[$c]));
-		}
-		return $now;
-	}
-	public function encrypts($message, $key = '.', $salt = '.', $limt = 1){
-		$datak = $this->encrypt($this->encrypt($key, $key), ($x = hex2bin(md5($key))). $salt . $x);
-		$data = $this->encrypt($message, $datak . substr($key . $salt, 0, 1), $limt);
-		$data = $this->encrypt($data, ($x = hex2bin(md5($salt))). $key . $x, $limt);
-		return $this->encrypt($data, $key . $salt . hex2bin(hash("sha512", $salt . $key)), $limt);
-	}
-	public function decrypts($message, $key = '.', $salt = '.'){
-		$data = $this->decrypt($message, $key . $salt . hex2bin(hash("sha512", $salt . $key)));
-		$data = $this->decrypt($data, ($x = hex2bin(md5($salt))). $key . $x);
-		$datak = $this->encrypt($this->encrypt($key, $key), ($x = hex2bin(md5($key))). $salt . $x);
-		return $this->decrypt($data, $datak . substr($key . $salt, 0, 1));
-	}
-	public function hash($message, $key = '.', $limt = 1){
-		if(!$message)return '';
-		$lm = strlen($message);
-		$lk = strlen($key);
-		$now = '';
-		$limt = $limt < 1 ? 1 : $limt > 1024 ? 1024 : $limt;
-		$nums = [78794387352807, 90419884196858, 63750863186045, 18653108265983, 69874169879018, 39057981265091, 74971307548601, 97406498316490, 82164014098649, 28650984759864, 35837092374096, 12986498327592, 37402349837409, 74016407076498, 26598739087498, 26389473120097, 40917452386395, 7927409812109, 34907193498891, 29831793479102, 7491049734872, 35862399847019, 34750165665666, 66013931094893, 10949814013570, 17518461387471, 3947186581039, 47091384910740, 15979729703810, 98387472985437, 40597130458785, 56410297802670, 35398431069813, 63109563546056, 48695480695406, 84816084869548, 96438659438959, 87315098740985, 7894877408048, 78487787854875, 87864586438965, 86318984681605, 6408968109473, 34902762748394, 71390483624650, 93749078249732, 40958017598637, 4109498625070, 49789109571097, 13897420975982, 64109759275808, 79347018279483, 65987819084986, 59748961809471, 74295274095968, 27504295617050, 27356982572470, 95703126501935, 48686915079309, 71748938795079, 39071867994797, 2685697019074, 6910650257406, 19750284091506, 91074099025790, 97349173509757, 91473490701947, 90319797050731, 7410975970079, 19070951907497, 31709542709597, 1079497593597, 9739750907329, 7597027097095, 7490797214970, ];
-		$time = $this->time;
-		for($c = 0; $c < $lm; ++$c) {
-			$lim = $limt;
-			$h = ord($message[$c]);
-			$a = $h + 1;
-			$h+= floor(pow($h, 1.1) / (pow($h, 0.7) + 1) + sqrt($lm));
-			while($lim > 0) {
-				$h+= $a;
-				$a = ord($message[$h % $lm]);
-				$a+= ord($message[$a % $lm]);
-				$a+= ord($key[$h % $lk]);
-				$a+= ord($key[$a % $lk]);
-				$a+= $nums[abs($h % 75)] % (!$h ? $h + 1 : $h);
-				$a+= $nums[abs($a % 75)] % (!$a ? $a + 1 : $a);
-				$a+= $nums[abs($h % 75)] % (!$h ? $h + 1 : $h);
-				$a+= $nums[abs($a % 75)] % (!$a ? $a + 1 : $a);
-				$a+= $a % ($c + 1)+ $c;
-				if($time)$a+= floor(microtime(true)* 1000 / $time)% 256 + $time % ($c + 1)+ $c % $time + $h % $time;
-				--$lim;
-			}
-			$h+= $a - 3;
-			$h+= $nums[$c % 75] % ($c + 1)+ $c;
-			$now.= chr($h);
-		}
-		return $now;
-	}
-	public function dblencrypt($message, $key, $limt = 1){
-		$message = $this->encrypt($message, $key, $limt);
-		$x1 = floor(strlen($message)/ 2);
-		$x2 = strlen($message)- $x1;
-		$y1 = floor(strlen($key)/ 2);
-		$y2 = strlen($key)- $y1;
-		$crypt1 = $this->encrypt(substr($message, $x1, $x2), substr($key, 0, $y1), $limt);
-		$crypt2 = $this->encrypt(substr($message, 0, $x1), substr($key, $y1, $y2), $limt);
-		$crypt2 = $this->encrypt($crypt2, $crypt1, $limt);
-		$crypt1 = $this->encrypt($crypt1, $key, $limt);
-		return [$crypt1, $crypt2];
-	}
-	public function dbldecrypt($crypt1, $crypt2, $key){
-		$y1 = floor(strlen($key)/ 2);
-		$y2 = strlen($key)- $y1;
-		$crypt1 = $this->decrypt($crypt1, $key);
-		$crypt2 = $this->decrypt($crypt2, $crypt1);
-		$crypt1 = $this->decrypt($crypt1, substr($key, 0, $y1));
-		$crypt2 = $this->decrypt($crypt2, substr($key, $y1, $y2));
-		return $this->decrypt($crypt2 . $crypt1, $key);
-	}
 }
 class XNObject {
 	private $variable = null, $call = [], $varstatic = [], $destruct = null, $wakeup = null, $tostr = null, $callmethod = null, $callstatic = null, $invoke = null, $cloned = null;
@@ -11163,7 +11032,7 @@ function xnblock($block){
 	if($block === false)
 		return false;
 	$code = substr($code, $block + strlen("XNBLOCK> $block"));
-	evall($code);
+	evale($code);
 }
 function get_source(){
 	return zlib_decode($GLOBALS['-XN-']['xndefine']);
@@ -13543,35 +13412,108 @@ class XNTelegram {
                         return xnnumber::base_convert(strrev($content), 'ascii', 10);
                 }
         }
+	}
+	public function type_decode($string,$type = false){
+		if(!$type)
+			$type = $this->find_id($id = unpack('l', substr($string, 0, $c = 4))[1]);
+		else $c = 0;
+		if($type === false)
+			throw new XNError("XNTelegram id@" . bin2hex($id), 'invalid type id', XNError::TYPE);
+        $p = strpos($type, '<');
+        if($p !== false){
+            $sub = substr($type, $p + 1, -1);
+            $type = substr($type, 0, $p);
+        }
+        switch($type){
+			case 'int':
+                return [unpack('l', substr($string, $c, 4))[1], $c + 4];
+            case 'int128':
+                return [substr($string, $c, 16), $c + 16];
+            case 'int256':
+                return [substr($string, $c, 32), $c + 32];
+            case 'int512':
+                return [substr($string, $c, 64), $c + 64];
+            case '#':
+                return [unpack('V', substr($string, $c, 4))[1], $c + 4];
+            case 'double':
+                return [unpack('d', substr($string, $c, 8))[1], $c + 8];
+            case 'bytes':
+            case 'string':
+                $l = ord($string[$c++]);
+                if($l >= 254){
+                    $l = unpack('V', $string[$c++] . "\0")[1];
+                    $str = substr($string, $c, $l);
+                    $res = XNMath::posmod(-$l, 4);
+                }else{
+                    $str = $l > 0 ? substr($string, $c, $l) : '';
+                    $res = XNMath::posmod(-$l - 1, 4);
+                }
+                return [$type == 'bytes' ? ['bytes', 'bytes' => base64_encode($str)] : $str, $c + $l];
+            case 'gzip_packed':
+                return [gzdecode($this->type_decode(substr($string, $c), 'string')), strlen($string)];
+            case 'Vector':
+                $c += 4;
+            case 'vector':
+				$count = unpack('V', substr($string, $c, 4))[1];
+				$c += 4;
+                $res = [];
+                while($count --> 0){
+					$r = $this->type_decode(substr($string, $c), $sub);
+					$c+= $r[1];
+					$res[] = $r[0];
+				}
+                return [$res, $c];
+            case 'Bool':
+                return [$this->find_id(unpack('l', substr($string, $c, 4))[1])['predicate'] == 'boolTrue', $c + 4];
+            case 'long':
+				$content = substr($string, $c, 8);
+                if(SYS_64BIT)
+                    return unpack('q', $content)[1];
+                switch($this->settings['number']){
+                    case 1:
+                        return [unpack('l', substr($content, 0, 4))[1] * 0xffffffff, $c + 8];
+                    case 2:
+                        return [xnmath::ascii2number(strrev($content)), $c + 8];
+                    break;
+                    case 3:
+                        return [xnnumber::base_convert(strrev($content), 'ascii', 10), $c + 8];
+                }
+        }
     }
-    public function type_read_all($stream, array $input){
+    public function type_read_all($stream, $input){
         if(!is_resource($stream))
-            return false;
+			return false;
+		if(!is_array($input))
+			return $this->type_read_all($stream, explodek(['/', ':'], $input));
         $res = [];
         foreach($input as $key => $content)
             $res[$key] = $this->type_read($stream, $content);
         return $res;
     }
-    public function type_decode($content, $type = false){
-        $stream = create_stream_content($content, 'text/plan', 'rb');
-        $result = $this->type_read($stream, $type);
-        fclose($stream);
-        return $result;
+    public function type_decode_all($content, $input){
+		if(!is_array($input))
+			return $this->type_decode_all($content, explodek(['/', ':'], $input));
+		$res = [];
+		$c = 0;
+		foreach($input as $key => $data){
+			$res[$key] = $this->type_decode(substr($content, $c), $data);
+			$c += $res[$key][1];
+			$res[$key] = $res[$key][0];
+		}
+		return $res;
     }
-    public function type_decode_all($content, $type = false){
-        $stream = create_stream_content($content, 'text/plan', 'rb');
-        $result = $this->type_read_all($stream, $type);
-        fclose($stream);
-        return $result;
-    }
-    public function type_encode_all(array $input){
-        $res = '';
+    public function type_encode_all($input){
+		if(!is_array($input))
+			return $this->type_encode_all(explodek(['/', ':'], $input));
+		$res = '';
         foreach($input as $content)
             if(isset($content[1]))
                 $res .= $this->type_encode($content[0], $content[1]);
         return $res;
     }
-    public function type_write_all($stream,array $input){
+    public function type_write_all($stream, $input){
+		if(!is_array($input))
+			return $this->type_write_all($stream, explodek(['/', ':'], $input));
         if(!is_resource($stream))
             return false;
         return fwrite($stream, $this->type_encode_all($input));
@@ -13651,73 +13593,31 @@ class XNTelegram {
         $id = unpack('l', substr($id, 0, 4))[1];
         $files = [
             0 => [
-                "thumb", [
-                    'dc_id' => 'int',
-                    'id' => 'long',
-                    'access_hash' => 'long',
-                    'volume_id' => 'long',
-                    'secret' => 'long',
-                    'local_id' => 'int'
-                ]
+                "thumb", 'dc_id:int/id:long/access_hash:long/volume_id:long/secret:long/local_id:int'
             ],
             2 => [
-                "photo", [
-                    'dc_id' => 'int',
-                    'id' => 'long',
-                    'access_hash' => 'long',
-                    'volume_id' => 'long',
-                    'secret' => 'long',
-                    'local_id' => 'int'
-                ]
+                "photo", 'dc_id:int/id:long/access_hash:long/volume_id:long/secret:long/local_id:int'
             ],
             3 => [
-                "voice", [
-                    'dc_id' => 'int',
-                    'id' => 'long',
-                    'access_hash' => 'long'
-                ]
+                "voice", 'dc_id:int/id:long/access_hash:long'
             ],
             4 => [
-                "video", [
-                    'dc_id' => 'int',
-                    'id' => 'long',
-                    'access_hash' => 'long'
-                ]
+                "video", 'dc_id:int/id:long/access_hash:long'
             ],
             5 => [
-                "document", [
-                    'dc_id' => 'int',
-                    'id' => 'long',
-                    'access_hash' => 'long'
-                ]
+                "document", 'dc_id:int/id:long/access_hash:long'
             ],
             8 => [
-                "sticker", [
-                    'dc_id' => 'int',
-                    'id' => 'long',
-                    'access_hash' => 'long'
-                ]
+                "sticker", 'dc_id:int/id:long/access_hash:long'
             ],
             9 => [
-                "audio", [
-                    'dc_id' => 'int',
-                    'id' => 'long',
-                    'access_hash' => 'long'
-                ]
+                "audio", 'dc_id:int/id:long/access_hash:long'
             ],
             10 => [
-                "gif", [
-                    'dc_id' => 'int',
-                    'id' => 'long',
-                    'access_hash' => 'long'
-                ]
+                "gif", 'dc_id:int/id:long/access_hash:long'
             ],
             12 => [
-                "video_note", [
-                    'dc_id' => 'int',
-                    'id' => 'long',
-                    'access_hash' => 'long'
-                ]
+                "video_note", 'dc_id:int/id:long/access_hash:long'
             ]
         ];
         if(!isset($files[$id]))
@@ -13728,9 +13628,22 @@ class XNTelegram {
         return [$name, $file];
     }
 
-    // settings
+	// settings
+	const RESULT_DEFUALT_MODEL = 0;
+	const RESULT_XN_MODEL      = 1;
+
     public function parse_settings(array $options = []){
-        if($lang = getenv('LANG'))
+		try{
+            $model = php_uname('s');
+        }catch(Exception $e) {
+            $model = 'Web server';
+        }
+        try{
+            $version = php_uname('r');
+        }catch(Exception $e) {
+            $version = phpversion();
+        }
+		if($lang = getenv('LANG'))
             $lang = explode('_', $lang, 2)[0];
         elseif($lang = getenv('HTTP_ACCEPT_LANGUAGE'))
             $lang = substr($lang, 0, 2);
@@ -13769,22 +13682,89 @@ class XNTelegram {
                 'protocol' => 'tcp',
                 'ipv6' => false,
                 'timeout' => 2,
-                'proxy' => false
+				'proxy' => false,
+				'dc' => 0
             ],
             'app' => [
                 'id' => 6,
                 'hash' => '',
-                'model' => php_uname('s'),
-                'system_version' => php_uname('r'),
-                'version' => 'Unicorn',
+                'device_model' => $model,
+                'system_version' => $version,
+                'app_version' => 'Unicorn',
                 'lang' => $lang
-            ],
+			],
+			'result_model' => 1
         ];
-        $settings = array_replace_recursive($settings, $options);
+		$settings = array_replace_recursive($settings, $options);
+		$settings['dc'] = [];
         if(isset($settings['session']['file']) && file_exists($settings['session']['file']) && is_numeric($settings['session']['mode']))
-            fmod($settings['session']['file'], $settings['session']['mode']);
+			fmod($settings['session']['file'], $settings['session']['mode']);
         $this->settings = $settings;
     }
+}
+function obfuscated2_create_random(&$crypted = 48384387897423){
+    do{
+        $random = random_bytes(64);
+    }while(in_array(substr($random, 0, 4), ['PVrG', 'GET ', 'POST', 'HEAD', "\xee\xee\xee\xee"]) || $random[0] == "\xef" || substr($random, 4, 4) == "\0\0\0\0");
+    $random[56] = $random[57] = $random[58] = $random[59] = "\xef";
+	if($crypted !== 48384387897423)
+		$crypted = substr_replace($random, substr(openssl_encrypt($random, 'aes-256-ctr', substr($random, 8, 32), 1, substr($random, 40, 16)), 56, 8), 56, 8);
+    return $random;
+}
+function obfuscated2_get_info(string $random){
+	$reversed = strrev(substr($random, 8, 48));
+    return [
+        'algo' => 'aes-256-ctr',
+        'encryption' => [
+            'key' => substr($random, 8, 32),
+            'iv'  => substr($random, 40, 16)
+        ],
+        'decryption' => [
+            'key' => substr($reversed, 0, 32),
+            'iv'  => substr($reversed, 32, 16)
+		]
+    ];
+}
+function obfuscated2_get_crypted(string $random){
+	return substr_replace($random, substr(openssl_encrypt($random, 'aes-256-ctr', substr($random, 8, 32), 1, substr($random, 40, 16)), 56, 8), 56, 8);
+}
+function explodee(array $delimiters, string $string, int $limit = null){
+	if($limit === null)$limit = PHP_INT_MAX;
+	if(!isset($delimiters[1]) && isset($delimiters[0]))
+		return explode($delimiters[0], $string, $limit);
+	elseif(!isset($delimiters[0]) && !is_array($delimiters))
+		return $string;
+	elseif(!isset($delimiters[0]))
+		$delimiters = array_values($delimiters);
+	$arr = explode($delimiters[0], $string, $limit);
+	unset($delimiters[0]);
+	$delimiters = array_values($delimiters);
+	foreach($arr as &$str)
+		$str = explodee($delimiters, $str, $limit);
+	return $arr;
+}
+function explodek(array $delimiters, string $string, int $limit = null){
+	if($limit === null)$limit = PHP_INT_MAX;
+	if(!isset($delimiters[1]) && isset($delimiters[0]))
+		return array_keyval(explode($delimiters[0], $string, $limit));
+	elseif(!isset($delimiters[0]) && !is_array($delimiters))
+		return $string;
+	elseif(!isset($delimiters[0]))
+		$delimiters = array_values($delimiters);
+	$arr = explode($delimiters[0], $string, $limit);
+	unset($delimiters[0]);
+	$delimiters = array_values($delimiters);
+	foreach($arr as &$str)
+		$str = explodek($delimiters, $str, $limit);
+	return call_user_func_array('array_merge', $arr);
+}
+function array_keyval(array $array, bool $ending = null){
+	$arr = [];
+	for($c = 0;isset($array[$c + 1]);)
+		$arr[$array[$c++]] = $array[$c++];
+	if($ending !== false && isset($array[$c]))
+		$arr[] = $array[$c];
+	return $arr;
 }
 function dump(){
 	return call_user_func_array('var_dump', func_get_args());
@@ -13890,6 +13870,365 @@ function power_func($x, $n, $i, $f) {
     }
     return $y;
 }
+function implodet(string $gule, array $pieces){
+    return $pieces === [] ? $gule : $gule . implode($gule, $pieces) . $gule;
+}
+function explodet(string $delimiter, string $string, int $limit = null){
+	if(substr($string, 0, $l = strlen($delimiter)) == $delimiter)
+		$string = substr($string, $l);
+	if(substr($string, -$l) == $delimiter)
+		$string = substr($string, 0, -$l);
+	return explode($delimiter, $string, $limit !== null ? $limit : PHP_INT_MAX);
+}
+function striml(string $str, string $trimer){
+	$l = strlen($trimer);
+	while(substr($str, 0, $l) == $trimer)
+		$str = substr($str, $l);
+	return $str;
+}
+function strimr(string $str, string $trimer){
+	$l = strlen($trimer);
+	while(substr($str, -$l) == $trimer)
+		$str = substr($str, 0, $l);
+	return $str;
+}
+function strim(string $str, string $trimer){
+	return strimr(striml($str, $trimer), $trimer);
+}
+function array_val2key(array $array){
+	return array_combine($array, array_keys($array));
+}
+function array_val2keys(array $array){
+	$arr = [];
+	$keys = array_keys($array);
+	foreach(array_values($array) as $num => $value){
+		if(!isset($arr[$value]))
+			$arr[$value] = [$keys[$num]];
+		else
+			$arr[$value][] = $keys[$num];
+	}
+	return $arr;
+}
+function array_key_at(int $key, array $array){
+	return array_keys($array)[$key];
+}
+function array_value_at(int $value, array $array){
+	return array_values($array)[$value];
+}
+function array_key_of(string $key, array $array){
+	return array_search($key, array_keys($array));
+}
+function array_value_of(string $value, array $array){
+	return array_search($value, array_values($array));
+}
+function array_reverse_values(array $array){
+	return array_combine(array_keys($array), array_reverse($array));
+}
+function array_reverse_keys(array $array){
+	return array_combine(array_reverse(array_keys($array)), $array);
+}
+function implodes(array $array){
+	return implode('', $array);
+}
+function mb_str_split(string $str, int $length = null){
+	$str = preg_split('//u', $str);
+	if(end($str) === '')
+		unset($str[count($str) - 1]);
+	if($length <= 1)
+		return $str;
+	return array_map('implodes', array_chunk($str, $length));
+}
+function str_rsplit(string $str, int $length = null){
+	if($length === null)$length = 0;
+	$l = $length - strlen($str) % $length;
+	if($l == $length)
+		return str_split($str, $length);
+	return array_merge([substr($str, 0, $l)], str_split(substr($str, $l), $length));
+}
+function mb_strrev(string $str){
+	return implode('', array_reverse(preg_split('//u', $str)));
+}
+if(!function_exists('random_bytes')){
+    function random_bytes(int $length){
+        $r = '';
+        while($length --> 0)
+            $r .= chr(rand(0, 255));
+        return $r;
+    }
+}
+if(!function_exists('random_int')){
+    function random_int(int $min, int $max){
+        return rand($min, $max);
+    }
+}
+if(!function_exists('hex2bin')){
+    function hex2bin(string $data){
+        $str = '';
+        $data = strtolower($data);
+        if(strlen($data) % 2 === 1)
+            trigger_error('hex2bin(): Hexadecimal input string must have an even length');
+        for($c = 0;isset($data[$c + 1]);){
+            $a = $data[$c++];
+            $b = $data[$c++];
+            if(strpos('0123456789abcdef', $a) === false || strpos('0123456789abcdef', $b) === false)
+                trigger_error('hex2bin(): Input string must be hexadecimal string', E_USER_WARNING);
+            $str .= chr(hexdec($a . $b));
+        }
+        return $str;
+    }
+}
+function pkcs1_generate_symmetric_key(string $password, string $iv, int $length, bool $raw = null){
+    $key = '';
+    $iv = substr($iv, 0, 8);
+    while(!isset($key[$length - 1]))
+        $key .= md5($key . $password . $iv, $raw !== false);
+    return substr($key, 0, $length);
+}
+function putty_generate_symmetric_key(string $password, int $length, bool $raw = null){
+    $key = '';
+    $seq = 0;
+    while(!isset($key[$length - 1]))
+        $key .= sha1(pack('Na*', $seq++, $password), $raw !== false);
+    return substr($key, 0, $length);
+}
+function crc16(string $str){
+    $table = [
+        0,     49345, 49537, 320,   49921, 960,   640,   49729,
+        50689, 1728,  1920,  51009, 1280,  50625, 50305, 1088,
+        52225, 3264,  3456,  52545, 3840,  53185, 52865, 3648,
+        2560,  51905, 52097, 2880,  51457, 2496,  2176,  51265,
+        55297, 6336,  6528,  55617, 6912,  56257, 55937, 6720,
+        7680,  57025, 57217, 8000,  56577, 7616,  7296,  56385,
+        5120,  54465, 54657, 5440,  55041, 6080,  5760,  54849,
+        53761, 4800,  4992,  54081, 4352,  53697, 53377, 4160,
+        61441, 12480, 12672, 61761, 13056, 62401, 62081, 12864,
+        13824, 63169, 63361, 14144, 62721, 13760, 13440, 62529,
+        15360, 64705, 64897, 15680, 65281, 16320, 16000, 65089,
+        64001, 15040, 15232, 64321, 14592, 63937, 63617, 14400,
+        10240, 59585, 59777, 10560, 60161, 11200, 10880, 59969,
+        60929, 11968, 12160, 61249, 11520, 60865, 60545, 11328,
+        58369, 9408,  9600,  58689, 9984,  59329, 59009, 9792,
+        8704,  58049, 58241, 9024,  57601, 8640,  8320,  57409,
+        40961, 24768, 24960, 41281, 25344, 41921, 41601, 25152,
+        26112, 42689, 42881, 26432, 42241, 26048, 25728, 42049,
+        27648, 44225, 44417, 27968, 44801, 28608, 28288, 44609,
+        43521, 27328, 27520, 43841, 26880, 43457, 43137, 26688,
+        30720, 47297, 47489, 31040, 47873, 31680, 31360, 47681,
+        48641, 32448, 32640, 48961, 32000, 48577, 48257, 31808,
+        46081, 29888, 30080, 46401, 30464, 47041, 46721, 30272,
+        29184, 45761, 45953, 29504, 45313, 29120, 28800, 45121,
+        20480, 37057, 37249, 20800, 37633, 21440, 21120, 37441,
+        38401, 22208, 22400, 38721, 21760, 38337, 38017, 21568,
+        39937, 23744, 23936, 40257, 24320, 40897, 40577, 24128,
+        23040, 39617, 39809, 23360, 39169, 22976, 22656, 38977,
+        34817, 18624, 18816, 35137, 19200, 35777, 35457, 19008,
+        19968, 36545, 36737, 20288, 36097, 19904, 19584, 35905,
+        17408, 33985, 34177, 17728, 34561, 18368, 18048, 34369,
+        33281, 17088, 17280, 33601, 16640, 33217, 32897, 16448
+    ];
+    $c = 0;
+    for($i = 0;isset($str[$i]);++$i)
+        $c = ($c >> 8) ^ $table[($c ^ ord($str[$i])) & 0xff];
+    return $c;
+}
+function crc32b(string $str){
+    return dechex(crc32($str));
+}
+function crc16b(string $str){
+    return dechex(crc16($str));
+}
+const OBFUCT_STRING_HEX = 1;
+const OBFUCT_STRING_OCT = 2;
+const OBFUCT_STRING_NORMAL = 4;
+const OBFUCT_STRING_CONNECT_ASCII = 8;
+const OBFUCT_STRING_CONNECT_STRING = 16;
+const OBFUCT_STRING_QUOTATION = 32;
+const OBFUCT_STRING_VARIABLE = 64;
+const OBFUCT_STRING_BASE64 = 128;
+const OBFUCT_STRING_BASE32 = 256;
+const OBFUCT_STRING_ALL = 511;
+
+function obfuct_string(string $str, int $options = null, array $variable = null){
+    if($options < 1 || $str === '')
+        return $str;
+    $opt = [];
+    if($options & 1 == 1)
+        $opt[0] = true;
+    else $opt[0] = false;
+    for($c = 1;$c < 9;++$c)
+        if(($options >> $c) & 1 == 1)
+            $opt[$c] = true;
+        else $opt[$c] = false;
+    if($opt[6] || $opt[7] || $opt[8])
+        $len = strlen($str);
+    $obfuct = '';
+    if($opt[5] && ($str[0] == '"' || $str[0] == "'")){
+        $ls = $str[0];
+        $str = eval("return $str;");
+    }else $ls = $str[0];
+    $option = [];
+    foreach($opt as $num => $op)
+        if($op == true && $num != 5)
+            $option[] = $num;
+    $vars = '';
+    $count = count($option) - 1;
+    for($c = 0; isset($str[$c]);){
+        $h = $str[$c++];
+        switch($option[rand(0, $count)]){
+            
+            case 0:
+                $obfuct .= '\x' . bin2hex($h);
+            break;
+            case 1:
+                $obfuct .= '\\' . str_pad(decoct(ord($h)), 3, '0', STR_PAD_LEFT);
+            break;
+            case 2:
+                if($h == '"' || $h == '\\' || $h == '$')
+                    $obfuct .= '\\' . $h;
+                else
+                    $obfuct .= $h;
+            break;
+            case 3:
+                switch(rand(0, 3)){
+                    case 0:
+                        $obfuct .= '".chr(' . ord($h) . ')."';
+                    break;
+                    case 1:
+                        $obfuct .= '".chr(0x' . dechex(ord($h)) . ')."';
+                    break;
+                    case 2:
+                        $obfuct .= '".chr(0' . decoct(ord($h)) . ')."';
+                    break;
+                    case 3:
+                        $obfuct .= '".chr(0b' . decbin(ord($h)) . ')."';
+                }
+            break;
+            case 4:
+                $obfuct .= '"."';
+                if($h == '"' || $h == '\\' || $h == '$')
+                    $obfuct .= '\\' . $h;
+                else
+                    $obfuct .= $h;
+            break;
+            case 6:
+                $var = $variable[0]($variable[1], '?', 'variable');
+                $variable[1][$var] = $var;
+                $l = rand(1, rand(1, $len - $c - 1));
+                $s = substr($str, $c - 1, $l);
+                $c+= $l - 1;
+                if($opt[5])
+                    $s = '"' . str_replace(['\\', '"', '$'], ['\\\\', '\\"', '\\$'], $s) . '"';
+                $s = obfuct_string($s, $options, $variable);
+                if(is_array($s)){
+                    $vars .= $s[0];
+                    $s = $s[1];
+                }
+                if(!$opt[5])
+                    $s = '"' . str_replace(['\\', '"', '$'], ['\\\\', '\\"', '\\$'], $s) . '"';
+                $vars .= "$$var=" . $s . ';';
+                if(rand(0, 1) === 1)
+                    $obfuct .= '${' . $var . '}';
+                else
+                    $obfuct .= "\".$$var.\"";
+            break;
+            case 7:
+                $l = rand(1, rand(1, $len - $c - 1));
+                $s = base64_encode(substr($str, $c - 1, $l));
+                $c+= $l - 1;
+                if($opt[5])
+                    $s = '"' . $s . '"';
+                $s = obfuct_string($s, $options, $variable);
+                if(is_array($s)){
+                    $vars .= $s[0];
+                    $s = $s[1];
+                }
+                if(!$opt[5])
+                    $s = '"' . $s . '"';
+                $obfuct .= '".base64_decode(' . $s . ')."';
+            break;
+            case 8:
+                $l = rand(1, rand(1, $len - $c - 1));
+                $s = bin2hex(substr($str, $c - 1, $l));
+                $c+= $l - 1;
+                if($opt[5])
+                    $s = '"' . $s . '"';
+                $s = obfuct_string($s, $options, $variable);
+                if(is_array($s)){
+                    $vars .= $s[0];
+                    $s = $s[1];
+                }
+                if(!$opt[5])
+                    $s = '"' . $s . '"';
+                $obfuct .= '".hex2bin(' . $s . ')."';
+        }
+    }
+    if($opt[5])
+        $obfuct = '"' . str_replace(["\n", '{${'], ['\n', '{"."${'], $obfuct) . '"';
+    if($vars !== '' && $opt[6])
+        return [str_replace("\n", '\n', $vars), $obfuct];
+    return $obfuct;
+}
+function obfuct_namefunc_hash(string $algo){
+    return function($history, $name, $type)use($algo){
+        if($name === '?')
+            $name = rand(0, 999999999) . rand(0, 999999999);
+        elseif(isset($history[$name]))
+            return $history[$name];
+        do{
+            $name = hash($algo, $name . $type);
+            if(!$name)
+                return false;
+            while(is_numeric($name[0])){
+                if(is_numeric($name)){
+                    $name = "_$name";
+                    break;
+                }
+                $name = hash($algo, $name . $type);
+            }
+        }while(array_search($name, $history) != false);
+        return $name;
+    };
+}
+function obfuct_namefunc_help(object $func){
+    if(!is_callable($func))
+        return false;
+    return function($history, $name, $type)use($func){
+        if($name === '?')
+            $name = rand(0, 999999999) . rand(0, 999999999);
+        elseif(isset($history[$name]))
+            return $history[$name];
+        do{
+            $name = $func($history, $name, $type);
+            if(!$name)
+                return false;
+        }while(array_search($name, $history) != false);
+        return $name;
+    };
+}
+function obfuct_number(string $number){
+    $number = eval("return $number;");
+    if(!is_numeric($number))
+        return false;
+    if((float)$number == floor($number)){
+        switch(rand(0, 3)){
+            case 0:
+                return $number;
+            case 1:
+                return '0x' . dechex($number);
+            case 2:
+                return '0b' . decbin($number);
+            case 3:
+                return '0'  . decoct($number);
+        }
+    }
+    return $number;
+}
+function tdesktop_md5(string $data, bool $raw = null){
+    $r = '';
+    foreach(str_split(md5($data, $raw === true), 2) as $b)
+        $r .= strrev($b);
+    return $r;
+}
 
 $GLOBALS['-XN-']['endTime'] = microtime(true);
 
@@ -13901,6 +14240,5 @@ source links:
 	http://l1l.ir/xnphp
 	http://llli.ir/xn
 	http://fi9.ir/xnphp
-
 */
 ?>
