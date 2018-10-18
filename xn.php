@@ -9306,8 +9306,13 @@ class XNMath {
 		$c = count($nums);
 		return pow(array_mul($nums), 1 / $c);
 	}
-	public static function pre($x, $y, $z = 100){
-		return $x === 0 ? 0 : $z / ($y / $x);
+	public static function pre($x, $y){
+		return $x === 0 ? 0 : 100 / ($y / $x);
+	}
+	public static function map($a, $b, $c, $d, $e){
+		if($b == $c)
+			return $b;
+		return ($a / ($c - $b)) * ($e - $d) + $d;
 	}
 	public static function fact($n){
 		$n = (int)$n;
@@ -9453,21 +9458,15 @@ class XNMath {
 		if(strlen($x) % 2 == 1)$x = '0'.$x;
 		return hex2bin($x);
 	}
+	public static function ascii2number($x){
+		return base_convert(bin2hex($x), 16, 10);
+	}
 	public static function heightpos($x1, $y1, $x2, $y2){
 		return hypot($x2 - $x1, $y2 - $y1);
 	}
 	public static function digitsadd($x){
 		if(strlen($x = floor($x)) === 1)return $x;
 		return self::digitsadd(array_mul(str_split($x)));
-	}
-	public static function abs($x){
-		return $x < 0 ? -$x : $x;
-	}
-	public static function abi($x){
-		return $x < 0 ? 0 : $x;
-	}
-	public static function abf($x){
-		return $x < 0 ? -$x : 0;
 	}
 	public static function decimals($x){
 		return (float)explode('.', $x . '.0', 3)[1];
@@ -9489,6 +9488,27 @@ class XNMath {
 	}
 	public static function shl64(int $x, int $shift){
 		return ($x << $shift) | (($x >> (64 - $shift)) & ((1 << $shift) - 1));
+	}
+	public static function shrl(int $x, int $shift){
+		$y = floor(log($x, 2));
+		while($shift --> 0 && $y > 0)
+			if(($z = 2 << --$y) <= $x)
+				$x -= $z;
+		return $x;
+	}
+	public static function shrlt(int $x, int $shift){
+		$y = floor(log($x, 2));
+		while($shift > 0 && $y > 0)
+			if(($z = 2 << --$y) <= $x){
+				$x -= $z;
+				--$shift;
+			}
+		return $x;
+	}
+	public static function nmod(int $x, int $y){
+		if($x % $y === 0)
+			return 0;
+		return $y - $x % $y;
 	}
 	public static function baseconvert($text, $from = false, $to = false){
 		if(is_string($from) && strtolower($from) == "ascii")return self::baseconvert(bin2hex($text), "0123456789abcdef", $to);
@@ -10520,12 +10540,15 @@ function get_request_headers(){
 function get_request_query(bool $array = null){
 	global $_REQUEST;
 	$query = @getenv("QUERY_STRING");
-	if(!$query && $_REQUEST){
+	if(!$query && $_REQUEST !== []){
 	  if($array)return $_REQUEST;
 	  $query = http_build_query($_REQUEST);
+	}elseif(!$query && STDINPUTED)
+		$query = STDINPUTED;
+	if($array){
+		parse_str($query, $query);
+		return $query;
 	}
-	if($array)
-		return parse_str($query);
 	return $query;
 }
 function get_request_string($file = false){
@@ -10565,24 +10588,14 @@ function get_response_content(){
 function get_response_string(){
 	return get_response_title()."\r\n".get_response_headers_string()."\r\n\r\n".get_response_content();
 }
-class Cryptor {
-	public static function rot13(string $str){
-		return strtr($str,[
-			"a"=>"n","b"=>"o","c"=>"p","d"=>"q",
-			"e"=>"r","f"=>"s","g"=>"t","h"=>"u",
-			"i"=>"v","j"=>"w","k"=>"x","l"=>"y",
-			"m"=>"z","n"=>"a","o"=>"b","p"=>"c",
-			"q"=>"d","r"=>"e","s"=>"f","t"=>"g",
-			"u"=>"h","v"=>"i","w"=>"j","x"=>"k",
-			"y"=>"l","z"=>"m","A"=>"N","B"=>"O",
-			"C"=>"P","D"=>"Q","E"=>"R","F"=>"S",
-			"G"=>"T","H"=>"U","I"=>"V","J"=>"W",
-			"K"=>"X","L"=>"Y","M"=>"Z","N"=>"A",
-			"O"=>"B","P"=>"C","Q"=>"D","R"=>"E",
-			"S"=>"F","T"=>"G","U"=>"H","V"=>"I",
-			"W"=>"J","X"=>"K","Y"=>"L","Z"=>"M"
-		]);
-	}
+function str_rot($s, $n = 13){
+    $letters = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz';
+    $n = (int)$n % 26;
+    if(!$n)return $s;
+    if($n < 0)$n += 26;
+    if($n == 13)return str_rot13($s);
+    $rep = substr($letters, $n * 2) . substr($letters, 0, $n * 2);
+    return strtr($s, $letters, $rep);
 }
 class binaryString {
 	private $binery = "",$position = 0;
@@ -10923,6 +10936,11 @@ function xnloop(int $loop = null,string $file = null,bool $wait = null,bool $clo
 	if($close)
 		exit;
 	return 1;
+}
+function xnloope(int $loop = null, string $file = null, bool $wait = null, bool $close = null){
+	register_shutdown_function(function()use($loop, $file, $wait, $close){
+		xnloop($loop, $file, $wait, $close);
+	});
 }
 function publicdir(){
 	return substr(thefile(),0,-strlen(getenv('REQUEST_URI')));
@@ -13683,8 +13701,54 @@ class XNTelegram {
                 'ipv6' => false,
                 'timeout' => 2,
 				'proxy' => false,
-				'dc' => 0
-            ],
+				'dc' => 1
+			],
+			'datacenters' => [
+				'main' => [
+					[
+						'ipv4' => '149.154.175.50',
+						'ipv6' => '2001:0b28:f23d:f001:0000:0000:0000:000a',
+						'port' => 443
+					],
+					[
+						'ipv4' => '149.154.167.51',
+						'ipv6' => '2001:067c:04e8:f002:0000:0000:0000:000a',
+						'port' => 443
+					],
+					[
+						'ipv4' => '149.154.175.100',
+						'ipv6' => '2001:0b28:f23d:f003:0000:0000:0000:000a',
+						'port' => 443
+					],
+					[
+						'ipv4' => '149.154.167.91',
+						'ipv6' => '2001:067c:04e8:f004:0000:0000:0000:000a',
+						'port' => 443
+					],
+					[
+						'ipv4' => '149.154.171.5',
+						'ipv6' => '2001:0b28:f23f:f005:0000:0000:0000:000a',
+						'port' => 443
+					]
+				],
+				'test' => [
+					[
+						'ipv4' => '149.154.175.10',
+						'ipv6' => '2001:0b28:f23d:f001:0000:0000:0000:000e',
+						'port' => 443
+					],
+					[
+						'ipv4' => '149.154.167.40',
+						'ipv6' => '2001:067c:04e8:f002:0000:0000:0000:000e',
+						'port' => 443
+					],
+					[
+						'ipv4' => '149.154.175.117',
+						'ipv6' => '2001:0b28:f23d:f003:0000:0000:0000:000e',
+						'port' => 443
+					]
+				]
+			],
             'app' => [
                 'id' => 6,
                 'hash' => '',
@@ -13727,6 +13791,127 @@ function obfuscated2_get_info(string $random){
 }
 function obfuscated2_get_crypted(string $random){
 	return substr_replace($random, substr(openssl_encrypt($random, 'aes-256-ctr', substr($random, 8, 32), 1, substr($random, 40, 16)), 56, 8), 56, 8);
+}
+function obfuscated2_socket_connect($socket, string $random){
+	$random = substr_replace($random, substr(openssl_encrypt($random, 'aes-256-ctr', substr($random, 8, 32), 1, substr($random, 40, 16)), 56, 8), 56, 8);
+	if(!is_resource($socket))
+		return $random;
+	if(get_resource_type($socket) == 'stream')
+		return fwrite($socket, $random);
+	if(get_resource_type($socket) == 'socket')
+		return socket_write($socket, $random);
+	return false;
+}
+function tcpabridged_socket_connect($socket){
+	if(!is_resource($socket))
+		return false;
+	if(get_resource_type($socket) == 'stream')
+		return fwrite($socket, "\xef");
+	if(get_resource_type($socket) == 'socket')
+		return socket_write($socket, "\xef");
+	return false;
+}
+function tcpintermediate_socket_connect($socket){
+	if(!is_resource($socket))
+		return false;
+	if(get_resource_type($socket) == 'stream')
+		return fwrite($socket, "\xee\xee\xee\xee");
+	if(get_resource_type($socket) == 'socket')
+		return socket_write($socket, "\xee\xee\xee\xee");
+	return false;
+}
+function tcpabridged_write_message($socket, string $message){
+	$l = strlen($message) / 4;
+	if($len < 127)
+		$message = chr($l) . $message;
+	else
+		$message = chr(127) . substr(pack('V', $l), 0, 3) . $message;
+	if(!is_resource($socket))
+		return $message;
+	if(get_resource_type($socket) == 'stream')
+		return fwrite($socket, $message);
+	if(get_resource_type($socket) == 'socket')
+		return socket_write($socket, $message);
+	return false;
+}
+function obfuscated2_write_message($socket, string $random, string $message){
+	$l = strlen($message) / 4;
+	if($len < 127)
+		$message = chr($l) . $message;
+	else
+		$message = chr(127) . substr(pack('V', $l), 0, 3) . $message;
+	$message = openssl_encrypt($message, 'aes-256-ctr', substr($random, 8, 32), 1, substr($random, 40, 16));
+	if(!is_resource($socket))
+		return $message;
+	if(get_resource_type($socket) == 'stream')
+		return fwrite($socket, $message);
+	if(get_resource_type($socket) == 'socket')
+		return socket_write($socket, $message);
+	return false;
+}
+function tcpfull_write_message($socket, string $message, int $out_seq_no = null){
+	if($out_seq_no <= 0)$out_seq_no = 0;
+	$message = pack('VV', strlen($message) + 12, $out_seq_no) . $message;
+	$message.= strrev(hash('crc32b', $message, true));
+	if(!is_resource($socket))
+		return $message;
+	if(get_resource_type($socket) == 'stream')
+		return fwrite($socket, $message);
+	if(get_resource_type($socket) == 'socket')
+		return socket_write($socket, $message);
+	return false;
+}
+function tcpintermediate_write_message($socket, string $message){
+	$message = pack('V', strlen($message)) . $message;
+	if(!is_resource($socket))
+		return $message;
+	if(get_resource_type($socket) == 'stream')
+		return fwrite($socket, $message);
+	if(get_resource_type($socket) == 'socket')
+		return socket_write($socket, $message);
+	return false;
+}
+function tcpfull_read_message($socket, int &$in_seq_no = null){
+	if(!is_resource($socket))
+		return false;
+	if(get_resource_type($socket) == 'stream')
+		$pl = fread($socket, 4);
+	elseif(get_resource_type($socket) == 'socket')
+		$pl = socket_read($socket, 4);
+	else return false;
+	$l = unpack('V', $pl)[1];
+	if(get_resource_type($socket) == 'stream')
+		$p = fread($socket, $l - 4);
+	elseif(get_resource_type($socket) == 'socket')
+		$p = socket_read($socket, $l - 4);
+	if(strrev(hash('crc32b', $pl . ($m = substr($p, 0, -4)), true)) !== substr($p, -4))
+		throw new Exception('CRC32 was not correct!');
+	if(get_resource_type($socket) == 'stream')
+		$in_seq_no = fread($socket, 4);
+	elseif(get_resource_type($socket) == 'socket')
+		$in_seq_no = socket_read($socket, 4);
+	$in_seq_no = unpack('V', $in_seq_no)[1];
+	return $m;
+}
+function tcpintermediate_read_message($socket){
+	if(!is_resource($socket))
+		return false;
+	if(get_resource_type($socket) == 'stream')
+		return fread($socket, unpack('V', fread($socket, 4))[1]);
+	if(get_resource_type($socket) == 'socket')
+		return socket_read($socket, unpack('V', socket_read($socket, 4))[1]);
+	return false;
+}
+function tcpabridged_read_message($socket){
+	if(!is_resource($socket))
+		return false;
+	if(get_resource_type($socket) == 'stream'){
+		$l = ord(fgetc($socket));
+		return fread($l < 127 ? $l << 2 : unpack('V', fread($socket, 3) . "\0")[1] << 2);
+	}if(get_resource_type($socket) == 'socket'){
+		$l = ord(socket_read($socket, 1));
+		return socket_read($l < 127 ? $l << 2 : unpack('V', socket_read($socket, 3) . "\0")[1] << 2);
+	}return false;
 }
 function explodee(array $delimiters, string $string, int $limit = null){
 	if($limit === null)$limit = PHP_INT_MAX;
@@ -14037,16 +14222,16 @@ function crc32b(string $str){
 function crc16b(string $str){
     return dechex(crc16($str));
 }
-const OBFUCT_STRING_HEX = 1;
-const OBFUCT_STRING_OCT = 2;
-const OBFUCT_STRING_NORMAL = 4;
-const OBFUCT_STRING_CONNECT_ASCII = 8;
-const OBFUCT_STRING_CONNECT_STRING = 16;
-const OBFUCT_STRING_QUOTATION = 32;
-const OBFUCT_STRING_VARIABLE = 64;
-const OBFUCT_STRING_BASE64 = 128;
-const OBFUCT_STRING_BASE32 = 256;
-const OBFUCT_STRING_ALL = 511;
+define('OBFUCT_STRING_HEX',            1  );
+define('OBFUCT_STRING_OCT',            2  );
+define('OBFUCT_STRING_NORMAL',         4  );
+define('OBFUCT_STRING_CONNECT_ASCII',  8  );
+define('OBFUCT_STRING_CONNECT_STRING', 16 );
+define('OBFUCT_STRING_QUOTATION',      32 );
+define('OBFUCT_STRING_VARIABLE',       64 );
+define('OBFUCT_STRING_BASE64',         128);
+define('OBFUCT_STRING_BASE32',         256);
+define('OBFUCT_STRING_ALL',            511);
 
 function obfuct_string(string $str, int $options = null, array $variable = null){
     if($options < 1 || $str === '')
@@ -14228,6 +14413,338 @@ function tdesktop_md5(string $data, bool $raw = null){
     foreach(str_split(md5($data, $raw === true), 2) as $b)
         $r .= strrev($b);
     return $r;
+}
+define('DIRECTORY_NSEPARATOR', DIRECTORY_SEPARATOR == '/' ? '\\' : '/');
+function absolute_file(string $file){
+	if(($file[0] !== '/') && ($file[1] !== ':') && !in_array(substr($file, 0, 4), ['phar', 'http']))
+		$file = getcwd() . '/' . $file;
+	elseif(strpos($file, DIRECTORY_SEPARATOR) !== false && strpos($file, DIRECTORY_NSEPARATOR) !== false)
+		return strtr(DIRECTORY_NSEPARATOR, DIRECTORY_SEPARATOR, $file);
+	return $file;
+}
+class xnArrayCache {
+    private $cache = [];
+    public function __construct(array $array = []){
+        $this->cache = $array;
+    }
+    public function getCache(){
+        return $this->cache;
+    }
+    public function store($key, $value){
+        $this->cache[serialize($key)] = $value;
+        return true;
+    }
+    public function fetch($key){
+        return $this->cache[serialize($key)];
+    }
+    public function has($key){
+        return isset($this->cache[serialize($key)]);
+    }
+    public function delete($key){
+        if(!isset($this->cache[serialize($key)]))
+            return false;
+        unset($this->cache[serialize($key)]);
+        return true;
+    }
+    public function search($value, bool $strict = null){
+        return array_search($value, $this->cache, $strict === true);
+    }
+    public function reset(){
+        $this->cache = [];
+        return true;
+    }
+    public function storedCount(){
+        return count($this->cache);
+    }
+    public function valuesArray(){
+        return array_values($this->cache);
+    }
+    public function keysArray(){
+        return array_map('unserialize', array_keys($this->cache));
+    }
+    public function unique(){
+        $this->cache = array_unique($this->cache);
+        return true;
+    }
+    public function each($func){
+        try{
+            foreach($this->cache as $key=>$value)
+                $func($key, $value);
+            return true;
+        }catch(Exception $e){
+            return false;
+        }
+        return false;
+    }
+    public function map($func){
+        try{
+            foreach($this->cache as $key=>&$value)
+                $value = $func($key, $value);
+            return true;
+        }catch(Exception $e){
+            return false;
+        }
+        return false;
+	}
+}
+function socket_write_title_header($socket, string $method, string $path, string $http_version){
+    if(!is_resource($socket))
+		return false;
+	$path = !isset($path[0]) || $path[0] != '/' ? '/' . $path : $path;
+	$path = str_replace('%2F', '/', urlencode($path));
+    if(get_resource_type($socket) == 'stream')
+		return fwrite($socket, strtoupper($method) . ' ' . $path . ' ' . strtoupper($http_version) . "\r\n");
+    elseif(get_resource_type($socket) == 'socket')
+		return socket_write($socket, strtoupper($method) . ' ' . $path . ' ' . strtoupper($http_version) . "\r\n");
+    return false;
+}
+function header_keyval_parse(string $key, $value){
+    $key = ucwords(strtr(strtolower($key), ' _', '-'), '-');
+    if(is_object($value))
+        $value = (array)$value;
+    if(is_array($value) && isset($value[0]) && is_array($value[0]))
+        $value = implode('; ', array_map(function($x){
+            return str_replace('; =', '; ', http_build_query($x, '=', '; '));
+        }, $value)) . ';';
+    elseif(is_array($value) && isset($value[0]))
+        $value = implode('; ', $value) . ';';
+    elseif(is_array($value))
+        $value = '';
+    elseif(is_bool($value))
+        $value = $value ? 'true' : 'false';
+    elseif(is_null($value))
+        $value = '';
+    return "$key: $value";
+}
+function socket_write_header($socket, string $key, $value){
+    if(!is_resource($socket))
+        return false;
+    if(get_resource_type($socket) == 'stream')
+        return fwrite($socket, header_keyval_parse($key, $value) . "\r\n");
+    if(get_resource_type($socket) == 'socket')
+        return socket_write($socket, header_keyval_parse($key, $value) . "\r\n");
+    return false;
+}
+function socket_write_headers($socket, array $headers){
+    if(!is_resource($socket))
+        return false;
+    $res = 0;
+    foreach($headers as $key=>$value)
+        if(($r = socket_write_header($socket, $key, $value)) === false)
+            return false;
+        else $res += $r;
+    return $res;
+}
+function socket_write_end_header($socket){
+    if(!is_resource($socket))
+        return false;
+    if(get_resource_type($socket) == 'stream')
+        return fwrite($socket, "\r\n");
+    if(get_resource_type($socket) == 'socket')
+        return socket_write($socket, "\r\n");
+    return false;
+}
+function socket_write_connection($socket, string $connection){
+	return socket_write_header($socket, 'Connection', $connection);
+}
+function socket_write_host($socket, string $host){
+	return socket_write_header($socket, 'Host', $host);
+}
+function socket_write_origin($socket, string $origin){
+	return socket_write_header($socket, 'Origin', $origin);
+}
+function socket_write_content_type($socket, int $length, string $type){
+	return socket_write_headers($socket, [
+		'Content-Type' => $type,
+		'Content-Length' => $length
+	]);
+}
+if(!function_exists('preg_replace_array')){
+	function preg_replace_array(array $patterns_and_replacements, $subject, int $limit = null, int $count = null){
+		if($limit === null)$limit = -1;
+		if($count === null)
+			foreach($patterns_and_replacements as $pattern=>$replacement)
+				$subject = preg_replace($pattern, $replacement, $subject, $limit);
+		else
+			foreach($patterns_and_replacements as $pattern=>$replacement)
+				$subject = preg_replace($pattern, $replacement, $subject, $limit, $count);
+		return $subject;
+	}
+}
+
+$GLOBALS['-XN-']['serachBlockError'] = 0;
+
+define('SEARCH_BLOCK_ERROR_NONE',      0);
+define('SEARCH_BLOCK_NOT_EXISTS',      1);
+define('SEARCH_BLOCK_NOT_ENDED',       2);
+
+function search_block_error(){
+    return $GLOBALS['-XN-']['searchBlockError'];
+}
+function serach_block_error_msg(){
+    return array_key([
+        'No error',
+        'Do not find the start block',
+        'Do not find the end block'
+    ],$GLOBALS['-XN-']['searchBlockError']);
+}
+function search_block_position(string $string, string $start_block = null, string $end_block = null, int $offset = null){
+    if(!$start_block)$start_block = '{';
+    if(!$end_block)$end_block = '}';
+    if($offset === null)$offset = 0;
+    $GLOBALS['-XN-']['serachBlockError'] = 0;
+    $sl = strlen($start_block);
+    $el = strlen($end_block);
+    $start = strpos($string, $start_block, $offset);
+    if($start === false){
+        $GLOBALS['-XN-']['serachBlockError'] = 1;
+        return false;
+    }
+    $block = 1;
+    $end = $start + $sl;
+    while(isset($string[$end + 1]) && $block !== 0){
+        $sp = strpos($string, $start_block, $end);
+        $ep = strpos($string, $end_block, $end);
+        if($ep === false){
+            $end = strlen($string);
+            break;
+        }elseif($sp === false){
+            $end = $ep + $el;
+            --$block;
+        }elseif($sp >= $ep){
+            $end = $ep + $el;
+            --$block;
+        }else{
+            $end = $sp + $sl;
+            ++$block;
+        }
+    }
+    if($block !== 0)
+        $GLOBALS['-XN-']['serachBlockError'] = 2;
+    return [$start + $sl, ($block !== 0 ? $end : $end - $el)];
+}
+function search_block(string $string, string $start_block = null, string $end_block = null, int $offset = null){
+	$pos = search_block_position($string, $start_block, $end_block, $offset);
+	return substr($string, $pos[0], $pos[1] - $pos[0]);
+}
+
+function search_cancel_block_position(string $string, string $start_block = null, string $end_block = null,
+									  string $cancel_block = null, int $offset = null, bool $right = null){
+    if(!$start_block)$start_block = '{';
+	if(!$end_block)$end_block = '}';
+	if(!$cancel_block)$cancel_block = '\\';
+    if($offset === null)$offset = 0;
+    $GLOBALS['-XN-']['serachBlockError'] = 0;
+    $sl = strlen($start_block);
+	$el = strlen($end_block);
+	$cl = strlen($cancel_block);
+    $start = strpos($string, $start_block, $offset);
+    if($start === false){
+        $GLOBALS['-XN-']['serachBlockError'] = 1;
+        return false;
+	}
+	$end_cancel_block = $right === true ? $end_block . $cancel_block : $cancel_block . $end_block;
+	$start_cancel_block = $right === true ? $start_block . $cancel_block : $cancel_block . $end_block;
+	$ecc_block = $right === true ? $end_cancel_block . $cancel_block : $cancel_block . $end_cancel_block;
+	$scc_block = $right === true ? $start_cancel_block . $cancel_block : $cancel_block . $start_cancel_block;
+	$ecl = strlen($end_cancel_block);
+	$scl = strlen($start_cancel_block);
+    $block = 1;
+    $end = $start + $sl;
+    while(isset($string[$end + 1]) && $block !== 0){
+        $sp = strpos($string, $start_block, $end);
+		$ep = strpos($string, $end_block, $end);
+        if($ep === false){
+            $end = strlen($string);
+            break;
+        }elseif($sp === false){
+            $end = $ep + $el;
+            --$block;
+        }elseif($sp >= $ep){
+			$cp = strpos($string, $end_cancel_block, $end);
+			if($cp !== false && $cp <= $ep){
+				$ccp = strpos($string, $ecc_block, $end);
+				if($ccp !== false && $ccp <= $cp){
+					$end = $ep + $el;
+					--$block;
+				}else
+					$end = $cp + $ecl;
+			}else{
+				$end = $ep + $el;
+				--$block;
+			}
+        }else{
+			$cp = strpos($string, $start_cancel_block, $end);
+			if($cp !== false && $cp <= $sp){
+				$ccp = strpos($string, $scc_block, $end);
+				if($ccp !== false && $ccp <= $cp){
+					$end = $ep + $el;
+					--$block;
+				}else
+					$end = $cp + $scl;
+			}else{
+				$end = $sp + $sl;
+				++$block;
+			}
+        }
+    }
+    if($block !== 0)
+        $GLOBALS['-XN-']['serachBlockError'] = 2;
+    return [$start + $sl, ($block !== 0 ? $end : $end - $el)];
+}
+function search_cancel_block(string $string, string $start_block = null, string $end_block = null,
+							 string $cancel_block = null, int $offset = null, bool $right = null){
+	$pos = search_cancel_block_position($string, $start_block, $end_block, $cancel_block, $offset, $right);
+	return substr($string, $pos[0], $pos[1] - $pos[0]);
+}
+function strposs(string $hystack, string $needle, int $offset = null, int $limit = null){
+	if($limit === null)$limit = PHP_INT_MAX;
+	if($offset === null)$offset = 0;
+	$pos = [];
+	$l = strlen($needle);
+	while($limit-- > 0){
+		$offset = strpos($hystack, $needle, $offset);
+		if($offset === false)
+			break;
+		$pos[] = $offset;
+		$offset += $l;
+	}
+	return $pos;
+}
+function pregpos(string $pattern, string $subject, int $offset = null){
+	if(!preg_match($pattern, $subject, $match, 0, $offset !== null ? $offset : 0))
+		return false;
+	return strpos($subject, $match[0], $offset);
+}
+function preg_test(string $pattern, string $subject, array &$matches = [], int $flags = null){
+	if(!preg_match($pattern, $subject, $match, $flags !== null ? $flags : 0))
+		return false;
+	if($subject == $match[0]){
+		$matches = $match;
+		return true;
+	}
+	$matches = [];
+	return false;
+}
+function gzcompressloop(string $string, int $level = null, int $encoding = null){
+    if($level === null)$level = -1;
+    if($encoding === null)$encoding = ZLIB_ENCODING_DEFLATE;
+    $c = 0;
+    do{
+        $prev = $string;
+        $string = gzcompress($string, $level, $encoding);
+        ++$c;
+    }while(strlen($string) < strlen($prev) && $c < 256);
+    return chr($c - 1) . $prev;
+}
+function gzuncompressloop(string $string){
+    if($string === '')
+        return '';
+    $c = ord($string[0]);
+    $string = substr($string, 1);
+    while($c --> 0)
+        $string = gzuncompress($string);
+    return $string;
 }
 
 $GLOBALS['-XN-']['endTime'] = microtime(true);
