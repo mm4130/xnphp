@@ -4951,10 +4951,10 @@ class XNData {
 						print "$k# description : ".unce(self::decodenz($value))."\n";
 					return;
 					case 'm':
-						print "$k# modified time : ".unce(self::decodenz($value))."\n";
+						print "$k# modified time : ".date(DATE_RFC822, (int)self::decodenz($value))."\n";
 					return;
 					case 'c':
-						print "$k# created time : ".unce(self::decodenz($value))."\n";
+						print "$k# created time :  ".date(DATE_RFC822, (int)self::decodenz($value))."\n";
 					return;
 				}
 				return;
@@ -7763,6 +7763,31 @@ function convert_class(object &$class, string $to){
 	$to = strlen($to). ":\"$to\"";
 	$class = replace_first($name, $to, $class);
 	$class = unserialize($class);
+}
+function class_to_object(object &$class){
+	convert_class($class, 'stdClass');
+}
+function class_to_array(object &$class){
+	$class = (array)convert_class($class, 'stdClass');
+}
+function classarray_to_array(object $class){
+	$array = [];
+	foreach($class as $key => $value)
+		$array[$key] = $value;
+	return $array;
+}
+function is_classarray($class){
+	if(!is_object($class))
+		return false;
+	try{
+		if(isset($class[0]))
+			return true;
+		$class[0] = null;
+		unset($class[0]);
+		return true;
+	}catch(Error $e){
+		return false;
+	}
 }
 function get_class_var_type(object $class, $key){
 	$name = get_class($class);
@@ -15125,6 +15150,134 @@ class XNStream {
 }
 function is_xnstream($stream){
     return is_object($stream) && $stream instanceof XNStream;
+}
+function xml_find_all_urls(string $xml){
+    $doc = new DOMDocument;
+    @$doc->loadHTML($xml);
+    $doc = classarray_to_array($doc->getElementsByTagName('*'));
+    $links = [];
+    foreach($doc as $elm){
+        if($elm->hasAttribute('src'))
+            $links[] = $elm->getAttribute('src');
+        if($elm->hasAttribute('href'))
+            $links[] = $elm->getAttribute('href');
+	}
+
+//	$search = Finder::link_search($xml);
+//	if($search !== false)
+//		$links = array_merge($links, $search);
+
+    return array_unique($links);
+}
+function convert_srcs_for(array $srcs, string $link, bool $private = null){
+    if($link === '')
+        return false;
+    if($link[strlen($link) - 1] != '/')
+        $link .= '/';
+    $info = parse_url($link);
+    if(!isset($info['host']))
+        return false;
+    $host = (isset($info['protocol']) ? $info['protocol'] : 'http') . '://' . $info['host'] . (isset($info['port']) ? ':' . $info['port'] : '');
+    foreach($srcs as $k => &$src){
+        if($src === ''){
+            $src = $link;
+            continue;
+        }
+        if(strpos($src, '://') !== false){
+            if($private === true){
+                if(strpos($src, '://' . $info['host']) === false)
+                    unset($srcs[$k]);
+                else
+                    continue;
+            }else
+                continue;
+        }
+        if($src[0] == '/')
+            $src = $host . $src;
+        else
+            $src = $link . $src;
+    }
+    return array_values($srcs);
+}
+function ntconvert_srcs_for(array $srcs, string $link, bool $private = null){
+    $srcs = convert_srcs_for($srcs, $link, $private);
+    foreach($srcs as &$src)
+        $src = explode('?', explode('#', $src, 2)[0], 2)[0];
+    return array_unique($srcs);
+}
+function site_find_all_urls(string $link, bool $private = null){
+    $xml = @file_get_contents($link);
+    $urls = xml_find_all_urls($xml);
+    $urls = ntconvert_srcs_for($urls, $link, $private);
+    return $urls;
+}
+function site_fullfind_all_urls(string $link, bool $private = null){
+    if($link === '')
+        return [];
+    if($link[strlen($link) - 1] != '/')
+        $link .= '/';
+    $urls = [site_find_all_urls($link, $private)];
+    if($urls === [[]])
+        return [];
+    $links = [$link];
+    for($c = 0;isset($urls[$c]);){
+        $u = $urls[$c++];
+        for($p = 0;isset($u[$p]);){
+            if($u[$p][strlen($u[$p]) - 1] != '/')
+                $u[$p] .= '/';
+            if(array_search($u[$p], $links) === false){
+                $links[] = $u[$p];
+                $url = site_find_all_urls($u[$p++], $private);
+                if($url !== [] && array_search($url, $urls) === false)
+                    $urls[] = $url;
+            }else ++$p;
+        }
+    }
+    return $links;
+}
+function array_tree(array $array){
+    $tree = [];
+    $last = null;
+    $now = &$tree;
+    foreach($array as $x){
+        if(!is_array($x)){
+            return false;
+        }
+        foreach($x as $k=>$y){
+            if(!isset($x[$k + 1])){
+				if(!isset($now[$y]) && array_search($y, $now) === false)
+					$now[] = $y;
+			}else{
+                if(!isset($now[$y])){
+                    if(($s = array_search($y, $now)) !== false)
+                        unset($now[$s]);
+                    $now[$y] = [];
+                }
+                $now = &$now[$y];
+            }
+        }
+        $now = &$tree;
+    }
+    return $tree;
+}
+function site_private_urls_tree(string $link){
+    $urls = site_fullfind_all_urls($link, true);
+    foreach($urls as &$url){
+        $url = explode('/', trim(str_replace('//', '/', parse_url($url)['path']), '/'));
+        if($url[$c = count($url) - 1] === '')
+            unset($url[$c]);
+    }
+    return array_tree($urls);
+}
+function site_public_urls_tree(string $link){
+    $urls = site_fullfind_all_urls($link);
+    foreach($urls as &$url){
+        $info = parse_url($url);
+        $url = explode('/', trim(str_replace('//', '/', $info['host'] . '/' . $info['path']), '/'));
+        if($url[$c = count($url) - 1] === '')
+            unset($url[$c]);
+    }
+    return array_tree($urls);
 }
 
 
