@@ -4575,32 +4575,90 @@ class XNData {
 		return $this;
     }
 
-    // query
-	public function query($query = ''){
+	// variables
+	public $vars = [];
+	public function setvar(string $variable, $content){
+		$this->vars[$variable] = [0, $content];
+	}
+	public function getvar(string $variable){
+		return isset($this->vars[$variable]) ? $this->vars[$variable][1] : null;
+	}
+	public function hasvar(string $variable){
+		return isset($this->vars[$variable]);
+	}
+	public function setfunc(string $variable, string $code, array $args = []){
+		$this->vars[$variable] = [1, $code, $args];
+	}
+	public function deletevar(string $variable){
+		if(isset($this->vars[$variable]))
+			unset($this->vars[$variable]);
+	}
+	public function call(string $variable, array $args = []){
+		if(!isset($this->vars[$variable]) || $this->vars[$variable][0] !== 1)
+			return false;
+		$pars = [];
+		foreach($this->vars[$variable][2] as $k => $arg)
+			if(isset($args[$k]))
+				$pars[$arg] = $args[$k];
+		$this->query($this->vars[$variable][1], $pars);
+	}
+
+	// query
+	public function query($query = '', array $vars = []){
+		$type = substr($query, 0, 3);
+		if($type == "#1\n"){
+			$type = 1;
+			$query = substr($query, 3);
+			$fvars = $this->vars;
+		}elseif($type == "#2\n"){
+			$type = 2;
+			$query = substr($query, 3);
+			$fvars = $this->vars;
+			$this->vars = [];
+		}elseif($type == "#3\n"){
+			$type = 3;
+			$query = substr($query, 3);
+		}else $type = 3;
+		foreach($vars as $var => $content)
+			$this->setvar($var, $content);
 		$datas = [];
 		$codes = [];
 		$c = 0;
-		$query = preg_replace_callback("/(?<x>\{((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\})/",
+		$query = preg_replace_callback("/(?<x>(in|out|glob|)\{((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\})/",
 		function($x)use(&$codes, &$c){
-			$codes[$c] = $x[2];
+			if($x[2] == 'in')
+				$x[2] = 1;
+			elseif($x[2] == 'out' || $x[2] === '')
+				$x[2] = 2;
+			elseif($x[2] == 'glob')
+				$x[2] = 3;
+			$codes[$c] = '#' . $x[2] . "\n" . $x[3];
 			return $c++;
-		}
-		, $query);
+		}, $query);
 		$c = 0;
-		$query = preg_replace_callback("/\"((?:\\\\\"|[^\"])*)\"/",
+		$query = preg_replace_callback("/\"((?:\\\\\"|[^\"])*)\"|'((?:\\\\'|[^'])*)'/",
 		function($x)use(&$datas, &$c){
-			$datas[$c] = $x[1];
+			$datas[$c] = isset($x[2]) ? $x[2] : $x[1];
 			return $c++;
-		}
-		, $query);
-		$query = preg_replace_callback("/(?i)<(true|false|null|none|(?:[0-9]*(?:\.[0-9]*){0,1})|x(?:[0-9a-f]+)|b(?:[01]+)|o(?:[0-7]+))>/",
+		}, $query);
+		$query = preg_replace_callback("/(?<x><((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)>)/",
+		function($x)use(&$datas, &$c){
+			$datas[$c] = unserialize($x[2]);
+			return $c++;
+		}, $query);
+		$query = preg_replace_callback("/(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\])/",
+		function($x)use(&$datas, &$c){
+			$datas[$c] = json_decode($x[2]);
+			return $c++;
+		}, $query);
+		$query = preg_replace_callback("/<(true|false|null|empty|(?:[0-9]*(?:\.[0-9]*){0,1})|x(?:[0-9a-f]+)|b(?:[01]+)|o(?:[0-7]+))>/i",
 		function($x)use(&$data, &$c){
 			$x = strtolower($x[1]);
 			if($x == "true")$datas[$c] = true;
 			if($x == "false")$datas[$c] = false;
 			if($x == "null")$datas[$c] = null;
-			if($x == "none")$datas[$c] = '';
-			if($x[0] == "h")$datas[$c] = (int)base_convert(substr($x, 1), 16, 10);
+			if($x == "empty")$datas[$c] = '';
+			if($x[0] == "x")$datas[$c] = (int)base_convert(substr($x, 1), 16, 10);
 			if($x[0] == "b")$datas[$c] = (int)base_convert(substr($x, 1), 2, 10);
 			if($x[0] == "o")$datas[$c] = (int)base_convert(substr($x, 1), 8, 10);
 			else {
@@ -4608,97 +4666,138 @@ class XNData {
 				$datas[$c] = to_number($x);
 			}
 			return $c++;
-		}
-		, $query);
-		$query = preg_replace_callback("/(?<x><((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)>)/",
-		function($x)use(&$datas, &$c){
-			$datas[$c] = unserialize($x[2]);
-			return $c++;
-		}
-		, $query);
-		$query = preg_replace_callback("/(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\])/",
-		function($x)use(&$datas, &$c){
-			$datas[$c] = json_decode($x[2]);
-			return $c++;
-		}
-		, $query);
-		$cc = $cd = 0;
+		}, $query);
 		$finish = '';
+		while(strpos($query, '  ') > 0)
+			$query = str_replace('  ', ' ', $query);
 		$query = explode("\n", $query);
 		foreach($query as $q) {
-			$q = explode(" ", trim($q));
-            $q[0] = strtolower($q[0]);
+			$q = array_map('strtolower', explode(' ', str_replace(["\r", "\t"], '', trim($q))));
+			do{
+				$pv = $q;
+				foreach($q as $k=>&$t){
+					$pr = $c;
+					if(isset($t[1]) && $t[0] == '$' && is_numeric(substr($t, 1)))
+						$datas[$c++] = $this->value($datas[substr($t, 1)]);
+					elseif(isset($t[1]) && $t[0] == '@' && is_numeric(substr($t, 1)))
+						$datas[$c++] = $this->key($datas[substr($t, 1)]);
+					elseif(isset($t[2]) && substr($t, 0, 2) == 'of' && is_numeric(substr($t, 2)))
+						$datas[$c++] = $this->of($datas[substr($t[0], 2)]);
+					elseif(isset($t[2]) && substr($t, 0, 2) == 'at' && is_numeric(substr($t, 2)))
+						$datas[$c++] = $this->of($datas[substr($t[0], 2)]);
+					elseif(isset($t[2]) && substr($t, 0, 2) == 'ln' && is_numeric(substr($t, 2)))
+						$datas[$c++] = strlen($datas[substr($t[0], 2)]);
+					elseif(isset($t[2]) && substr($t, 0, 2) == 'cd' && isset($datas[substr($t[0], 2)]))
+						$codes[$c++] = $datas[substr($t[0], 2)];
+					elseif(isset($t[2]) && substr($t, 0, 2) == 'st' && isset($codes[substr($t[0], 2)]))
+						$datas[$c++] = $codes[substr($t[0], 2)];
+					elseif(isset($t[2]) && substr($t, 0, 2) == 'da' && isset($datas[substr($t[0], 2)]))
+						$datas[$c++] = $datas[substr($t[0], 2)];
+					elseif(isset($t[2]) && substr($t, 0, 2) == 'co' && isset($codes[substr($t[0], 2)]))
+						$codes[$c++] = $codes[substr($t[0], 2)];
+					elseif($k > 0 && !is_numeric($t) && isset($this->vars[$t]))
+						$datas[$c++] = $this->getvar($t);
+					elseif(isset($t[1]) && $t[0] === '0' && is_numeric($t))
+						$datas[$c++] = (int)base_convert($t, 8, 10);
+					elseif(isset($t[1]) && $t[0] === 'x' && is_numeric(substr($t, 1)))
+						$datas[$c++] = (int)base_convert(substr($t, 1), 16, 10);
+					elseif(isset($t[1]) && $t[0] === 'b' && is_numeric(substr($t, 1)))
+						$datas[$c++] = (int)base_convert(substr($t, 1), 2, 10);
+					elseif(isset($t[1]) && $t[0] === 'o' && is_numeric(substr($t, 1)))
+						$datas[$c++] = (int)base_convert(substr($t, 1), 8, 10);
+					elseif(isset($t[1]) && $t[0] === 'n' && is_numeric(substr($t, 1)))
+						$datas[$c++] = (int)substr($t, 1);
+					elseif(is_numeric($t) && !isset($datas[$t]) && !isset($codes[$t]))
+						$datas[$c++] = (float)$t;
+					if($c > $pr)
+						$t = $pr;
+				}
+			}while($pv !== $q);
+			foreach($q as $k=>&$t){
+				if(isset($t[0]) && $t[0] == '#')
+					$t = substr($t, 1);
+			}
             if($q[0] == "set") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->set($datas[$cd - 2], $datas[$cd - 1]);
+				if(isset($datas[$q[1]]) && isset($datas[$q[2]]))$this->set($datas[$q[1]], $datas[$q[2]]);
 			}
 			elseif($q[0] == "make") {
-				if(isset($datas[$cd]))$this->make($datas[$cd++]);
+				if(isset($datas[$q[1]]))$this->make($datas[$q[1]]);
 			}
 			elseif($q[0] == "delete") {
-				if(isset($datas[$cd]))$this->delete($datas[$cd++]);
+				if(isset($datas[$q[1]]))$this->delete($datas[$q[1]]);
 			}
 			elseif($q[0] == "madd") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->madd($datas[$cd - 2], $datas[$cd - 1]);
+				if(isset($datas[$q[1]]) && isset($datas[$q[2]]))$this->madd($datas[$q[1]], $datas[$q[2]]);
 			}
 			elseif($q[0] == "msub") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->msub($datas[$cd - 2], $datas[$cd - 1]);
+				if(isset($datas[$q[1]]) && isset($datas[$q[2]]))$this->msub($datas[$q[1]], $datas[$q[2]]);
 			}
 			elseif($q[0] == "mmul") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->mmul($datas[$cd - 2], $datas[$cd - 1]);
-			}
-			elseif($q[0] == "mdiv") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->mdiv($datas[$cd - 2], $datas[$cd - 1]);
+				if(isset($datas[$q[1]]) && isset($datas[$q[2]]))$this->mmul($datas[$q[1]], $datas[$q[2]]);
 			}
 			elseif($q[0] == "mres") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->mres($datas[$cd - 2], $datas[$cd - 1]);
+				if(isset($datas[$q[1]]) && isset($datas[$q[2]]))$this->mres($datas[$q[1]], $datas[$q[2]]);
 			}
 			elseif($q[0] == "join") {
-				if(isset($datas[$cd++]) && isset($datas[$cd++]))$this->join($datas[$cd - 2], $datas[$cd - 1]);
+				if(isset($datas[$q[1]]) && isset($datas[$q[2]]))$this->join($datas[$q[1]], $datas[$q[2]]);
 			}
 			elseif($q[0] == "dir") {
-				if(isset($datas[$cd]) && isset($codes[$cc]))$dir = $this->dir($datas[$cd++]);
+				if(isset($datas[$q[1]]) && isset($codes[$q[2]]))$dir = $this->dir($datas[$q[1]]);
 				if($dir) {
-					$dir->query($codes[$cc++]);
+					$dir->query($codes[$q[2]]);
 					$dir->save();
 				}
 			}
+			elseif($q[0] == "mdir") {
+				if(isset($datas[$q[1]]) && isset($codes[$q[2]])){
+					$dir = $this->mdir($datas[$q[1]]);
+					if($dir) {
+						$dir->query($codes[$q[2]]);
+						$dir->save();
+					}
+				}elseif(isset($datas[$q[1]]))
+					$this->mdir($datas[$q[1]]);
+			}
 			elseif($q[0] == "run") {
-				if(isset($codes[$cc]))$this->query($codes[$cc++]);
+				if(isset($codes[$q[1]]))$this->query($codes[$q[1]]);
 			}
 			elseif($q[0] == "iskey") {
-				if(isset($datas[$cd]) && isset($codes[$cc]))
-				if($this->iskey($datas[$cd++]))$this->query($codes[$cc++]);
+				if(isset($datas[$q[1]]) && isset($codes[$q[2]]))
+				if($this->iskey($datas[$q[1]]))$this->query($codes[$q[2]]);
 			}
 			elseif($q[0] == "isvalue") {
-				if(isset($datas[$cd]) && isset($codes[$cc]))
-				if($this->isvalue($datas[$cd++]))$this->query($codes[$cc++]);
+				if(isset($datas[$q[1]]) && isset($codes[$q[2]]))
+				if($this->isvalue($datas[$q[1]]))$this->query($codes[$q[2]]);
 			}
 			elseif($q[0] == "isdir") {
-				if(isset($datas[$cd]) && isset($codes[$cc]))
-				if($this->isdir($datas[$cd++]))$this->query($codes[$cc++]);
+				if(isset($datas[$q[1]]) && isset($codes[$q[2]]))
+				if($this->isdir($datas[$q[1]]))$this->query($codes[$q[2]]);
 			}
 			elseif($q[0] == "islist") {
-				if(isset($datas[$cd]) && isset($codes[$cc]))
-				if($this->islist($datas[$cd++]))$this->query($codes[$cc++]);
+				if(isset($datas[$q[1]]) && isset($codes[$q[2]]))
+				if($this->islist($datas[$q[1]]))$this->query($codes[$q[2]]);
 			}
 			elseif($q[0] == "notkey") {
-				if(isset($datas[$cd]) && isset($codes[$cc]))
-				if(!$this->iskey($datas[$cd++]))$this->query($codes[$cc++]);
+				if(isset($datas[$q[1]]) && isset($codes[$q[2]]))
+				if(!$this->iskey($datas[$q[1]]))$this->query($codes[$q[2]]);
 			}
 			elseif($q[0] == "notvalue") {
-				if(isset($datas[$cd]) && isset($codes[$cc]))
-				if(!$this->isvalue($datas[$cd++]))$this->query($codes[$cc++]);
+				if(isset($datas[$q[1]]) && isset($codes[$q[2]]))
+				if(!$this->isvalue($datas[$q[1]]))$this->query($codes[$q[2]]);
 			}
 			elseif($q[0] == "notvalue") {
-				if(isset($datas[$cd]) && isset($codes[$cc]))
-				if(!$this->isdir($datas[$cd++]))$this->query($codes[$cc++]);
+				if(isset($datas[$q[1]]) && isset($codes[$q[2]]))
+				if(!$this->isdir($datas[$q[1]]))$this->query($codes[$q[2]]);
 			}
 			elseif($q[0] == "notlist") {
-				if(isset($datas[$cd]) && isset($codes[$cc]))
-				if(!$this->islist($datas[$cd++]))$this->query($codes[$cc++]);
+				if(isset($datas[$q[1]]) && isset($codes[$q[2]]))
+				if(!$this->islist($datas[$q[1]]))$this->query($codes[$q[2]]);
+			}
+			elseif($q[0] == "endquery") {
+				return;
 			}
 			elseif($q[0] == "exit") {
-				return;
+				exit;
 			}
 			elseif($q[0] == "reset") {
 				$this->reset();
@@ -4723,27 +4822,28 @@ class XNData {
 				--$this->position;
 			}
 			elseif($q[0] == "finish") {
-				if(isset($codes[$cc]))$finish.= "\n" . $codes[$cc++];
+				if(isset($codes[$q[1]]))$finish.= "\n" . $codes[$q[1]];
 			}
 			elseif($q[0] == "type") {
 				$cs = [];
 				foreach(explode("-", $q[1])as $n) {
 					foreach(explode(',', $n)as $m) {
-						if(isset($datas[$cd]) && isset($codes[$cc]) && $m == "iskey" && $this->iskey($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "notkey" && !$this->iskey($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "isvalue" && $this->isvalue($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "notvalue" && !$this->notvalue($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "isdir" && $this->isdir($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "notdir" && !$this->isdir($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "islist" && $this->islist($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "notlist" && !$this->islist($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "is" && $this->iskey($datas[$cd]) && $this->isvalue($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "exists" && ($this->iskey($datas[$cd]) || $this->isvalue($datas[$cd++])))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "not" && !$this->iskey($datas[$cd]) && !$this->isvalue($datas[$cd++]))$cs[] = $codes[$cc++];elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "notlist" && !$this->islist($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "notlastns" && !$this->isLastNS($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "notns" && !$this->isNS($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "islastns" && $this->isLastNS($datas[$cd++]))$cs[] = $codes[$cc++];
-						elseif(isset($datas[$cd]) && isset($codes[$cc]) && $m == "isns" && $this->isNS($datas[$cd++]))$cs[] = $codes[$cc++];
+						if(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "iskey" && $this->iskey($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "notkey" && !$this->iskey($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "isvalue" && $this->isvalue($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "notvalue" && !$this->notvalue($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "isdir" && $this->isdir($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "notdir" && !$this->isdir($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "islist" && $this->islist($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "notlist" && !$this->islist($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "is" && $this->iskey($datas[$q[1]]) && $this->isvalue($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "exists" && ($this->iskey($datas[$q[1]]) || $this->isvalue($datas[$q[1]])))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "not" && !$this->iskey($datas[$q[1]]) && !$this->isvalue($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "notlist" && !$this->islist($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "notlastns" && !$this->isLastNS($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "notns" && !$this->isNS($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "islastns" && $this->isLastNS($datas[$q[1]]))$cs[] = $codes[$q[2]];
+						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "isns" && $this->isNS($datas[$q[1]]))$cs[] = $codes[$q[2]];
 					}
 					foreach($cs as $co)$this->query($co);
 				}
@@ -4752,16 +4852,16 @@ class XNData {
 				$this->dump();
             }
             elseif($q[0] == "add"){
-                if(isset($datas[$cd]))$this->add($datas[$cd++]);
+                if(isset($datas[$q[1]]))$this->add($datas[$q[1]]);
             }
             elseif($q[0] == "setname"){
-                if(isset($datas[$cd]))$this->setName($datas[$cd++]);
+                if(isset($datas[$q[1]]))$this->setName($datas[$q[1]]);
             }
             elseif($q[0] == "setdescription"){
-                if(isset($datas[$cd]))$this->setDescription($datas[$cd++]);
+                if(isset($datas[$q[1]]))$this->setDescription($datas[$q[1]]);
 			}
 			elseif($q[0] == "openns"){
-				if(isset($datas[$cd]))$this->openNS($datas[$cd++]);
+				if(isset($datas[$q[1]]))$this->openNS($datas[$q[1]]);
 			}
 			elseif($q[0] == "backns"){
 				$this->backNS();
@@ -4770,14 +4870,71 @@ class XNData {
 				$this->mainNS();
 			}
 			elseif($q[0] == "isns") {
-				if(isset($datas[$cd]) && isset($codes[$cc]))
-				if($this->isLastNS($datas[$cd++]))$this->query($codes[$cc++]);
+				if(isset($datas[$q[1]]) && isset($codes[$q[2]]))
+				if($this->isLastNS($datas[$q[1]]))$this->query($codes[$q[2]]);
 			}
 			elseif($q[0] == "islastns") {
-				if(isset($datas[$cd]) && isset($codes[$cc]))
-				if($this->isNS($datas[$cd++]))$this->query($codes[$cc++]);
+				if(isset($datas[$q[1]]) && isset($codes[$q[2]]))
+				if($this->isNS($datas[$q[1]]))$this->query($codes[$q[2]]);
+			}
+			elseif($q[0] == 'out') {
+				if(isset($fvars)){
+					$lvars = $this->vars;
+					$this->vars = $fvars;
+					if(isset($codes[$q[1]]))$this->query($codes[$q[1]]);
+					$fvars = $this->vars;
+					$this->vars = $fvars;
+				}elseif(isset($codes[$q[1]]))$this->query($codes[$q[1]]);
+			}
+			elseif($q[0] == 'print') {
+				for($i = 1;isset($q[$i]) && isset($datas[$q[$i]]);)
+					print $datas[$q[$i++]];
+			}
+			elseif($q[0] == 'println') {
+				for($i = 1;isset($q[$i]) && isset($datas[$q[$i]]);)
+					print $datas[$q[$i++]] . "\n";
+			}
+			elseif($q[0] == 'vardump') {
+				for($i = 1;isset($q[$i]) && isset($datas[$q[$i]]);)
+					var_dump($datas[$q[$i++]]);
+			}
+			elseif(isset($q[1]) && $q[1] == '=') {
+				if(!isset($q[2])){
+					$this->deletevar($q[0]);
+				}elseif(isset($q[2][0]) && $q[2][0] == '&'){
+					$this->addressvar($q[0], substr($q[2], 1));
+				}elseif(is_numeric($q[0])){
+					$this->set($datas[$q[0]], $datas[$q[1]]);
+				}else{
+					$this->setvar($q[0], $datas[$q[2]]);
+				}
+			}
+			elseif($q[0] == 'function'){
+				if(isset($q[2]) && isset($codes[$q[2]])){
+					$args = array_slice($q, 3);
+					if(is_numeric($q[1]))
+						$this->set($q[1], $codes[$q[2]]);
+					else
+						$this->setfunc($q[1], $codes[$q[2]], $args);
+				}
+			}
+			elseif($q[0] == 'call' && isset($this->vars[$q[1]])) {
+				$args = array_slice($q, 2);
+				$this->call($q[1], $args);
+			}
+			elseif(isset($this->vars[$q[0]])) {
+				$args = array_slice($q, 1);
+				foreach($args as &$arg){
+					if(isset($datas[$arg]))
+						$arg = $datas[$arg];
+					else
+						$arg = $codes[$arg];
+				}
+				$this->call($q[0], $args);
 			}
 		}
+		if(isset($fvars))
+			$this->vars = $fvars;
 		if($finish)$this->query($finish);
     }
     
@@ -9448,7 +9605,13 @@ class XNMath {
 		return floor(log($x > 0 ? $x : ~$x, 2)) + 1;
 	}
 	public static function neg($x){
-		return (2 ** (floor(log($x, 2)) + 1) - 1) - $x;
+		return ($x | ~$x) - $x;
+	}
+	public static function maxbit($x){
+		return $x | ~$x;
+	}
+	public static function res($x, $y){
+		return $y | ($x ^ $y);
 	}
 	public static function revbits($x){
 		return base_convert(strrev(base_convert($x, 10, 2)), 2, 10);
@@ -9510,6 +9673,13 @@ class XNMath {
 			return 0;
 		return $y - $x % $y;
 	}
+	public function littleEndianWord(array $arr, int $off){
+		return (($arr[$off + 3] << 24 & 0xff000000 | $arr[$off + 2] << 16 & 0xff0000 | $arr[$off + 1] << 8 & 0xff00 | $arr[$off] & 0xFF)
+			<< ((PHP_INT_SIZE - 4) << 3)) >> ((PHP_INT_SIZE - 4) << 3);
+    }
+    public function littleEndianShort(array $arr, int $off){
+        return (($arr[$off + 1] << 8 & 0xff00 | $arr[$off] & 0xFF) << ((PHP_INT_SIZE - 2) << 3)) >> ((PHP_INT_SIZE - 2) << 3);
+    }
 	public static function baseconvert($text, $from = false, $to = false){
 		if(is_string($from) && strtolower($from) == "ascii")return self::baseconvert(bin2hex($text), "0123456789abcdef", $to);
 		if(is_string($to) && strtolower($to) == "ascii"){
@@ -9675,12 +9845,6 @@ class Finder {
 	const EMAIL = "/(?:[^ \n\r\t\/\\#?@]+)@(?:(?:[^ \n\r\t\.\/\\#?]+\.)*[^ \n\r\t\.\/\\#@?]{1,61}\.[^ \n\r\t\.\/\\#@?]{2,})/";
 	const FILE_NAME = "/[^ \n\r\t\/\\#@?]+/";
 	const DIRACTORY_NAME = "/(?:(?:(?:\/+)[^ \n\r\t\/\\#@?]+)*(?:\/*))/";
-	public static function get_emojis_regex(){
-		return xndata("emoji-regex");
-	}
-	public static function get_emojis_array(){
-		return explode("/",xndata("emoji"));
-	}
 	public static function exists($str, $regex){
 		return preg_match($regex, $str);
 	}
@@ -9763,15 +9927,6 @@ class Finder {
 	}
 	public static function diractory_name_search($str){
 		return self::search($str, self::DIRACTORY_NAME);
-	}
-	public static function emoji_exists($str){
-		return self::exists($str, self::get_emojis_regex());
-	}
-	public static function emoji_find($str){
-		return self::find($str, self::get_emojis_regex());
-	}
-	public static function emoji_search($str){
-		return self::search($str, self::get_emojis_regex());
 	}
 }
 function get_type($x){
@@ -14115,13 +14270,29 @@ function array_reverse_keys(array $array){
 function implodes(array $array){
 	return implode('', $array);
 }
-function mb_str_split(string $str, int $length = null){
+function utf8_split(string $str, int $length = null){
 	$str = preg_split('//u', $str);
 	if(end($str) === '')
 		unset($str[count($str) - 1]);
 	if($length <= 1)
 		return $str;
 	return array_map('implodes', array_chunk($str, $length));
+}
+function urf8_strlen(string $str){
+    return count(preg_split('//u', $str));
+}
+function utf8_substr(string $str, int $offset,  int $length = null){
+    if($length === null)
+        return implode('', array_slice(preg_split('//u', $str), $offset));
+    return implode('', array_slice(preg_split('//u', $str), $offset, $length));
+}
+if(function_exists('mb_substr')){
+    function mb_substr_replace(string $string, string $replacement, int $start, int $length = null, string $encoding = null){
+        if($encoding === null)$encoding = mb_internal_encoding();
+        if($length === null)
+            return mb_substr($string, 0, $start, $encoding) . $string . mb_substr($string, $start + mb_strlen($string, $coding), null, $coding);
+        return mb_substr($string, 0, $start, $encoding) . $string . mb_substr($string, $start, $length, $encoding);
+    }
 }
 function str_rsplit(string $str, int $length = null){
 	if($length === null)$length = 0;
@@ -14572,7 +14743,7 @@ if(!function_exists('preg_replace_array')){
 	}
 }
 
-$GLOBALS['-XN-']['serachBlockError'] = 0;
+$GLOBALS['-XN-']['searchBlockError'] = 0;
 
 define('SEARCH_BLOCK_ERROR_NONE',      0);
 define('SEARCH_BLOCK_NOT_EXISTS',      1);
@@ -14581,7 +14752,7 @@ define('SEARCH_BLOCK_NOT_ENDED',       2);
 function search_block_error(){
     return $GLOBALS['-XN-']['searchBlockError'];
 }
-function serach_block_error_msg(){
+function search_block_error_msg(){
     return array_key([
         'No error',
         'Do not find the start block',
@@ -14592,12 +14763,12 @@ function search_block_position(string $string, string $start_block = null, strin
     if(!$start_block)$start_block = '{';
     if(!$end_block)$end_block = '}';
     if($offset === null)$offset = 0;
-    $GLOBALS['-XN-']['serachBlockError'] = 0;
+    $GLOBALS['-XN-']['searchBlockError'] = 0;
     $sl = strlen($start_block);
     $el = strlen($end_block);
     $start = strpos($string, $start_block, $offset);
     if($start === false){
-        $GLOBALS['-XN-']['serachBlockError'] = 1;
+        $GLOBALS['-XN-']['searchBlockError'] = 1;
         return false;
     }
     $block = 1;
@@ -14620,12 +14791,24 @@ function search_block_position(string $string, string $start_block = null, strin
         }
     }
     if($block !== 0)
-        $GLOBALS['-XN-']['serachBlockError'] = 2;
+        $GLOBALS['-XN-']['searchBlockError'] = 2;
     return [$start + $sl, ($block !== 0 ? $end : $end - $el)];
 }
 function search_block(string $string, string $start_block = null, string $end_block = null, int $offset = null){
 	$pos = search_block_position($string, $start_block, $end_block, $offset);
 	return substr($string, $pos[0], $pos[1] - $pos[0]);
+}
+function search_all_block(string $string, string $start_block = null, string $end_block = null, int $offset = null, int $limit = null){
+	if($limit === null)$limit = PHP_INT_MAX;
+	$searchs = [];
+	$jumpeds = [];
+	while($limit > 0){
+		$pos = search_block_position($string, $start_block, $end_block, $offset);
+		$searchs[] = $search = substr($string, $pos[0], $pos[1] - $pos[0]);
+		$jumpeds[] = substr($string, $offset, $pos[0]);
+		$offset = $pos[1];
+	}
+	return [$searchs, $jumpeds];
 }
 
 function search_cancel_block_position(string $string, string $start_block = null, string $end_block = null,
@@ -14634,13 +14817,13 @@ function search_cancel_block_position(string $string, string $start_block = null
 	if(!$end_block)$end_block = '}';
 	if(!$cancel_block)$cancel_block = '\\';
     if($offset === null)$offset = 0;
-    $GLOBALS['-XN-']['serachBlockError'] = 0;
+    $GLOBALS['-XN-']['searchBlockError'] = 0;
     $sl = strlen($start_block);
 	$el = strlen($end_block);
 	$cl = strlen($cancel_block);
     $start = strpos($string, $start_block, $offset);
     if($start === false){
-        $GLOBALS['-XN-']['serachBlockError'] = 1;
+        $GLOBALS['-XN-']['searchBlockError'] = 1;
         return false;
 	}
 	$end_cancel_block = $right === true ? $end_block . $cancel_block : $cancel_block . $end_block;
@@ -14689,13 +14872,26 @@ function search_cancel_block_position(string $string, string $start_block = null
         }
     }
     if($block !== 0)
-        $GLOBALS['-XN-']['serachBlockError'] = 2;
+        $GLOBALS['-XN-']['searchBlockError'] = 2;
     return [$start + $sl, ($block !== 0 ? $end : $end - $el)];
 }
 function search_cancel_block(string $string, string $start_block = null, string $end_block = null,
 							 string $cancel_block = null, int $offset = null, bool $right = null){
 	$pos = search_cancel_block_position($string, $start_block, $end_block, $cancel_block, $offset, $right);
 	return substr($string, $pos[0], $pos[1] - $pos[0]);
+}
+function search_all_cancel_block(string $string, string $start_block = null, string $end_block = null, 
+								string $cancel_block = null, int $offset = null, int $right = null, int $limit = null){
+	if($limit === null)$limit = PHP_INT_MAX;
+	$searchs = [];
+	$jumpeds = [];
+	while($limit > 0){
+		$pos = search_cancel_block_position($string, $start_block, $end_block, $cancel_block, $offset, $right);
+		$searchs[] = $search = substr($string, $pos[0], $pos[1] - $pos[0]);
+		$jumpeds[] = substr($string, $offset, $pos[0]);
+		$offset = $pos[1];
+	}
+	return [$searchs, $jumpeds];
 }
 function strposs(string $hystack, string $needle, int $offset = null, int $limit = null){
 	if($limit === null)$limit = PHP_INT_MAX;
@@ -14746,6 +14942,191 @@ function gzuncompressloop(string $string){
         $string = gzuncompress($string);
     return $string;
 }
+function array2closure(array $array){
+	return function(string $key)use($array){
+		return $array[$key];
+	};
+}
+class XNStream {
+    private $stream;
+    public static function stream($stream){
+        if(!is_resource($stream) && get_resource_type($stream) == 'stream'){
+            $object = new XNFileStream;
+            $object->stream = $stream;
+            return $object;
+        }   return false;
+    }
+    public function getStream(){
+        return $this->stream;
+    }
+    public static function file(string $file, string $mode = null){
+        $stream = @fopen($file, $mode === null ? 'rw+' : $mode);
+        if(!$stream)
+            return false;
+        $object = new XNFileStream;
+        $object->stream = $stream;
+        return $object;
+    }
+    public static function tmp(){
+        $object = new XNFileStream;
+        $object->stream = tmpfile();
+        return $object;
+    }
+    public static function memory(string $contents = null){
+        $object = new XNFileStream;
+        $object->stream = fopen('php://memory', 'rw+');
+        if($contents !== null)
+            fwrite($object->stream, $contents);
+        return $object;
+    }
+    public function getURI(){
+        return stream_get_meta_data($this->stream)['uri'];
+    }
+    public function getSize(){
+        $pos = ftell($this->stream);
+        fseek($this->stream, 0, SEEK_END);
+        $size = ftell($this->stream);
+        fseek($this->stream, $pos);
+        return $size;
+    }
+    public function position(){
+        return ftell($this->stream);
+    }
+    public function seek(int $offset, int $whence = null){
+        return fseek($this->stream, $offset, $whence !== null ? SEEK_SET : $whence);
+    }
+    public function write(string $content, int $length = null){
+        if($length === null)
+            return fwrite($this->stream, $content);
+        return fwrite($this->stream, $content, $length);
+    }
+    public function read(int $length = null){
+        if($length === null || $length == -1)
+            return stream_get_contents($this->stream);
+        return fread($this->stream, $length);
+    }
+    public function currentChar(){
+        $c = fgetc($this->stream);
+        fseek($this->stream, -1, SEEK_CUR);
+        return $c;
+    }
+    public function nextChar(){
+        return fgetc($this->stream);
+    }
+    public function prevChar(){
+        fseek($this->stream, -2, SEEK_CUR);
+        return fgetc($this->stream);
+    }
+    public function readPrev(int $length = null){
+        if($length === null){
+            $length = ftell($this->stream);
+            fseek($this->stream, 0);
+        }else fseek($this->stream, -$length, SEEK_CUR);
+        return fread($this->stream, $length);
+    }
+    public function readPack(string $format, int $length){
+        return unpack($format, fread($this->stream, $length));
+    }
+    public function writePack(string $format, array $input, int $length = null){
+        if($length === null)
+            return fwrite($this->stream, call_user_func_array('pack', array_merge([$format], $input)));
+        return fwrite($this->stream, call_user_func_array('pack', array_merge([$format], $input)), $length);
+    }
+    public function nextLine(){
+        return fgets($this->stream);
+    }
+    public function currentLine(){
+        do{
+            fseek($this->stream, -2, SEEK_CUR);
+            $c = fgetc($this->stream);
+        }while($c !== "\n" && $c !== null);
+        return fgets($this->stream);
+    }
+    public function prevLine(){
+        do{
+            fseek($this->stream, -2, SEEK_CUR);
+            $c = fgetc($this->stream);
+        }while($c !== "\n" && $c !== null);
+        do{
+            fseek($this->stream, -2, SEEK_CUR);
+            $c = fgetc($this->stream);
+        }while($c !== "\n" && $c !== null);
+        return fgets($this->stream);
+    }
+    public function rewind(){
+        return rewind($this->stream);
+    }
+    public function repos(){
+        return fseek($this->stream, 0);
+    }
+    public function close(){
+        $r = fclose($this->stream);
+        $this->stream = null;
+        return $r;
+    }
+    public function truncate(int $size){
+        return ftruncate($this->stream, $size);
+    }
+    public function nowEnd(){
+        return ftruncate($this->stream, ftell($this->stream));
+    }
+    public function retype(){
+        $pos = ftell($this->stream);
+        rewind($this->stream);
+        fseek($this->stream, $pos);
+        return $pos;
+    }
+    public function endwrite(string $content, int $length = null){
+        $pos = ftell($this->stream);
+        fseek($this->stream, 1, SEEK_END);
+        if($length === null)
+            $r = fwrite($this->stream, $content);
+        else
+            $r = fwrite($this->stream, $content, $length);
+        fseek($this->stream, $pos);
+        return $r;
+    }
+    public function eof(){
+        return feof($this->stream);
+    }
+    public function flush(){
+        return fflush($this->stream);
+    }
+    public function reopen(){
+        $data = stream_get_meta_data($this->stream);
+        $this->stream = fopen($data['uri'], $data['mode']);
+        return $this->stream;
+    }
+    public function reopenpos(){
+        $data = stream_get_meta_data($this->stream);
+        $pos = ftell($this->stream);
+        $this->stream = fopen($data['uri'], $data['mode']);
+        if($this->stream)
+            fseek($this->stream, $pos);
+        return $this->stream;
+    }
+    public function unlink(){
+        return @unlink(stream_get_meta_data($this->stream)['uri']);
+    }
+    public function copyto($stream){
+        if(is_resource($stream) && get_resource_type($stream) == 'stream')
+            return stream_copy_to_stream($this->stream, $stream);
+        if(is_object($stream) && $stream instanceof XNStream)
+            return stream_copy_to_stream($this->stream, $stream->stream);
+        return false;
+    }
+    public function copy($stream){
+        if(is_resource($stream) && get_resource_type($stream) == 'stream')
+            return stream_copy_to_stream($stream, $this->stream);
+        if(is_object($stream) && $stream instanceof XNStream)
+            return stream_copy_to_stream($stream->stream, $this->stream);
+        return false;
+    }
+}
+function is_xnstream($stream){
+    return is_object($stream) && $stream instanceof XNStream;
+}
+
 
 $GLOBALS['-XN-']['endTime'] = microtime(true);
 
