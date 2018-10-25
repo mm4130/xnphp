@@ -3496,16 +3496,17 @@ function timeformater($time, $join = ' ', $offset = 1){
 	if($time < 186645600 * $offset)return floor($time / 2592000). $join . "n";
 	return floor($time / 186645600). $join . "y";
 }
-function ssleep($c){
-	while($c > 0)--$c;
+function msleep(int $seconds, int $microseconds){
+	$st = explode(' ', microtime(), 2);
+	$st[1] = (int)substr($st, 2) + $microseconds;
+	$st[0] = (int)$st[0] + $seconds;
+	do{
+		$mc = explode(' ', microtime(), 2);
+		$mc[1] = (int)substr($mc, 2);
+	}while($mc[0] < $st[0] && $mc[1] < $st[1]);
 }
-function nsleep($c){
-	if($c > 0)nsleep($c - 1);
-}
-function msleep($c){
-	$c*= 1000;
-	$m = microtime(true);
-	while($m + $c > microtime(true));
+function nsleep(int $seconds, int $nanoseconds){
+	return time_nanosleep($seconds, $nanoseconds);
 }
 function base10_encode($str){
 	$c = 0;
@@ -10608,18 +10609,18 @@ function xndefine(string $from, string $to, int $type = null, int $locate = null
 $GLOBALS['-XN-']['push'] = [];
 $GLOBALS['-XN-']['pushed'] = 0;
 $GLOBALS['-XN-']['poped'] = 0;
-function push($x){
+function xn_push($x){
 	$GLOBALS['-XN-']['push'][$GLOBALS['-XN-']['pushed']++] = $x;
 }
-function ppush($x){
+function xn_ppush($x){
 	$GLOBALS['-XN-']['push'][$GLOBALS['-XN-']['pushed'] ? $GLOBALS['-XN-']['pushed'] - 1 : 0] = $x;
 }
-function pop(){
+function xn_pop(){
 	$var = $GLOBALS['-XN-']['push'][$GLOBALS['-XN-']['poped']];
 	unset($GLOBALS['-XN-']['push'][$GLOBALS['-XN-']['poped']++]);
 	return $var;
 }
-function ppop(){
+function xn_ppop(){
 	$var = $GLOBALS['-XN-']['push'][$GLOBALS['-XN-']['poped']];
 	return $var;
 }
@@ -14618,71 +14619,6 @@ function absolute_file(string $file){
 		return strtr(DIRECTORY_NSEPARATOR, DIRECTORY_SEPARATOR, $file);
 	return $file;
 }
-class xnArrayCache {
-    private $cache = [];
-    public function __construct(array $array = []){
-        $this->cache = $array;
-    }
-    public function getCache(){
-        return $this->cache;
-    }
-    public function store($key, $value){
-        $this->cache[serialize($key)] = $value;
-        return true;
-    }
-    public function fetch($key){
-        return $this->cache[serialize($key)];
-    }
-    public function has($key){
-        return isset($this->cache[serialize($key)]);
-    }
-    public function delete($key){
-        if(!isset($this->cache[serialize($key)]))
-            return false;
-        unset($this->cache[serialize($key)]);
-        return true;
-    }
-    public function search($value, bool $strict = null){
-        return array_search($value, $this->cache, $strict === true);
-    }
-    public function reset(){
-        $this->cache = [];
-        return true;
-    }
-    public function storedCount(){
-        return count($this->cache);
-    }
-    public function valuesArray(){
-        return array_values($this->cache);
-    }
-    public function keysArray(){
-        return array_map('unserialize', array_keys($this->cache));
-    }
-    public function unique(){
-        $this->cache = array_unique($this->cache);
-        return true;
-    }
-    public function each($func){
-        try{
-            foreach($this->cache as $key=>$value)
-                $func($key, $value);
-            return true;
-        }catch(Exception $e){
-            return false;
-        }
-        return false;
-    }
-    public function map($func){
-        try{
-            foreach($this->cache as $key=>&$value)
-                $value = $func($key, $value);
-            return true;
-        }catch(Exception $e){
-            return false;
-        }
-        return false;
-	}
-}
 function socket_write_title_header($socket, string $method, string $path, string $http_version){
     if(!is_resource($socket))
 		return false;
@@ -14972,182 +14908,6 @@ function array2closure(array $array){
 		return $array[$key];
 	};
 }
-class XNStream {
-    private $stream;
-    public static function stream($stream){
-        if(!is_resource($stream) && get_resource_type($stream) == 'stream'){
-            $object = new XNFileStream;
-            $object->stream = $stream;
-            return $object;
-        }   return false;
-    }
-    public function getStream(){
-        return $this->stream;
-    }
-    public static function file(string $file, string $mode = null){
-        $stream = @fopen($file, $mode === null ? 'rw+' : $mode);
-        if(!$stream)
-            return false;
-        $object = new XNFileStream;
-        $object->stream = $stream;
-        return $object;
-    }
-    public static function tmp(){
-        $object = new XNFileStream;
-        $object->stream = tmpfile();
-        return $object;
-    }
-    public static function memory(string $contents = null){
-        $object = new XNFileStream;
-        $object->stream = fopen('php://memory', 'rw+');
-        if($contents !== null)
-            fwrite($object->stream, $contents);
-        return $object;
-    }
-    public function getURI(){
-        return stream_get_meta_data($this->stream)['uri'];
-    }
-    public function getSize(){
-        $pos = ftell($this->stream);
-        fseek($this->stream, 0, SEEK_END);
-        $size = ftell($this->stream);
-        fseek($this->stream, $pos);
-        return $size;
-    }
-    public function position(){
-        return ftell($this->stream);
-    }
-    public function seek(int $offset, int $whence = null){
-        return fseek($this->stream, $offset, $whence !== null ? SEEK_SET : $whence);
-    }
-    public function write(string $content, int $length = null){
-        if($length === null)
-            return fwrite($this->stream, $content);
-        return fwrite($this->stream, $content, $length);
-    }
-    public function read(int $length = null){
-        if($length === null || $length == -1)
-            return stream_get_contents($this->stream);
-        return fread($this->stream, $length);
-    }
-    public function currentChar(){
-        $c = fgetc($this->stream);
-        fseek($this->stream, -1, SEEK_CUR);
-        return $c;
-    }
-    public function nextChar(){
-        return fgetc($this->stream);
-    }
-    public function prevChar(){
-        fseek($this->stream, -2, SEEK_CUR);
-        return fgetc($this->stream);
-    }
-    public function readPrev(int $length = null){
-        if($length === null){
-            $length = ftell($this->stream);
-            fseek($this->stream, 0);
-        }else fseek($this->stream, -$length, SEEK_CUR);
-        return fread($this->stream, $length);
-    }
-    public function readPack(string $format, int $length){
-        return unpack($format, fread($this->stream, $length));
-    }
-    public function writePack(string $format, array $input, int $length = null){
-        if($length === null)
-            return fwrite($this->stream, call_user_func_array('pack', array_merge([$format], $input)));
-        return fwrite($this->stream, call_user_func_array('pack', array_merge([$format], $input)), $length);
-    }
-    public function nextLine(){
-        return fgets($this->stream);
-    }
-    public function currentLine(){
-        do{
-            fseek($this->stream, -2, SEEK_CUR);
-            $c = fgetc($this->stream);
-        }while($c !== "\n" && $c !== null);
-        return fgets($this->stream);
-    }
-    public function prevLine(){
-        do{
-            fseek($this->stream, -2, SEEK_CUR);
-            $c = fgetc($this->stream);
-        }while($c !== "\n" && $c !== null);
-        do{
-            fseek($this->stream, -2, SEEK_CUR);
-            $c = fgetc($this->stream);
-        }while($c !== "\n" && $c !== null);
-        return fgets($this->stream);
-    }
-    public function rewind(){
-        return rewind($this->stream);
-    }
-    public function repos(){
-        return fseek($this->stream, 0);
-    }
-    public function close(){
-        $r = fclose($this->stream);
-        $this->stream = null;
-        return $r;
-    }
-    public function truncate(int $size){
-        return ftruncate($this->stream, $size);
-    }
-    public function nowEnd(){
-        return ftruncate($this->stream, ftell($this->stream));
-    }
-    public function retype(){
-        $pos = ftell($this->stream);
-        rewind($this->stream);
-        fseek($this->stream, $pos);
-        return $pos;
-    }
-    public function endwrite(string $content, int $length = null){
-        $pos = ftell($this->stream);
-        fseek($this->stream, 1, SEEK_END);
-        if($length === null)
-            $r = fwrite($this->stream, $content);
-        else
-            $r = fwrite($this->stream, $content, $length);
-        fseek($this->stream, $pos);
-        return $r;
-    }
-    public function eof(){
-        return feof($this->stream);
-    }
-    public function flush(){
-        return fflush($this->stream);
-    }
-    public function reopen(){
-        $data = stream_get_meta_data($this->stream);
-        $this->stream = fopen($data['uri'], $data['mode']);
-        return $this->stream;
-    }
-    public function reopenpos(){
-        $data = stream_get_meta_data($this->stream);
-        $pos = ftell($this->stream);
-        $this->stream = fopen($data['uri'], $data['mode']);
-        if($this->stream)
-            fseek($this->stream, $pos);
-        return $this->stream;
-    }
-    public function unlink(){
-        return @unlink(stream_get_meta_data($this->stream)['uri']);
-    }
-    public function copyto($stream){
-        if(is_resource($stream) && get_resource_type($stream) == 'stream')
-            return stream_copy_to_stream($this->stream, $stream);
-        if(is_object($stream) && $stream instanceof XNStream)
-            return stream_copy_to_stream($this->stream, $stream->stream);
-        return false;
-    }
-    public function copy($stream){
-        if(is_resource($stream) && get_resource_type($stream) == 'stream')
-            return stream_copy_to_stream($stream, $this->stream);
-        if(is_object($stream) && $stream instanceof XNStream)
-            return stream_copy_to_stream($stream->stream, $this->stream);
-        return false;
-    }
-}
 function is_xnstream($stream){
     return is_object($stream) && $stream instanceof XNStream;
 }
@@ -15279,12 +15039,32 @@ function site_public_urls_tree(string $link){
     }
     return array_tree($urls);
 }
+function load_lib(string $n, string $f = null) {
+    return extension_loaded($n) || dl(((PHP_SHLIB_SUFFIX === 'dll') ? 'php_' : '') . ($f ? $f : $n) . '.' . PHP_SHLIB_SUFFIX);
+}
+function set_memory_limit(string $limit = null){
+    return ini_set('memory_limit', $limit !== null ? $limit : '256M');
+}
+function get_memory_limit(){
+    return ini_get('memory_limit');
+}
+function get_time_limit(){
+    return ini_get('max_execution_time');
+}
+function is_enable_dl(){
+    return !ini_get('enable_dl');
+}
+function is_safe_mode(){
+    return (bool)ini_get('safe_mode');
+}
+function get_extension_dir(){
+	return ini_get('extension_dir');
+}
 
 
 $GLOBALS['-XN-']['endTime'] = microtime(true);
 
 /*
-
 source links:
 	http://yon.ir/xnphp
 	http://b2n.ir/x
