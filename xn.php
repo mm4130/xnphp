@@ -4164,6 +4164,15 @@ class XNData {
 		$this->ns = [];
 		return $this;
 	}
+	public function allNSs(){
+		$ns = [];
+		$this->readkeys(function($x)use(&$ns){
+			$key = explode($key, "\xff", substr_count(substr($key, 0, strpos($key, "\\\xff")), "\xff") + 1);
+			for($c = 0;isset($key[$c + 1]);)
+				$ns[] = self::decodeon(str_replace("\\\xff", "\xff", $key[$c++]));
+		});
+		return array_unique($ns);
+	}
     
     // size info
     public function get(){
