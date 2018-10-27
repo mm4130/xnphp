@@ -3744,6 +3744,8 @@ function base4_decode($text){
 	return hex2bin($n);
 }
 class XNData {
+	const VERSION = '4.2.3';
+
     public static function encodesz($l){
 		$l = base_convert($l,10,16);
 		if(strlen($l) % 2 == 1)$l = '0'.$l;
@@ -4384,10 +4386,11 @@ class XNData {
     public function key($value){
         $key = $this->xnd->key(self::encodeon($value));
         if(!$key)return;
-        return self::decodeon($key);
+        return self::decodeNS($key);
     }
     public function keys($value){
-        $keys = $this->xnd->keys(self::encodeon($value));
+		$keys = $this->xnd->keys(self::encodeon($value));
+		if(!$keys)return;
 		$kys = [];
 		$ns = $this->getNSs();
 		foreach($keys as $key){
@@ -4395,7 +4398,25 @@ class XNData {
 				$kys[] = self::decodeNS($key);
 		}
 		return $kys;
+	}
+	public function keyNS($value){
+        $key = $this->xnd->key(self::encodeon($value));
+        if(!$key)return;
+		$key = explode($key, "\xff", substr_count(substr($key, 0, strpos($key, "\\\xff")), "\xff") + 1);
+		foreach($key as &$k)
+			$k = self::decodeon(str_replace("\\\xff", "\xff", $k));
+		return $key;
     }
+    public function keysNS($value){
+		$keys = $this->xnd->keys(self::encodeon($value));
+		if(!$keys)return;
+		foreach($keys as &$key){
+			$key = explode($key, "\xff", substr_count(substr($key, 0, strpos($key, "\\\xff")), "\xff") + 1);
+			foreach($key as &$k)
+				$k = self::decodeon(str_replace("\\\xff", "\xff", $k));
+		}
+		return $keys;
+	}
 
     // values
     public function isvalue($value){
@@ -4784,7 +4805,15 @@ class XNData {
 						$pr = $c++;
 						$t = $t[0] . $pr;
 					}
-					if(isset($t[1]) && $t[0] == '$' && is_numeric(substr($t, 1)))
+					if($t == 'true')
+						$datas[$c++] = true;
+					elseif($t == 'false')
+						$datas[$c++] = false;
+					elseif($t == 'null')
+						$datas[$c++] = null;
+					elseif($t == 'empty')
+						$datas[$c++] = '';
+					elseif(isset($t[1]) && $t[0] == '$' && is_numeric(substr($t, 1)))
 						$datas[$c++] = $this->value($datas[substr($t, 1)]);
 					elseif(isset($t[1]) && $t[0] == '@' && is_numeric(substr($t, 1)))
 						$datas[$c++] = $this->key($datas[substr($t, 1)]);
@@ -5009,6 +5038,10 @@ class XNData {
 			}
 			elseif($q[0] == 'include') {
 				$this->query(@file_get_contents($datas[$q[1]]));
+			}
+			elseif($q[0] == 'return' || $q[0] == 'ret'){
+				$this->setvar('return', $datas[$q[1]]);
+				return $datas[$q[1]];
 			}
 			elseif(isset($q[1]) && $q[1] == '=') {
 				if(!isset($q[2]))
