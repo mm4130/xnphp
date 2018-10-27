@@ -4273,6 +4273,16 @@ class XNData {
 		if(!$this->get())
 			$this->setCreatedTime();
 	}
+	public function dateCreatedTime(string $format){
+		$modifi = $this->xnd->value("\x01\x02\x09c");
+        if(!$modifi)return;
+        return date($format, self::decodenz($modifi) / 1000);
+	}
+	public function dateLastModified(string $format){
+		$modifi = $this->xnd->value("\x01\x02\x09m");
+        if(!$modifi)return;
+        return date($format, self::decodenz($modifi) / 1000);
+	}
 
     // convertor
     public function convert(string $to = null,$file = ''){
@@ -4472,6 +4482,10 @@ class XNData {
     public function join($key,$value){
         $this->set($key,$x = $this->value($key) . $value);
 		return $x;
+	}
+	public function sjoin($key,$value){
+        $this->set($key,$x = $value . $this->value($key));
+		return $x;
     }
     public function madd($key,$count = 1){
         $this->set($key,$x = $this->value($key) + $count);
@@ -4490,6 +4504,34 @@ class XNData {
 		return $x;
     }
     public function mmod($key,$count = 1){
+        $this->set($key,$x = $this->value($key) % $count);
+		return $x;
+	}
+	public function mpow($key,$count = 2){
+        $this->set($key,$x = pow($this->value($key), $count));
+		return $x;
+	}
+	public function msqrt($key,$count = 2){
+        $this->set($key,$x = pow($this->value($key), 1 / $count));
+		return $x;
+	}
+	public function mxor($key,$count = 1){
+        $this->set($key,$x = $this->value($key) ^ $count);
+		return $x;
+	}
+	public function mand($key,$count = 1){
+        $this->set($key,$x = $this->value($key) & $count);
+		return $x;
+	}
+	public function mor($key,$count = 1){
+        $this->set($key,$x = $this->value($key) | $count);
+		return $x;
+	}
+	public function mshl($key,$count = 1){
+        $this->set($key,$x = $this->value($key) % $count);
+		return $x;
+	}
+	public function mshr($key,$count = 1){
         $this->set($key,$x = $this->value($key) % $count);
 		return $x;
 	}
@@ -4584,6 +4626,62 @@ class XNData {
 	public function getvar(string $variable){
 		return isset($this->vars[$variable]) ? $this->vars[$variable][1] : null;
 	}
+	public function addvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] += $content;
+	}
+	public function subvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] -= $content;
+	}
+	public function mulvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] *= $content;
+	}
+	public function divvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] /= $content;
+	}
+	public function modvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] %= $content;
+	}
+	public function xorvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] ^= $content;
+	}
+	public function andvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] &= $content;
+	}
+	public function powvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] = pow($this->vars[$variable][1], $content);
+	}
+	public function sqrtvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+		$this->vars[$variable][1] = pow($this->vars[$variable][1], 1 / $content);
+	}
+	public function orvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] |= $content;
+	}
+	public function joinvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] .= $content;
+	}
+	public function sjoinvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] = $content . $this->vars[$variable][1];
+	}
+	public function shlvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] >>= $content;
+	}
+	public function shrvar(string $variable, $content){
+		if(isset($this->vars[$variable]) && $this->vars[$variable][0] === 0)
+			$this->vars[$variable][1] <<= $content;
+	}
 	public function hasvar(string $variable){
 		return isset($this->vars[$variable]);
 	}
@@ -4593,6 +4691,14 @@ class XNData {
 	public function deletevar(string $variable){
 		if(isset($this->vars[$variable]))
 			unset($this->vars[$variable]);
+	}
+	public function addressvar(string $variable, string $address){
+		if(isset($this->vars[$variable]) && isset($this->vars[$address]))
+			$this->vars[$variable] = &$this->vars[$address];
+	}
+	public function caddressvar(string $variable, string $address){
+		if(isset($this->vars[$variable]) && isset($this->vars[$address]))
+			$this->vars[$variable][1] = &$this->vars[$address][1];
 	}
 	public function call(string $variable, array $args = []){
 		if(!isset($this->vars[$variable]) || $this->vars[$variable][0] !== 1)
@@ -4622,8 +4728,7 @@ class XNData {
 		}else $type = 3;
 		foreach($vars as $var => $content)
 			$this->setvar($var, $content);
-		$datas = [];
-		$codes = [];
+		$params = $codes = $datas = [];
 		$c = 0;
 		$query = preg_replace_callback("/(?<x>(in|out|glob|)\{((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\})/",
 		function($x)use(&$codes, &$c){
@@ -4642,30 +4747,24 @@ class XNData {
 			$datas[$c] = isset($x[2]) ? $x[2] : $x[1];
 			return $c++;
 		}, $query);
-		$query = preg_replace_callback("/(?<x><((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)>)/",
+		$query = preg_replace_callback("/(?<x><((?:\g<x>|\\\\\[|\\\\\]|\\\\\(|\\\\\)|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)>)/",
 		function($x)use(&$datas, &$c){
 			$datas[$c] = unserialize($x[2]);
 			return $c++;
 		}, $query);
-		$query = preg_replace_callback("/(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\])/",
+		$query = preg_replace_callback("/(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\\\\\(|\\\\\)|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\])/",
 		function($x)use(&$datas, &$c){
 			$datas[$c] = json_decode($x[2]);
 			return $c++;
 		}, $query);
-		$query = preg_replace_callback("/<(true|false|null|empty|(?:[0-9]*(?:\.[0-9]*){0,1})|x(?:[0-9a-f]+)|b(?:[01]+)|o(?:[0-7]+))>/i",
-		function($x)use(&$data, &$c){
-			$x = strtolower($x[1]);
-			if($x == "true")$datas[$c] = true;
-			if($x == "false")$datas[$c] = false;
-			if($x == "null")$datas[$c] = null;
-			if($x == "empty")$datas[$c] = '';
-			if($x[0] == "x")$datas[$c] = (int)base_convert(substr($x, 1), 16, 10);
-			if($x[0] == "b")$datas[$c] = (int)base_convert(substr($x, 1), 2, 10);
-			if($x[0] == "o")$datas[$c] = (int)base_convert(substr($x, 1), 8, 10);
-			else {
-				if($x == '.')$x = '0';
-				$datas[$c] = to_number($x);
-			}
+		$query = preg_replace_callback("/(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\\\\\(|\\\\\)|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\])/",
+		function($x)use(&$datas, &$c){
+			$datas[$c] = json_decode($x[2]);
+			return $c++;
+		}, $query);
+		$query = preg_replace_callback("/\"((?:\\\\\"|[^\"])*)\"|'((?:\\\\'|[^'])*)'/",
+		function($x)use(&$datas, &$c){
+			$datas[$c] = isset($x[2]) ? $x[2] : $x[1];
 			return $c++;
 		}, $query);
 		$finish = '';
@@ -4678,40 +4777,49 @@ class XNData {
 				$pv = $q;
 				foreach($q as $k=>&$t){
 					$pr = $c;
+					if(isset($t[1]) && $t[0] == '#' && isset($this->vars[substr($t, 1)]))
+						$datas[$c++] = $this->getvar(substr($t, 1));
+					elseif(isset($t[2]) && $t[1] == '#' && isset($this->vars[substr($t, 2)])){
+						$datas[$c] = $this->getvar(substr($t, 2));
+						$pr = $c++;
+						$t = $t[0] . $pr;
+					}
 					if(isset($t[1]) && $t[0] == '$' && is_numeric(substr($t, 1)))
 						$datas[$c++] = $this->value($datas[substr($t, 1)]);
 					elseif(isset($t[1]) && $t[0] == '@' && is_numeric(substr($t, 1)))
 						$datas[$c++] = $this->key($datas[substr($t, 1)]);
-					elseif(isset($t[2]) && substr($t, 0, 2) == 'of' && is_numeric(substr($t, 2)))
-						$datas[$c++] = $this->of($datas[substr($t[0], 2)]);
-					elseif(isset($t[2]) && substr($t, 0, 2) == 'at' && is_numeric(substr($t, 2)))
-						$datas[$c++] = $this->of($datas[substr($t[0], 2)]);
-					elseif(isset($t[2]) && substr($t, 0, 2) == 'ln' && is_numeric(substr($t, 2)))
-						$datas[$c++] = strlen($datas[substr($t[0], 2)]);
-					elseif(isset($t[2]) && substr($t, 0, 2) == 'cd' && isset($datas[substr($t[0], 2)]))
-						$codes[$c++] = $datas[substr($t[0], 2)];
-					elseif(isset($t[2]) && substr($t, 0, 2) == 'st' && isset($codes[substr($t[0], 2)]))
-						$datas[$c++] = $codes[substr($t[0], 2)];
-					elseif(isset($t[2]) && substr($t, 0, 2) == 'da' && isset($datas[substr($t[0], 2)]))
-						$datas[$c++] = $datas[substr($t[0], 2)];
-					elseif(isset($t[2]) && substr($t, 0, 2) == 'co' && isset($codes[substr($t[0], 2)]))
-						$codes[$c++] = $codes[substr($t[0], 2)];
+					elseif(isset($t[1]) && $t[0] == 'i' && is_numeric(substr($t, 1)))
+						$datas[$c++] = $this->of($datas[substr($t, 1)]);
+					elseif(isset($t[1]) && $t[0] == 'a' && is_numeric(substr($t, 1)))
+						$datas[$c++] = $this->at($datas[substr($t, 1)]);
+					elseif(isset($t[1]) && $t[0] == 'l' && is_numeric(substr($t, 1)))
+						$datas[$c++] = strlen($datas[substr($t, 1)]);
+					elseif(isset($t[1]) && $t[0] == 'c' && is_numeric(substr($t, 1)))
+						$codes[$c++] = $datas[substr($t, 1)];
+					elseif(isset($t[1]) && $t[0] == 's' && is_numeric(substr($t, 1)))
+						$datas[$c++] = $codes[substr($t, 1)];
+					elseif(isset($t[1]) && $t[0] == 'h' && is_numeric(substr($t, 1)))
+						$datas[$c++] = $datas[substr($t, 1)];
+					elseif(isset($t[1]) && $t[0] == 't' && is_numeric(substr($t, 1)))
+						$codes[$c++] = strlen($codes[substr($t, 1)]);
+					elseif(isset($t[1]) && $t[0] == 'f' && is_numeric(substr($t, 1)))
+						$datas[$c++] = @file_get_contents($datas[$t[0]]);
 					elseif($k > 0 && !is_numeric($t) && isset($this->vars[$t]))
 						$datas[$c++] = $this->getvar($t);
-					elseif(isset($t[1]) && $t[0] === '0' && is_numeric($t))
+					elseif(isset($t[1]) && $t[0] == '0' && is_numeric(substr($t, 1)))
 						$datas[$c++] = (int)base_convert($t, 8, 10);
-					elseif(isset($t[1]) && $t[0] === 'x' && is_numeric(substr($t, 1)))
+					elseif(isset($t[1]) && $t[0] == 'x' && is_numeric(substr($t, 1)))
 						$datas[$c++] = (int)base_convert(substr($t, 1), 16, 10);
-					elseif(isset($t[1]) && $t[0] === 'b' && is_numeric(substr($t, 1)))
+					elseif(isset($t[1]) && $t[0] == 'b' && is_numeric(substr($t, 1)))
 						$datas[$c++] = (int)base_convert(substr($t, 1), 2, 10);
-					elseif(isset($t[1]) && $t[0] === 'o' && is_numeric(substr($t, 1)))
+					elseif(isset($t[1]) && $t[0] == 'o' && is_numeric(substr($t, 1)))
 						$datas[$c++] = (int)base_convert(substr($t, 1), 8, 10);
-					elseif(isset($t[1]) && $t[0] === 'n' && is_numeric(substr($t, 1)))
+					elseif(isset($t[1]) && $t[0] == 'n' && is_numeric(substr($t, 1)))
 						$datas[$c++] = (int)substr($t, 1);
 					elseif(is_numeric($t) && !isset($datas[$t]) && !isset($codes[$t]))
 						$datas[$c++] = (float)$t;
 					if($c > $pr)
-						$t = $pr;
+						$t = $c - 1;
 				}
 			}while($pv !== $q);
 			foreach($q as $k=>&$t){
@@ -4899,16 +5007,116 @@ class XNData {
 				for($i = 1;isset($q[$i]) && isset($datas[$q[$i]]);)
 					var_dump($datas[$q[$i++]]);
 			}
+			elseif($q[0] == 'include') {
+				$this->query(@file_get_contents($datas[$q[1]]));
+			}
 			elseif(isset($q[1]) && $q[1] == '=') {
-				if(!isset($q[2])){
+				if(!isset($q[2]))
 					$this->deletevar($q[0]);
-				}elseif(isset($q[2][0]) && $q[2][0] == '&'){
+				elseif(isset($q[2][1]) && $q[2][0] == '&' && $q[2][1] == '&')
+					$this->caddressvar($q[0], substr($q[2], 2));
+				elseif(isset($q[2][0]) && $q[2][0] == '&')
 					$this->addressvar($q[0], substr($q[2], 1));
-				}elseif(is_numeric($q[0])){
+				elseif(is_numeric($q[0]))
 					$this->set($datas[$q[0]], $datas[$q[1]]);
-				}else{
+				else
 					$this->setvar($q[0], $datas[$q[2]]);
-				}
+			}
+			elseif(isset($q[1]) && $q[1] == '+=') {
+				if(!isset($q[2]))
+					$this->addvar($q[0], 1);
+				elseif(is_numeric($q[0]))
+					$this->madd($datas[$q[0]], $datas[$q[1]]);
+				else
+					$this->addvar($q[0], $datas[$q[2]]);
+			}
+			elseif(isset($q[1]) && $q[1] == '-=') {
+				if(!isset($q[2]))
+					$this->subvar($q[0], 1);
+				elseif(is_numeric($q[0]))
+					$this->msub($datas[$q[0]], $datas[$q[1]]);
+				else
+					$this->subvar($q[0], $datas[$q[2]]);
+			}
+			elseif(isset($q[1]) && $q[1] == '*=') {
+				if(!isset($q[2]))
+					$this->mulvar($q[0], 2);
+				elseif(is_numeric($q[0]))
+					$this->mmul($datas[$q[0]], $datas[$q[1]]);
+				else
+					$this->mulvar($q[0], $datas[$q[2]]);
+			}
+			elseif(isset($q[1]) && $q[1] == '/=') {
+				if(!isset($q[2]))
+					$this->divvar($q[0], 2);
+				elseif(is_numeric($q[0]))
+					$this->mdiv($datas[$q[0]], $datas[$q[1]]);
+				else
+					$this->divvar($q[0], $datas[$q[2]]);
+			}
+			elseif(isset($q[1]) && $q[1] == '%=') {
+				if(!isset($q[2]))
+					$this->modvar($q[0], 2);
+				elseif(is_numeric($q[0]))
+					$this->mmod($datas[$q[0]], $datas[$q[1]]);
+				else
+					$this->modvar($q[0], $datas[$q[2]]);
+			}
+			elseif(isset($q[1]) && $q[1] == '^=') {
+				if(!isset($q[2]))
+					$this->xorvar($q[0], 1);
+				elseif(is_numeric($q[0]))
+					$this->mxor($datas[$q[0]], $datas[$q[1]]);
+				else
+					$this->xorvar($q[0], $datas[$q[2]]);
+			}
+			elseif(isset($q[1]) && $q[1] == '&=') {
+				if(!isset($q[2]))
+					$this->andvar($q[0], 1);
+				elseif(is_numeric($q[0]))
+					$this->mand($datas[$q[0]], $datas[$q[1]]);
+				else
+					$this->andvar($q[0], $datas[$q[2]]);
+			}
+			elseif(isset($q[1]) && $q[1] == '|=') {
+				if(!isset($q[2]))
+					$this->orvar($q[0], 1);
+				elseif(is_numeric($q[0]))
+					$this->mor($datas[$q[0]], $datas[$q[1]]);
+				else
+					$this->orvar($q[0], $datas[$q[2]]);
+			}
+			elseif(isset($q[1]) && $q[1] == '**=') {
+				if(!isset($q[2]))
+					$this->powvar($q[0], 2);
+				elseif(is_numeric($q[0]))
+					$this->mpow($datas[$q[0]], $datas[$q[1]]);
+				else
+					$this->powvar($q[0], $datas[$q[2]]);
+			}
+			elseif(isset($q[1]) && $q[1] == '/*=') {
+				if(!isset($q[2]))
+					$this->sqrtvar($q[0], 2);
+				elseif(is_numeric($q[0]))
+					$this->msqrt($datas[$q[0]], $datas[$q[1]]);
+				else
+					$this->sqrtvar($q[0], $datas[$q[2]]);
+			}
+			elseif(isset($q[1]) && $q[1] == '.=') {
+				if(!isset($q[2]))
+					$this->joinvar($q[0], '');
+				elseif(is_numeric($q[0]))
+					$this->mjoin($datas[$q[0]], $datas[$q[1]]);
+				else
+					$this->joinvar($q[0], $datas[$q[2]]);
+			}
+			elseif(isset($q[1]) && $q[1] == '..=') {
+				if(!isset($q[2]))
+					$this->sjoinvar($q[0], '');
+				elseif(is_numeric($q[0]))
+					$this->msjoin($datas[$q[0]], $datas[$q[1]]);
+				else
+					$this->sjoinvar($q[0], $datas[$q[2]]);
 			}
 			elseif($q[0] == 'function'){
 				if(isset($q[2]) && isset($codes[$q[2]])){
