@@ -4294,6 +4294,12 @@ class XNData {
         if(!$modifi)return;
         return date($format, self::decodenz($modifi) / 1000);
 	}
+	public function hasName(){
+		return $this->xnd->iskey("\x01\x02\x09n");
+	}
+	public function hasDescription(){
+		return $this->xnd->iskey("\x01\x02\x09d");
+	}
 
     // convertor
     public function convert(string $to = null,$file = ''){
@@ -8021,14 +8027,19 @@ function class_to_object(object &$class){
 function class_to_array(object &$class){
 	$class = (array)convert_class($class, 'stdClass');
 }
-function classarray_to_array(object $class){
+function classarray_to_array($class){
+	if(!is_classarray($class))
+		return false;
 	$array = [];
 	foreach($class as $key => $value)
 		$array[$key] = $value;
 	return $array;
 }
+function classarray_to_object($class){
+	return (object)classarray_to_array($class);
+}
 function is_classarray($class){
-	if(!is_object($class))
+	if(is_array($class))
 		return false;
 	try{
 		if(isset($class[0]))
@@ -8036,7 +8047,7 @@ function is_classarray($class){
 		$class[0] = null;
 		unset($class[0]);
 		return true;
-	}catch(Error $e){
+	}catch(Exception $e){
 		return false;
 	}
 }
@@ -10899,38 +10910,6 @@ function bytexorx($x, $y){
     if($use_include_path === null)$use_include_path = false;
     if($context)return fopen("data://$mime_type,$string",$mode,$use_include_path,$context);
     return fopen("data://$mime_type,$string",$mode,$use_include_path);
-}
-function unbug(&$x){};
-class ShortLink {
-  public function uto_add($link){
-    $curl = curl_init("http://u.to/");
-    $data = "a=add&url=".urlencode($link);
-    curl_setopt($curl,CURLOPT_RETURNTRANSFER,true);
-    curl_setopt($curl,CURLOPT_HTTPHEADER,[
-      "Content-Length: ".strlen($data),
-      "Content-Type: application/x-www-form-urlencoded",
-    ]);
-    curl_setopt($curl,CURLOPT_POSTFIELDS,$data);
-    $res = curl_exec($curl);
-    curl_close($curl);
-    preg_match_all("/http:\/\/u.to\/([^\"']+)/",$res,$res);
-    return end($res[0]);
-  }
-  public function uto_del($id){
-    $curl = curl_init("http://u.to/");
-    $id = substr($id,strrpos($id,'/')+1);
-    $data = "a=delURL&uid=$id";
-    curl_setopt($curl,CURLOPT_RETURNTRANSFER,true);
-    curl_setopt($curl,CURLOPT_HTTPHEADER,[
-      "Content-Length: ".strlen($data),
-      "Content-Type: application/x-www-form-urlencoded",
-    ]);
-    curl_setopt($curl,CURLOPT_POSTFIELDS,$data);
-    $res = curl_exec($curl);
-    curl_close($curl);
-    return true;
-  }
-  
 }
 function get_request_title($file = false){
 	$method = getenv('REQUEST_METHOD');
@@ -15172,15 +15151,26 @@ function xml_find_all_urls(string $xml){
         if($elm->hasAttribute('href'))
             $links[] = $elm->getAttribute('href');
 	}
-
-//	$search = Finder::link_search($xml);
-//	if($search !== false)
-//		$links = array_merge($links, $search);
-
     return array_unique($links);
 }
-function convert_srcs_for(array $srcs, string $link, bool $private = null){
-    if($link === '')
+function site_find_all_urls(string $link, bool $private = null){
+	$xml = @file_get_contents($link);
+	if($xml === false)
+		return false;
+	// find urls
+	$doc = new DOMDocument;
+    @$doc->loadHTML($xml);
+    $doc = classarray_to_array($doc->getElementsByTagName('*'));
+    $links = [];
+    foreach($doc as $elm){
+        if($elm->hasAttribute('src'))
+            $links[] = $elm->getAttribute('src');
+        if($elm->hasAttribute('href'))
+            $links[] = $elm->getAttribute('href');
+	}
+    $srcs = array_unique($links);
+	// convert urls
+	if($link === '')
         return false;
     if($link[strlen($link) - 1] != '/')
         $link .= '/';
@@ -15207,19 +15197,9 @@ function convert_srcs_for(array $srcs, string $link, bool $private = null){
         else
             $src = $link . $src;
     }
-    return array_values($srcs);
-}
-function ntconvert_srcs_for(array $srcs, string $link, bool $private = null){
-    $srcs = convert_srcs_for($srcs, $link, $private);
     foreach($srcs as &$src)
         $src = explode('?', explode('#', $src, 2)[0], 2)[0];
-    return array_unique($srcs);
-}
-function site_find_all_urls(string $link, bool $private = null){
-    $xml = @file_get_contents($link);
-    $urls = xml_find_all_urls($xml);
-    $urls = ntconvert_srcs_for($urls, $link, $private);
-    return $urls;
+    return array_unique(array_values($srcs));
 }
 function site_fullfind_all_urls(string $link, bool $private = null){
     if($link === '')
