@@ -8846,14 +8846,19 @@ class XNNumber {
 	}
 	public static function _pow($a, $b, int $l){
 		$c = '1';
-		while(($c = self::floord($c, $l)) != $b){
+		$d = '0.5';
+		$e = $a;
+		$b = self::floord($b, $l);
+		while($c != $b){
 			if($b > $c){
-				$c = self::mul($c, '1.5');
-				$a = self::mul($a, self::sqrt($a, $l));
+				$c = self::floord(self::add($c, $d), $l);
+				$a = self::mul($a, $e = self::sqrt($e, $l));
 			}else{
-				$c = self::div($c, '2', $l);
-				$a = self::sqrt($a, $l);
+				$c = self::floord(self::sub($c, $d), $l);
+				$a = self::div($a, ($e = self::sqrt($e, $l)), $l);
 			}
+			$d = self::div($d, '2', $l);
+			if($d == 0)break;
 		}
 		return $a;
 	}
