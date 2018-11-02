@@ -8439,6 +8439,11 @@ class XNNumber {
 	public static function is_floor($a){
 		return strpos($a, '.') < 1;
 	}
+	public static function floord($a, int $x){
+		if(($p = self::_lm($a)) === false)
+			return $a;
+		return self::_get(substr($a, 0, $p + $x + 1));
+	}
 	// calc functions
 	public static function _add0($a, $b){
 		$a = str_split($a, 13);
@@ -8716,11 +8721,13 @@ class XNNumber {
 			return false;
 		}
 		if(function_exists('bcdiv')){
-			$c = 0;
-			if(($p = strpos($a, '.')) !== false)
-				$c+= strlen($a) - $p;
-			if(($p = strpos($b, '.')) !== false)
-				$c+= strlen($b) - $p;
+			if($c == -1){
+				$c = 1;
+				if(($p = strpos($a, '.')) !== false)
+					$c+= strlen($a) - $p;
+				if(($p = strpos($b, '.')) !== false)
+					$c+= strlen($b) - $p;
+			}
 			return self::_get3(bcdiv($a, $b, $c));
 		}
 		if($a == 0)return '0';
@@ -8827,17 +8834,46 @@ class XNNumber {
 	}
 	public static function sqrt($n, int $limit = null){
 		if($limit === null)$limit = 10;
-		if(strlen($n) < 9)
-			return (string)sqrt($n);
 		if(function_exists('bcsqrt'))
 			return self::_get3(bcsqrt($n, $limit));
 		$x = $n;
 		$y = '1';
-		while(self::sub($x, $y) > 0) {
+		while($x != $y) {
 			$x = self::div(self::add($x, $y), '2', $limit);
 			$y = self::div($n, $x, $limit);
 		}
 		return $x;
+	}
+	public static function _pow($a, $b, int $l){
+		$c = '1';
+		while(($c = self::floord($c, $l)) != $b){
+			if($b > $c){
+				$c = self::mul($c, '1.5');
+				$a = self::mul($a, self::sqrt($a, $l));
+			}else{
+				$c = self::div($c, '2', $l);
+				$a = self::sqrt($a, $l);
+			}
+		}
+		return $a;
+	}
+	public static function pow($a, $b, int $l = null){
+		if($l === null)$l = 10;
+		if(!self::_check($a))return false;
+		if(!self::_check($b))return false;
+		if($b == 0)
+			return '1';
+		if($b == 1)
+			return $a;
+		if($b < 0)
+			return self::div('1', self::pow($a, self::abs($b), $l), $l);
+		self::_setfull($a, $b);
+		if(self::_lm($b) === false)
+			return self::powFloor($a, $b);
+		else{
+			list($b1, $b2) = self::_mo($b);
+			return self::_get(self::mul(self::powFloor($a, $b1), self::_pow($a, '0.' . $b2, $l)));
+		}
 	}
 	public static function max(){
 		return call_user_func_array('max', func_get_args());
@@ -9769,6 +9805,11 @@ class XNMath {
 	}
 	public static function gcd($a, $b){
 		return $b > 0 ? self::gcd($b, $a % $b): $a;
+	}
+	public static function floord($a, int $x){
+		if($a == floor($a))
+			return $a;
+		return floor($a) + substr($a - floor($a), 0, $x + 2);
 	}
 	public static function factors($x){
 		if($x == 0)return [INF];
@@ -15289,6 +15330,273 @@ function is_safe_mode(){
 }
 function get_extension_dir(){
 	return ini_get('extension_dir');
+}
+function str_replace_loop($from, $to, $string){
+    do {
+		$prev = $string;
+		$string = str_replace($from, $to, $string);
+	}while($prev != $string);
+	return $string;
+}
+class VideoCaption {
+    public $info = [], $frames = [], $format = true;
+    public function setFrame(float $from, float $length, string $caption){
+        $this->frames[] = [$from, $from + $length, $caption];
+    }
+    public function append(float $from, float $to, string $caption){
+        $this->frames[] = [$from, $to, $caption];
+    }
+    public function getFrame(float $time){
+        foreach($this->frames as $frame)
+            if($frame[0] <= $time && $frame[1] > $time)
+                return [
+                    'start' => $frame[0],
+                    'stop' => $frame[1],
+                    'caption' => $frame[2]
+                ];
+        return null;
+	}
+	public function setZoom(int $zoom = null){
+		if($zoom < 0)
+			$zoom *= -1;
+		foreach($this->frames as &$frame){
+			$frame[0] *= $zoom;
+			$frame[1] *= $zoom;
+		}
+	}
+    public function setInfo(string $info, string $content){
+        $this->info[$info] = $content;
+    }
+    public function getInfo(string $info){
+        return isset($this->info[$info]) ? $this->info[$info] : false;
+    }
+    private function TimeFormat(float $time, bool $srt = null){
+        return date('h:m:s' . ($srt === true ? ',' : ($srt === null ? '.' : ':')), $time) . floor(($time - floor($time)) * 1000);
+    }
+    private function TimeUnformat(string $time){
+        if(strpos($time, ',') > 0)
+            $time = explode(',', $time, 2);
+        elseif(strpos($time, '.') > 0)
+            $time = explode('.', $time, 2);
+        else
+			$time = explode(':', $time, 2);
+        $i = $time[1];
+        $time = explode(':', $time[0], 3);
+        $time = $time[0] * 3600 + $time[1] * 60 + $time[2];
+        return (float)"$time.$i";
+    }
+    private function FrameFormat(float $from, float $to, bool $srt = null, bool $ctl = null){
+        return self::TimeFormat($from, $srt) . ($ctl === null ? ' --> ' : ($ctl === true ? ',' : ':')) . self::TimeFormat($to, $srt);
+    }
+    private function FrameUnformat(string $time){
+		if(strpos($time, ' --> ') > 0)
+			$time = explode(' --> ', $time, 2);
+		elseif(strpos($time, ',') > 0)
+			$time = explode(',', $time, 2);
+		else
+			$time = explode(':', $time, 2);
+        return [$this->TimeUnformat($time[0]), $this->TimeUnformat($time[1])];
+	}
+	private function StringFormat(string $string, int $type = null){
+		if(!$this->format)
+			return $string;
+		if($type === null || $type === 1)
+			return str_replace("\n", "\r\n", $string);
+		if($type == 2)
+			return str_replace("\n", '[BR]', $string);
+		if($type == 3)
+			return str_replace_loop("\n\n", "\n", $string);
+		if($type == 4)
+			return str_replace("\n", '|', $string);
+	}
+	private function StringUnformat(string $string, int $type = null){
+		if(!$this->format)
+			return $string;
+		if($type === null || $type === 1)
+			return str_replace("\r\n", "\n", $string);
+		if($type == 2)
+			return str_replace('[BR]', "\n", $string);
+		if($type == 3)
+			return $string;
+		if($type == 4)
+			return str_replace('|', "\n", $string);
+	}
+
+	public function toSRT(string $file = null){
+		$caption = "\xef\xbb\xbf";
+		$n = 0;
+		foreach($this->frames as $frame)
+			$caption .= (++$n) . "\r\n" . $this->FrameFormat($frame[0], $frame[1], true) . "\r\n" . $this->StringFormat($frame[2]) . "\r\n\r\n";
+		if($file === null)
+			return $caption;
+		return file_put_contents($file, $caption);
+	}
+	public function isSRT(string $caption){
+		return substr($caption, 0, 3) == "\xef\xbb\xbf" && substr($caption, 3, 6) != 'WEBVTT';
+	}
+	public function fromSRT(string $caption){
+		if(!$this->isSRT($caption))
+			return false;
+		$caption = explode("\r\n\r\n", substr($caption, 3));
+		$n = 0;
+		for($k = 0;isset($caption[$k]);++$k){
+			$line = $caption[$k];
+			if($line === '')
+				continue;
+			$line = explode("\r\n", $line, 3);
+			if(!isset($line[2])){
+				$caption[$k + 1] = substr($caption[$k + 1], 1);
+				$line[2] = '';
+			}
+			$time = $this->FrameUnformat($line[1]);
+			$content = $this->StringUnformat($line[2]);
+			$this->append($time[0], $time[1], $content);
+		}
+		return true;
+	}
+	public function fromSRTFile(string $file){
+		$file = file_get_contents($file);
+		if($file === false)
+			return false;
+		return $this->fromSRT($file);
+	}
+
+	public function toVTT(string $file = null){
+		$caption = "\xef\xbb\xbfWEBVTT";
+		foreach($this->frames as $frame)
+			$caption .= "\n\n" . $this->FrameFormat($frame[0], $frame[1]) . "\n" . $this->StringFormat($frame[2], 3);
+		if($file === null)
+			return $caption;
+		return file_put_contents($file, $caption);
+	}
+	public function isVTT(string $caption){
+		return substr($caption, 0, 9) == "\xef\xbb\xbfWEBVTT";
+	}
+	public function fromVTT(string $caption){
+		if(!$this->isVTT($caption))
+			return false;
+		$caption = explode("\n\n", substr($caption, 9));
+		for($k = 0;isset($caption[$k]);++$k){
+			$line = $caption[$k];
+			if($line === '')
+				continue;
+			$line = explode("\n", $line, 2);
+			$time = $this->FrameUnformat($line[0]);
+			if(!isset($line[1])){
+				$caption[$k + 1] = substr($caption[$k + 1], 1);
+				$content = '';
+			}else $content = $line[1];
+			$this->setFrame($time[0], $time[1], $content);
+		}
+		return true;
+	}
+	public function fromVTTFile(string $file){
+		$file = file_get_contents($file);
+		if($file === false)
+			return false;
+		return $this->fromVTT($file);
+	}
+
+	public function toSUB2(string $file = null){
+		$caption = "\xef\xbb\xbf";
+		foreach($this->frames as $k => $frame){
+			$caption .= '{' . floor($frame[0]) . '}{' . floor($frame[1]) . '}' . $this->StringFormat($frame[2], 4);
+			if(isset($this->frames[$k + 1]))
+				$caption .= "\n";
+		}
+		return $caption;
+	}
+	public function isSUB2(string $caption){
+		return $caption == "\xef\xbb\xbf" || substr($caption, 0, 4) == "\xef\xbb\xbf{";
+	}
+	public function fromSUB2(string $caption){
+		if(!$this->isSUB2($caption))
+			return false;
+		$caption = explode("\n", substr($caption, 3));
+		foreach($caption as $line){
+			if($line === '' || $line[0] != '{')
+				continue;
+			$line = explode('}{', substr($line, 1), 2);
+			$time = [$line[0], substr($line[1], 0, $p = strpos($line[1], '}'))];
+			$content = substr($line[1], $p + 1);
+			$this->setFrame($time[0], $time[1], $content);
+		}
+		return true;
+	}
+	public function fromSUB2File(string $file){
+		$file = file_get_contents($file);
+		if($file === false)
+			return false;
+		return $this->fromSUB2($file);
+	}
+
+	public function existsformat(string $format){
+		return method_exists($this, 'is' . strtoupper($format));
+	}
+	public function isformat(string $format, string $caption){
+		if(!$this->existsformat($format))
+			return null;
+		return call_user_method('is' . strtoupper($format), $this, $caption);
+	}
+	public function toformat(string $format){
+		if(!$this->existsformat($format))
+			return null;
+		return call_user_method('to' . strtoupper($format), $this);
+	}
+	public function fromformat(string $format, string $caption){
+		if(!$this->existsformat($format))
+			return null;
+		return call_user_method('from' . strtoupper($format), $this, $caption);
+	}
+	public function isfileformat(string $format, string $file){
+		if(!$this->existsformat($format))
+			return null;
+		$file = file_get_contents($file);
+		if($file === false)
+			return false;
+		return call_user_method('is' . strtoupper($format), $this, $file);
+	}
+	public function tofileformat(string $format, string $file){
+		if(!$this->existsformat($format))
+			return null;
+		return call_user_method('to' . strtoupper($format), $this, $file);
+	}
+	public function fromfileformat(string $format, string $caption){
+		if(!$this->existsformat($format))
+			return null;
+		return call_user_method('from' . strtoupper($format) . 'File', $this, $caption);
+	}
+
+	public function getCaption(string $caption){
+		if(file_exists($caption))
+			$caption = file_get_contents($caption);
+		if($this->isSRT($caption))
+			return 'SRT';
+		if($this->isVTT($caption))
+			return 'VTT';
+		if($this->isSUB2($caption))
+			return 'SUB2';
+		return false;
+	}
+	public function fromCaption(string $caption){
+		if(file_exists($caption))
+			$caption = file_get_contents($caption);
+		return $this->fromformat($this->getCaption($caption), $caption);
+	}
+	public function toCaption(string $format, string $file = null){
+		if($file === null)
+			return $this->tofileformat($format, $file);
+		return $this->toformat($format);
+	}
+}
+function vcaption_convert(string $from, string $format, string $to = null){
+	$vc = new VideoCaption;
+	if(!$vc->fromCaption($from))
+		return false;
+	return $vc->toCaption($format, $to);
+}
+function vcaption_get(string $caption){
+	return (new VideoCaption)->getCaption($caption);
 }
 
 
