@@ -486,6 +486,9 @@ function array_repeat(array &$array, int $count){
 		foreach($array as $x)
 			$array[] = $x;
 }
+function array_array_merge(array $array){
+	return call_user_func_array('array_merge', $array);
+}
 function evals($str){
 	return eval("return \"$str\";");
 }
@@ -9578,6 +9581,8 @@ class XNString {
 	const ALPHBA_NUMBERS_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 	const TELEGRAM_USERNAME_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_';
 	const GMAIL_USERNAME_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_';
+	const VIW_RANGE = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ \n\r\t~!@#$%^&*()_+<>?:\"{}|\\,./;'[]`-=";
+	const CRK_RANGE = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-_ ";
 	public static function number_of_alphba(string $char){
 		return strpos(self::ALPHBA_RANGE, substr($char, 0, 1)) % 26 + 1;
 	}
@@ -9803,9 +9808,8 @@ class XNMath {
 		$n = (int)$n;
 		$r = 1;
 		if($n >= 171)return INF;
-		while($n > 0) {
+		while($n > 0)
 			$r*= $n--;
-		}
 		return $r;
 	}
 	public static function gcd($a, $b){
@@ -15602,6 +15606,171 @@ function vcaption_convert(string $from, string $format, string $to = null){
 }
 function vcaption_get(string $caption){
 	return (new VideoCaption)->getCaption($caption);
+}
+function xogame_create(){
+    return [0, 0, 0, 
+            0, 0, 0,
+            0, 0, 0];
+}
+function xogame_set(array &$table, $p, int $user){
+    if(is_array($p))
+        $p = $p[0] + $p[1] * 3;
+    $table[$p] = $user;
+}
+function xogame_get(array $table, $p, int $user){
+    if(is_array($p))
+        $p = $p[0] + $p[1] * 3;
+    return $table[$p];
+}
+function xogame_check(array $table){
+    foreach([[0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 4, 8], [2, 4, 6]] as $t)
+        if($table[$t[0]] == $table[$t[1]] && $table[$t[1]] == $table[$t[2]] && $table[$t[0]] !== 0)
+            return $table[$t[0]];
+    foreach($table as $t)
+        if($t === 0)
+            return 0;
+    return 3;
+}
+define('XOGAME_ROBOT', 2);
+define('XOGAME_PLAYER', 1);
+define('XOGAME_PLAYER1', 1);
+define('XOGAME_PLAYER2', 2);
+
+define('XOGAME_VERY_EASY', 1);
+define('XOGAME_EASY', 2);
+define('XOGAME_NORMAL', 3);
+define('XOGAME_HARD', 4);
+define('XOGAME_VERY_HARD', 5);
+
+function xogame_go(array &$table, int $level = null){
+    $list = [
+        [0, 3, 6], [3, 0, 6], [6, 3, 0], [1, 4, 7], [4, 1, 7],
+        [7, 1, 4], [2, 5, 8], [5, 2, 8], [8, 2, 5], [0, 1, 2],
+        [1, 0, 2], [2, 0, 1], [3, 4, 5], [4, 3, 5], [5, 3, 4],
+        [6, 7, 8], [7, 6, 8], [8, 6, 7], [0, 4, 5], [4, 0, 8],
+        [8, 0, 4], [8, 0, 4], [2, 4, 6], [4, 2, 6], [6, 2, 4],
+    ];
+    $uns = $use = [];
+    foreach($list as $t)
+        if($table[$t[1]] == $table[$t[2]] && $table[$t[0]] === 0)
+            $use[] = $t[0];
+    $list = [
+        [0, [1, 3, 4, 1, 3, 4]],
+        [1, [0, 3, 5, 0, 3, 4, 5, 2]],
+        [2, [1, 4, 5, 1, 4, 5]],
+        [3, [0, 6, 4, 0, 1, 4, 6, 7]],
+        [4, [0, 1, 2, 3, 5, 6, 7, 8, 0, 1, 2, 3, 5, 6, 7, 8]],
+        [5, [2, 4, 8, 1, 2, 4, 7, 8]],
+        [6, [3, 4, 7, 3, 4, 7]],
+        [7, [6, 4, 8, 6, 3, 4, 5, 8]],
+        [8, [4, 5, 7, 4, 5, 7]]
+    ];
+    foreach($list as $t)
+        if($table[$t[0]] == 2 && brand())
+            foreach($t[1] as $p)
+                if($table[$p] === 0)
+                    $uns[] = $p;
+    switch($level){
+        case 1:
+            if($uns !== [])
+                $use = $uns;
+        break;
+        case 2:
+            $use = array_merge($use, $use, $uns);
+        break;
+        case null:
+        case 3:
+            $use = array_merge($use, $use, $use, $use, $uns);
+        break;
+        case 4:
+            $use = array_merge($use, $use, $use, $use, $use, $use, $use, $uns);
+        break;
+        case 5:
+            if($use === [])
+                $use = $uns;
+    }
+    if($use === [])
+        foreach([0, 0, 0, 1, 1, 2,
+                 2, 2, 3, 3, 4, 4,
+                 4, 4, 5, 5, 6, 6,
+                 6, 7, 7, 8, 8, 8] as $t)
+            if($table[$t] === 0)
+                $use[] = $t;
+    $table[$use[array_rand($use)]] = 2;
+}
+function chrviw(int $x){
+	return XNString::VIW_RANGE[$x % 103];
+}
+function chrcrk(int $x){
+	return XNString::CRK_RANGE[$x % 66];
+}
+function ordviw(string $x){
+	if($x === '')
+		return false;
+	return strpos(XNString::VIW_RANGE, $x[0]);
+}
+function ordcrk(string $x){
+	if($x === '')
+		return false;
+	return strpos(XNString::CRK_RANGE, $x[0]);
+}
+function hash_length(string $algo){
+	return array_key([
+		"md2" => 16,
+		"md4" => 16,
+		"md5" => 16,
+		"sha1" => 20,
+		"sha224" => 28,
+		"sha256" => 32,
+		"sha384" => 48,
+		"sha512/224" => 28,
+		"sha512/256" => 32,
+		"sha512" => 64,
+		"sha3-224" => 28,
+		"sha3-256" => 32,
+		"sha3-384" => 48,
+		"sha3-512" => 64,
+		"ripemd128" => 16,
+		"ripemd160" => 20,
+		"ripemd256" => 32,
+		"ripemd320" => 40,
+		"whirlpool" => 64,
+		"tiger128,3" => 16,
+		"tiger160,3" => 20,
+		"tiger192,3" => 24,
+		"tiger128,4" => 16,
+		"tiger160,4" => 20,
+		"tiger192,4" => 24,
+		"snefru" => 32,
+		"snefru256" => 32,
+		"gost" => 32,
+		"gost-crypto" => 32,
+		"adler32" => 4,
+		"crc32" => 4,
+		"crc32b" => 4,
+		"crc16" => 2,
+		"crc16b" => 2,
+		"fnv132" => 4,
+		"fnv1a32" => 4,
+		"fnv164" => 8,
+		"fnv1a64" => 8,
+		"joaat" => 4,
+		"haval128,3" => 16,
+		"haval160,3" => 20,
+		"haval192,3" => 24,
+		"haval224,3" => 28,
+		"haval256,3" => 32,
+		"haval128,4" => 16,
+		"haval160,4" => 20,
+		"haval192,4" => 24,
+		"haval224,4" => 28,
+		"haval256,4" => 32,
+		"haval128,5" => 16,
+		"haval160,5" => 20,
+		"haval192,5" => 24,
+		"haval224,5" => 28,
+		"haval256,5" => 32
+	], $algo);
 }
 
 
