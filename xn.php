@@ -5,12 +5,12 @@ if(defined('XNLIB')){
 	return;
 }
 
-$GLOBALS['-XN-'] = [];
+$GLOBALS['-XN-'] = array();
 $GLOBALS['-XN-']['startTime'] = microtime(true);
 $GLOBALS['-XN-']['dirName'] = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
 $GLOBALS['-XN-']['dirNameDir'] = $GLOBALS['-XN-']['dirName'] . DIRECTORY_SEPARATOR;
 $GLOBALS['-XN-']['isf'] = file_exists($GLOBALS['-XN-']['dirNameDir'] . "xn.php");
-$GLOBALS['-XN-']['savememory'] = [];
+$GLOBALS['-XN-']['savememory'] = array();
 
 define("XNVERSION", "2.1");
 define("XNLIB", true);
@@ -130,9 +130,9 @@ function set_data_nter(){
 	}
 }
 function xnupdate(){
-	if(!function_exists("zlib_decode"))$code = file_get_contents("http://lib.xntm.ir/php/code.php");
+	/*if(!function_exists("zlib_decode"))$code = file_get_contents("http://lib.xntm.ir/php/code.php");
 	else $code = zlib_decode(file_get_contents("http://lib.xntm.ir/php/zlibcode.php"));
-	if(!$code)$code = file_get_contents("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php");
+	if(!$code)*/$code = file_get_contents("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php");
 	file_put_contents("xn.php", $code);
 	set_last_update_nter();
 }
@@ -186,9 +186,9 @@ if(!class_exists('DivisionByZeroError')){class DivisionByZeroError extends Arith
 
 if(@$XNUPDATE === 2 || (@$XNUPDATE === 1 && substr($GLOBALS['-XN-']['lastUpdate'], 0, -14)+ 10000 <= time()))xnupdate();
 $GLOBALS['-XN-']['errorShow'] = true;
-$GLOBALS['-XN-']['errorTypeShow'] = [
+$GLOBALS['-XN-']['errorTypeShow'] = array(
 	true,true,false,true,true,true,true,true,false,true,true,true,true,true,true,true,true,false
-];
+);
 class XNError extends Error {
 	protected $message;
 	public $HTMLMessage, $consoleMessage, $type, $from;
@@ -197,7 +197,7 @@ class XNError extends Error {
 	const TEXIT = 1;
 	const TTHROW = 2;
 
-	public static $TYPES = [
+	public static $TYPES = array(
 		0  => "Notic            ",
 		1  => "Warning          ",
 		2  => "Log              ",
@@ -215,7 +215,7 @@ class XNError extends Error {
 		14 => "Type Error       ",
 		15 => "Network Error    ",
 		16 => "                 "
-	];
+	);
 
 	const NOTIC = 0;
 	const WARNING = 1;
@@ -307,15 +307,16 @@ function var_read(){
 	return $r;
 }
 function swap(&$var1, &$var2){
-	$var3 = $var1;
-	$var1 = $var2;
-	$var2 = $var3;
+	list($var2, $var1) = array($var1, $var2);
 }
 function swap3(&$var1, &$var2, &$var3){
-	$var4 = $var1;
-	$var1 = $var2;
-	$var2 = $var3;
-	$var3 = $var4;
+	list($var3, $var1, $var2) = array($var1, $var2, $var3);
+}
+function swap4(&$var1, &$var2, &$var3, &$var4){
+	list($var4, $var1, $var2, $var3) = array($var1, $var2, $var3, $var4);
+}
+function dblswap(&$var1, &$var2, &$var3, &$var4){
+	list($var2, $var1, $var4, $var3) = array($var1, $var2, $var3, $var4);
 }
 function varadd($to){
 	$t = gettype($to);
@@ -365,7 +366,7 @@ function varadd($to){
 }
 function theline(){
 	$t = debug_backtrace();
-	return end($t)['line'];
+	return array_key(end($t), 'line');
 }
 function thelinecall(){
 	$t = debug_backtrace();
@@ -374,10 +375,10 @@ function thelinecall(){
 	return $t[1]['line'];
 }
 function thelinecode(){
-	return explode("\n", get_source())[theline() - 1];
+	return array_key(explode("\n", get_source()), theline() - 1);
 }
 function getlinecode(int $line){
-	return @explode("\n", get_source())[$line];
+	return @array_key(explode("\n", get_source()), $line);
 }
 function thefile(){
 	$t = debug_backtrace();
@@ -460,7 +461,7 @@ function thecallcode(){
 			$type = $t[$c]['type'];
 	if(!isset($func) || !isset($args))
 		return false;	
-	$list = [];
+	$list = array();
 	foreach($args as $arg)
 		$list[] = unce($arg);
 	$list = $func . '(' . implode(', ', $list) . ')';
@@ -488,7 +489,7 @@ function recall($object = null){
 			$type = $t[$c]['type'];
 	if(!isset($func) || !isset($args))
 		return false;
-	$list = [];
+	$list = array();
 	foreach($args as $arg)
 		$list[] = unce($arg);
 	$list = $func . '(' . implode(', ', $list) . ')';
@@ -505,35 +506,35 @@ function recall($object = null){
 function thecolumn(){
 	$t = debug_backtrace(1, 2);
 	$args = $t[0]['args'];
-	$list = [];
+	$list = array();
 	foreach($args as $arg)
 		$list[] = preg_unce($arg);
 	$list = '/thecolumn[ \n\r\t]*([ \n\r\t]*' . implode('[ \n\r\t]*,[ \n\r\t]*', $list) . '[ \n\r\t]*)/i';
 	$line = thelinecode();
 	preg_match($list, $line, $match);
-	return $match === [] ? false : strpos($line, $match[0]);
+	return $match === array() ? false : strpos($line, $match[0]);
 }
 function thelastcolumn(){
 	$t = debug_backtrace(1, 2);
 	$args = $t[0]['args'];
-	$list = [];
+	$list = array();
 	foreach($args as $arg)
 		$list[] = preg_unce($arg);
 	$list = '/thelastcolumn[ \n\r\t]*([ \n\r\t]*' . implode('[ \n\r\t]*,[ \n\r\t]*', $list) . '[ \n\r\t]*)/i';
 	$line = thelinecode();
 	preg_match($list, $line, $match);
-	return $match === [] ? false : strpos($line, $match[0]) + strlen($match[0]);
+	return $match === array() ? false : strpos($line, $match[0]) + strlen($match[0]);
 }
 function thebreakcolumn(){
 	$t = debug_backtrace(1, 2);
 	$args = $t[0]['args'];
-	$list = [];
+	$list = array();
 	foreach($args as $arg)
 		$list[] = preg_unce($arg);
 	$list = '/thebreakcolumn[ \n\r\t]*([ \n\r\t]*' . implode('[ \n\r\t]*,[ \n\r\t]*', $list) . '[ \n\r\t]*)(?:.|\n)*;{0,1}/i';
 	$line = thelinecode();
 	preg_match($list, $line, $match);
-	return $match === [] ? false : strpos($line, $match[0]) + strlen($match[0]);
+	return $match === array() ? false : strpos($line, $match[0]) + strlen($match[0]);
 }
 function evale($codeiuefhuisegbfyusegfrusbgtys){
 	extract($GLOBALS);
@@ -565,8 +566,7 @@ function is_stdclass($f){
 	return $f instanceof stdClass;
 }
 function is_json($json){
-	$obj = @json_decode($json);
-	return $obj !== false && is_string($json) && (is_object($obj) || is_array($obj));
+	return is_string($json) && ($json == 'null' || @json_decode($json) !== null);
 }
 function is_xndata($xndata){
 	return $xndata instanceof XNDataString || $xndata instanceof XNDataFile || $xndata instanceof XNDataURL || $xndata instanceof XNData;
@@ -582,7 +582,7 @@ function random($str, $leng = 1){
 	return $r;
 }
 function xnsplit($str, $count = 1, $space = 1){
-	$arr = [];
+	$arr = array();
 	$length = strlen($str);
 	$str = str_split($str);
 	$loc = 0;
@@ -649,7 +649,7 @@ function xndata(string $name){
 	return $xnd->value($name);
 }
 class TelegramBotKeyboard {
-	private $btn = [], $button = [];
+	private $btn = array(), $button = array();
 	public $resize = false, $onetime = false, $selective = false;
 	public function size($size = null){
 		if($size === null)$size = !$this->resize;
@@ -667,7 +667,7 @@ class TelegramBotKeyboard {
 		return $this;
 	}
 	public function add($name, $type = ''){
-		$btn = ["text" => $name];
+		$btn = array("text" => $name);
 		if($type == "contact")$btn["request_contact"] = true;
 		elseif($type == "location")$btn["request_location"] = true;
 		$this->btn[] = $btn;
@@ -675,37 +675,37 @@ class TelegramBotKeyboard {
 	}
 	public function line(){
 		$this->button[] = $this->btn;
-		$this->btn = [];
+		$this->btn = array();
 		return $this;
 	}
 	public function get($json = false){
 		$this->button[] = $this->btn;
-		$btn = ["keyboard" => $this->button];
+		$btn = array("keyboard" => $this->button);
 		if($this->resize)$btn['resize_keyboard'] = true;
 		if($this->onetime)$btn['one_time_keyboard'] = true;
 		if($this->selective)$btn['selective'] = true;
-		$this->button = [];
-		$this->btn = [];
+		$this->button = array();
+		$this->btn = array();
 		$this->size = false;
 		return $json ? json_encode($btn): $btn;
 	}
 	public function reset(){
-		$this->button = [];
-		$this->btn = [];
+		$this->button = array();
+		$this->btn = array();
 		$this->size = false;
 		return $this;
 	}
 	public function parse(string $str,string $space = null){
 	    if($space === null)$space = '||';
-		return ['keyboard' => array_map(function($x)use($space){
+		return array('keyboard' => array_map(function($x)use($space){
 			return array_map(function($x){
-				return ['text'=>$x];
+				return array('text'=>$x);
 			},explode($space,$x));
-		},explode("\n",$str))];
+		},explode("\n",$str)));
 	}
 }
 class TelegramBotInlineKeyboard {
-	private $btn = [], $button = [];
+	private $btn = array(), $button = array();
 	public $resize = false, $onetime = false, $selective = false;
 	public function size($size = null){
 		if($size === null)$size = !$this->resize;
@@ -723,7 +723,7 @@ class TelegramBotInlineKeyboard {
 		return $this;
 	}
 	public function add($name, $type, $data = ''){
-		$btn = ["text" => $name];
+		$btn = array("text" => $name);
 		if($type == "pay")$data = true;
 		elseif($type == "game")$type = "callback_game";
 		elseif($type == "switch")$type = "switch_inline_query";
@@ -736,30 +736,30 @@ class TelegramBotInlineKeyboard {
 	}
 	public function line(){
 		$this->button[] = $this->btn;
-		$this->btn = [];
+		$this->btn = array();
 		return $this;
 	}
 	public function get($json = false){
 		$this->button[] = $this->btn;
-		$btn = ["inline_keyboard" => $this->button];
+		$btn = array("inline_keyboard" => $this->button);
 		if($this->resize)$btn['resize_keyboard'] = true;
 		if($this->onetime)$btn['one_time_keyboard'] = true;
 		if($this->selective)$btn['selective'] = true;
-		$this->button = [];
-		$this->btn = [];
+		$this->button = array();
+		$this->btn = array();
 		$this->size = false;
 		return $json ? json_encode($btn): $btn;
 	}
 	public function reset(){
-		$this->button = [];
-		$this->btn = [];
+		$this->button = array();
+		$this->btn = array();
 		$this->size = false;
 		return $this;
 	}
 }
 class TelegramBotQueryResult {
-	public $get = [];
-	public function add($type, $id, $title, $input, $args = []){
+	public $get = array();
+	public function add($type, $id, $title, $input, $args = array()){
 		$args["type"] = $type;
 		$args["id"] = $id;
 		$args["title"] = $title;
@@ -768,32 +768,32 @@ class TelegramBotQueryResult {
 		return $this;
 	}
 	public function inputMessage($text, $parse = false, $preview = false){
-		$args = ["message_text" => $text];
+		$args = array("message_text" => $text);
 		if($parse)$args["parse_mode"] = $parse;
 		if($preview)$args["disable_web_page_preview"] = $preview;
 		return $args;
 	}
 	public function inputLocation($latitude, $longitude, $live = false){
-		$args = ["latitude" => $latitude, "longitude" => $longitude];
+		$args = array("latitude" => $latitude, "longitude" => $longitude);
 		if($live)$args['live_period'] = $live;
 		return $args;
 	}
 	public function inputVenue($latitude, $longitude, $title, $address, $id = false){
-		$args = ["latitude" => $latitude, "longitude" => $longitude, "title" => $title, "address" => $address];
+		$args = array("latitude" => $latitude, "longitude" => $longitude, "title" => $title, "address" => $address);
 		if($id)$args["foursquare_id"] = $id;
 		return $args;
 	}
 	public function get(){
 		$get = $this->get;
-		$this->get = [];
+		$this->get = array();
 		return $get;
 	}
 	public function reset(){
-		$this->get = [];
+		$this->get = array();
 	}
 }
 class TelegramBotButtonSave {
-	private $btns = [], $btn = [];
+	private $btns = array(), $btn = array();
 	public function get(string $name, $json = true){
 		if($json)return @$this->btn[$name];
 		return @$this->btns[$name];
@@ -815,8 +815,8 @@ class TelegramBotButtonSave {
 		return $this;
 	}
 	public function reset(){
-		$this->btn = [];
-		$this->btns = [];
+		$this->btn = array();
+		$this->btns = array();
 		return $this;
 	}
 	public function exists(string $name){
@@ -826,13 +826,13 @@ class TelegramBotButtonSave {
 	    if($space === null)$space = '||';
 		return array_map(function($x)use($space){
 			return array_map(function($x){
-				return ['text'=>$x];
+				return array('text'=>$x);
 			},explode($space,$x));
 		},explode("\n",$str));
 	}
 }
 class TelegramBotSaveMsgs {
-	private $msgs = [];
+	private $msgs = array();
 	public function get(string $name){
 		return isset($this->msgs[$name])? $this->msgs[$name] : false;
 	}
@@ -846,7 +846,7 @@ class TelegramBotSaveMsgs {
 		return $this;
 	}
 	public function reset(){
-		$this->msgs = [];
+		$this->msgs = array();
 		return $this;
 	}
 	public function exists(string $name){
@@ -888,190 +888,190 @@ class TelegramBotSends {
 		$this->bot->sendAction($this->chat, "typing", $this->level);
 		return $this;
 	}
-	public function msg($text, $args = []){
+	public function msg($text, $args = array()){
 		$this->bot->sendMessage($this->chat, $text, $args, $this->level);
 		return $this;
 	}
-	public function btnmsg($text, $btn, $args = []){
+	public function btnmsg($text, $btn, $args = array()){
 		$args['reply_markup'] = $btn;
 		$this->bot->sendMessage($this->chat, $text, $args, $this->level);
 		return $this;
 	}
-	public function media($type, $media, $args = []){
+	public function media($type, $media, $args = array()){
 		$this->bot->sendMedia($this->chat, $type, $media, $args, $this->level);
 		return $this;
 	}
-	public function mediamsg($type, $media, $caption, $args = []){
+	public function mediamsg($type, $media, $caption, $args = array()){
 		$args['caption'] = $caption;
 		$this->bot->sendMedia($this->chat, $type, $media, $args, $this->level);
 		return $this;
 	}
-	public function mediabtn($type, $media, $markup, $args = []){
+	public function mediabtn($type, $media, $markup, $args = array()){
 		$args['reply_markup'] = $markup;
 		$this->bot->sendMedia($this->chat, $type, $media, $args, $this->level);
 		return $this;
 	}
-	public function mediamsgbtn($type, $media, $caption, $markup, $args = []){
+	public function mediamsgbtn($type, $media, $caption, $markup, $args = array()){
 		$args['caption'] = $caption;
 		$args['reply_markup'] = $markup;
 		$this->bot->sendMedia($this->chat, $type, $media, $args, $this->level);
 		return $this;
 	}
-	public function photo($photo, $args = []){
+	public function photo($photo, $args = array()){
 		$this->bot->sendPhoto($this->chat, $photo, $args, $this->level);
 		return $this;
 	}
-	public function voice($voice, $args = []){
+	public function voice($voice, $args = array()){
 		$this->bot->sendVoice($this->chat, $voice, $args, $this->level);
 		return $this;
 	}
-	public function video($video, $args = []){
+	public function video($video, $args = array()){
 		$this->bot->sendVideo($this->chat, $video, $args, $this->level);
 		return $this;
 	}
-	public function audio($audio, $args = []){
+	public function audio($audio, $args = array()){
 		$this->bot->sendAudio($this->chat, $audio, $args, $this->level);
 		return $this;
 	}
-	public function videonote($videonote, $args = []){
+	public function videonote($videonote, $args = array()){
 		$this->bot->sendVideoNote($this->chat, $videonote, $args, $this->level);
 		return $this;
 	}
-	public function sticker($sticker, $args = []){
+	public function sticker($sticker, $args = array()){
 		$this->bot->sendSticker($this->chat, $sticker, $args, $this->level);
 		return $this;
 	}
-	public function document($document, $args = []){
+	public function document($document, $args = array()){
 		$this->bot->sendDocument($this->chat, $document, $args, $this->level);
 		return $this;
 	}
-	public function file($file, $args = []){
+	public function file($file, $args = array()){
 		$this->bot->sendFile($this->chat, $file, $args, $this->level);
 		return $this;
 	}
-	public function photomsg($photo, $caption, $args = []){
+	public function photomsg($photo, $caption, $args = array()){
 		$args['caption'] = $caption;
 		$this->bot->sendPhoto($this->chat, $photo, $args, $this->level);
 		return $this;
 	}
-	public function voicemsg($voice, $caption, $args = []){
+	public function voicemsg($voice, $caption, $args = array()){
 		$args['caption'] = $caption;
 		$this->bot->sendVoice($this->chat, $voice, $args, $this->level);
 		return $this;
 	}
-	public function videomsg($video, $caption, $args = []){
+	public function videomsg($video, $caption, $args = array()){
 		$args['caption'] = $caption;
 		$this->bot->sendVideo($this->chat, $video, $args, $this->level);
 		return $this;
 	}
-	public function audiomsg($audio, $caption, $args = []){
+	public function audiomsg($audio, $caption, $args = array()){
 		$args['caption'] = $caption;
 		$this->bot->sendAudio($this->chat, $audio, $args, $this->level);
 		return $this;
 	}
-	public function videonotemsg($videonote, $caption, $args = []){
+	public function videonotemsg($videonote, $caption, $args = array()){
 		$args['caption'] = $caption;
 		$this->bot->sendVideoNote($this->chat, $videonote, $args, $this->level);
 		return $this;
 	}
-	public function stickermsg($sticker, $caption, $args = []){
+	public function stickermsg($sticker, $caption, $args = array()){
 		$args['caption'] = $caption;
 		$this->bot->sendSticker($this->chat, $sticker, $args, $this->level);
 		return $this;
 	}
-	public function documentmsg($document, $caption, $args = []){
+	public function documentmsg($document, $caption, $args = array()){
 		$args['caption'] = $caption;
 		$this->bot->sendDocument($this->chat, $document, $args, $this->level);
 		return $this;
 	}
-	public function filemsg($file, $caption, $args = []){
+	public function filemsg($file, $caption, $args = array()){
 		$args['caption'] = $caption;
 		$this->bot->sendFile($this->chat, $file, $args, $this->level);
 		return $this;
 	}
-	public function photobtn($photo, $markup, $args = []){
+	public function photobtn($photo, $markup, $args = array()){
 		$args['reply_markup'] = $markup;
 		$this->bot->sendPhoto($this->chat, $photo, $args, $this->level);
 		return $this;
 	}
-	public function voicebtn($voice, $markup, $args = []){
+	public function voicebtn($voice, $markup, $args = array()){
 		$args['reply_markup'] = $markup;
 		$this->bot->sendVoice($this->chat, $voice, $args, $this->level);
 		return $this;
 	}
-	public function videobtn($video, $markup, $args = []){
+	public function videobtn($video, $markup, $args = array()){
 		$args['reply_markup'] = $markup;
 		$this->bot->sendVideo($this->chat, $video, $args, $this->level);
 		return $this;
 	}
-	public function audiobtn($audio, $markup, $args = []){
+	public function audiobtn($audio, $markup, $args = array()){
 		$args['reply_markup'] = $markup;
 		$this->bot->sendAudio($this->chat, $audio, $args, $this->level);
 		return $this;
 	}
-	public function videonotebtn($videonote, $markup, $args = []){
+	public function videonotebtn($videonote, $markup, $args = array()){
 		$args['reply_markup'] = $markup;
 		$this->bot->sendVideoNote($this->chat, $videonote, $args, $this->level);
 		return $this;
 	}
-	public function stickerbtn($sticker, $markup, $args = []){
+	public function stickerbtn($sticker, $markup, $args = array()){
 		$args['reply_markup'] = $markup;
 		$this->bot->sendSticker($this->chat, $sticker, $args, $this->level);
 		return $this;
 	}
-	public function documentbtn($document, $markup, $args = []){
+	public function documentbtn($document, $markup, $args = array()){
 		$args['reply_markup'] = $markup;
 		$this->bot->sendDocument($this->chat, $document, $args, $this->level);
 		return $this;
 	}
-	public function filebtn($file, $markup, $args = []){
+	public function filebtn($file, $markup, $args = array()){
 		$args['reply_markup'] = $markup;
 		$this->bot->sendFile($this->chat, $file, $args, $this->level);
 		return $this;
 	}
-	public function photomsgbtn($photo, $caption, $markup, $args = []){
+	public function photomsgbtn($photo, $caption, $markup, $args = array()){
 		$args['caption'] = $caption;
 		$args['reply_markup'] = $markup;
 		$this->bot->sendPhoto($this->chat, $photo, $args, $this->level);
 		return $this;
 	}
-	public function voicemsgbtn($voice, $caption, $markup, $args = []){
+	public function voicemsgbtn($voice, $caption, $markup, $args = array()){
 		$args['caption'] = $caption;
 		$args['reply_markup'] = $markup;
 		$this->bot->sendVoice($this->chat, $voice, $args, $this->level);
 		return $this;
 	}
-	public function videomsgbtn($video, $caption, $markup, $args = []){
+	public function videomsgbtn($video, $caption, $markup, $args = array()){
 		$args['caption'] = $caption;
 		$args['reply_markup'] = $markup;
 		$this->bot->sendVideo($this->chat, $video, $args, $this->level);
 		return $this;
 	}
-	public function audiomsgbtn($audio, $caption, $markup, $args = []){
+	public function audiomsgbtn($audio, $caption, $markup, $args = array()){
 		$args['caption'] = $caption;
 		$args['reply_markup'] = $markup;
 		$this->bot->sendAudio($this->chat, $audio, $args, $this->level);
 		return $this;
 	}
-	public function videonotemsgbtn($videonote, $caption, $markup, $args = []){
+	public function videonotemsgbtn($videonote, $caption, $markup, $args = array()){
 		$args['caption'] = $caption;
 		$args['reply_markup'] = $markup;
 		$this->bot->sendVideoNote($this->chat, $videonote, $args, $this->level);
 		return $this;
 	}
-	public function stickermsgbtn($sticker, $caption, $markup, $args = []){
+	public function stickermsgbtn($sticker, $caption, $markup, $args = array()){
 		$args['caption'] = $caption;
 		$args['reply_markup'] = $markup;
 		$this->bot->sendSticker($this->chat, $sticker, $args, $this->level);
 		return $this;
 	}
-	public function documentmsgbtn($document, $caption, $markup, $args = []){
+	public function documentmsgbtn($document, $caption, $markup, $args = array()){
 		$args['caption'] = $caption;
 		$args['reply_markup'] = $markup;
 		$this->bot->sendDocument($this->chat, $document, $args, $this->level);
 		return $this;
 	}
-	public function filemsgbtn($file, $caption, $markup, $args = []){
+	public function filemsgbtn($file, $caption, $markup, $args = array()){
 		$args['caption'] = $caption;
 		$args['reply_markup'] = $markup;
 		$this->bot->sendFile($this->chat, $file, $args, $this->level);
@@ -1117,14 +1117,14 @@ class TelegramBotSends {
 		$this->bot->deleteMessage($this->chat, $id, $this->level);
 		return $this;
 	}
-	public function editmsg($message,$id = false, $text, $args = []){
+	public function editmsg($message,$id = false, $text, $args = array()){
 		if($id)
 			$this->bot->editMessageText($this->chat, $message, $id, $text, $args, $this->level);
 		else
 			$this->bot->editInlineText($this->chat, $message, $text, $args, $this->level);
 		return $this;
 	}
-	public function editmsgbtn($message,$id = false, $text, $keyboard, $args = []){
+	public function editmsgbtn($message,$id = false, $text, $keyboard, $args = array()){
 		$args['reply_markup'] = $keyboard;
 		if($id)
 			$this->bot->editMessageText($this->chat, $message, $id, $text, $args, $this->level);
@@ -1132,25 +1132,25 @@ class TelegramBotSends {
 			$this->bot->editInlineText($this->chat, $message, $text, $args, $this->level);
 		return $this;
 	}
-	public function editbtn($message,$id = false, $keyboard, $args = []){
+	public function editbtn($message,$id = false, $keyboard, $args = array()){
 		if($id)
 			$this->bot->editMessageInlineKeyboard($this->chat, $message, $id, $keyboard, $args, $this->level);
 		else
 			$this->bot->editInlineInlineKeyboard($this->chat, $message, $keyboard, $args, $this->level);
 		return $this;
 	}
-	public function editlive($message, $id, $live, $args = []){
+	public function editlive($message, $id, $live, $args = array()){
 		$this->bot->editMessageLiveLocation($this->chat, $message, $id, $live, $args, $this->level);
 		return $this;
 	}
-	public function editcaption($message,$id = false, $text, $args = []){
+	public function editcaption($message,$id = false, $text, $args = array()){
 		if($id)
 			$this->bot->editMessageText($this->chat, $message, $id, $text, $args, $this->level);
 		else
 			$this->bot->editInlineText($this->chat, $message, $text, $args, $this->level);
 		return $this;
 	}
-	public function editcaptionbtn($message,$id = false, $text, $keyboard, $args = []){
+	public function editcaptionbtn($message,$id = false, $text, $keyboard, $args = array()){
 		$args['reply_markup'] = $keyboard;
 		if($id)
 			$this->bot->editMessageCaption($this->chat, $message, $id, $text, $args, $this->level);
@@ -1158,14 +1158,14 @@ class TelegramBotSends {
 			$this->bot->editInlineCaption($this->chat, $message, $text, $args, $this->level);
 		return $this;
 	}
-	public function editmedia($message,$id = false, $media, $args = []){
+	public function editmedia($message,$id = false, $media, $args = array()){
 		if($id)
 			$this->bot->editMessageMedia($this->chat, $message, $id, $media, $args, $this->level);
 		else
 			$this->bot->editInlineMedia($this->chat, $message, $media, $args, $this->level);
 		return $this;
 	}
-	public function editmediabtn($message,$id = false, $media, $keyboard, $args = []){
+	public function editmediabtn($message,$id = false, $media, $keyboard, $args = array()){
 		$args['reply_markup'] = $keyboard;
 		if($id)
 			$this->bot->editMessageMedia($this->chat, $message, $id, $media, $args, $this->level);
@@ -1175,7 +1175,7 @@ class TelegramBotSends {
 	}
 }
 class TelegramBot {
-	public $data, $token, $final, $results = [], $sents = [], $save = true, $last, $parser = true, $variables = false, $notresponse = false, $autoaction = false, $handle = false;
+	public $data, $token, $final, $results = array(), $sents = array(), $save = true, $last, $parser = true, $variables = false, $notresponse = false, $autoaction = false, $handle = false;
 	public $keyboard, $inlineKeyboard, $foreReply, $removeKeyboard, $queryResult, $menu, $send, $msgs;
 	
 	const KEYBOARD = 'keyboard';
@@ -1214,11 +1214,11 @@ class TelegramBot {
 		$this->menu = new TelegramBotButtonSave;
 		$this->send = new TelegramBotSends($this);
 		$this->msgs = new TelegramBotSaveMsgs;
-		$this->forceReply = ["force_reply" => true];
-		$this->removeKeyboard = ["remove_keyboard" => true];
+		$this->forceReply = array("force_reply" => true);
+		$this->removeKeyboard = array("remove_keyboard" => true);
 	}
 	public function isTelegram(){
-		return in_array(getenv('REMOTE_ADDR'), [
+		return in_array(getenv('REMOTE_ADDR'), array(
 			'149.154.0.0',
 			'149.154.0.1',
 			'149.154.0.2',
@@ -1236,7 +1236,7 @@ class TelegramBot {
 			'149.154.0.14',
 			'149.154.0.15',
 			'149.154.0.16'
-		]);
+		));
 	}
 	public function checkTelegram(){
 		if(!$this->isTelegram())
@@ -1245,16 +1245,16 @@ class TelegramBot {
 	public function update($offset = - 1, $limit = 1, $timeout = 0){
 		if(isset($this->data->message_id))return $this->data;
 		elseif($this->data = json_decode(STDINPUTED))return $this->data;
-		else $res = $this->data = $this->request("getUpdates", ["offset" => $offset, "limit" => $limit, "timeout" => $timeout], 3);
+		else $res = $this->data = $this->request("getUpdates", array("offset" => $offset, "limit" => $limit, "timeout" => $timeout), 3);
 		return (object)$res;
 	}
-	public function request($method, $args = [], $level = 3){
+	public function request($method, $args = array(), $level = 3){
 		$args = $this->parse_args($method, $args);
 		$res = false;
 		$func = $this->handle;
 		$handle = $func ? new ThumbCode(
 		function()use(&$method, &$args, &$res, &$level, &$func){
-			$func((object)["method" => $method, "arguments" => $args, "result" => $res, "level" => $level]);
+			$func((object)array("method" => $method, "arguments" => $args, "result" => $res, "level" => $level));
 		}): false;
 		if($this->autoaction && isset($args['chat_id'])) {
 			switch(strtolower($method)) {
@@ -1283,10 +1283,10 @@ class TelegramBot {
 				$action = false;
 			}
 			if($action)
-				$this->request("sendChatAction", [
+				$this->request("sendChatAction", array(
 					"chat_id" => $args['chat_id'],
 					"action" => $action
-				]);
+				));
 		}
 		if($level == 1) {
 			$args['method'] = $method;
@@ -1316,7 +1316,7 @@ class TelegramBot {
 		if($res === false)return false;
 		if($res === true)return true;
 		if(!$res) {
-			$server = array_key(["OUTPUT", "api.telegram.org", "api.telegram.org"], $level - 1);
+			$server = array_key(array("OUTPUT", "api.telegram.org", "api.telegram.org"), $level - 1);
 			new XNError("TelegramBot", "can not Connect to $server", XNError::NETWORK);
 			return false;
 		}
@@ -1328,8 +1328,8 @@ class TelegramBot {
 	}
 	public function reset(){
 		$this->final = null;
-		$this->results = [];
-		$this->sents = [];
+		$this->results = array();
+		$this->sents = array();
 		$this->data = null;
 	}
 	public function close(){
@@ -1353,12 +1353,12 @@ class TelegramBot {
 		    $notr();
 		}
 	}
-	public function sendMessage($chat, $text, $args = [], $level = 3){
+	public function sendMessage($chat, $text, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['text'] = $text;
 		return $this->request("sendMessage", $args, $level);
 	}
-	public function sendMessages($chat, $text, $args = [], $level = 3){
+	public function sendMessages($chat, $text, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$texts = str_split($text, 4096);
 		foreach($texts as $text) {
@@ -1367,66 +1367,66 @@ class TelegramBot {
 		}
 		return $this;
 	}
-	public function sendMessageremoveKeyboard($chat, $text, $args = [], $level = 3){
+	public function sendMessageremoveKeyboard($chat, $text, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['text'] = $text;
-		$args['reply_markup'] = json_encode(["remove_keyboard" => true]);
+		$args['reply_markup'] = json_encode(array("remove_keyboard" => true));
 		return $this->request("sendMessage", $args, $level);
 	}
-	public function sendMessageForceReply($chat, $text, $args = [], $level = 3){
+	public function sendMessageForceReply($chat, $text, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['text'] = $text;
-		$args['reply_markup'] = json_encode(['force_reply' => true]);
+		$args['reply_markup'] = json_encode(array('force_reply' => true));
 		return $this->request("sendMessage", $args, $level);
 	}
 	public function sendAction($chat, $action, $level = 3){
-		return $this->request("sendChatAction", ["chat_id" => $chat, "action" => $action], $level);
+		return $this->request("sendChatAction", array("chat_id" => $chat, "action" => $action), $level);
 	}
 	public function sendUploadingPhoto($chat, $level = 3){
-		return $this->request("sendChatAction", ["chat_id" => $chat, "action" => "upload_photo"], $level);
+		return $this->request("sendChatAction", array("chat_id" => $chat, "action" => "upload_photo"), $level);
 	}
 	public function sendUploadingVideo($chat, $level = 3){
-		return $this->request("sendChatAction", ["chat_id" => $chat, "action" => "upload_video"], $level);
+		return $this->request("sendChatAction", array("chat_id" => $chat, "action" => "upload_video"), $level);
 	}
 	public function sendUploadingAudio($chat, $level = 3){
-		return $this->request("sendChatAction", ["chat_id" => $chat, "action" => "upload_audio"], $level);
+		return $this->request("sendChatAction", array("chat_id" => $chat, "action" => "upload_audio"), $level);
 	}
 	public function sendUploadingDocument($chat, $level = 3){
-		return $this->request("sendChatAction", ["chat_id" => $chat, "action" => "upload_document"], $level);
+		return $this->request("sendChatAction", array("chat_id" => $chat, "action" => "upload_document"), $level);
 	}
 	public function sendUploadingVideoNote($chat, $level = 3){
-		return $this->request("sendChatAction", ["chat_id" => $chat, "action" => "upload_video_note"], $level);
+		return $this->request("sendChatAction", array("chat_id" => $chat, "action" => "upload_video_note"), $level);
 	}
 	public function sendFindingLocation($chat, $level = 3){
-		return $this->request("sendChatAction", ["chat_id" => $chat, "action" => "find_location"], $level);
+		return $this->request("sendChatAction", array("chat_id" => $chat, "action" => "find_location"), $level);
 	}
 	public function sendRecordingVideo($chat, $level = 3){
-		return $this->request("sendChatAction", ["chat_id" => $chat, "action" => "record_video"], $level);
+		return $this->request("sendChatAction", array("chat_id" => $chat, "action" => "record_video"), $level);
 	}
 	public function sendRecordingAudio($chat, $level = 3){
-		return $this->request("sendChatAction", ["chat_id" => $chat, "action" => "record_audio"], $level);
+		return $this->request("sendChatAction", array("chat_id" => $chat, "action" => "record_audio"), $level);
 	}
 	public function sendRecordingVideoNote($chat, $level = 3){
-		return $this->request("sendChatAction", ["chat_id" => $chat, "action" => "record_video_note"], $level);
+		return $this->request("sendChatAction", array("chat_id" => $chat, "action" => "record_video_note"), $level);
 	}
 	public function sendTyping($chat, $level = 3){
-		return $this->request("sendChatAction", ["chat_id" => $chat, "action" => "typing"], $level);
+		return $this->request("sendChatAction", array("chat_id" => $chat, "action" => "typing"), $level);
 	}
-	public function setWebhook($url = '', $args = [], $level = 3){
+	public function setWebhook($url = '', $args = array(), $level = 3){
 		$args['url'] = $url ? $url : '';
 		return $this->request("setWebhook", $args, $level);
 	}
 	public function deleteWebhook($level = 3){
-		return $this->request("setWebhook", [], $level);
+		return $this->request("setWebhook", array(), $level);
 	}
 	public function getChat($chat, $level = 3){
-		return $this->request("getChat", ["chat_id" => $chat], $level);
+		return $this->request("getChat", array("chat_id" => $chat), $level);
 	}
 	public function getMembersCount($chat, $level = 3){
-		return $this->request("getChatMembersCount", ["chat_id" => $chat], $level);
+		return $this->request("getChatMembersCount", array("chat_id" => $chat), $level);
 	}
 	public function getMember($chat, $user, $level = 3){
-		return $this->request("getChatMember", ["chat_id" => $chat, "user_id" => $user], $level);
+		return $this->request("getChatMember", array("chat_id" => $chat, "user_id" => $user), $level);
 	}
 	public function getProfile($user, $level = 3){
 		$args['user_id'] = $user;
@@ -1434,21 +1434,21 @@ class TelegramBot {
 		return $this->request("getUserProfilePhotos", $args, $level);
 	}
 	public function banMember($chat, $user, $time = false, $level = 3){
-		$args = ["chat_id" => $chat, "user_id" => $user];
+		$args = array("chat_id" => $chat, "user_id" => $user);
 		if($time)$args['until_date'] = $time;
 		return $this->request("kickChatMember", $args, $level);
 	}
 	public function unbanMember($chat, $user, $level = 3){
-		return $this->request("unbanChatMember", ["chat_id" => $chat, "user_id" => $user], $level);
+		return $this->request("unbanChatMember", array("chat_id" => $chat, "user_id" => $user), $level);
 	}
 	public function kickMember($chat, $user, $level = 3){
-		return [$this->banMember($chat, $user, $level), $this->unbanMember($chat, $user, $level)];
+		return array($this->banMember($chat, $user, $level), $this->unbanMember($chat, $user, $level));
 	}
 	public function getMe($level = 3){
-		return $this->request("getMe", [], $level);
+		return $this->request("getMe", array(), $level);
 	}
 	public function getWebhook($level = 3){
-		return $this->request("getWebhookInfo", [], $level);
+		return $this->request("getWebhookInfo", array(), $level);
 	}
 	public function resrictMember($chat, $user, $args, $time = false, $level = 3){
 		foreach($args as $key => $val)$args["can_$key"] = $val;
@@ -1457,201 +1457,201 @@ class TelegramBot {
 		if($time)$args['until_date'] = $time;
 		return $this->request("resrictChatMember", $args, $level);
 	}
-	public function promoteMember($chat, $user, $args = [], $level = 3){
+	public function promoteMember($chat, $user, $args = array(), $level = 3){
 		foreach($args as $key => $val)$args["can_$key"] = $val;
 		$args['chat_id'] = $chat;
 		$args['user_id'] = $user;
 		return $this->request("promoteChatMember", $args, $level);
 	}
 	public function exportInviteLink($chat, $level = 3){
-		$this->request("exportChatInviteLink", ["chat_id" => $chat], $level);
+		$this->request("exportChatInviteLink", array("chat_id" => $chat), $level);
 	}
 	public function setChatPhoto($chat, $photo, $level = 3){
-		return $this->request("setChatPhoto", ["chat_id" => $chat, "photo" => $photo], $level);
+		return $this->request("setChatPhoto", array("chat_id" => $chat, "photo" => $photo), $level);
 	}
 	public function deleteChatPhoto($chat, $level = 3){
-		return $this->request("deleteChatPhoto", ["chat_id" => $chat], $level);
+		return $this->request("deleteChatPhoto", array("chat_id" => $chat), $level);
 	}
 	public function setTitle($chat, $title, $level = 3){
-		return $this->request("setChatTitle", ["chat_id" => $chat, "title" => $title], $level);
+		return $this->request("setChatTitle", array("chat_id" => $chat, "title" => $title), $level);
 	}
 	public function setDescription($chat, $description, $level = 3){
-		return $this->request("setChatDescription", ["chat_id" => $chat, "description" => $description], $level);
+		return $this->request("setChatDescription", array("chat_id" => $chat, "description" => $description), $level);
 	}
 	public function pinMessage($chat, $message, $disable = false, $level = 3){
-		return $this->request("pinChatMessage", ["chat_id" => $chat, "message_id" => $message, "disable_notification" => $disable], $level);
+		return $this->request("pinChatMessage", array("chat_id" => $chat, "message_id" => $message, "disable_notification" => $disable), $level);
 	}
 	public function unpinMessage($chat, $level = 3){
-		return $this->request("unpinChatMessage", ["chat_id" => $chat], $level);
+		return $this->request("unpinChatMessage", array("chat_id" => $chat), $level);
 	}
 	public function leaveChat($chat, $level = 3){
-		return $this->request("leaveChat", ["chat_id" => $chat], $level);
+		return $this->request("leaveChat", array("chat_id" => $chat), $level);
 	}
 	public function getAdmins($chat, $level = 3){
-		return $this->request("getChatAdministrators", ["chat_id" => $chat], $level);
+		return $this->request("getChatAdministrators", array("chat_id" => $chat), $level);
 	}
 	public function setChatStickerSet($chat, $sticker, $level = 3){
-		return $this->request("setChatStickerSet", ["chat_id" => $chat, "sticker_set_name" => $sticker], $level);
+		return $this->request("setChatStickerSet", array("chat_id" => $chat, "sticker_set_name" => $sticker), $level);
 	}
 	public function deleteChatStickerSet($chat, $level = 3){
-		return $this->request("deleteChatStickerSet", ["chat_id" => $chat], $level);
+		return $this->request("deleteChatStickerSet", array("chat_id" => $chat), $level);
 	}
-	public function answerCallback($id, $text, $args = [], $level = 3){
+	public function answerCallback($id, $text, $args = array(), $level = 3){
 		$args['callback_query_id'] = $id;
 		$args['text'] = $text;
 		return $this->request("answerCallbackQuery", $args, $level);
 	}
-	public function editText($text, $args = [], $level = 3){
+	public function editText($text, $args = array(), $level = 3){
 		$args['text'] = $text;
 		return $this->request("editMessageText", $args, $level);
 	}
-	public function editMessageText($chat, $msg, $text, $args = [], $level = 3){
+	public function editMessageText($chat, $msg, $text, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['message_id'] = $msg;
 		$args['text'] = $text;
 		return $this->request("editMessageText", $args, $level);
 	}
-	public function editInlineText($msg, $text, $args = [], $level = 3){
+	public function editInlineText($msg, $text, $args = array(), $level = 3){
 		$args['inline_message_id'] = $msg;
 		$args['text'] = $text;
 		return $this->request("editMessageText", $args, $level);
 	}
-	public function editCaption($caption, $args = [], $level = 3){
+	public function editCaption($caption, $args = array(), $level = 3){
 		$args['caption'] = $caption;
 		return $this->request("editMessageCaption", $args, $level);
 	}
-	public function editMessageCaption($chat, $msg, $caption, $args = [], $level = 3){
+	public function editMessageCaption($chat, $msg, $caption, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$arsg['message_id'] = $msg;
 		$args['caption'] = $caption;
 		return $this->request("editMessageCaption", $args, $level);
 	}
-	public function editInlineCaption($msg, $caption, $args = [], $level = 3){
+	public function editInlineCaption($msg, $caption, $args = array(), $level = 3){
 		$arsg['inline_message_id'] = $msg;
 		$args['caption'] = $caption;
 		return $this->request("editMessageCaption", $args, $level);
 	}
-	public function editReplyMarkup($reply_makup, $args = [], $level = 3){
+	public function editReplyMarkup($reply_makup, $args = array(), $level = 3){
 		$args['reply_markup'] = $reply_markup;
 		return $this->request("editMessageReplyMarkup", $args, $level);
 	}
-	public function editMessageReplyMarkup($chat, $msg, $reply_makup, $args = [], $level = 3){
+	public function editMessageReplyMarkup($chat, $msg, $reply_makup, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['message_id'] = $msg;
 		$args['reply_markup'] = $reply_markup;
 		return $this->request("editMessageReplyMarkup", $args, $level);
 	}
-	public function editInlineReplyMarkup($msg, $reply_makup, $args = [], $level = 3){
+	public function editInlineReplyMarkup($msg, $reply_makup, $args = array(), $level = 3){
 		$args['inline_message_id'] = $msg;
 		$args['reply_markup'] = $reply_markup;
 		return $this->request("editMessageReplyMarkup", $args, $level);
 	}
-	public function editMedia($media, $args = [], $level = 3){
+	public function editMedia($media, $args = array(), $level = 3){
 		$args['media'] = $media;
 		return $this->request("editMessageMedia",$args,$level);
 	}
-	public function editMessageMedia($chat, $message, $media, $args = [], $level = 3){
+	public function editMessageMedia($chat, $message, $media, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['message_id'] = $message;
 		$args['media'] = $media;
 		return $this->request("editMessageMedia",$args,$level);
 	}
-	public function editInlineMedia($message, $media, $args = [], $level = 3){
+	public function editInlineMedia($message, $media, $args = array(), $level = 3){
 		$args['inline_message_id'] = $message;
 		$args['media'] = $media;
 		return $this->request("editMessageMedia",$args,$level);
 	}
-	public function editInlineKeyboard($reply_makup, $args = [], $level = 3){
-		$args['reply_markup'] = ["inline_keyboard" => $reply_markup];
+	public function editInlineKeyboard($reply_makup, $args = array(), $level = 3){
+		$args['reply_markup'] = array("inline_keyboard" => $reply_markup);
 		return $this->request("editMessageReplyMarkup", $args, $level);
 	}
-	public function editMessageInlineKeyboard($chat, $msg, $reply_makup, $args = [], $level = 3){
+	public function editMessageInlineKeyboard($chat, $msg, $reply_makup, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['message_id'] = $msg;
-		$args['reply_markup'] = ["inline_keyboard" => $reply_markup];
+		$args['reply_markup'] = array("inline_keyboard" => $reply_markup);
 		return $this->request("editMessageReplyMarkup", $args, $level);
 	}
-	public function editInlineInlineKeyboard($msg, $reply_makup, $args = [], $level = 3){
+	public function editInlineInlineKeyboard($msg, $reply_makup, $args = array(), $level = 3){
 		$args['inline_message_id'] = $msg;
-		$args['reply_markup'] = ["inline_keyboard" => $reply_markup];
+		$args['reply_markup'] = array("inline_keyboard" => $reply_markup);
 		return $this->request("editMessageReplyMarkup", $args, $level);
 	}
 	public function deleteMessage($chat, $message, $level = 3){
-		return $this->request("deleteMessage", ["chat_id" => $chat, "message_id" => $message], $level);
+		return $this->request("deleteMessage", array("chat_id" => $chat, "message_id" => $message), $level);
 	}
-	public function sendMedia($chat, $type, $file, $args = [], $level = 3){
+	public function sendMedia($chat, $type, $file, $args = array(), $level = 3){
 		$type = strtolower($type);
 		if($type == "videonote")$type = "video_note";
 		$args['chat_id'] = $chat;
 		$args[$type] = $file;
 		return $this->request("send" . str_replace('_', '', $type), $args, $level);
 	}
-	public function sendFile($chat, $file, $args = [], $level = 3){
-		$type = XNTelegram::botfileid_info($file)['type'];
+	public function sendFile($chat, $file, $args = array(), $level = 3){
+		$type = array_key(XNTelegram::botfileid_info($file), 'type');
 		if(!$type)return false;
 		$args['chat_id'] = $chat;
 		$args[$type] = $file;
 		return $this->request("send" . str_replace('_', '', $type), $args, $level);
 	}
 	public function getStickerSet($name, $level = 3){
-		return $this->request("getStickerSet", ["name" => $name], $level);
+		return $this->request("getStickerSet", array("name" => $name), $level);
 	}
-	public function sendDocument($chat, $file, $args = [], $level = 3){
+	public function sendDocument($chat, $file, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['document'] = $file;
 		return $this->request("sendDocument", $args, $level);
 	}
-	public function sendPhoto($chat, $file, $args = [], $level = 3){
+	public function sendPhoto($chat, $file, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['photo'] = $file;
 		return $this->request("sendPhoto", $args, $level);
 	}
-	public function sendVideo($chat, $file, $args = [], $level = 3){
+	public function sendVideo($chat, $file, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['video'] = $file;
 		return $this->request("sendVideo", $args, $level);
 	}
-	public function sendAudio($chat, $file, $args = [], $level = 3){
+	public function sendAudio($chat, $file, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['audio'] = $file;
 		return $this->request("sendAudio", $args, $level);
 	}
-	public function sendVoice($chat, $file, $args = [], $level = 3){
+	public function sendVoice($chat, $file, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['voice'] = $file;
 		return $this->request("sendVoice", $args, $level);
 	}
-	public function sendSticker($chat, $file, $args = [], $level = 3){
+	public function sendSticker($chat, $file, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['sticker'] = $file;
 		return $this->request("sendSticker", $args, $level);
 	}
-	public function sendVideoNote($chat, $file, $args = [], $level = 3){
+	public function sendVideoNote($chat, $file, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['video_note'] = $file;
 		return $this->request("sendVideoNote", $args, $level);
 	}
 	public function uploadStickerFile($user, $file, $level = 3){
-		return $this->request("uploadStickerFile", ["user_id" => $user, "png_sticker" => $file], $level);
+		return $this->request("uploadStickerFile", array("user_id" => $user, "png_sticker" => $file), $level);
 	}
-	public function createNewStickerSet($user, $name, $title, $args = [], $level = 3){
+	public function createNewStickerSet($user, $name, $title, $args = array(), $level = 3){
 		$args['user_id'] = $user;
 		$args['name'] = $name;
 		$args['title'] = $title;
 		return $this->request("createNewStickerSet", $args, $level);
 	}
-	public function addStickerToSet($user, $name, $args = [], $level = 3){
+	public function addStickerToSet($user, $name, $args = array(), $level = 3){
 		$args['user_id'] = $user;
 		$args['name'] = $name;
 		return $this->request("addStickerToSet", $args, $level);
 	}
 	public function setStickerPositionInSet($sticker, $position, $level = 3){
-		return $this->request("setStickerPositionInSet", ["sticker" => $sticker, "position" => $position], $level);
+		return $this->request("setStickerPositionInSet", array("sticker" => $sticker, "position" => $position), $level);
 	}
 	public function deleteStickerFromSet($sticker, $level = 3){
-		return $this->request("deleteStickerFromSet", ["sticker" => $sticker], $level);
+		return $this->request("deleteStickerFromSet", array("sticker" => $sticker), $level);
 	}
-	public function answerInline($id, $results, $args = [], $switch = [], $level = 3){
+	public function answerInline($id, $results, $args = array(), $switch = array(), $level = 3){
 		$args['inline_query_id'] = $id;
 		$args['results'] = is_array($results)? json_encode($results): $results;
 		if($switch['text'])$args['switch_pm_text'] = $switch['text'];
@@ -1659,26 +1659,26 @@ class TelegramBot {
 		return $this->request("answerInlineQuery", $args, $level);
 	}
 	public function answerPreCheckout($id, $ok = true, $level = 3){
-		if($ok === true)$args = ["pre_checkout_query_id" => $id, "ok" => true];
-		else $args = ["pre_checkout_query_id" => $id, "ok" => false, "error_message" => $ok];
+		if($ok === true)$args = array("pre_checkout_query_id" => $id, "ok" => true);
+		else $args = array("pre_checkout_query_id" => $id, "ok" => false, "error_message" => $ok);
 		return $this->request("answerPreCheckoutQuery", $args, $level);
 	}
-	public function setGameScore($user, $score, $args = [], $level = 3){
+	public function setGameScore($user, $score, $args = array(), $level = 3){
 		$args['user_id'] = $user;
 		$args['score'] = $score;
 		return $this->request("setGameScore", $args, $level);
 	}
-	public function getGameHighScores($user, $args = [], $level = 3){
+	public function getGameHighScores($user, $args = array(), $level = 3){
 		$args['user_id'] = $user;
 		return $this->request("getGameHighScores", $args, $level);
 	}
-	public function sendGame($chat, $name, $args = [], $level = 3){
+	public function sendGame($chat, $name, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['name'] = $name;
 		return $this->request("sendGame", $args, $level);
 	}
 	public function getFile($file, $level = 3){
-		return $this->request("getFile", ["file_id" => $file], $level);
+		return $this->request("getFile", array("file_id" => $file), $level);
 	}
 	public function readFile($path, $level = 3, $speed = false){
 		if($speed)$func = "fget";
@@ -1692,7 +1692,7 @@ class TelegramBot {
 		return $this->readFile($this->getFile($file, 3)->result->file_path, $level);
 	}
 	public function downloadFileProgress($file, $func, $al, $level = 3){
-		$file = $this->request("getFile", ["file_id" => $file], $level);
+		$file = $this->request("getFile", array("file_id" => $file), $level);
 		if(!$file->ok)return false;
 		$size = $file->result->file_size;
 		$path = $file->result->file_path;
@@ -1705,18 +1705,18 @@ class TelegramBot {
 				$speed = $dat / $up;
 				$all = $size / $dat * $time - $time;
 				$pre = 100 / ($size / $dat);
-				return $func((object)["content" => $data, "downloaded" => $dat, "size" => $size, "time" => $up, "endtime" => $all, "speed" => $speed, "pre" => $pre]);
+				return $func((object)array("content" => $data, "downloaded" => $dat, "size" => $size, "time" => $up, "endtime" => $all, "speed" => $speed, "pre" => $pre));
 			}
 			, $al);
 		}
 		else return false;
 	}
-	public function sendContact($chat, $phone, $args = [], $level = 3){
+	public function sendContact($chat, $phone, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['phone_number'] = $phone;
 		return $this->request("sendContact", $args, $level);
 	}
-	public function sendVenue($chat, $latitude, $longitude, $title, $address, $args = [], $level = 3){
+	public function sendVenue($chat, $latitude, $longitude, $title, $address, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['latitude'] = $latitude;
 		$args['longitude'] = $longitude;
@@ -1727,24 +1727,24 @@ class TelegramBot {
 	public function stopMessageLiveLocation($args, $level = 3){
 		return $this->request("stopMessageLiveLocation", $args, $level);
 	}
-	public function editMessageLiveLocation($latitude, $longitude, $args = [], $level = 3){
+	public function editMessageLiveLocation($latitude, $longitude, $args = array(), $level = 3){
 		$args['latitude'] = $latitude;
 		$args['longitude'] = $longitude;
 		return $this->request("editMessageLiveLocation", $args, $level);
 	}
-	public function sendLocation($chat, $latitude, $longitude, $args = [], $level = 3){
+	public function sendLocation($chat, $latitude, $longitude, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['latitude'] = $latitude;
 		$args['longitude'] = $longitude;
 		$this->request("sendLocation", $args, $level);
 	}
-	public function sendMediaGroup($chat, $media, $args = [], $level = 3){
+	public function sendMediaGroup($chat, $media, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
 		$args['media'] = json_encode($media);
 		return $this->request("sendMediaGroup", $args, $level);
 	}
 	public function forwardMessage($chat, $from, $message, $disable = false, $level = 3){
-		return $this->request("forwardMessage", ["chat_id" => $chat, "from_chat_id" => $from, "message_id" => $message, "disable_notification" => $disable], $level);
+		return $this->request("forwardMessage", array("chat_id" => $chat, "from_chat_id" => $from, "message_id" => $message, "disable_notification" => $disable), $level);
 	}
 	public function getAllMembers($chat){
 		return json_decode(file_get_contents("http://xns.elithost.eu/getparticipants/?token=$this->token&chat=$chat"));
@@ -1772,7 +1772,7 @@ class TelegramBot {
 		while($while > 0 || $while < 0) {
 			$updates = $this->update($offset, $limit, $timeout);
 			if(isset($updates->message_id)) {
-				if($offset == 0)$updates = (object)["result" => [$updates]];
+				if($offset == 0)$updates = (object)array("result" => array($updates));
 				else return;
 			}
 			if(isset($updates->result)) {
@@ -1784,13 +1784,13 @@ class TelegramBot {
 			}
 		}
 	}
-	public function filterUpdates($filter = [], $func = false){
+	public function filterUpdates($filter = array(), $func = false){
 		if(in_array($this->updateType(), $filter)) {
 			if($func)$func($this->data);
 			exit();
 		}
 	}
-	public function unfilterUpdates($filter = [], $func = false){
+	public function unfilterUpdates($filter = array(), $func = false){
 		if(!in_array($this->updateType(), $filter)) {
 			if($func)$func($this->data);
 			exit();
@@ -1798,8 +1798,8 @@ class TelegramBot {
 	}
 	public function getUser($update = false){
 		$update = $this->getUpdateInType($update);
-		if(!isset($update->chat))return (object)["chat" => $update->from, "from" => $update->from];
-		return (object)["chat" => $update->chat, "from" => $update->from];
+		if(!isset($update->chat))return (object)array("chat" => $update->from, "from" => $update->from);
+		return (object)array("chat" => $update->chat, "from" => $update->from);
 	}
 	public function getDate($update = false){
 		$update = $this->getUpdateInType($update);
@@ -1822,13 +1822,13 @@ class TelegramBot {
 		$update = $this->update();
 		if(isset($update->update_id))return $update;
 		elseif(isset($update->result[0]->update_id))return $update->result[0];
-		else return [];
+		else return array();
 	}
 	public function getUpdates(){
 		$update = $this->update(0, 999999999999, 0);
-		if(isset($update->update_id))return [$update];
+		if(isset($update->update_id))return array($update);
 		elseif($update->result[0]->update_id)return $update->result;
-		else return [];
+		else return array();
 	}
 	public function lastUpdateId($update = false){
 		if(!$update)$update = $this->update(-1, 1, 0);
@@ -1912,7 +1912,7 @@ class TelegramBot {
 		curl_close($c);
 		return $r;
 	}
-	public function sendMessageFromUpdate($chat, $update = false, $args = [], $level = 3){
+	public function sendMessageFromUpdate($chat, $update = false, $args = array(), $level = 3){
 		if($update)$update = $this->update->message;
 		elseif(isset($update->message))$update = $update->message;
 		$args['file'] = isset($args['file']) 				? $args['file'] :
@@ -1972,7 +1972,7 @@ class TelegramBot {
 		}
 		return false;
 	}
-	public function parse_args($method, $args = []){
+	public function parse_args($method, $args = array()){
 		if(!$this->parser)return $args;
 		if(isset($args['user'])){
 			$args['user_id'] = $args['user'];
@@ -2183,11 +2183,11 @@ class TelegramBotTestOutput extends TelegramBot {
 		$this->menu = new TelegramBotButtonSave;
 		$this->send = new TelegramBotSends($this);
 		$this->msgs = new TelegramBotSaveMsgs;
-		$this->forceReply = ["force_reply" => true];
-		$this->removeKeyboard = ["remove_keyboard" => true];
+		$this->forceReply = array("force_reply" => true);
+		$this->removeKeyboard = array("remove_keyboard" => true);
 		println("token : $token\n");
 	}
-	public function request($method, $args = [], $level = 3, $result = []){
+	public function request($method, $args = array(), $level = 3, $result = array()){
 		$args = $this->parse_args($method, $args);
 		if($this->autoaction && isset($args['chat_id'])) {
 			switch(strtolower($method)) {
@@ -2216,10 +2216,10 @@ class TelegramBotTestOutput extends TelegramBot {
 				$action = false;
 			}
 			if($action)
-				$this->request("sendChatAction", [
+				$this->request("sendChatAction", array(
 					"chat_id" => $args['chat_id'],
 					"action" => $action
-				]);
+				));
 		}
 		println("# $method");
 		foreach($args as $name => $arg)
@@ -2246,7 +2246,7 @@ class TelegramBotTestOutput extends TelegramBot {
 				case 'file':
 				case 'document_id':
 				case 'sticker_id':
-					println("| " . explode('_', $name)[0] . " : $arg");
+					println("| " . array_key(explode('_', $name), 0) . " : $arg");
 				break;
 				case 'video_note_id':
 					println("| video note : $arg");
@@ -2322,7 +2322,7 @@ class TelegramBotTestOutput extends TelegramBot {
 					println("| $name : $arg");
 			}
 		echo "\n";
-		return (object)['ok' => true, 'result' => json_decode(json_encode($result))];
+		return (object)array('ok' => true, 'result' => json_decode(json_encode($result)));
 	}
 }
 class TelegramLink {
@@ -2334,8 +2334,8 @@ class TelegramLink {
 			@$x->loadHTML($g);
 			$x = @new DOMXPath($x);
 			$path = "//div[@class='tgme_widget_message_bubble']";
-			$enti = $x->query("$path//div[@class='tgme_widget_message_text']")[0];
-			$entities = [];
+			$enti = array_key($x->query("$path//div[@class='tgme_widget_message_text']"), 0);
+			$entities = array();
 			$last = 0;
 			$pos = false;
 			$line = 0;
@@ -2343,19 +2343,20 @@ class TelegramLink {
 			$entit = new DOMDocument;
 			$entit->appendChild($entit->importNode($enti, true));
 			$text = trim(html_entity_decode(strip_tags(str_replace('<br/>', "\n", $entit->saveXML()))));
-			foreach((new DOMXPath($entit))->query("//code|i|b|a")as $num => $el) {
+			$tmp = new DOMXPath($entit);
+			foreach($tmp->query("//code|i|b|a") as $num => $el) {
 				$len = strlen($el->nodeValue);
 				$pos = strpos(substr($enti->nodeValue, $last, $textlen), $el->nodeValue)+ $last;
 				$last = $pos + $len;
-				$entities[$num] = ["offset" => $pos, "length" => $len];
+				$entities[$num] = array("offset" => $pos, "length" => $len);
 				if($el->tagName == 'a')$entities[$num]['url'] = $el->getAttribute("href");
 				elseif($el->tagName == 'b')$entities[$num]['type'] = 'bold';
 				elseif($el->tagName == 'i')$entities[$num]['type'] = 'italic';
 				elseif($el->tagName == 'code')$entities[$num]['type'] = 'code';
 				elseif($el->tagName == 'a')$entities[$num]['type'] = 'link';
 			}
-			if($entities == [])$entities = false;
-			$date = strtotime($x->query("$path//a[@class='tgme_widget_message_date']")[0]->getElementsByTagName('time')[0]->getAttribute("datetime"));
+			if($entities == array())$entities = false;
+			$date = strtotime(array_key(array_key($x->query("$path//a[@class='tgme_widget_message_date']"), 0)->getElementsByTagName('time'), 0)->getAttribute("datetime"));
 			$views = $x->query("$path//span[@class='tgme_widget_message_views']");
 			if(isset($views[0]))$views = $views[0]->nodeValue;
 			else $views = false;
@@ -2365,12 +2366,12 @@ class TelegramLink {
 			$via = $x->query("$path//a[@class='tgme_widget_message_via_bot']");
 			if(isset($via[0]))$via = substr($via[0]->nodeValue, 1);
 			else $via = false;
-			$forward = $x->query("$path//a[@class='tgme_widget_message_forwarded_from_name']")[0];
+			$forward = array_key($x->query("$path//a[@class='tgme_widget_message_forwarded_from_name']"), 0);
 			if($forward) {
 				$forwardname = $forward->nodeValue;
 				$forwarduser = $forward->getAttribute("href");
 				$forwarduser = end(explode('/', $forwarduser));
-				$forward = $forwardname ? ["title" => $forwardname, "username" => $forwarduser] : false;
+				$forward = $forwardname ? array("title" => $forwardname, "username" => $forwarduser) : false;
 			}
 			else $forward = false;
 			$replyid = $x->query("$path//a[@class='tgme_widget_message_reply']");
@@ -2378,16 +2379,16 @@ class TelegramLink {
 				$replyid = $replyid[0]->getAttribute("href");
 				$replyid = explode('/', $replyid);
 				$replyid = end($replyid);
-				$replyname = $x->query("$path//a[@class='tgme_widget_message_reply']//span[@class='tgme_widget_message_author_name']")[0]->nodeValue;
-				$replytext = $x->query("$path//a[@class='tgme_widget_message_reply']//div[@class='tgme_widget_message_text']")[0]->nodeValue;
-				$replymeta = $x->query("$path//a[@class='tgme_widget_message_reply']//div[@class='tgme_widget_message_metatext']")[0]->nodeValue;
+				$replyname = array_key($x->query("$path//a[@class='tgme_widget_message_reply']//span[@class='tgme_widget_message_author_name']"), 0)->nodeValue;
+				$replytext = array_key($x->query("$path//a[@class='tgme_widget_message_reply']//div[@class='tgme_widget_message_text']"), 0)->nodeValue;
+				$replymeta = array_key($x->query("$path//a[@class='tgme_widget_message_reply']//div[@class='tgme_widget_message_metatext']"), 0)->nodeValue;
 				$replyparse = explode(' ', $replymeta);
-				$replythumb = $x->query("$path//a[@class='tgme_widget_message_reply']//i[@class='tgme_widget_message_reply_thumb']")[0];
+				$replythumb = array_key($x->query("$path//a[@class='tgme_widget_message_reply']//i[@class='tgme_widget_message_reply_thumb']"), 0);
 				if($replythumb)$replythumb = $replythumb->getAttribute('style');
 				else $replythumb = false;
 				preg_match('/url\(\'(.{1,})\'\)/', $replythumb, $pr);
 				$replythumb = $pr[1];
-				$reply = ["message_id" => $replyid, "title" => $replyname];
+				$reply = array("message_id" => $replyid, "title" => $replyname);
 				if($replytext)$reply['text'] = $replytext;
 				elseif($replyparse[0] == 'Service' || $replyparse[0] == 'Channel')$reply['service_message'] = true;
 				elseif($replyparse[1] == 'Sticker') {
@@ -2402,59 +2403,59 @@ class TelegramLink {
 			$service = $x->query("$path//div[@class='message_media_not_supported_label']");
 			if(isset($service[0]))$service = $service[0]->nodeValue == 'Service message';
 			else $service = false;
-			$photo = $x->query("$path//a[@class='tgme_widget_message_photo_wrap']")[0];
+			$photo = array_key($x->query("$path//a[@class='tgme_widget_message_photo_wrap']"), 0);
 			if($photo) {
 				$photo = $photo->getAttribute('style');
 				preg_match('/url\(\'(.{1,})\'\)/', $photo, $pr);
-				$photo = ["photo" => $pr[1]];
+				$photo = array("photo" => $pr[1]);
 			}
 			else $photo = false;
 			$voice = $x->query("$path//audio[@class='tgme_widget_message_voice']");
 			if(isset($voice[0])) {
 				$voice = $voice[0]->getAttribute("src");
-				$voiceduration = $x->query("$path//time[@class='tgme_widget_message_voice_duration']")[0]->nodeValue;
+				$voiceduration = array_key($x->query("$path//time[@class='tgme_widget_message_voice_duration']"), 0)->nodeValue;
 				$voiceex = explode(':', $voiceduration);
 				if(count($voiceex) == 3)$voiceduration = $voiceex[0] * 3600 + $voiceex[1] * 60 + $voiceex[2];
 				else $voiceduration = $voiceex[0] * 60 + $voiceex[1];
-				$voice = ["voice" => $voice, "duration" => $voiceduration];
+				$voice = array("voice" => $voice, "duration" => $voiceduration);
 			}
 			else $voice = false;
 			$sticker = $x->query("$path//div[@class='tgme_widget_message_sticker_wrap']");
 			if(isset($sticker[0])) {
-				$stickername = $sticker[0]->getElementsByTagName("a")[0];
-				$sticker = $stickername->getElementsByTagName('i')[0]->getAttribute("style");
+				$stickername = array_key($sticker[0]->getElementsByTagName("a"), 0);
+				$sticker = array_key($stickername->getElementsByTagName('i'), 0)->getAttribute("style");
 				preg_match('/url\(\'(.{1,})\'\)/', $sticker, $pr);
 				$sticker = $pr[1];
 				$stickername = $stickername->getAttribute("href");
 				$stickername = explode('/', $stickername);
 				$stickername = end($stickername);
-				$sticker = ["sticker" => $sticker, "setname" => $stickername];
+				$sticker = array("sticker" => $sticker, "setname" => $stickername);
 			}
 			else $sticker = false;
 			$document = $x->query("$path//div[@class='tgme_widget_message_document_title']");
 			if(isset($document[0])) {
 				$document = $document[0]->nodeValue;
-				$documentsize = $x->query("$path//div[@class='tgme_widget_message_document_extra']")[0]->nodeValue;
-				$document = ["title" => $document, "size" => $documentsize];
+				$documentsize = array_key($x->query("$path//div[@class='tgme_widget_message_document_extra']"), 0)->nodeValue;
+				$document = array("title" => $document, "size" => $documentsize);
 			}
 			else $document = false;
 			$video = $x->query("$path//a[@class='tgme_widget_message_video_player']");
 			if(isset($video[0])) {
-				$video = $video[0]->getElementsByTagName("i")[0]->getAttribute("style");
+				$video = array_key($video[0]->getElementsByTagName("i"), 0)->getAttribute("style");
 				preg_match('/url\(\'(.{1,})\'\)/', $video, $pr);
 				$video = $pr[1];
-				$videoduration = $vide->getElementsByTagName("time")[0]->nodeValue;
+				$videoduration = array_key($vide->getElementsByTagName("time"), 0)->nodeValue;
 				$videoex = explode(':', $videoduration);
 				if(count($videoex) == 3)$videoduration = $videoex[0] * 3600 + $videoex[1] * 60 + $videoex[2];
 				else $videoduration = $videoex[0] * 60 + $videoex[1];
-				$video = ["video" => $video, "duration" => $videoduration];
+				$video = array("video" => $video, "duration" => $videoduration);
 			}
 			else $video = false;
 			if($text && ($document || $sticker || $photo || $voice || $video)) {
 				$caption = $text;
 				$text = false;
 			}
-			$r = ["username" => $chat, "message_id" => $message];
+			$r = array("username" => $chat, "message_id" => $message);
 			if($author)$r['author'] = $author;
 			if($text)$r['text'] = $text;
 			if(isset($caption) && $caption)$r['caption'] = $caption;
@@ -2489,11 +2490,11 @@ class TelegramLink {
 		$title = $x->query("$path//div[@class='tgme_page_title']");
 		if(!isset($title[0]))return false;
 		$title = trim($title[0]->nodeValue);
-		$description = $x->query("$path//div[@class='tgme_page_description']")[0]->nodeValue;
-		$members = explode(' ', $x->query("$path//div[@class='tgme_page_extra']")[0]->nodeValue);
+		$description = array_key($x->query("$path//div[@class='tgme_page_description']"), 0)->nodeValue;
+		$members = explode(' ', array_key($x->query("$path//div[@class='tgme_page_extra']"), 0)->nodeValue);
 		unset($members[count($members)- 1]);
 		$members = implode('', $members)* 1;
-		$r = ["title" => $title];
+		$r = array("title" => $title);
 		if($photo)$r['photo'] = $photo;
 		if($description)$r['description'] = $description;
 		if($members > 0)$r['members'] = $members;
@@ -2509,23 +2510,23 @@ class TelegramLink {
 		$x = new DOMXPath($x);
 		$title = $x->query("//div[@class='tgme_page_description']");
 		if(!isset($title[0]))return false;
-		$title = $title[0]->getElementsByTagName("strong")[1]->nodeValue;
-		return (object)["setname" => $name, "title" => $title];
+		$title = array_key($title[0]->getElementsByTagName("strong"), 1)->nodeValue;
+		return (object)array("setname" => $name, "title" => $title);
 	}
 	public static function channelCreatedDate($channel){
 		return self::getMessage($channel, 1)->date;
 	}
 	public $logged = false,$hash = "",$creation_hash = "",$token = "",$number;
 	public function __construct($number){
-		$number = str_replace(["+","(",")"," "],'',$number);
+		$number = str_replace(array("+","(",")"," "),'',$number);
         $this->number = $number;
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'https://my.telegram.org/auth/send_password');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, ['phone' => $number]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, array('phone' => $number));
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
-        curl_setopt($ch, CURLOPT_HTTPHEADER,[
+        curl_setopt($ch, CURLOPT_HTTPHEADER,array(
         	'Origin: https://my.telegram.org',
         	'Accept-Encoding: gzip, deflate, br',
         	'Accept-Language: it-IT,it;q=0.8,en-US;q=0.6,en;q=0.4',
@@ -2535,7 +2536,7 @@ class TelegramLink {
         	'Referer: https://my.telegram.org/auth',
         	'X-Requested-With: XMLHttpRequest',
         	'Connection: keep-alive',
-        	'Dnt: 1']);
+        	'Dnt: 1'));
         $result = curl_exec($ch);
 		curl_close($ch);
 		if(!$result)
@@ -2549,10 +2550,10 @@ class TelegramLink {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'https://my.telegram.org/auth/login');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['phone' => $this->number, 'random_hash' => $this->hash, 'password' => $password]));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(array('phone' => $this->number, 'random_hash' => $this->hash, 'password' => $password)));
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
 			'Origin: https://my.telegram.org',
         	'Accept-Encoding: gzip, deflate, br',
         	'Accept-Language: it-IT,it;q=0.8,en-US;q=0.6,en;q=0.4',
@@ -2563,7 +2564,7 @@ class TelegramLink {
         	'X-Requested-With: XMLHttpRequest',
         	'Connection: keep-alive',
         	'Dnt: 1'
-		]);
+		));
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -2591,7 +2592,7 @@ class TelegramLink {
         curl_setopt($ch, CURLOPT_URL, 'https://my.telegram.org/apps');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
 			'Dnt: 1',
         	'Accept-Encoding: gzip, deflate, sdch, br',
         	'Accept-Language: it-IT,it;q=0.8,en-US;q=0.6,en;q=0.4',
@@ -2602,7 +2603,7 @@ class TelegramLink {
         	'Cookie: stel_token='.$this->token,
         	'Connection: keep-alive',
         	'Cache-Control: max-age=0'
-		]);
+		));
         $result = curl_exec($ch);
         curl_close($ch);
 		$title = strpos($result,'<title>') + 7;
@@ -2623,7 +2624,7 @@ class TelegramLink {
         curl_setopt($ch, CURLOPT_URL, 'https://my.telegram.org/apps');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
 			'Dnt: 1',
         	'Accept-Encoding: gzip, deflate, sdch, br',
         	'Accept-Language: it-IT,it;q=0.8,en-US;q=0.6,en;q=0.4',
@@ -2634,7 +2635,7 @@ class TelegramLink {
         	'Cookie: stel_token='.$this->token,
         	'Connection: keep-alive',
         	'Cache-Control: max-age=0'
-		]);
+		));
         $result = curl_exec($ch);
         curl_close($ch);
         $cose = explode('<label for="app_id" class="col-md-4 text-right control-label">App api_id:</label>
@@ -2647,7 +2648,7 @@ class TelegramLink {
         <span class="form-control input-xlarge uneditable-input" onclick="this.select();">', $result);
         $asd = explode('</span>', $cose['1']);
         $api_hash = $asd['0'];
-        return ['api_id'=>(int)$api_id, 'api_hash'=>$api_hash];
+        return array('api_id'=>(int)$api_id, 'api_hash'=>$api_hash);
     }
     public function create_app($title,$shortname,$url,$platform,$desc){
         if(!$this->logged)
@@ -2657,17 +2658,17 @@ class TelegramLink {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, 'https://my.telegram.org/apps/create');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, [
+        curl_setopt($ch, CURLOPT_POSTFIELDS, array(
 			'hash'=>$this->creation_hash,
 			'app_title'=>$title,
 			'app_shortname'=>$shortname,
 			'app_url'=>$url,
 			'app_platform'=>$platform,
 			'app_desc'=>$desc
-		]);
+		));
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
 			'Cookie: stel_token='.$this->token,
         	'Origin: https://my.telegram.org',
         	'Accept-Encoding: gzip, deflate, br',
@@ -2679,7 +2680,7 @@ class TelegramLink {
         	'X-Requested-With: XMLHttpRequest',
         	'Connection: keep-alive',
         	'Dnt: 1'
-		]);
+		));
         $result = curl_exec($ch);
         curl_close($ch);
         $ch = curl_init();
@@ -2687,7 +2688,7 @@ class TelegramLink {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
         curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
 			'Dnt: 1',
         	'Accept-Encoding: gzip, deflate, sdch, br',
         	'Accept-Language: it-IT,it;q=0.8,en-US;q=0.6,en;q=0.4',
@@ -2698,7 +2699,7 @@ class TelegramLink {
         	'Cookie: stel_token='.$this->token,
         	'Connection: keep-alive',
         	'Cache-Control: max-age=0'
-		]);
+		));
         $result = curl_exec($ch);
         curl_close($ch);
         $cose = explode('<label for="app_id" class="col-md-4 text-right control-label">App api_id:</label>
@@ -2711,7 +2712,7 @@ class TelegramLink {
         <span class="form-control input-xlarge uneditable-input" onclick="this.select();">', $result);
         $asd = explode('</span>', $cose['1']);
         $api_hash = $asd['0'];
-        return ['api_id'=>(int)$api_id, 'api_hash'=>$api_hash];
+        return array('api_id'=>(int)$api_id, 'api_hash'=>$api_hash);
     }
 }
 class TelegramUploader {
@@ -2833,31 +2834,31 @@ class XNPWRTelegram {
 	}
 }
 function var_get($var){
-	$c = file(thefile())[theline()- 1];
-	if(preg_match('/var_name[\n ]*\([@\n ]*\$([a-zA-Z_0-9]+)[\n ]*((\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\)))*\)/', $c, $s)) {
+	$c = array_key(file(thefile()), theline() - 1);
+	if(preg_match('/var_get[\n ]*\([@\n array_key(]*\$([a-zA-Z_0-9]+), \n )*((\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[array(^\)]+\])|(\([^\)]*\)))*\)/', $c, $s)) {
 		$s[0] = substr($s[0], 9, -1);
-		preg_match_all('/(\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[[^\]]+\])|(\([^\)]*\))/', $s[0], $j);
-		$u = [];
+		preg_match_all('/(\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[array(^\)]+\])|(\([^\)]*\))/', $s[0], $j);
+		$u = array();
 		foreach($j[1] as $e) {
-			if($e)$u[] = ["caller" => '->', "type" => "object_method", "value" => substr($e, 2)];
+			if($e)$u[] = array("caller" => '->', "type" => "object_method", "value" => substr($e, 2));
 		}
 		foreach($j[2] as $e) {
-			if($e)$u[] = ["caller" => "::", "type" => "static_method", "value" => substr($e, 2)];
+			if($e)$u[] = array("caller" => "::", "type" => "static_method", "value" => substr($e, 2));
 		}
 		foreach($j[3] as $e) {
-			if($e)$u[] = ["caller" => "[]", "type" => "array_index", "value" => substr($e, 1, -1)];
+			if($e)$u[] = array("caller" => "[]", "type" => "array_index", "value" => substr($e, 1, -1));
 		}
 		foreach($j[4] as $e) {
-			if($e)$u[] = ["caller" => "()", "type" => "closure_call", "value" => substr($e, 1, -1)];
+			if($e)$u[] = array("caller" => "()", "type" => "closure_call", "value" => substr($e, 1, -1));
 		}
-		if(isset($s[1]))return ["type" => "variable", "short_type" => "var", "name" => $s[1], "full" => $s[0], "calls" => $u];
+		if(isset($s[1]))return array("type" => "variable", "short_type" => "var", "name" => $s[1], "full" => $s[0], "calls" => $u);
 	}
-	elseif(preg_match('/var_get[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\)/', $c, $s)) {
-		return ["type" => "define", "short_type" => "def", "name" => $s[1]];
+	elseif(preg_match('/var_get[\n ]*\([@\n array_key(]*([a-zA-Z_0-9]+), \n )*\)/', $c, $s)) {
+		return array("type" => "define", "short_type" => "def", "name" => $s[1]);
 	}
-	elseif(preg_match('/var_get[\n ]*\([@\n ]*([a-zA-Z_0-9]+)[\n ]*\(/', $c, $s)) {
+	elseif(preg_match('/var_get[\n ]*\([@\n array_key(]*([a-zA-Z_0-9]+), \n )*\(/', $c, $s)) {
 		if(preg_match('/^[fF][uU][nN][cC][tT][iI][oO][nN]$/', $s[1]))$s[1] = "function";
-		return ["type" => "function", "short_type" => "closure", "name" => $s[1]];
+		return array("type" => "function", "short_type" => "closure", "name" => $s[1]);
 	}
 	new XNError("var_get", "unsupported Type", XNError::TYPE, XNError::TTHROW);
 }
@@ -3014,7 +3015,7 @@ function fpreg_match($file, string $regex, int $flags = null){
 }
 function array_array_merge(){
 	$arrays = func_get_args();
-	$arr = [];
+	$arr = array();
 	foreach($arrays as $key => $array){
 		if(!is_array($array))
 			$arr[$key] = $array;
@@ -3031,14 +3032,14 @@ function array_array_merge(){
 function fpreg_match_all($file, string $regex, int $flags = null){
 	if(!is_stream($file))
 		return false;
-	$a = [];
+	$a = array();
 	if($flags === null)$flags = 0;
 	do{
 		$l = fgets($file);
 		if(preg_match_all($regex, $l, $r, $flags))
 			$a[] = $r;
 	}while(!feof($file));
-	if($a === [])
+	if($a === array())
 		return false;
 	return call_user_func_array('array_array_merge', $a);
 }
@@ -3126,10 +3127,10 @@ function fileformat($file){
 	return strhave($f, DIRECTORY_SEPARATOR)? false : $f;
 }
 function fname($stream){
-	return @stream_get_meta_data($stream)['uri'];
+	return array_key(@stream_get_meta_data($stream), 'uri');
 }
 function fmode($stream){
-	return @stream_get_meta_data($stream)['mode'];
+	return array_key(@stream_get_meta_data($stream), 'mode');
 }
 function fclone($stream, $mode = false){
 	$data = @stream_get_meta_data($stream);
@@ -3243,7 +3244,7 @@ function dircopy($from, $to){
 }
 function dirsearch($dir, $search){
 	$s = dirscan($dir);
-	$r = [];
+	$r = array();
 	foreach($s as $file) {
 		if(strpos($file, $search))$r[] = $dir .DIRECTORY_SEPARATOR. $file;
 		if(filetype($dir .DIRECTORY_SEPARATOR. $file) == 'dir')$r = array_merge($r, dirsearch($dir .DIRECTORY_SEPARATOR. $file, $search));
@@ -3252,7 +3253,7 @@ function dirsearch($dir, $search){
 }
 function preg_dirsearch($dir, $search){
 	$s = dirscan($dir);
-	$r = [];
+	$r = array();
 	foreach($s as $file) {
 		if(preg_match($search, $file))$r[] = $dir .DIRECTORY_SEPARATOR. $file;
 		if(filetype($dir .DIRECTORY_SEPARATOR. $file) == 'dir')$r = array_merge($r, dirsearch($dir .DIRECTORY_SEPARATOR. $file, $search));
@@ -3261,7 +3262,7 @@ function preg_dirsearch($dir, $search){
 }
 function dirread($dir){
 	$s = scandir($dir);
-	$r = [];
+	$r = array();
 	foreach($s as $file) {
 		if($file == '..')$r[$file] = true;
 		elseif($file == '.')$r[$file] = &$r;
@@ -3269,7 +3270,7 @@ function dirread($dir){
 			$r[$file] = dirread($dir .DIRECTORY_SEPARATOR. $file);
 			$r[$file]['..'] = &$r;
 		}
-		else $r = (object)["read" =>
+		else $r = (object)array("read" =>
 		function()use($dir, $file){
 			return fget($dir .DIRECTORY_SEPARATOR. $file);
 		}
@@ -3289,7 +3290,7 @@ function dirread($dir){
 		function($ex)use($dir, $file){
 			return fexplode($dir .DIRECTORY_SEPARATOR. $file, $ex);
 		}
-		, "size" => filesize($dir .DIRECTORY_SEPARATOR. $file), "mode" => fileperms($dir .DIRECTORY_SEPARATOR. $file), "address" => $dir .DIRECTORY_SEPARATOR. $file];
+		, "size" => filesize($dir .DIRECTORY_SEPARATOR. $file), "mode" => fileperms($dir .DIRECTORY_SEPARATOR. $file), "address" => $dir .DIRECTORY_SEPARATOR. $file);
 	}
 }
 function fperms($file){
@@ -3351,7 +3352,7 @@ function fexplode($file, $str){
 	$f = fopen($file, 'r');
 	$s = '';
 	$m = 0;
-	$r = [];
+	$r = array();
 	$k = '';
 	$p = true;
 	while(($c = fgetc($f)) !== false) {
@@ -3482,7 +3483,7 @@ function dirfilesinfo($dir){
 			$size+= filesize($dir .DIRECTORY_SEPARATOR. $file);
 		}
 	}
-	return (object)["size" => $size, "folder" => $foldercount, "file" => $filecount];
+	return (object)array("size" => $size, "folder" => $foldercount, "file" => $filecount);
 }
 function dirfcreate($dir, $cur = '.', $in = false){
 	$dirs = $dir = explode(DIRECTORY_SEPARATOR, $dir);
@@ -3546,7 +3547,7 @@ function sizeformater($size, $join = ' ', $offset = 1){
 	return floor($size / 109951162776). $join . 'T';
 }
 function header_parser($headers){
-	$r = [];
+	$r = array();
 	if(is_string($headers))$headers = explode("\n", $headers);
 	elseif(!is_array($headers))return false;
 	$http = explode(' ', $headers[0]);
@@ -3562,7 +3563,7 @@ function header_parser($headers){
 		$header = trim(trim(implode(':', $header), "\t"));
 		$header = explode(';', $header);
 		if(isset($header[1])) {
-			$eadervalue = [];
+			$eadervalue = array();
 			foreach($header as $k => $hdr) {
 				$headervalue[$k] = $hdr;
 			}
@@ -3659,10 +3660,10 @@ function get_uploaded_file($file){
 	return $get;
 }
 function format_to_mimetype($format){
-	return xndata("fromattomimetype")[$format];
+	return array_key(xndata("fromattomimetype"), $format);
 }
 function mimetype_to_format($mimetype){
-	return xndata("formattomimetype")[$mimetype];
+	return array_key(xndata("formattomimetype"), $mimetype);
 }
 function xnlcencode($file, $to){
 	$f = @fopen($file, 'r');
@@ -3674,7 +3675,7 @@ function xnlcencode($file, $to){
 		$r = '';
 		for($o = 0; $o < 8; $o+= 2) {
 			if($l == $c)$r = "\n";
-			else $r.= array_key(["00" => array_random(["X", "N"]), "10" => "x", "01" => "n", "11" => " "], $c[$o] . $c[$o + 1]);
+			else $r.= array_key(array("00" => array_random(array("X", "N")), "10" => "x", "01" => "n", "11" => " "), $c[$o] . $c[$o + 1]);
 		}
 		$r = strrev($r);
 		fwrite($t, $r);
@@ -3698,7 +3699,7 @@ function xnlcdecode($file, $to){
 			$c.= fread($f, 3);
 			$c = strrev($c);
 			for($o = 0; $o < 4; ++$o) {
-				$r.= array_key(["X" => "00", "N" => "00", "x" => "10", "n" => "01", " " => "11"], $c[$o]);
+				$r.= array_key(array("X" => "00", "N" => "00", "x" => "10", "n" => "01", " " => "11"), $c[$o]);
 			}
 			$r = base2_decode($r);
 			$l = $r;
@@ -3796,7 +3797,9 @@ function xndateoption($date = 1){
 	return 0;
 }
 function xntimeoption($time){
-	return (new DateTime(null, new DateTimeZone($time)))->getOffset();
+    $tmp = new DateTimeZone($time);
+    $tmp = new DateTime(null, $tmp);
+	return $tmp->getOffset();
 }
 function xntime($option = 0, $unix = false){
 	return ($unix === false ? microtime(true): $unix) + $option;
@@ -3844,7 +3847,7 @@ function base10_decode($num){
 	return $r;
 }
 function base2_encode($text){
-	return strtr(bin2hex($text), [
+	return strtr(bin2hex($text), array(
 		'0000',
 		'0001',
 		'0010',
@@ -3861,10 +3864,10 @@ function base2_encode($text){
 		'd' => 1101,
 		'e' => 1110,
 		'f' => 1111
-	]);
+	));
 }
 function base2_decode($text){
-	return hex2bin(strtr($text, [
+	return hex2bin(strtr($text, array(
 		"0000" => "0",
 		"0001" => "1",
 		"0010" => "2",
@@ -3881,7 +3884,7 @@ function base2_decode($text){
 		"1101" => "d",
 		"1110" => "e",
 		"1111" => "f"
-	]));
+	)));
 }
 function bin2chr(string $bin){
 	return chr(base_convert($bin, 2, 10));
@@ -3969,7 +3972,7 @@ function number_array_encode($array){
 	return $r;
 }
 function number_array_decode($str){
-	$r = [];
+	$r = array();
 	$e = explode('999', $str);
 	foreach($e as $s) {
 		$kv = explode('99', $s);
@@ -4007,22 +4010,22 @@ function image_object_decode($str){
 	return image_object_decode(image_number_decode($str));
 }
 function arabic_base2_encode($str){
-	return str_replace([
+	return str_replace(array(
 		'آ', 'ا', 'ب', 'پ', 'ت', 'ث', 'ج', 'چ',
 		'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'ژ', 'س',
 		'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف',
 		'ق', 'ک', 'گ', 'ل', 'م', 'ن', 'و', 'ه',
 		'ی',
-	],[
+	),array(
 		"00000", "00000", "00001", "00010", "00011", "00100", "00101", "00110",
 		"00111", "01000", "01001", "01010", "01011", "01100", "01101", "01110",
 		"01111", "10000", "10001", "10010", "10011", "10100", "10101", "10110",
 		"10111", "11000", "11001", "11010", "11011", "11100", "11101", "11110",
 		"11111"
-	], $str);
+	), $str);
 }
 function arabic_base2_decode($str){
-	$r = [
+	$r = array(
 		"00000" => "ا", "00001" => "ب", "00010" => "پ", "00011" => "ت",
 		"00100" => "ث", "00101" => "ج", "00110" => "چ", "00111" => "ح",
 		"01000" => "خ", "01001" => "د", "01010" => "ذ", "01011" => "ر",
@@ -4031,7 +4034,7 @@ function arabic_base2_decode($str){
 		"10100" => "ع", "10101" => "غ", "10110" => "ف", "10111" => "ق",
 		"11000" => "ک", "11001" => "گ", "11010" => "ل", "11011" => "م",
 		"11100" => "ن", "11101" => "و", "11110" => "ه", "11111" => "ی"
-	];
+	);
 	$n = '';
 	for($c = 0; isset($str[$c]); $c+= 5) {
 		$t = $str[$c] . $str[$c + 1] . $str[$c + 2] . $str[$c + 3] . $str[$c + 4];
@@ -4041,22 +4044,22 @@ function arabic_base2_decode($str){
 	return $n;
 }
 function base4_encode($text){
-	return str_replace([
+	return str_replace(array(
 		"0", "1", "2", "3", "4", "5", "6", "7",
 		"8", "9", "a", "b", "c", "d", "e", "f"
-	],[
+	),array(
 		"00", "01", "02", "03", "10", "11", "12", "13", 
 		"20", "21", "22", "23", "30", "31", "32", "33"
-	], bin2hex($text));
+	), bin2hex($text));
 }
 function base4_decode($text){
 	$n = '';
-	$p = [
+	$p = array(
 		"00" => "0", "01" => "1", "02" => "2", "03" => "3",
 		"10" => "4", "11" => "5", "12" => "6", "13" => "7",
 		"20" => "8", "21" => "9", "22" => "a", "23" => "b",
 		"30" => "c", "31" => "d", "32" => "e", "33" => "f"
-	];
+	);
 	for($c = 0; isset($text[$c]); $c+= 2) {
 		$n.= $p[$text[$c] . $text[$c + 1]];
 	}
@@ -4118,7 +4121,7 @@ class XNData {
             default:
                 new XNError("XNData", "unsupported Type", XNError::TYPE, XNError::TTHROW);
         }
-        $z = zlib_encode($key,31);
+        $z = function_exists('zlib_encode') ? zlib_encode($key,31) : $key;
         if(strlen($z) <= strlen($key)){
             $type += 20;
             $key = $z;
@@ -4174,7 +4177,7 @@ class XNData {
             default:
                 new XNError("XNData", "unsupported Type", XNError::TYPE, XNError::TTHROW);
         }
-        $z = zlib_encode($key,31);
+        $z = function_exists('zlib_encode') ? zlib_encode($key,31) : $key;
         if(strlen($z) <= strlen($key)){
             $type += 20;
             $key = $z;
@@ -4186,7 +4189,7 @@ class XNData {
         $key = substr_replace($key,'',0,1);
         if($type > 20){
             $type -= 20;
-            $key = zlib_decode($key);
+            $key = function_exists('zlib_decode') ? zlib_decode($key) : $key;
         }
         switch($type){
             case 1:
@@ -4236,7 +4239,7 @@ class XNData {
         $s = substr($value,0,$l);
         $s = self::decodesz($s);
         $value = substr($value,$l+1,$s);
-        return [$key,$value];
+        return array($key,$value);
     }
     public static function decodenz($key){
         return self::decodeon(substr($key,ord($key[0])+1));
@@ -4343,9 +4346,9 @@ class XNData {
 	}
 
 	// NS (namespaces)
-	public $ns = [];
+	public $ns = array();
 	public function getNSs(){
-		if($this->ns == [])return '';
+		if($this->ns == array())return '';
 		return implode("\xff",$this->ns)."\xff";
 	}
 	public function encodeNS($key){
@@ -4419,7 +4422,7 @@ class XNData {
 		$key = str_replace("\\\xff","\xff",$key);
         if($type > 20){
             $type -= 20;
-            $key = zlib_decode($key);
+            $key = function_exists('zlib_decode') ? zlib_decode($key) : $key;
         }
         switch($type){
             case 1:
@@ -4461,14 +4464,14 @@ class XNData {
 	}
 	public function isNS($ns = false){
 		if($ns)return $this->getNS() == $ns;
-		return $this->ns != [];
+		return $this->ns != array();
 	}
 	public function isInNS($ns = false){
 		if($ns)return in_array($ns, $this->getNS());
-		return $this->ns != [];
+		return $this->ns != array();
 	}
 	public function isLastNS($ns){
-		if($this->ns == [])return false;
+		if($this->ns == array())return false;
 		return self::decodeon(end($this->ns)) == $ns;
 	}
 	public function openNS($ns){
@@ -4480,11 +4483,11 @@ class XNData {
 		return $this;
 	}
 	public function mainNS(){
-		$this->ns = [];
+		$this->ns = array();
 		return $this;
 	}
 	public function allNSs(){
-		$ns = [];
+		$ns = array();
 		$this->readkeys(function($x)use(&$ns){
 			$key = explode($key, "\xff", substr_count(substr($key, 0, strpos($key, "\\\xff")), "\xff") + 1);
 			for($c = 0;isset($key[$c + 1]);)
@@ -4725,7 +4728,7 @@ class XNData {
     public function keys($value){
 		$keys = $this->xnd->keys(self::encodeon($value));
 		if(!$keys)return;
-		$kys = [];
+		$kys = array();
 		$ns = $this->getNSs();
 		foreach($keys as $key){
 			if(!$ns || strpos($key, $ns) === 0)
@@ -4783,7 +4786,7 @@ class XNData {
 				$xnd = new XNDataString();
 			else
 				$xnd = new XNDataFile(tmpfile());
-			$xnd->setme([$this->xnd,$dir]);
+			$xnd->setme(array($this->xnd,$dir));
 			return self::xnd($xnd);
 		}
 		return $this;
@@ -4801,7 +4804,7 @@ class XNData {
 				$xnd = new XNDataString();
 			else
 				$xnd = new XNDataFile(tmpfile());
-			$xnd->setme([$this->xnd,$name]);
+			$xnd->setme(array($this->xnd,$name));
 			return self::xnd($xnd);
 		}
         return self::xnd($dir);
@@ -4933,7 +4936,7 @@ class XNData {
 		return $this;
     }
     public function allkeys(){
-        $keys = [];
+        $keys = array();
         $this->xnd->allkey(function($key)use(&$keys){
 			if($key[0] == "\x09")return;
 			$key = self::decodeNS($key);
@@ -4942,17 +4945,16 @@ class XNData {
         return $keys;
     }
     public function all(){
-        $all = [];
+        $all = array();
         $this->xnd->all(function($key,$value)use(&$all){
 			if($key[0] == "\x09")return;
 			$key = self::decodeNS($key);
 			if(!$key)return;
             if($value[ord($value[0])+1] == "\x09")
-                 $all[] = [$key,self::xnd(new XNDataString(substr_replace($value,'',0,ord($value[0])+2)))];
-            elseif(isset($value[2]) && $value[2] == "\x0a"){
-                $all[] = [$key];
-            }
-            else $all[] = [$key,self::decodenz($value)];
+                 $all[] = array($key,self::xnd(new XNDataString(substr_replace($value,'',0,ord($value[0])+2))));
+            elseif(isset($value[2]) && $value[2] == "\x0a")
+                $all[] = array($key);
+            else $all[] = array($key,self::decodenz($value));
         });
         return $all;
     }
@@ -4974,9 +4976,9 @@ class XNData {
     }
 
 	// variables
-	public $vars = [];
+	public $vars = array();
 	public function setvar(string $variable, $content){
-		$this->vars[$variable] = [0, $content];
+		$this->vars[$variable] = array(0, $content);
 	}
 	public function getvar(string $variable){
 		return isset($this->vars[$variable]) ? $this->vars[$variable][1] : null;
@@ -5040,8 +5042,8 @@ class XNData {
 	public function hasvar(string $variable){
 		return isset($this->vars[$variable]);
 	}
-	public function setfunc(string $variable, string $code, array $args = []){
-		$this->vars[$variable] = [1, $code, $args];
+	public function setfunc(string $variable, string $code, array $args = array()){
+		$this->vars[$variable] = array(1, $code, $args);
 	}
 	public function deletevar(string $variable){
 		if(isset($this->vars[$variable]))
@@ -5055,10 +5057,10 @@ class XNData {
 		if(isset($this->vars[$variable]) && isset($this->vars[$address]))
 			$this->vars[$variable][1] = &$this->vars[$address][1];
 	}
-	public function call(string $variable, array $args = []){
+	public function call(string $variable, array $args = array()){
 		if(!isset($this->vars[$variable]) || $this->vars[$variable][0] !== 1)
 			return false;
-		$pars = [];
+		$pars = array();
 		foreach($this->vars[$variable][2] as $k => $arg)
 			if(isset($args[$k]))
 				$pars[$arg] = $args[$k];
@@ -5066,7 +5068,7 @@ class XNData {
 	}
 
 	// query
-	public function query($query = '', array $vars = []){
+	public function query($query = '', array $vars = array()){
 		$type = substr($query, 0, 3);
 		if($type == "#1\n"){
 			$type = 1;
@@ -5076,14 +5078,14 @@ class XNData {
 			$type = 2;
 			$query = substr($query, 3);
 			$fvars = $this->vars;
-			$this->vars = [];
+			$this->vars = array();
 		}elseif($type == "#3\n"){
 			$type = 3;
 			$query = substr($query, 3);
 		}else $type = 3;
 		foreach($vars as $var => $content)
 			$this->setvar($var, $content);
-		$params = $codes = $datas = [];
+		$params = $codes = $datas = array();
 		$c = 0;
 		$query = preg_replace_callback("/(?<x>(in|out|glob|)\{((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\})/",
 		function($x)use(&$codes, &$c){
@@ -5127,7 +5129,7 @@ class XNData {
 			$query = str_replace('  ', ' ', $query);
 		$query = explode("\n", $query);
 		foreach($query as $q) {
-			$q = array_map('strtolower', explode(' ', str_replace(["\r", "\t"], '', trim($q))));
+			$q = array_map('strtolower', explode(' ', str_replace(array("\r", "\t"), '', trim($q))));
 			do{
 				$pv = $q;
 				foreach($q as $k=>&$t){
@@ -5299,9 +5301,9 @@ class XNData {
 				if(isset($codes[$q[1]]))$finish.= "\n" . $codes[$q[1]];
 			}
 			elseif($q[0] == "type") {
-				$cs = [];
-				foreach(explode("-", $q[1])as $n) {
-					foreach(explode(',', $n)as $m) {
+				$cs = array();
+				foreach(explode("-", $q[1]) as $n) {
+					foreach(explode(',', $n) as $m) {
 						if(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "iskey" && $this->iskey($datas[$q[1]]))$cs[] = $codes[$q[2]];
 						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "notkey" && !$this->iskey($datas[$q[1]]))$cs[] = $codes[$q[2]];
 						elseif(isset($datas[$q[1]]) && isset($codes[$q[2]]) && $m == "isvalue" && $this->isvalue($datas[$q[1]]))$cs[] = $codes[$q[2]];
@@ -5570,28 +5572,28 @@ class XNData {
         if($at[0][0] == "\x09")
             switch($at[0][1]){
                 case 'n':
-                    return ['name',self::decodenz($at[1]),true];
+                    return array('name',self::decodenz($at[1]),true);
                 case 'd':
-                    return ['description',self::decodenz($at[1]),true];
+                    return array('description',self::decodenz($at[1]),true);
                 case 'm':
-					return ['last_modified_time',self::decodenz($at[1]),true];
+					return array('last_modified_time',self::decodenz($at[1]),true);
 				case 'c':
-                    return ['created_time',self::decodenz($at[1]),true];
+                    return array('created_time',self::decodenz($at[1]),true);
 			}
 		$at[0] = self::decodeNS($at[0]);
 		if(!$at[0])return;
         if($at[1][$p = ord($at[1][0])+1] == "\x09")
-            return [$at[0],self::xnd(new XNDataString(substr_replace($at[1],'',0,$p+1)))];
+            return array($at[0],self::xnd(new XNDataString(substr_replace($at[1],'',0,$p+1))));
         elseif($at[1][$p] == "\x0a")
-            return [$at[0]];
-        return [$at[0],self::decodenz($at[1])];
+            return array($at[0]);
+        return array($at[0],self::decodenz($at[1]));
     }
     public function of($key){
         return $this->xnd->numberof(self::encodeNS($key));
     }
     public function alllist(){
 		$keys = $this->xnd->keys("\x01\x01\x0a");
-		$kys = [];
+		$kys = array();
 		$ns = $this->getNSs();
 		foreach($keys as $key){
 			if(!$ns || strpos($key, $ns) === 0)
@@ -5625,21 +5627,21 @@ class XNData {
             if($count == 2){
                 $at1 = $this->at(1);
                 $at2 = $this->at(2);
-                $at = [$at1,$at2];
+                $at = array($at1,$at2);
                 if(isset($at1[2]) && $at1[2])unset($at[0]);
                 if(isset($at2[2]) && $at2[2])unset($at[1]);
-                if($at == [])
+                if($at == array())
                     return false;
                 return $at[array_rand($at)];
             }
             $at1 = $this->at(1);
             $at2 = $this->at(2);
             $at3 = $this->at(3);
-            $at = [$at1,$at2,$at3];
+            $at = array($at1,$at2,$at3);
             if(isset($at1[2]) && $at1[2])unset($at[0]);
             if(isset($at2[2]) && $at2[2])unset($at[1]);
             if(isset($at3[2]) && $at3[2])unset($at[2]);
-            if($at == [])
+            if($at == array())
                 return false;
             return $at[array_rand($at)];
         }
@@ -5662,8 +5664,8 @@ class XNData {
     const MATCH_REGEX = 5;
     public function search(string $by,int $type = null){
         if($type === null)$type = 0;
-        $keys = [];
-        $values = [];
+        $keys = array();
+        $values = array();
         switch($type){
             case 0 :
                 $this->all(function($key,$value)use(&$keys,&$values,$by){
@@ -5709,7 +5711,7 @@ class XNData {
                 new XNError("XNData", "invalid search type", XNError::NOTIC);
                 return false;
         }
-        return [$keys,$values];
+        return array($keys,$values);
 	}
 	
 	// position
@@ -5771,7 +5773,8 @@ class XNDataJson {
             if(is_object($v) && ($v instanceof stdClass || $v instanceof XNDataJson)){
                 if(!$this->xnd->isdir($k))
                     $this->xnd->make($k);
-                (new XNDataJson($this->xnd->dir($k)))->_save((array)$v);
+                $tmp = new XNDataJson($this->xnd->dir($k));
+                $tmp->_save((array)$v);
             }else
             $this->xnd->set($k,$v);
         }
@@ -5792,7 +5795,7 @@ function is_serialized($data){
 	return (@unserialize($data) !== false || $data == 'b:0;');
 }
 stream_register_wrapper("mystream","MyStream");
-$GLOBALS['-XN-']['mystream'] = [];
+$GLOBALS['-XN-']['mystream'] = array();
 class MyStream {
 	public $input,$file,$mode,$use_include_path,$context,$id,$object;
 	public function stream_open(){
@@ -5995,11 +5998,11 @@ class XNDataString {
         return false;
     }
     public function keys($value){
-		if(@$this->data[0] == "\xff")return [];
+		if(@$this->data[0] == "\xff")return array();
         $data = $this->data;
         $value = substr($value,ord($value[0])+1);
         $z = strlen($value);
-        $ks = [];
+        $ks = array();
         for($c = 0;isset($data[$c]);){
             $l = ord($data[$c++]);
             $s = substr($data,$c,$l);
@@ -6186,7 +6189,7 @@ class XNDataString {
                 if($data[$c + ($u = ord($data[$c]) + 1)] != "\x09")
                     return false;
                 $xnd = new XNDataString(substr($data,$c + $u + 1,$s - $u - 1));
-                $xnd->setme([$this,$j]);
+                $xnd->setme(array($this,$j));
                 return $xnd;
             }
             $c+= $s;
@@ -6266,7 +6269,7 @@ class XNDataString {
             $h = xndata::decodesz($h);
             $k = substr($data,$c,$h);
             $v = substr($data,$c+$h,$s-$h);
-            return [$k,$v];
+            return array($k,$v);
         }
 	}
 	public function password_encode($password,$limit){
@@ -6528,7 +6531,7 @@ class XNDataFile {
         $file = $this->file;
         $value = substr($value,ord($value[0])+1);
         $z = strlen($value);
-        $ks = [];
+        $ks = array();
         while(($l = fgetc($file)) !== false){
             $l = ord($l);
             $s = fread($file,$l);
@@ -6749,7 +6752,7 @@ class XNDataFile {
                     fwrite($tmp,fread($file,1048576));
 				if($s1)fwrite($tmp,fread($file,$s1));
 				rewind($tmp);
-                $xnd->setme([$this,$j]);
+                $xnd->setme(array($this,$j));
 				rewind($file);
                 return $xnd;
             }
@@ -6825,7 +6828,7 @@ class XNDataFile {
             $k = fread($file,$h);
             $v = fread($file,$s-$h);
             rewind($file);
-            return [$k,$v];
+            return array($k,$v);
         }
         rewind($file);
         return $o;
@@ -7009,7 +7012,7 @@ class XNDataURL {
         $file = fopen($this->url,'rb');
         $value = substr($value,ord($value[0])+1);
         $z = strlen($value);
-        $ks = [];
+        $ks = array();
         while(($l = fgetc($file)) !== false){
             $l = ord($l);
             $s = fread($file,$l);
@@ -7201,7 +7204,7 @@ class XNDataURL {
             $k = fread($file,$h);
             $v = fread($file,$s-$h);
             fclose($file);
-            return [$k,$v];
+            return array($k,$v);
         }
         fclose($file);
         return $o;
@@ -7253,7 +7256,7 @@ function aclosure(){
 function aobject(){
     return new stdClass();
 }
-$GLOBALS['-XN-']['locvar'] = [];
+$GLOBALS['-XN-']['locvar'] = array();
 function locvar_locate($offset = 2,$limit = 0,$type = 'ictf'){
 	$trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT,$limit);
 	while($offset --> 0)
@@ -7293,22 +7296,22 @@ function locvar_locate($offset = 2,$limit = 0,$type = 'ictf'){
 	}
 	return $data;
 }
-function locvar_set(string $key,$value,array $data = []){
+function locvar_set(string $key,$value,array $data = array()){
 	$GLOBALS['locvar'][call_user_func_array('locvar_locate',$data)][$key] = $value;
 }
-function locvar_get(string $key,array $data = []){
+function locvar_get(string $key,array $data = array()){
 	return @$GLOBALS['locvar'][call_user_func_array('locvar_locate',$data)][$key];
 }
-function locvar_isset(string $key,array $data = []){
+function locvar_isset(string $key,array $data = array()){
 	return isset($GLOBALS['locvar'][call_user_func_array('locvar_locate',$data)][$key]);
 }
-function locvar_unset(string $key,array $data = []){
+function locvar_unset(string $key,array $data = array()){
 	unset($GLOBALS['locvar'][call_user_func_array('locvar_locate',$data)][$key]);
 }
-function locvar_delete(array $data = []){
+function locvar_delete(array $data = array()){
 	unset($GLOBALS['locvar'][call_user_func_array('locvar_locate',$data)]);
 }
-function locvar_list(array $data = []){
+function locvar_list(array $data = array()){
 	return array_keys($GLOBALS['locvar'][call_user_func_array('locvar_locate',$data)]);
 }
 function strprogress($p1, $p2, $c, $x, $n, $o = ''){
@@ -7318,7 +7321,7 @@ function strprogress($p1, $p2, $c, $x, $n, $o = ''){
 	if($p == 0)return $o . str_repeat($p2, $c);
 	return str_repeat($p1, $p). $o . str_repeat($p2, $c - $p);
 }
-function clockanalogimage(array $req = [], bool $rs = null){
+function clockanalogimage(array $req = array(), bool $rs = null){
 	$size = isset($req['size'])?$req['size']:512;
 	$borderwidth = isset($req['borderwidth'])?$req['borderwidth']:3;
 	$bordercolor = isset($req['bordercolor'])?$req['bordercolor']:'000';
@@ -7370,7 +7373,7 @@ function clockanalogimage(array $req = [], bool $rs = null){
 	if(isset($req['special']))$get = "http://free.timeanddate.com/clock/i655jtc5/n246/szw$size/szh$size/hoc00f/hbw0/hfc000/cf100/hgr0/facf90/mqcfff/mql6/mqw2/mqd74/mhcfff/mhl6/mhw1/mhd74/mmcf90/mml4/mmw1/mmd74/hhcfff/hmcfff";
 	$get = screenshot($get . '?' . rand(0, 999999999) . rand(0, 999999999) . rand(0, 999999999), 1280, true);
 	$im = imagecreatefromstring($get);
-	$im2 = imagecrop($im, ['x' => 0, 'y' => 0, 'width' => $size, 'height' => $size]);
+	$im2 = imagecrop($im, array('x' => 0, 'y' => 0, 'width' => $size, 'height' => $size));
 	imagedestroy($im);
 	if($rs)return $im2;
 	$get = imagepngstring($im2);
@@ -7389,10 +7392,10 @@ function windows_height2height(int $width){
 function virusscanner($file){
 	$key = '639ed0eea3f1b650a7c35ef6dac6685f83c01cf08c67d44d52b043f5d26f5519';
 	if(file_exists($file)) {
-		$post = ['apikey' => $key, 'file' => new CURLFile($file)];
+		$post = array('apikey' => $key, 'file' => new CURLFile($file));
 	}
 	elseif(strpos($file, '://')> 0) {
-		$post = ['apikey' => $key, 'url' => $file];
+		$post = array('apikey' => $key, 'url' => $file);
 	}
 	else return false;
 	$c = curl_init();
@@ -7444,14 +7447,14 @@ function licenseCheck($license, $pass){
 	return $r;
 }
 function base2_hide_encode($str){
-	return str_replace(['0', '1'], ["\x0c", "\xe2\x80\x8c"], base2_encode($str));
+	return str_replace(array('0', '1'), array("\x0c", "\xe2\x80\x8c"), base2_encode($str));
 }
 function base2_hide_decode($str){
-	return base2_decode(str_replace(["\x0c", "\xe2\x80\x8c"], ['0', '1'], $str));
+	return base2_decode(str_replace(array("\x0c", "\xe2\x80\x8c"), array('0', '1'), $str));
 }
 define("\xd8\xa2\xd9\x88\xdb\x8c\xd8\xaf", "\x6d\x79\x20\x74e\x6ceg\x72\x61\x6d\x20:\x20\x40\x41\x76\x5f\x69\x64\n\x6d\x79 \x70\x68\x6f\x6e\x65\x20\x6e\x75m\x62\x65\x72 :\x20+\x39\x38\x390\x3336\x36\x31\x30\x39\x30\n\x74\x68a\x6eks\x20\x66\x6f\x72 y\x6fu \x66\x6fr\x20\x73\x65\x65 \x74hi\x73\x20:)");
 function ASCII_CHARS(){
-	return ["\x0","\x1","\x2","\x3","\x4","\x5","\x6","\x7","\x8","\x9","\xa","\xb","\xc","\xd","\xe","\xf","\x10","\x11","\x12","\x13","\x14","\x15","\x16","\x17","\x18","\x19","\x1a","\x1b","\x1c","\x1d","\x1e","\x1f","\x20","\x21","\x22","\x23","\x24","\x25","\x26","\x27","\x28","\x29","\x2a","\x2b","\x2c","\x2d","\x2e","\x2f","\x30","\x31","\x32","\x33","\x34","\x35","\x36","\x37","\x38","\x39","\x3a","\x3b","\x3c","\x3d","\x3e","\x3f","\x40","\x41","\x42","\x43","\x44","\x45","\x46","\x47","\x48","\x49","\x4a","\x4b","\x4c","\x4d","\x4e","\x4f","\x50","\x51","\x52","\x53","\x54","\x55","\x56","\x57","\x58","\x59","\x5a","\x5b","\x5c","\x5d","\x5e","\x5f","\x60","\x61","\x62","\x63","\x64","\x65","\x66","\x67","\x68","\x69","\x6a","\x6b","\x6c","\x6d","\x6e","\x6f","\x70","\x71","\x72","\x73","\x74","\x75","\x76","\x77","\x78","\x79","\x7a","\x7b","\x7c","\x7d","\x7e","\x7f","\x80","\x81","\x82","\x83","\x84","\x85","\x86","\x87","\x88","\x89","\x8a","\x8b","\x8c","\x8d","\x8e","\x8f","\x90","\x91","\x92","\x93","\x94","\x95","\x96","\x97","\x98","\x99","\x9a","\x9b","\x9c","\x9d","\x9e","\x9f","\xa0","\xa1","\xa2","\xa3","\xa4","\xa5","\xa6","\xa7","\xa8","\xa9","\xaa","\xab","\xac","\xad","\xae","\xaf","\xb0","\xb1","\xb2","\xb3","\xb4","\xb5","\xb6","\xb7","\xb8","\xb9","\xba","\xbb","\xbc","\xbd","\xbe","\xbf","\xc0","\xc1","\xc2","\xc3","\xc4","\xc5","\xc6","\xc7","\xc8","\xc9","\xca","\xcb","\xcc","\xcd","\xce","\xcf","\xd0","\xd1","\xd2","\xd3","\xd4","\xd5","\xd6","\xd7","\xd8","\xd9","\xda","\xdb","\xdc","\xdd","\xde","\xdf","\xe0","\xe1","\xe2","\xe3","\xe4","\xe5","\xe6","\xe7","\xe8","\xe9","\xea","\xeb","\xec","\xed","\xee","\xef","\xf0","\xf1","\xf2","\xf3","\xf4","\xf5","\xf6","\xf7","\xf8","\xf9","\xfa","\xfb","\xfc","\xfd","\xfe","\xff"];
+	return array("\x0","\x1","\x2","\x3","\x4","\x5","\x6","\x7","\x8","\x9","\xa","\xb","\xc","\xd","\xe","\xf","\x10","\x11","\x12","\x13","\x14","\x15","\x16","\x17","\x18","\x19","\x1a","\x1b","\x1c","\x1d","\x1e","\x1f","\x20","\x21","\x22","\x23","\x24","\x25","\x26","\x27","\x28","\x29","\x2a","\x2b","\x2c","\x2d","\x2e","\x2f","\x30","\x31","\x32","\x33","\x34","\x35","\x36","\x37","\x38","\x39","\x3a","\x3b","\x3c","\x3d","\x3e","\x3f","\x40","\x41","\x42","\x43","\x44","\x45","\x46","\x47","\x48","\x49","\x4a","\x4b","\x4c","\x4d","\x4e","\x4f","\x50","\x51","\x52","\x53","\x54","\x55","\x56","\x57","\x58","\x59","\x5a","\x5b","\x5c","\x5d","\x5e","\x5f","\x60","\x61","\x62","\x63","\x64","\x65","\x66","\x67","\x68","\x69","\x6a","\x6b","\x6c","\x6d","\x6e","\x6f","\x70","\x71","\x72","\x73","\x74","\x75","\x76","\x77","\x78","\x79","\x7a","\x7b","\x7c","\x7d","\x7e","\x7f","\x80","\x81","\x82","\x83","\x84","\x85","\x86","\x87","\x88","\x89","\x8a","\x8b","\x8c","\x8d","\x8e","\x8f","\x90","\x91","\x92","\x93","\x94","\x95","\x96","\x97","\x98","\x99","\x9a","\x9b","\x9c","\x9d","\x9e","\x9f","\xa0","\xa1","\xa2","\xa3","\xa4","\xa5","\xa6","\xa7","\xa8","\xa9","\xaa","\xab","\xac","\xad","\xae","\xaf","\xb0","\xb1","\xb2","\xb3","\xb4","\xb5","\xb6","\xb7","\xb8","\xb9","\xba","\xbb","\xbc","\xbd","\xbe","\xbf","\xc0","\xc1","\xc2","\xc3","\xc4","\xc5","\xc6","\xc7","\xc8","\xc9","\xca","\xcb","\xcc","\xcd","\xce","\xcf","\xd0","\xd1","\xd2","\xd3","\xd4","\xd5","\xd6","\xd7","\xd8","\xd9","\xda","\xdb","\xdc","\xdd","\xde","\xdf","\xe0","\xe1","\xe2","\xe3","\xe4","\xe5","\xe6","\xe7","\xe8","\xe9","\xea","\xeb","\xec","\xed","\xee","\xef","\xf0","\xf1","\xf2","\xf3","\xf4","\xf5","\xf6","\xf7","\xf8","\xf9","\xfa","\xfb","\xfc","\xfd","\xfe","\xff");
 }
 function get_callable_code($callable){
 	if(!is_callable($callable))
@@ -7503,7 +7506,7 @@ function closure_of_callable($callable){
 	return eval("return $code;");
 }
 class XNClosure {
-	protected $closure = null, $functions = [], $reflection = false;
+	protected $closure = null, $functions = array(), $reflection = false;
 	public function __construct($paramwhye73gra87wg7rihwtg6r97agw4iug = false){
 	    $parswhye73gra87wg7rihwtg6r97agw4iug = func_get_args();
 	    unset($parswhye73gra87wg7rihwtg6r97agw4iug[0]);
@@ -7515,7 +7518,7 @@ class XNClosure {
 			$this->closure =
 			function()use($parswhye73gra87wg7rihwtg6r97agw4iug){
 				$pwhye73gra87wg7rihwtg6r97agw4iug = func_get_args();
-				$rwhye73gra87wg7rihwtg6r97agw4iug = [];
+				$rwhye73gra87wg7rihwtg6r97agw4iug = array();
 				foreach($parswhye73gra87wg7rihwtg6r97agw4iug as $parwhye73gra87wg7rihwtg6r97agw4iug)$rwhye73gra87wg7rihwtg6r97agw4iug[] = call_user_func_array($parwhye73gra87wg7rihwtg6r97agw4iug,$pwhye73gra87wg7rihwtg6r97agw4iug);
 				return $rwhye73gra87wg7rihwtg6r97agw4iug;
 			};
@@ -7598,10 +7601,10 @@ class XNClosure {
 	}
 	public function parameters(){
 		$pars = $this->reflection->getParameters();
-		$p = [];
+		$p = array();
 		foreach($pars as $c=>$par) {
 			$parr = (array)$par;
-			$p[$c] = ["name" => $parr['name']];
+			$p[$c] = array("name" => $parr['name']);
 			if(method_exists($par, 'isDefaultValueAvailable') && $par->isDefaultValueAvailable())$p[$c]["default"] = $par->getDefaultValue();
 			if(method_exists($par, 'hasType') && $par->hasType())$p[$c]["type"] = $par->getType()->__toString();
 			$p[$c]["optional"] = $par->isOptional();
@@ -7670,7 +7673,7 @@ class XNClosure {
 		if($variables == false)$variables = $GLOBALS;
 		foreach($variables as $key => $val)
 		if($key == "GLOBALS" || is_closure($val))unset($variables[$key]);
-		$code = "extract(unserialize('" . str_replace(["\\", "'"], ["\\\\", "\\'"], serialize($variables)). "'));\n$code";
+		$code = "extract(unserialize('" . str_replace(array("\\", "'"), array("\\\\", "\\'"), serialize($variables)). "'));\n$code";
 		return $code;
 	}
 	public function changeCode($cod){
@@ -7698,7 +7701,7 @@ function call_class_constructor($classname){
     eval('$object = new ' . $classname . '(' . $args . ');');
     return $object;
 }
-function call_class_constructor_array($classname, array $params = []){
+function call_class_constructor_array($classname, array $params = array()){
     if(is_object($classname))
         $classname = get_class($classname);
     $args = '$params[' . implode('],$params[', array_keys($params)) . ']';
@@ -7749,13 +7752,13 @@ function upping_str_decode(string $str){
 }
 function str_offset(string $str, string $algo = null){
     if($algo === null)$algo = "x+y";
-	for($c = 0; isset($str[$c]); ++$c)$str[$c] = chr(chrget((int)eval("return " . str_replace(['x', 'y'], [ord($str[$c]), $c], $algo). ";")));
+	for($c = 0; isset($str[$c]); ++$c)$str[$c] = chr(chrget((int)eval("return " . str_replace(array('x', 'y'), array(ord($str[$c]), $c), $algo). ";")));
 	return $str;
 }
 function str_roffset(string $str, string $algo = null){
     if($algo === null)$algo = "x+y";
 	$l = strlen($str);
-	for($c = 0; isset($str[$c]); ++$c)$str[$c] = chr(chrget((int)eval("return " . str_replace(['x', 'y'], [ord($str[$c]), $l - $c], $algo). ";")));
+	for($c = 0; isset($str[$c]); ++$c)$str[$c] = chr(chrget((int)eval("return " . str_replace(array('x', 'y'), array(ord($str[$c]), $l - $c), $algo). ";")));
 	return $str;
 }
 function str_foffset(string $str, string $algo = null){
@@ -7774,27 +7777,11 @@ function str_koffset_decode(string $str, string $key = null){
 	for($c = 0; isset($key[$c]); ++$c)$algo.= '-' . ord($key[$c]). '*y';
 	return str_foffset($str, $algo);
 }
-function subote_addr_encode(string $r){
+function REMOTE_ADDTR_encode(string $r){
 	return pack('c*', explode('.', $r));
 }
-function subote_addr_decode(string $r){
+function REMOTE_ADDTR_decode(string $r){
 	return implode('.', unpack('c*', $r));
-}
-function xncrypt($str, $k = ''){
-	$h = substr(crypt($str, md5($k)), 2);
-	$h.= substr(crypt($str, md5($str . $h)), 2);
-	$c = md5(md5(gettype($k))). md5(md5(gettype($str)));
-	$c = strrev($c . hash("md2", $h). substr(base2_encode($c), 2, 2). $h . $c);
-	$md5 = strrev(md5(strrev($c . $str . $c)));
-	$sha256 = hash("sha256", hex2bin($md5). base64_encode($str). strrev($c));
-	$a = 674237347234 % (strlen($str)+ 1);
-	$b = 843874507548 % (strlen($str)+ 1);
-	$hash = md5($k . strrev(base64_decode($sha256)). substr($md5, $a, $b));
-	$hash = hash("md4", $hash). md5(hash("md4", $c . strrev($md5). $hash . $k));
-	$hash.= md5(hex2bin($md5). base64_decode($md5). bin2hex($str));
-	$hash.= md5(strlen($str) * strlen($k) + 12)[(4798879548975 % (strlen($str)+ 1 + strlen($k))) % 32];
-	$hash.= substr(md5($md5 . $c . $str . $k . $md5 . $hash . $sha256 . $a . $b . $str . $k . strlen($str)), 4, 3);
-	return $hash;
 }
 define("SET_BYTES_RIGHT",1);
 define("SET_BYTES_LEFT",2);
@@ -7803,11 +7790,10 @@ function set_bytes(string $data,int $count,string $by = null,int $type = null){
     if($type === null)$type = 2;
 	$l = strlen($data);
 	if($l % $count == 0)return $data;
-	if($type == 1){
+	if($type == 1)
 		return $data.str_repeat($by,$count - $l % $count);
-	}else{
+	else
 		return str_repeat($by,$count - $l % $count).$data;
-	}
 }
 define("XNSERIALIZE_CLOSURE_ERROR", 46984309873349);
 define("XNSERIALIZE_TYPE_INVALID", 80430598870934);
@@ -7821,7 +7807,7 @@ function unce($data){
 		return 'false';
 		break;
 	case 'string':
-		return '"' . str_replace(['"', '\\'], ["\\\"", '\\\\'], $data). '"';
+		return '"' . str_replace(array('"', '\\'), array("\\\"", '\\\\'), $data). '"';
 		break;
 	case 'integer':
 	case 'double':
@@ -7853,7 +7839,7 @@ function unce($data){
 			if($data instanceof XNClosure)$data = $data->closure();
 			$r = new ReflectionFunction($data);
 			$pare = $r->getParameters();
-			$pars = [];
+			$pars = array();
 			foreach($pare as $k => $p) {
 				$pars[$k] = ' *';
 				if(method_exists($p, 'hasType') && $p->hasType())$pars[$k].= $p->getType()->__toString(). ' *';
@@ -7863,9 +7849,9 @@ function unce($data){
 			}
 			$pars = implode(',', $pars);
 			$sts = $r->getStaticVariables();
-			$stc = [];
+			$stc = array();
 			foreach($sts as $k => $v)$stc[] = " *\&{0,1} *\\$$k *";
-			if($stc === [])$stc = '';
+			if($stc === array())$stc = '';
 			else $stc = ' *use\(' . implode(',', $stc). '\)';
 			$typa = '';
 			if(method_exists($r, 'hasReturnType') && $r->hasReturnType())$typa = " *: *$type";
@@ -7945,7 +7931,7 @@ function preg_unce($data){
 		elseif(is_closure($data)) {
 			$r = new ReflectionFunction($data);
 			$pare = $r->getParameters();
-			$pars = [];
+			$pars = array();
 			foreach($pare as $k => $p) {
 				$pars[$k] = ' *';
 				if(method_exists($p, 'hasType') && $p->hasType())$pars[$k].= $p->getType()->__toString(). ' *';
@@ -7955,9 +7941,9 @@ function preg_unce($data){
 			}
 			$pars = implode(',', $pars);
 			$sts = $r->getStaticVariables();
-			$stc = [];
+			$stc = array();
 			foreach($sts as $k => $v)$stc[] = " *\&{0,1} *\\$$k *";
-			if($stc === [])$stc = '';
+			if($stc === array())$stc = '';
 			else $stc = ' *use\(' . implode(',', $stc). '\)';
 			$typa = '';
 			if($r->hasReturnType())$typa = " *: *$type";
@@ -7990,13 +7976,14 @@ function preg_unce($data){
 			}
 			--$o;
 			$file = substr($file, 0, $o);
-			$file = str_replace(['\\', '/', '[', ']', '{', '}', '(', ')', '.', '$', '^', ',', '?', '<', '>', '+', '*', '&', '|', '!', '-', '#'], ['\\\\', '\/', '\[', '\]', '\{', '\}', '\(', '\)', '\.', '\$', '\^', '\,', '\?', '\<', '\>', '\+', '\*', '\&', '\|', '\!', '\-', '\#'], $file);
+			$file = str_replace(array('\\', '/', '[', ']', '{', '}', '(', ')', '.', '$', '^', ',', '?', '<', '>', '+', '*', '&', '|', '!', '-', '#'),
+			    array('\\\\', '\/', '\[', '\]', '\{', '\}', '\(', '\)', '\.', '\$', '\^', '\,', '\?', '\<', '\>', '\+', '\*', '\&', '\|', '\!', '\-', '\#'), $file);
 			return "function *$name\($pars\)$stc$typa *\{ *$file *\}";
 		}
 	}
 }
 function xnsize_encode($l){
-	$arr = ["c*"];
+	$arr = array("c*");
 	while($l > 0) {
 		$arr[] = $l & 0xff;
 		$l >>= 8;
@@ -8043,7 +8030,7 @@ function xnserialize(){
 			break;
 		case "array":
 			$dtype = 7;
-			$d = [];
+			$d = array();
 			foreach($data as $k => $v) {
 				$d[] = $k;
 				$d[] = $v;
@@ -8055,7 +8042,7 @@ function xnserialize(){
 			if(is_stdclass($data)) {
 				$dtype = 8;
 				$data = (array)$data;
-				$d = [];
+				$d = array();
 				foreach($data as $k => $v) {
 					$d[] = $k;
 					$d[] = $v;
@@ -8067,7 +8054,7 @@ function xnserialize(){
 				$dtype = 9;
 				$r = new ReflectionFunction($data);
 				$pare = $r->getParameters();
-				$pars = [];
+				$pars = array();
 				$par = '';
 				foreach($pare as $k => $p) {
 					$t = '';
@@ -8092,9 +8079,9 @@ function xnserialize(){
 				$par = xnsize_encode(strlen($par)). $par;
 				$pars = implode(',', $pars);
 				$sts = $r->getStaticVariables();
-				$stc = [];
+				$stc = array();
 				foreach($sts as $k => $v)$stc[] = " *\&{0,1} *\\$$k *";
-				if($stc === [])$stc = '';
+				if($stc === array())$stc = '';
 				else $stc = ' *use\(' . implode(',', $stc). '\)';
 				$sts = substr(xnserialize($sts), 1);
 				if($sts == "\x00")$sts = "\x01\x01\x01";
@@ -8141,7 +8128,7 @@ function xnserialize(){
 				$dtype = 10;
 				$name = get_class($data);
 				$data = (array)$data;
-				$d = [];
+				$d = array();
 				foreach($data as $k => $v) {
 					$d[] = $k;
 					$d[] = $v;
@@ -8160,7 +8147,7 @@ function xnserialize(){
 }
 function xnunserialize($datas){
 	$u = strlen($datas);
-	$dall = [];
+	$dall = array();
 	for($c = 0; $c < $u;) {
 		$type = ord($datas[$c++]);
 		switch ($type) {
@@ -8200,7 +8187,7 @@ function xnunserialize($datas){
 			$data = substr($datas, $c, $size);
 			$c+= $size;
 			$d = xnunserialize($data);
-			$data = [];
+			$data = array();
 			for($o = 0; isset($d[$o]); $o+= 2)$data[$d[$o]] = $d[$o + 1];
 			break;
 		case 8:
@@ -8211,7 +8198,7 @@ function xnunserialize($datas){
 			$data = substr($datas, $c, $size);
 			$c+= $size;
 			$d = xnunserialize($data);
-			$data = [];
+			$data = array();
 			for($o = 0; isset($d[$o]); $o+= 2)$data[$d[$o]] = $d[$o + 1];
 			$data = (object)$data;
 			break;
@@ -8247,7 +8234,7 @@ function xnunserialize($datas){
 			$fils = xnsize_decode(chr($fill). $fils);
 			$fil = substr($data, $cl, $fils);
 			$cl+= $fils;
-			$pars = [];
+			$pars = array();
 			if($par != "\x01") {
 				$ll = strlen($par);
 				$pv = 0;
@@ -8286,7 +8273,7 @@ function xnunserialize($datas){
 			}
 			$pars = implode(',', $pars);
 			$stcs = xnunserialize("\x07" . xnsize_encode(strlen($stc)). $stc);
-			$stc = [];
+			$stc = array();
 			foreach($stcs as $k => $v)$stc[] = "$$k";
 			$stc = implode(',', $stc);
 			if($stc)$stc = "use($stc)";
@@ -8318,7 +8305,7 @@ $file
 			$pc+= $size;
 			$data = substr($data, $pc);
 			$d = xnunserialize($data);
-			$data = [];
+			$data = array();
 			for($o = 0; isset($d[$o]); $o+= 2)$data[$d[$o]] = $d[$o + 1];
 			$data = serialize((object)$data);
 			$data = replace_first("8:\"stdClass\"", strlen($name). ":\"$name\"", $data);
@@ -8364,7 +8351,7 @@ function delete_class_var(object &$class, string $type, $key){
 function get_class_all_vars(object $class){
 	$name = get_class($class);
 	$class = (array)$class;
-	$vars = ['public' => [], "private" => [], "protected" => []];
+	$vars = array('public' => array(), "private" => array(), "protected" => array());
 	foreach($class as $k => $v) {
 		if(@$k[1] == '')$vars['public'][$k] = $v;
 		elseif($k[1] == 'a' && $k[0] == "\x00")$vars['private'][substr($k, 3)] = $v;
@@ -8398,7 +8385,7 @@ function class_to_array(object &$class){
 function classarray_to_array($class){
 	if(!is_classarray($class))
 		return false;
-	$array = [];
+	$array = array();
 	foreach($class as $key => $value)
 		$array[$key] = $value;
 	return $array;
@@ -8429,7 +8416,7 @@ function class_var_exists(object $class, $key){
 }
 function roman2number($str){
     $number = 0;
-    $values = [
+    $values = array(
         'M' => 1000,
         'D' => 500,
         'C' => 100,
@@ -8437,15 +8424,15 @@ function roman2number($str){
         'X' => 10,
         'V' => 5,
         'I' => 1
-    ];
-    $str = strtr($str, [
+    );
+    $str = strtr($str, array(
         'CM' => 'DCCCC',
         'CD' => 'CCCC',
         'XC' => 'LXXXX',
         'XL' => 'XXXX',
         'IX' => 'VIIII',
         'IV' => 'IIII'
-    ]);
+    ));
     foreach($values as $r => $n)
 		$number += $n * substr_count($str, $r);
     return $number;
@@ -8454,7 +8441,7 @@ function number2roman($number){
 	if($number > 4999 || $number < 0)
 		return false;
     $str = '';
-    $values = [
+    $values = array(
         'M' => 1000,
         'D' => 500,
         'C' => 100,
@@ -8462,19 +8449,19 @@ function number2roman($number){
         'X' => 10,
         'V' => 5,
         'I' => 1
-    ];
+    );
     foreach($values as $r => $n) {
         $str .= str_repeat($r, floor($number / $n));
         $number = $number % $n;
     }
-    return strtr($str, [
+    return strtr($str, array(
         'DCCCC' => 'CM',
         'CCCC' => 'CD',
         'LXXXX' => 'XC',
         'XXXX' => 'XL',
         'VIIII' => 'IX',
         'IIII' => 'IV'
-    ]);
+    ));
 }
 class XNNumber {
 	// consts variables
@@ -8642,7 +8629,7 @@ class XNNumber {
 		$l = '0';
 		while($a != $l) {
 			$l = $a;
-			$a = str_replace(['--', '-+', '+-', '++'], ['+', '-', '-', '+'], $a);
+			$a = str_replace(array('--', '-+', '+-', '++'), array('+', '-', '-', '+'), $a);
 		}
 		return $a;
 	}
@@ -8788,7 +8775,7 @@ class XNNumber {
 		if(!self::_check($a))return false;
 		if(self::_view($a) && strpos($a, '.') > 0)
 			return '-' . self::add(self::floor(self::abs($a)), '1');
-		return explode('.', $a)[0];
+		return array_key(explode('.', $a), 0);
 	}
 	public static function ceil(string $a){
 		if(!self::_check($a))return false;
@@ -9265,7 +9252,7 @@ class XNNumber {
 		return self::powTwo($b) - self::mul(self::mul($a, $c), 4);
 	}
 	public static function decimals($x){
-		return explode('.', $x . '.0', 3)[1];
+		return array_key(explode('.', $x . '.0', 3), 1);
 	}
 	public static function hypot($x, $y){
 		return self::sqrt(self::add(self::powFloor($x, '2'), self::powFloor($y, '2')));
@@ -9326,7 +9313,7 @@ class XNNumber {
 		$a = call_user_func_array('min', func_get_args());
 	}
 	public static function averagea(&$a){
-		$a = call_user_func_array(['XNNumber', 'average'], func_get_args());
+		$a = call_user_func_array(array('XNNumber', 'average'), func_get_args());
 	}
 	public static function gcda(&$a, $b){
 		$a = self::gcd($a, $b);
@@ -9418,7 +9405,7 @@ class XNNumber {
 		if(!is_array($from))$fromel = str_split($from);
 		else $fromel = $from;
 		if($from == $to)return $text;
-		$frome = [];
+		$frome = array();
 		foreach($fromel as $key => $value) {
 			$frome[$value] = $key;
 		}
@@ -9463,7 +9450,7 @@ class XNNumber {
 		return self::baseconvert($str, $from, $to);
 	}
 	// calc function
-	public static function calc(string $x,array $variables = []){
+	public static function calc(string $x,array $variables = array()){
 	}
 }
 class XNNumberObject {
@@ -9662,10 +9649,10 @@ class XNBinary {
 		return XNNumber::base_convert($a, 2, 10);
 	}
 	public function tostring($a){
-		return base2_decode(set_bytes($a, 8));
+		return base2_decode(set_bytes($a, 8, '0'));
 	}
 	public function bytes($a){
-		return base2_decode(set_bytes($a, 8));
+		return base2_decode(set_bytes($a, 8, '0'));
 	}
 	public function init($a, $init = 2){
 		return XNNumber::base_convert($a, $init, 2);
@@ -9759,8 +9746,8 @@ class XNStringBinaryPosition {
 class XNString {
 	// parser functions
 	public static function parse(string $str){
-		$str = str_replace(['\n','\r','\t','\v'],["\n","\r","\t","\v"],$str);
-		$str = preg_replace_callback_array([
+		$str = str_replace(array('\n','\r','\t','\v'),array("\n","\r","\t","\v"),$str);
+		$str = preg_replace_callback_array(array(
 			'/(?<!\\\\)\\\\x[0-9a-fA-F]{1,2}/' => function($x){
 				return chr(base_convert(substr($x[0],2),16,10));
 			},
@@ -9807,8 +9794,8 @@ class XNString {
 			'/(?<!\\\\)%(?<x>\{((?:\\\\\{|\\\\\}|\g<x>|[^\{\}])*)\})/' => function($x){
 				return eval('return '.$x[2].';');
 			}
-		],$str);
-		$str = str_replace(['\e','\\\\'],["\e",'\\'],$str);
+		),$str);
+		$str = str_replace(array('\e','\\\\'),array("\e",'\\'),$str);
 		return $str;
 	}
 	public static function lshift(string $str, int $shift = null){
@@ -9848,7 +9835,7 @@ class XNString {
 	}
 	public static function range(){
 	    $chars = func_get_args();
-		return range(call_user_func_array(['XNString', 'min'], $chars),call_user_func_array(['XNString', 'max'], $chars));
+		return range(call_user_func_array(array('XNString', 'min'), $chars),call_user_func_array(array('XNString', 'max'), $chars));
 	}
 	public static function end(string $str, string $im){
 		return substr($str, strrpos($str, $im)+ 1);
@@ -9952,10 +9939,10 @@ class XNString {
 		return strpos(self::ALPHBA_RANGE, substr($char, 0, 1)) % 26 + 1;
 	}
 	public static function lalphba_char_at(int $index){
-		return self::ALPHBA_LOWER_RANGE[abs($index) % 26];
+		return array_key(self::ALPHBA_LOWER_RANGE, abs($index) % 26);
 	}
 	public static function ualphba_char_at(int $index){
-		return self::ALPHBA_UPPER_RANGE[abs($index) % 26];
+		return array_key(self::ALPHBA_UPPER_RANGE, abs($index) % 26);
 	}
 	public static function char_in_range(string $char, string $range){
 		if($char === '')return false;
@@ -10007,6 +9994,13 @@ class XNString {
 			else $n.= '0';
 		}
 		return $n;
+	}
+	public static function xor_chars(string $chars, string $string){
+		$str = '';
+		for($i = 0;isset($chars[$i]);++$i)
+			if(strpos($string, $chars[$i]) === false)
+				$str .= $chars[$i];
+		return $str;
 	}
 	public static function xorx(string $a, string $b){
 		return base2_decode(set_bytes(self::xorn($a, $b), 8, '0'));
@@ -10070,7 +10064,7 @@ function userip(){
 	if(@$_SERVER['HTTP_CLIENT_IP'])return $_SERVER['HTTP_CLIENT_IP'];
 	elseif(@$_SERVER['HTTP_X_FORWARDED'])return $_SERVER['HTTP_X_FORWARDED'];
 	elseif(@$_SERVER['HTTP_X_FORWARDED_FOR'])return $_SERVER['HTTP_X_FORWARDED_FOR'];
-	elseif(@$_SERVER['subOTE_ADDR'])return $_SERVER['subOTE_ADDR'];
+	elseif(@$_SERVER['REMOTE_ADDTR'])return $_SERVER['REMOTE_ADDTR'];
 	else return "127.0.0.1";
 }
 function save_memory($file = false){
@@ -10084,12 +10078,12 @@ function back_memory($file = false){
 function boolnumber($x, int $bbv = null){
     if($bbv === null)$bbv = 12;
 	$tree = XNMath::tree($x);
-	$strs = [];
+	$strs = array();
 	foreach($tree as $num) {
 		if(isset($strs[$num]))++$strs[$num][1];
 		else {
 			$n = $num;
-			$s = [];
+			$s = array();
 			if($n == 0) {
 				$r = rand(1, rand(1, rand(1, rand(1, $bbv))));
 				$r = $r < 1 ? 1 : $r;
@@ -10104,10 +10098,10 @@ function boolnumber($x, int $bbv = null){
 				$s[] = ($r ? str_repeat('!', $r): '') . '[]';
 			}
 			$s = implode('+', $s);
-			$strs[$num] = ["($s)", 1];
+			$strs[$num] = array("($s)", 1);
 		}
 	}
-	$s = [];
+	$s = array();
 	foreach($strs as $num) {
 		if($num[1] == 1)$s[] = $num[0];
 		else $s[] = $num[0] . '**(' . boolnumber($num[1]). ')';
@@ -10131,19 +10125,19 @@ function is_ereg($x){
 function getmd5xn(){
 	if($GLOBALS['-XN-']['isf']) {
 		$get = file_get_contents($GLOBALS['-XN-']['dirNameDir'] . "xn.php");
-		$get = str_replace(["\"" . $GLOBALS['-XN-']['lastUse'] . "\";", "\"" . $GLOBALS['-XN-']['lastUse'] . "\";", "\"" . $GLOBALS['-XN-']['DATA'] . "\";"], '', $get);
+		$get = str_replace(array("\"" . $GLOBALS['-XN-']['lastUse'] . "\";", "\"" . $GLOBALS['-XN-']['lastUse'] . "\";", "\"" . $GLOBALS['-XN-']['DATA'] . "\";"), '', $get);
 		return md5($get);
 	}
 	else return '';
 }
 function xnscript(){
-	return [
+	return array(
 		"version"     => "2.1",
 		"start_time"  => $GLOBALS['-XN-']['startTime'],
 		"end_time"    => $GLOBALS['-XN-']['endTime'],
 		"loaded_time" => $GLOBALS['-XN-']['endTime'] - $GLOBALS['-XN-']['startTime'],
 		"dir_name"    => $GLOBALS['-XN-']['dirName']
-	];
+	);
 }
 class XNMath {
 	const PI = 3.1415926535898;
@@ -10186,8 +10180,8 @@ class XNMath {
 		return floor($a) + substr($a - floor($a), 0, $x + 2);
 	}
 	public static function factors($x){
-		if($x == 0)return [INF];
-		$r = [];
+		if($x == 0)return array(INF);
+		$r = array();
 		$y = sqrt(($x = $x < 0 ? -$x : $x));
 		for($c = 1; $c <= $y; ++$c)
 		if($x % $c == 0) {
@@ -10210,15 +10204,15 @@ class XNMath {
 	}
 	public static function natives($x){
 		$x = $x < 0 ? -$x : $x;
-		if($x == 0)return [0];
-		$r = [];
+		if($x == 0)return array(0);
+		$r = array();
 		for($c = 1; $c <= $x; ++$c)
 		if($x % $c == 0)$r[] = $c;
 		return $r;
 	}
 	public static function tree($x){
-		if($x == 0)return [0];
-		$r = [$l = self::native($x)];
+		if($x == 0)return array(0);
+		$r = array($l = self::native($x));
 		while(($x/= $l)> 1)$r[] = $l = self::native($x);
 		return $r;
 	}
@@ -10226,8 +10220,8 @@ class XNMath {
 		return (pow(($x + 1), (1 / $y)) - 1)* $y;
 	}
 	public static function pnan($x){
-		if($x == 0)return [];
-		$a = [1];
+		if($x == 0)return array();
+		$a = array(1);
 		for($c = 2;$c < $x;++$c)
 			if(self::gcd($x,$c) == 1)
 				$a[] = $c;
@@ -10237,7 +10231,7 @@ class XNMath {
 		return self::native($x) == $x;
 	}
 	public static function pnpnt($x){
-		$a = [];
+		$a = array();
 		for($c = 2;$c < $x;++$c)
 			if(self::native($c) == $c)
 				$a[] = $c;
@@ -10267,7 +10261,7 @@ class XNMath {
 	}
 	public static function pnphi($x){
 		if($x == 0)return 0;
-		$n = [];
+		$n = array();
 		for($c = 2;$c < $x;)
 			if(self::gcd($x,$c++) == 1)
 				$n[] = $c;
@@ -10315,6 +10309,12 @@ class XNMath {
 	public static function res($x, $y){
 		return $y | ($x ^ $y);
 	}
+	public static function nor($x, $y){
+		return ~($x | $y);
+	}
+	public static function clamp($x, $y, $z){
+		return max($y, min($x, $z));
+	}
 	public static function revbits($x){
 		return base_convert(strrev(base_convert($x, 10, 2)), 2, 10);
 	}
@@ -10334,7 +10334,7 @@ class XNMath {
 		return self::digitsadd(array_mul(str_split($x)));
 	}
 	public static function decimals($x){
-		return (float)explode('.', $x . '.0', 3)[1];
+		return array_key((float)explode('.', $x . '.0', 3), 1);
 	}
 	public static function decimal($x){
 		return $x < 0 ? $x ^ -1 : $x;
@@ -10388,7 +10388,7 @@ class XNMath {
         return $x * pow(2, $exp - 23);
 	}
 	public function complex2float($data){
-        return (float)($data & 0xFFFFFF00) * array_key([0.00390625, 3.051758E-005, 1.192093E-007, 4.656613E-010], ($data>>4) & 3);
+        return (float)($data & 0xFFFFFF00) * array_key(array(0.00390625, 3.051758E-005, 1.192093E-007, 4.656613E-010), ($data>>4) & 3);
     }
 	public static function baseconvert($text, $from = false, $to = false){
 		if(is_string($from) && strtolower($from) == "ascii")return self::baseconvert(bin2hex($text), "0123456789abcdef", $to);
@@ -10401,7 +10401,7 @@ class XNMath {
 		if(!is_array($from))$fromel = str_split($from);
 		else $fromel = $from;
 		if($from == $to)return $text;
-		$frome = [];
+		$frome = array();
 		foreach($fromel as $key => $value) {
 			$frome[$value] = $key;
 		}
@@ -10476,7 +10476,7 @@ function filestate(string $filename){
     return $s;
 }
 class BrainFuck {
-	public $homes = [0], $home = 0, $output = '', $input = '', $position = - 1;
+	public $homes = array(0), $home = 0, $output = '', $input = '', $position = - 1;
 	private function __construct(string $code, string $input = null){
 		$this->input = $input !== null ? $input : '';
 		$this->code($code);
@@ -10522,12 +10522,14 @@ class BrainFuck {
 		}
 	}
 	public static function run(string $code, string $input = null){
-		return (new BrainFuck($code, $input))->output;
+		$tmp = new BrainFuck($code, $input);
+		return $tmp->output;
 	}
 	public static function file(string $file, string $input = null){
 		$code = @file_get_contents($file);
 		if($code === false)return false;
-		return (new BrainFuck($code, $input))->output;
+		$tmp = new BrainFuck($code, $input);
+		return $tmp->output;
 	}
 	public static function create(string $string){
 		$string = str_split($string);
@@ -10642,11 +10644,11 @@ class Finder {
 function get_type($x){
 	return is_object($x)?get_class($x):gettype($x);
 }
-define('UNICODE_CHARS',0,true);
-define('UNICODE_ALL',1,true);
-define('UNICODE_UTF',2,true);
+define('UNICODE_CHARS',0);
+define('UNICODE_ALL',1);
+define('UNICODE_UTF',2);
 function unicode_encode(string $str,string $charset = null,int $type = null){
-    if($charset === null)$charset = 'ISO-8861-1';
+    if($charset === null)$charset = 'UTF-8';
     if($type === null)$type = 2;
 	$str = str_replace('\u','\\\u',$str);
 	$str = iconv($charset,'gbk',$str);
@@ -10743,7 +10745,7 @@ function fjson_last_error() {
 	return $GLOBALS['-XN-']['jsonerror'];
 }
 function fjson_last_error_msg() {
-	return array_key([
+	return array_key(array(
 		'No error',
 		'Maximum stack depth exceeded',
 		'Invalid or malformed JSON',
@@ -10755,7 +10757,7 @@ function fjson_last_error_msg() {
 		'A value of a type that cannot be encoded was given',
 		'A property name that cannot be encoded was given',
 		'Malformed UTF-16 characters, possibly incorrectly encoded'
-	],$GLOBALS['-XN-']['jsonerror']);
+	),$GLOBALS['-XN-']['jsonerror']);
 }
 function _fjson_encode($value, $options = 0, $depth = 512){
 	if($value === null)
@@ -10766,14 +10768,13 @@ function _fjson_encode($value, $options = 0, $depth = 512){
 		return 'true';
 	switch(gettype($value)){
 		case 'string':
-			if($options & JSON_NUMERIC_CHECK && is_numeric($value)){
+			if($options & JSON_NUMERIC_CHECK && is_numeric($value))
 				return ($value + 0).'';
-			}
 			if(~$options & JSON_UNESCAPED_UNICODE)
 				$value = unicode_encode($value);
-			$value = '"'.str_replace(['\\','"',"\n","\r","\t"],['\\\\','\"','\n','\r','\t'],$value).'"';
+			$value = '"'.str_replace(array('\\','"',"\n","\r","\t"),array('\\\\','\"','\n','\r','\t'),$value).'"';
 			if($options & JSON_HEX_TAG)
-				$value = str_replace(['<','>'],['\u003C','\u003E'],$value);
+				$value = str_replace(array('<','>'),array('\u003C','\u003E'),$value);
 			if($options & JSON_HEX_AMP)
 				$value = str_replace('&','\u0026',$value);
 			if($options & JSON_HEX_APOS)
@@ -10789,7 +10790,7 @@ function _fjson_encode($value, $options = 0, $depth = 512){
 		case 'float':
 			if(is_infinite($value) || is_nan($value)){
 				$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_INF_OR_NAN;
-				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return false;
+				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
 				return '0';
 			}
 			if($options & JSON_PRESERVE_ZERO_FRACTION && !is_int($value))
@@ -10800,7 +10801,7 @@ function _fjson_encode($value, $options = 0, $depth = 512){
 		case 'object':
 			if($depth <= 0){
 				$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_INF_OR_NAN;
-				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return false;
+				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
 			}
 			if($options & JSON_PRETTY_PRINT){
 				if(is_array($value) && ~$options & JSON_FORCE_OBJECT){
@@ -10813,7 +10814,7 @@ function _fjson_encode($value, $options = 0, $depth = 512){
 							$str = '';
 							break;
 						}
-						if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return false;
+						if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return null;
 					}
 				}else $str = '';
 				if($str){
@@ -10828,7 +10829,7 @@ function _fjson_encode($value, $options = 0, $depth = 512){
 				$str = "{\n    ";
 				foreach($value as $key => $val){
 					$str .= _fjson_encode((string)$key,$options,$depth - 1) . ': ' . str_replace("\n","\n    ",_fjson_encode($val,$options,$depth - 1)) . ",\n    ";
-					if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return false;
+					if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return null;
 				}
 				if($str == "{\n    ")
 					$str = '{}';
@@ -10846,7 +10847,7 @@ function _fjson_encode($value, $options = 0, $depth = 512){
 						$str = '';
 						break;
 					}
-					if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return false;
+					if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return nulll;
 				}
 			}else $str = '';
 			if($str){
@@ -10860,7 +10861,7 @@ function _fjson_encode($value, $options = 0, $depth = 512){
 			$str = '{';
 			foreach($value as $key => $val){
 				$str .= _fjson_encode((string)$key,$options,$depth - 1) . ':' . _fjson_encode($val,$options,$depth - 1) . ',';
-				if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return false;
+				if($GLOBALS['-XN-']['jsonerror'] > 0 && ~$options & JSON_FORCE_OBJECT)return null;
 			}
 			if($str == '{')
 				$str = '{}';
@@ -10870,7 +10871,7 @@ function _fjson_encode($value, $options = 0, $depth = 512){
 		break;
 		default:
 			$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_UNSUPPORTED_TYPE;
-			if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return false;
+			if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
 			return '';
 	}
 }
@@ -10890,11 +10891,112 @@ function _fjson_decode($value, bool $assoc = null, int $depth = null, int $optio
 		return false;
 	if($value == 'true')
 		return true;
+	if(is_numeric($value))
+		return $value * 1;
 	if($value[0] == '"'){
-		$value = unicode_decode(substr($value,1,-1));
-		$value = str_replace(['\"','\/','\\\\'],['"','/','\\'],$value);
-		echo $value;
+		$l = strlen($value);
+		if($value[$l - 1] !== '"' || preg_match("/(?<!\\\\)\"/", $value =substr($value, 1, -1))){
+			$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_SYNTAX;
+			return null;
+		}
+		$value = unicode_decode($value);
+		if(preg_match("/(?<!\\\\)\\\\u/", $value)){
+			$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_SYNTAX;
+			return null;
+		}
+		return str_replace(array('\"','\/','\\\\'),array('"','/','\\'),$value);
 	}
+	if($options & JSON_PARSE_JAVASCRIPT && $value[0] == "'"){
+		$l = strlen($value);
+		if($value[$l - 1] !== "'" || preg_match("/(?<!\\\\)'/", $value = substr($value, 1, -1))){
+			$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_SYNTAX;
+			return null;
+		}
+		$value = unicode_decode($value);
+		if(preg_match("/(?<!\\\\)\\\\u/", $value)){
+			$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_SYNTAX;
+			return null;
+		}
+		return str_replace(array("\\'",'\/','\\\\'),array("'",'/','\\'),$value);
+	}
+	if($value[0] == '['){
+		if($depth <= 0){
+			$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_INF_OR_NAN;
+			if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
+		}
+		$value = substr($value, 1, -1);
+		$poses = array();
+		$prev = $pos = 0;
+		preg_replace_callback("/\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\[\]])*)\])|(?<y>\{((?:\g<y>|\\\\\{|\\\\\}|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\{\}])*)\})|,/",
+			function($x)use(&$poses, &$pos, &$prev, $value){
+				$pos = strpos($value, $x[0], $pos) + strlen($x[0]);
+				if($x[0] == ','){
+					$poses[] = substr($value, $prev, $pos - 1 - $prev);
+					$prev = $pos;
+				}
+				return '';
+			}, $value);
+		$pos = substr($value, $prev);
+		if($pos !== '')
+			$poses[] = $pos;
+		foreach($poses as &$pos){
+			$pos = _fjson_decode(trim($pos), $assoc, $depth - 1, $options);
+			if($pos === null)return null;
+		}
+		return $poses;
+	}
+	if($value[0] == '{'){
+		if($depth <= 0){
+			$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_INF_OR_NAN;
+			if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
+		}
+		$value = substr($value, 1, -1);
+		$poses = array();
+		$prev = $pos = 0;
+		preg_replace_callback("/\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\[\]])*)\])|(?<y>\{((?:\g<y>|\\\\\{|\\\\\}|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\{\}])*)\})|,|:/",
+			function($x)use(&$poses, &$pos, &$prev, $value){
+				$pos = strpos($value, $x[0], $pos) + strlen($x[0]);
+				if($x[0] == ','){
+					$poses[] = array(',', substr($value, $prev, $pos - 1 - $prev));
+					$prev = $pos;
+				}elseif($x[0] == ':'){
+					$poses[] = array(':', substr($value, $prev, $pos - 1 - $prev));
+					$prev = $pos;
+				}
+				return '';
+			}, $value);
+		$pos = substr($value, $prev);
+		if($pos !== '')
+			$poses[] = array(',', $pos);
+		if(count($pos) % 2 === 0 || (isset($poses[0]) && $poses[0][0] == ',')){
+			$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_SYNTAX;
+			return null;
+		}
+		foreach($poses as $k=>&$pos){
+			if(isset($poses[$k - 1]) && $poses[$k - 1][0] == $pos[0]){
+				$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_SYNTAX;
+				return null;
+			}
+			if($pos[1] == 'null')
+				$pos[1] = null;
+			else{
+				$pos[1] = _fjson_decode(trim($pos[1]), $assoc, $depth - 1, $options);
+				if($pos[1] === null)return null;
+			}
+		}
+		if($options & JSON_OBJECT_AS_ARRAY || $assoc === true){
+			$obj = array();
+			for($i = 0;isset($poses[$i]);$i += 2)
+				$obj[$poses[$i][1]] = $poses[$i + 1][1];
+		}else{
+			$obj = new stdClass;
+			for($i = 0;isset($poses[$i]);$i += 2)
+				$obj->{$poses[$i][1]} = $poses[$i + 1][1];
+		}
+		return $obj;
+	}
+	$GLOBALS['-XN-']['jsonerror'] = JSON_ERROR_SYNTAX;
+	return null;
 }
 function fjson_decode($value, bool $assoc = null, int $depth = null, int $options = null){
     if($assoc === null)$assoc = false;
@@ -10933,7 +11035,7 @@ function militime(){
 	return floor(microtime(true)* 1000);
 }
 class XNObject {
-	private $variable = null, $call = [], $varstatic = [], $destruct = null, $wakeup = null, $tostr = null, $callmethod = null, $callstatic = null, $invoke = null, $cloned = null;
+	private $variable = null, $call = array(), $varstatic = array(), $destruct = null, $wakeup = null, $tostr = null, $callmethod = null, $callstatic = null, $invoke = null, $cloned = null;
 	public function variable(&$var){
 		$this->variable = &$var;
 		$var = $this;
@@ -11025,7 +11127,8 @@ class XNCode {
 			$code = $code->getCode();
 		}
 		elseif($code instanceof Closure) {
-			$code = (new XNClosure($code))->getCode();
+		    $tmp = new XNClosure($code);
+			$code = $tmp->getCode();
 		}
 		elseif(is_string($code) && (file_exists($code) || filter_var($code, FILTER_VALIDATE_URL))) {
 			$code = file_get_contents($code);
@@ -11076,7 +11179,7 @@ class XNCode {
 			foreach($variables as $key => $val) {
 				if(is_object($val))$val = "unserialize(base64_decode('" . base64_encode(serialize($val)). "'))";
 				else $val = unce($val);
-				$code = "\${'" . str_replace(["\\", "'"], ["\\\\", "\\'"], $key). "'}=$val;\n$code";
+				$code = "\${'" . str_replace(array("\\", "'"), array("\\\\", "\\'"), $key). "'}=$val;\n$code";
 			}
 		}
 		if($this->timer) {
@@ -11086,7 +11189,7 @@ class XNCode {
 		return $code;
 	}
 	private function open(){
-		$proc = proc_open($this->php, $this->errorfile ? [["pipe", "r"], ["pipe", "w"], ["file", $this->errorfile, "a"]] : [["pipe", "r"], ["pipe", "w"]], $pipes, ".", ["PARENT_XNCODE" => __FILE__]);
+		$proc = proc_open($this->php, $this->errorfile ? array(array("pipe", "r"), array("pipe", "w"), array("file", $this->errorfile, "a")) : array(array("pipe", "r"), array("pipe", "w")), $pipes, ".", array("PARENT_XNCODE" => __FILE__));
 		$this->proc = $proc;
 		$this->pipes = $pipes;
 		return $pipes;
@@ -11156,7 +11259,7 @@ define("XNDEFINE_ALL",            1);
 define("XNDEFINE_STRING",         2);
 define("XNDEFINE_NUMBER",         3);
 define("XNDEFINE_CODE",           4);
-$GLOBALS['-XN-']['xndefine'] = zlib_encode(file_get_contents(thefile()),31);
+$GLOBALS['-XN-']['xndefine'] = function_exists('zlib_encode') ? zlib_encode(file_get_contents(thefile()),31) : file_get_contents(thefile());
 function xndefine(string $from, string $to, int $type = null, int $locate = null){
     if($type === null)$type = 1;
     if($locate === null)$locate = 1;
@@ -11222,10 +11325,10 @@ function xndefine(string $from, string $to, int $type = null, int $locate = null
 		exit;
 		break;
 	case XNDEFINE_CODE:
-		$saves = [];
+		$saves = array();
 		$source = preg_replace_callback("/(?i)(?:(?<!\\\\)(?:\'(?:\\\'|[^\'])*(?<!\\\\)\'|\"(?:\\\\\"|[^\"])*(?<!\\\\)\")|(?:[0-9]+\.[0-9]+|[0-9]+\.|\.[0-9]+|[0-9]+)|(?:0[xb][0-9]+)|true|false|null)/",
 		function($x)use(&$saves, $source){
-			$saves[] = [strpos($source, $x[0]), $x[0]];
+			$saves[] = array(strpos($source, $x[0]), $x[0]);
 			return '';
 		}
 		, $source);
@@ -11290,7 +11393,7 @@ function xndefine(string $from, string $to, int $type = null, int $locate = null
 	}
 	return true;
 }
-$GLOBALS['-XN-']['push'] = [];
+$GLOBALS['-XN-']['push'] = array();
 $GLOBALS['-XN-']['pushed'] = 0;
 $GLOBALS['-XN-']['poped'] = 0;
 function xn_push($x){
@@ -11356,7 +11459,7 @@ function get_request_title($file = false){
 }
 function get_request_headers_list(){
 	global $_SERVER;
-	$headers = [];
+	$headers = array();
 	foreach($_SERVER as $header=>$value){
 		if(strpos($header,"HTTP_") !== 0)continue;
 			strtr(ucwords(strtr(strtolower(substr($header,5)),'_',' ')),' ','-').": ".$value;
@@ -11374,7 +11477,7 @@ function get_request_headers_string(){
 }
 function get_request_headers(){
 	global $_SERVER;
-	$headers = [];
+	$headers = array();
 	foreach($_SERVER as $header=>$value){
 		if(strpos($header,"HTTP_") !== 0)continue;
 		$headers[strtr(ucwords(strtr(strtolower(substr($header,5)),'_',' ')),' ','-')] = $value;
@@ -11384,7 +11487,7 @@ function get_request_headers(){
 function get_request_query(bool $array = null){
 	global $_REQUEST;
 	$query = @getenv("QUERY_STRING");
-	if(!$query && $_REQUEST !== []){
+	if(!$query && $_REQUEST !== array()){
 	  if($array)return $_REQUEST;
 	  $query = http_build_query($_REQUEST);
 	}elseif(!$query && STDINPUTED)
@@ -11412,7 +11515,7 @@ function get_response_title(){
 	return "$protocol $code $status";
 }
 function get_response_headers(){
-	$arr = [];
+	$arr = array();
 	$hdrs = headers_list();
 	foreach($hdrs as $hdr){
 		$hdr = explode(':',$hdr);
@@ -11842,7 +11945,7 @@ function open_class(string $name,&$return = 53348987487374){
     unset($input[0]);
     unset($input[1]);
 	$class = unserialize("O:".strlen($name).":\"$name\":0:{}");
-	if($input === [] && $return === 53348987487374)
+	if($input === array() && $return === 53348987487374)
 		return $class;
 	$input[1] = $class;
 	$return = call_user_func_array('call_constructor', $input);
@@ -11890,7 +11993,7 @@ function create_stream_content(string $content, string $mime_type = null, string
 	return fopen("data://$mime_type," . urlencode($content),$mode);
 }
 function go_line(int $x){
-	$code = implode("\n",array_slice(explode("\n",zlib_decode($GLOBALS['-XN-']['xndefine'])),$x));
+	$code = implode("\n",array_slice(explode("\n",function_exists('zlib_decode') ? zlib_decode($GLOBALS['-XN-']['xndefine']) : zlib_decode($GLOBALS['-XN-']['xndefine'])),$x));
 	evale($code);
 }
 define("XNBLOCK",'',true);
@@ -11903,7 +12006,7 @@ function xnblock($block){
 	evale($code);
 }
 function get_source(){
-	return zlib_decode($GLOBALS['-XN-']['xndefine']);
+	return function_exists('zlib_decode') ? zlib_decode($GLOBALS['-XN-']['xndefine']) : zlib_decode($GLOBALS['-XN-']['xndefine']);
 }
 if(file_exists('autoinclude.php')){
 	try{
@@ -11971,7 +12074,7 @@ function makepass(int $length = null, int $type = null, int $make = null, string
 	if($make & MAKEPASS_ENV)
 		$data .= serialize(@$GLOBALS['_SERVER']) . $salt . serialize(@$GLOBALS['_ENV']) . $salt;
 	if($make & MAKEPASS_USER)
-		$data .= getenv('subOTE_ADDR') . $salt . strrev(getenv('subOTE_ADDR'));
+		$data .= getenv('REMOTE_ADDTR') . $salt . strrev(getenv('REMOTE_ADDTR'));
 	if($make & MAKEPASS_HOST)
 		$data .= getenv('HOST_NAME') . $salt . getenv('SERVER_ADMIN') . getenv('HTTP_HOST') . $salt;
 	if($make & MAKEPASS_GLOBAL)
@@ -12202,26 +12305,26 @@ function tbotGetSelf($data){
 	$self = false;
 	foreach($scores as $user)
 		if(isset($user['current']))
-			return [
+			return array(
 				'pos' => $user['pos'],
 				'score' => $user['score'],
 				'name' => $user['name']
-			];
+			);
 }
 function tbotInfoData($data){
 	$data = json_decode(substr(base64_decode($data), 0, -32), true);
 	if($data === false)
 		return false;
-	return [
+	return array(
 		'game' => $data['g'],
 		'id' => $data['u'],
 		'name' => $data['n']
-	];
+	);
 }
 function array_key(array $array, string $key){
 	return $array[$key];
 }
-$GLOBALS['-XN-']['currenttmpfiles'] = [];
+$GLOBALS['-XN-']['currenttmpfiles'] = array();
 function current_tmpfile(){
 	do{
 		$file = 'php.'.rand(0, 999999999).rand(0, 999999999).rand(0, 999999999).'.tmp';
@@ -12235,7 +12338,7 @@ function variables_memory_usage(){
 	return fulllength($GLOBALS);
 }
 function _dirvar(array $var, $now){
-	if((!is_array($now) && !is_object($now)) || $var === [])
+	if((!is_array($now) && !is_object($now)) || $var === array())
 		return $now;
 	if(is_object($now))
 		$now = (array)$now;
@@ -12269,6 +12372,8 @@ if(!defined('DATE_RFC3339'))define('DATE_RFC3339','Y-m-d\TH:i:sP'   );
 if(!defined('DATE_RSS'	  ))define('DATE_RSS'	 ,'D, d M Y H:i:s O');
 if(!defined('DATE_W3C'	  ))define('DATE_W3C'	 ,'Y-m-d\TH:i:sP'   );
 
+define('MAX_NUMBER', 1.7976931348623e+308);
+
 function adler32(string $data, int $mod = null){
 	if($mod === null)$mod = 65521;
 	$a = 1;
@@ -12290,10 +12395,10 @@ class XNNet {
 			$protocol,
 			$scheme,
 			$connected = false,
-			$headers = [],
+			$headers = array(),
 			$method = 'GET',
 			$http_version,
-			$cookie = [],
+			$cookie = array(),
 			$panel_cookies = false,
 			$redirect = false,
 			$timeout,
@@ -12302,111 +12407,111 @@ class XNNet {
 			$header_origin = true,
 			$header_cookie = true,
 			$query = '',
-			$content = [
+			$content = array(
 				'scan' => true,
 				'type' => 'application/x-www-form-urlencoded',
 				'length' => 0,
 				'coding' => ''
-			],
-			$response = [
+			),
+			$response = array(
 				'http_version' => '',
 				'code' => -1,
 				'status' => '',
-				'headers' => [],
+				'headers' => array(),
 				'content' => ''
-			],
+			),
 			$username,
 			$password,
 			$load_ping = 0;
-    private $ports = [
-        ['ftp', 20, 'tcp'],
-        ['ftp', 21, 'tcp'],
-        ['ssh', 22, 'tcp'],
-        ['rap', 38, 'udp'],
-        ['rlp', 39, 'udp'],
-        ['dns', 53, 'tcp'],
-        ['tftp', 69, 'udp'],
-        ['http', 80, 'tcp'],
-        ['tsap', 102, 'tcp'],
-        ['sna', 108, 'tcp'],
-        ['pop2', 109, 'tcp'],
-        ['pop3', 110, 'tcp'],
-        ['sql', 118, 'tcp'],
-        ['sql', 156, 'tcp'],
-        ['imap', 143, 'tcp'],
-        ['imap', 220, 'tcp'],
-        ['nntp', 119, 'tcp'],
-        ['ntp', 123, 'udp'],
-        ['bftp', 152, 'tcp'],
-        ['sgmp', 153, 'tcp'],
-        ['snmp', 161, 'udp'],
-        ['ipx', 213, 'tcp'],
-        ['mpp', 218, 'tcp'],
-        ['esro', 259, 'tcp'],
-        ['bgmp', 264, 'tcp'],
-        ['tsp', 318, 'tcp'],
-        ['ptp', 319, 'udp'],
-        ['ptp', 320, 'udp'],
-        ['odmr', 366, 'tcp'],
-        ['ldap', 389, 'tcp'],
-        ['ups', 401, 'tcp'],
-        ['slp', 427, 'tcp'],
-        ['https', 443, 'ssl'],
-        ['snpp', 444, 'tcp'],
-        ['smtps', 465, 'ssl'],
-        ['fcp', 510, 'tcp'],
-        ['lpd', 515, 'tcp'],
-        ['rip', 520, 'udp'],
-        ['ncp', 524, 'tcp'],
-        ['rpc', 530, 'tcp'],
-        ['uucp', 540, 'tcp'],
-        ['afp', 548, 'tcp'],
-        ['rtsp', 554, 'tcp'],
-        ['nntps', 563, 'ssl'],
-        ['9p', 564, 'tcp'],
-        ['smtp', 587, 'tls'],
-        ['imaps', 585, 'ssl'],
-        ['cups', 631, 'tcp'],
-        ['ldaps', 636, 'ssl'],
-        ['ldp', 646, 'tcp'],
-        ['dhcp', 647, 'tcp'],
-        ['rrp', 648, 'tcp'],
-        ['mms', 654, 'tcp'],
-        ['mmp', 654, 'tcp'],
-        ['acap', 674, 'tcp'],
-        ['vatp', 690, 'tcp'],
-        ['olsr', 698, 'udp'],
-        ['epp', 700, 'tcp'],
-        ['lmp', 701, 'tcp'],
-        ['silc', 706, 'tcp'],
-        ['rrh', 753, 'tcp'],
-        ['ftps', 989, 'ssl'],
-        ['ftps', 990, 'ssl'],
-        ['nas', 991, 'tcp'],
-        ['imaps', 993, 'ssl'],
-        ['ircs', 994, 'ssl'],
-        ['pop3s', 995, 'ssl'],
-        ['nfs', 1023, 'tcp'],
-        ['http', 8080, 'tcp'],
-        ['oftp', 6619, 'ssl'],
-        ['mftp', 5042, 'tcp'],
-        ['xmapp', 5269, 'tcp'],
-        ['xmapp', 5280, 'tcp'],
-        ['xmapp', 5281, 'tcp'],
-        ['xmapp', 5298, 'tcp'],
-        ['stt', 7471, 'tcp'],
-        ['mssql', 1433, 'tcp'],
-        ['mssql', 1434, 'tcp'],
-        ['mysql', 3306, 'tcp'],
-        ['dbgp', 9001, 'tcp'],
-        ['odproxy', 625, 'tcp'],
-        ['socks', 1080, 'tcp'],
-        ['qotd', 17, 'tcp'],
-        ['chargen', 19, 'tcp'],
-        ['mqtt', 1883, 'tcp'],
-        ['ssdp', 1900, 'udp'],
-        ['*', -1, '*'],
-    ];
+    private $ports = array(
+        array('ftp', 20, 'tcp'),
+        array('ftp', 21, 'tcp'),
+        array('ssh', 22, 'tcp'),
+        array('rap', 38, 'udp'),
+        array('rlp', 39, 'udp'),
+        array('dns', 53, 'tcp'),
+        array('tftp', 69, 'udp'),
+        array('http', 80, 'tcp'),
+        array('tsap', 102, 'tcp'),
+        array('sna', 108, 'tcp'),
+        array('pop2', 109, 'tcp'),
+        array('pop3', 110, 'tcp'),
+        array('sql', 118, 'tcp'),
+        array('sql', 156, 'tcp'),
+        array('imap', 143, 'tcp'),
+        array('imap', 220, 'tcp'),
+        array('nntp', 119, 'tcp'),
+        array('ntp', 123, 'udp'),
+        array('bftp', 152, 'tcp'),
+        array('sgmp', 153, 'tcp'),
+        array('snmp', 161, 'udp'),
+        array('ipx', 213, 'tcp'),
+        array('mpp', 218, 'tcp'),
+        array('esro', 259, 'tcp'),
+        array('bgmp', 264, 'tcp'),
+        array('tsp', 318, 'tcp'),
+        array('ptp', 319, 'udp'),
+        array('ptp', 320, 'udp'),
+        array('odmr', 366, 'tcp'),
+        array('ldap', 389, 'tcp'),
+        array('ups', 401, 'tcp'),
+        array('slp', 427, 'tcp'),
+        array('https', 443, 'ssl'),
+        array('snpp', 444, 'tcp'),
+        array('smtps', 465, 'ssl'),
+        array('fcp', 510, 'tcp'),
+        array('lpd', 515, 'tcp'),
+        array('rip', 520, 'udp'),
+        array('ncp', 524, 'tcp'),
+        array('rpc', 530, 'tcp'),
+        array('uucp', 540, 'tcp'),
+        array('afp', 548, 'tcp'),
+        array('rtsp', 554, 'tcp'),
+        array('nntps', 563, 'ssl'),
+        array('9p', 564, 'tcp'),
+        array('smtp', 587, 'tls'),
+        array('imaps', 585, 'ssl'),
+        array('cups', 631, 'tcp'),
+        array('ldaps', 636, 'ssl'),
+        array('ldp', 646, 'tcp'),
+        array('dhcp', 647, 'tcp'),
+        array('rrp', 648, 'tcp'),
+        array('mms', 654, 'tcp'),
+        array('mmp', 654, 'tcp'),
+        array('acap', 674, 'tcp'),
+        array('vatp', 690, 'tcp'),
+        array('olsr', 698, 'udp'),
+        array('epp', 700, 'tcp'),
+        array('lmp', 701, 'tcp'),
+        array('silc', 706, 'tcp'),
+        array('rrh', 753, 'tcp'),
+        array('ftps', 989, 'ssl'),
+        array('ftps', 990, 'ssl'),
+        array('nas', 991, 'tcp'),
+        array('imaps', 993, 'ssl'),
+        array('ircs', 994, 'ssl'),
+        array('pop3s', 995, 'ssl'),
+        array('nfs', 1023, 'tcp'),
+        array('http', 8080, 'tcp'),
+        array('oftp', 6619, 'ssl'),
+        array('mftp', 5042, 'tcp'),
+        array('xmapp', 5269, 'tcp'),
+        array('xmapp', 5280, 'tcp'),
+        array('xmapp', 5281, 'tcp'),
+        array('xmapp', 5298, 'tcp'),
+        array('stt', 7471, 'tcp'),
+        array('mssql', 1433, 'tcp'),
+        array('mssql', 1434, 'tcp'),
+        array('mysql', 3306, 'tcp'),
+        array('dbgp', 9001, 'tcp'),
+        array('odproxy', 625, 'tcp'),
+        array('socks', 1080, 'tcp'),
+        array('qotd', 17, 'tcp'),
+        array('chargen', 19, 'tcp'),
+        array('mqtt', 1883, 'tcp'),
+        array('ssdp', 1900, 'udp'),
+        array('*', -1, '*'),
+    );
     public function __construct(string $address = null, int $timeout = null, int &$errno = null, int &$errstr = null){
 		$this->timeout = ini_get('default_socket_timeout');
         if(!$address)
@@ -12423,7 +12528,7 @@ class XNNet {
         $this->scheme = 'data';
         $this->host = '';
         $this->port = -1;
-        $this->path = explode(',' , $address, 2)[0];
+        $this->path = array_key(explode(',' , $address, 2), 0);
         $this->connected = true;
 	}
 	private function connect_file($address){
@@ -12477,14 +12582,14 @@ class XNNet {
                     $scheme = $port[0];
                     break;
                 }
-        }elseif(!isset($address['scheme']) || !in_array($address['scheme'], ['tcp', 'udp', 'ssl', 'tls', 'sslv2', 'sslv3'])){
+        }elseif(!isset($address['scheme']) || !in_array($address['scheme'], array('tcp', 'udp', 'ssl', 'tls', 'sslv2', 'sslv3'))){
             foreach($this->ports as $port)
                 if($port[1] == $address['port']){
                     $address['scheme'] = $port[2];
                     $scheme = $port[0];
                     break;
                 }
-        }elseif(isset($address['scheme']) && isset($address['port']) && in_array($address['scheme'], ['tcp', 'udp', 'ssl', 'tls', 'sslv2', 'sslv3'])){
+        }elseif(isset($address['scheme']) && isset($address['port']) && in_array($address['scheme'], array('tcp', 'udp', 'ssl', 'tls', 'sslv2', 'sslv3'))){
             foreach($this->ports as $port)
                 if($port[1] === $address['port']){
                     $scheme = $port[0];
@@ -12534,14 +12639,14 @@ class XNNet {
         return true;
     }
     public function getAddressInfo(){
-        return [
+        return array(
             'protocol' => $this->protocol,
             'scheme' => $this->scheme,
             'host' => $this->host,
             'port' => $this->port,
 			'path' => $this->path,
 			'ping' => $this->ping
-        ];
+        );
 	}
 	public function getProtocol(){
 		return $this->protocol;
@@ -12571,7 +12676,7 @@ class XNNet {
 		return $this->http_version;
 	}
 	public function is_secury_protocol(){
-		return in_array($this->protocol, ['ssl', 'tls', 'sslv2', 'sslv3']);
+		return in_array($this->protocol, array('ssl', 'tls', 'sslv2', 'sslv3'));
 	}
     public function getAddressSocket(){
         return "$this->protocol://$this->host:$this->port$this->path";
@@ -12697,7 +12802,7 @@ class XNNet {
     public function get_headers(){
         if(!isset($this->headers[0]))
             $this->opt_status();
-        $headers = [];
+        $headers = array();
         foreach($this->headers as $header){
             $header = explode(':', $header,2);
             if(isset($header[1]))
@@ -12714,7 +12819,7 @@ class XNNet {
     public function reset_headers(){
         if(!isset($this->headers[1]))
             return;
-        $this->headers = [];
+        $this->headers = array();
         $this->opt_status();
     }
     public function opt_method(string $method = null){
@@ -12751,7 +12856,7 @@ class XNNet {
     }
     public function opt_connection(string $connection = null){
         if($connection === null)
-            $connection = 'keep-alive';
+            $connection = 'close';
         $this->set_only_header('Connection', $connection);
     }
     public function opt_useragent(string $useragent){
@@ -12827,7 +12932,7 @@ class XNNet {
     }
     public function set_cookie(string $key, string $value, int $expire = null, int $path = null, string $domain = null, bool $secury = null, bool $httponly = null){
         $key = urlencode($key);
-        if(in_array(strtolower($key), ['expires', 'path', 'domain', 'secure', 'httponly']))
+        if(in_array(strtolower($key), array('expires', 'path', 'domain', 'secure', 'httponly')))
             $key = '%' . bin2hex($key[0]) . substr($key, 1);
         $this->delete_cookie($key);
         $cookie = $key . '=' . urlencode($value) . '; ';
@@ -12847,7 +12952,7 @@ class XNNet {
     }
     public function delete_cookie(string $key){
         $key = urlencode($key);
-        if(in_array(strtolower($key), ['expires', 'path', 'domain', 'secure', 'httponly']))
+        if(in_array(strtolower($key), array('expires', 'path', 'domain', 'secure', 'httponly')))
             $key = '%' . bin2hex($key[0]) . substr($key, 1);
         $key.= '=';
         foreach($this->cookie as $x => $cookie)
@@ -12859,7 +12964,7 @@ class XNNet {
     }
     public function exists_cookie(string $key){
         $key = urlencode($key);
-        if(in_array(strtolower($key), ['expires', 'path', 'domain', 'secure', 'httponly']))
+        if(in_array(strtolower($key), array('expires', 'path', 'domain', 'secure', 'httponly')))
             $key = '%' . bin2hex($key[0]) . substr($key, 1);
         $key.= '=';
         foreach($this->cookie as $cookie)
@@ -12869,14 +12974,14 @@ class XNNet {
     }
     public function get_cookie(string $key){
         $key = urlencode($key);
-        if(in_array(strtolower($key), ['expires', 'path', 'domain', 'secure', 'httponly']))
+        if(in_array(strtolower($key), array('expires', 'path', 'domain', 'secure', 'httponly')))
             $key = '%' . bin2hex($key[0]) . substr($key, 1);
         $key.= '=';
         foreach($this->cookie as $cookie)
             if(strpos($cookie, $key) === 0){
                 $value = substr($cookie, strlen($key));
                 $value = explode(';', $value);
-                $key = [];
+                $key = array();
                 $key['value'] = urldecode($value[0]);
                 for($c = 1;isset($value[$c]);){
                     $now = explode('=', $value[$c++], 2);
@@ -12907,11 +13012,11 @@ class XNNet {
         return false;
     }
     public function get_cookies(){
-        $cookies = [];
+        $cookies = array();
         foreach($this->cookie as $cookie){
             $value = substr($cookie, strlen($key));
             $value = explode(';', $value);
-            $key = [];
+            $key = array();
             $key['key'] = explode('=', $value[0],2);
             $key['value'] = urldecode($key['key'][1]);
             $key['key'] = urlencode($key['key'][0]);
@@ -13048,7 +13153,7 @@ class XNNet {
         $this->set_header('Content-Location', $address);
     }
     public function request_methods(){
-        return [
+        return array(
             'CONNECT',
             'DELETE',
             'GET',
@@ -13058,25 +13163,25 @@ class XNNet {
             'POST',
             'PUT',
             'TRACE'
-        ];
+        );
     }
     public function opt_content_description(string $type = null, string $name = null, string $filename = null){
         $type = strtr(strtolower($type), '_ ', '-');
         if($type == 'fromdata' || $type === null)
             $type = 'from-data';
-        if(!is_array($type, [
+        if(!is_array($type, array(
             'attachment',
             'inline',
             'from-data'
-        ])){
+        ))){
             new XNError('XNNet Content', 'Content Description type invalid', XNError::WARNING);
             return false;
         }
         $desc = $type . '; ';
         if($name)
-            $desc .= 'name="' . str_replace(['"', '\\'], ['\"', '\\\\'], $name) . '"; ';
+            $desc .= 'name="' . str_replace(array('"', '\\'), array('\"', '\\\\'), $name) . '"; ';
         if($filename)
-            $desc .= 'filename="' . str_replace(['"', '\\'], ['\"', '\\\\'], $filename) . '";';
+            $desc .= 'filename="' . str_replace(array('"', '\\'), array('\"', '\\\\'), $filename) . '";';
         $desc = ltrim($desc, ' ');
         $this->set_header('Content-Description', $desc);
         return true;
@@ -13127,12 +13232,12 @@ class XNNet {
             $agent = '-';
         else
             $agent = '"' . $agent . '"';
-        if(!in_array($code, [110, 111, 112, 113, 199, 214, 299])){
+        if(!in_array($code, array(110, 111, 112, 113, 199, 214, 299))){
             new XNError('XNNet WarnHdr', 'Warning code invalid', XNError::WARNING);
             return false;
         }
         if($text === null)
-            $text = array_key([
+            $text = array_key(array(
                 110 => 'Response is Stale',
                 111 => 'Revalidation Failed',
                 112 => 'Disconnected Operation',
@@ -13140,8 +13245,8 @@ class XNNet {
                 199 => 'Miscellaneous Warning',
                 214 => 'Transformation Applied',
                 299 => 'Miscellaneous Warning'
-            ], $code);
-        $warn = $code . ' ' . str_replace(['"', '\\'], ['\"', '\\\\'], $agent) . '"' . str_replace(['"', '\\'], ['\"', '\\\\'], $text) . '"';
+            ), $code);
+        $warn = $code . ' ' . str_replace(array('"', '\\'), array('\"', '\\\\'), $agent) . '"' . str_replace(array('"', '\\'), array('\"', '\\\\'), $text) . '"';
         if($date)
             $warn .= ' ' . '"' . $date . '"';
         $this->set_header('Warning', $warn);
@@ -13158,12 +13263,12 @@ class XNNet {
         return $date;
     }
     public function opt_etag(string $value, bool $W = null){
-        $etag = ($W ? 'W/' : '') . '"' . str_replace(['"', '\\'], ['\"', '\\\\'], $value) . '"';
+        $etag = ($W ? 'W/' : '') . '"' . str_replace(array('"', '\\'), array('\"', '\\\\'), $value) . '"';
         $this->add_header("ETag: $etag");
         return $etag;
     }
     public static function http_status_code(){
-        return [
+        return array(
             100 => 'Continue',
             101 => 'Switching Protocols',
             102 => 'Processing',
@@ -13241,13 +13346,13 @@ class XNNet {
             511 => 'Network Authentication Required',
             598 => 'Network read timeout error',
             599 => 'Network connect timeout error',
-        ];
+        );
     }
     public function opt_expect($code){
         $codes = self::http_status_code();
         if(is_numeric($code)){
             if(!isset($codes[$code])){
-                new XNError('XNNet', "HTTP Status Code [$code] invalid", XNError::WARNING);
+                new XNError('XNNet', "HTTP Status Code array($code) invalid", XNError::WARNING);
                 return false;
             }
             $status = strtolower(strtr($codes[$code], ' ', '-'));
@@ -13257,7 +13362,7 @@ class XNNet {
         $status = substr($code, 0, 40);
         $code = array_search($codes, ucwords(strtolower(strtr($code, '-_', '  '))));
         if($code === false){
-            new XNError('XNNet', "HTTP Status Text [$status] invalid");
+            new XNError('XNNet', "HTTP Status Text array($status) invalid");
             return false;
         }
         $status = strtolower(strtr($codes[$code], ' ', '-'));
@@ -13283,7 +13388,7 @@ class XNNet {
         $value = $header[1];
         $header = strtolower($header[0]);
         if($options === null)
-            $options = [];
+            $options = array();
         switch($header){
             case 'set-cookie':
                 if($this->panel_cookie && !in_array('cookie', $options))
@@ -13349,16 +13454,16 @@ class XNNet {
         return fread($this->socket, 8);
     }
     public function getshortc(){
-        return unpack('s', fread($this->socket, 2))[1];
+        return array_key(unpack('s', fread($this->socket, 2)), 1);
     }
     public function getintc(){
-        return unpack('l', fread($this->socket, 4))[1];
+        return array_key(unpack('l', fread($this->socket, 4)), 1);
     }
     public function getdoublec(){
-        return unpack('d',fread($this->socket, 8))[1];
+        return array_key(unpack('d',fread($this->socket, 8)), 1);
     }
     public function getlongc(){
-        return unpack('q',fread($this->socket, 8))[1];
+        return array_key(unpack('q',fread($this->socket, 8)), 1);
     }
     public function write(string $content, int $length = null){
         if($length === null)$length = strlen($content);
@@ -13469,12 +13574,12 @@ class XNNet {
         $this->response['headers'] = $headers;
         $this->response['content'] = $read;
         foreach($headers as $header)
-            $this->load_header($header, ['redirect']);
+            $this->load_header($header, array('redirect'));
         foreach($headers as $header)
-            $this->load_header($header, ['cookie']);
+            $this->load_header($header, array('cookie'));
     }
     public function reading_header(){
-        $headers = [];
+        $headers = array();
         $r = fgets($this->socket);
         $status = explode(' ', $r);
         while(($r = fgets($this->socket)) != "\r\n")
@@ -13484,9 +13589,9 @@ class XNNet {
         $this->response['status'] = $status[2];
         $this->response['headers'] = $headers;
         foreach($headers as $header)
-            $this->load_header($header, ['redirect']);
+            $this->load_header($header, array('redirect'));
         foreach($headers as $header)
-            $this->load_header($header, ['cookie']);
+            $this->load_header($header, array('cookie'));
     }
     public function reading_content(){
         if(!$this->execed())
@@ -13499,14 +13604,15 @@ class XNNet {
     }
     public function exec(){
         $this->send();
-        $this->reading();
+		$this->reading();
+		$this->loadConnection();
     }
     public function execed(){
         return $this->response['code'] != -1;
     }
     public function response_full_header(){
         $header = $this->response['headers'];
-        if($header === [])
+        if($header === array())
             $header = "\r\n";
         else
             $header = implode("\r\n", $header) . "\r\n";
@@ -13543,7 +13649,7 @@ class XNNet {
             if(strpos($y, $header) === 0)
                 return true;
         return false;
-    }
+	}
     public function get_response_content_type(){
         $type = $this->get_reponse_header('Content-Type');
         return substr($type, 0, strpos($type, ';'));
@@ -13553,12 +13659,19 @@ class XNNet {
     }
     public function get_response_content_size(){
         return strlen($this->response['content']);
-    }
+	}
+	public function loadConnection(){
+		$connection = $this->get_response_header('connection');
+		if($connection == 'close')
+			$this->close();
+		return $connection;
+	}
     public function clienthtml(){
         return new XNClientHTML($this->response['content']);
 	}
 	public static function ping(string $address){
-		return (new XNNet($address))->getPing();
+	    $tmp = new XNNet($address);
+		return $tmp->getPing();
 	}
 	public static function loadping(string $address){
 		$xnn = new XNNet($address);
@@ -13566,20 +13679,20 @@ class XNNet {
 		return $xnn->getLoadPing();
 	}
 	public static function pings(string $address, int $count){
-		$pings = [];
+		$pings = array();
 		while($count --> 0)
 			$pings[] = self::ping($address);
-		if($pings === [])
+		if($pings === array())
 			return 0;
-		return call_user_func_array(['XNMath', 'average'], $pings);
+		return call_user_func_array(array('XNMath', 'average'), $pings);
 	}
 	public static function loadpings(string $address, int $count){
-		$pings = [];
+		$pings = array();
 		while($count --> 0)
 			$pings[] = self::loadping($address);
-		if($pings === [])
+		if($pings === array())
 			return 0;
-		return call_user_func_array(['XNMath', 'average'], $pings);
+		return call_user_func_array(array('XNMath', 'average'), $pings);
 	}
 	public static function callback_send(array $callbacks){
 		foreach($callbacks as $request => $callback){
@@ -13602,7 +13715,7 @@ class XNNet {
 		}
 	}
 	public function scanf(){
-		return call_user_func_array('fscanf', array_merge([$this->socket], func_get_args()));
+		return call_user_func_array('fscanf', array_merge(array($this->socket), func_get_args()));
 	}
 	public function preg_match(string $pattern){
 		return fpreg_match($this->socket, $pattern);
@@ -13689,7 +13802,7 @@ function sarrand($x, $y, $a, $b){
 			return $a - 1;
 	return sarrand($x, $y, rand($a, $b), rand($b, $a));
 }
-function proposal_username(string $username, array $options = []){
+function proposal_username(string $username, array $options = array()){
     $l = strlen($username);
     $ll = floor(pow($l, 0.2));
     $s = $username;
@@ -13770,40 +13883,42 @@ function imagecreatefromfile($file){
     }
     return imagecreatefromstring(file_get_contents($file));
 }
-function imagepixelscolor($image, int $x = null, int $y = null, $width = null, $height = null){
-    if(!is_gd($image)){
-        new XNError('imagepixelscolor', 'image gd resource invalid', XNError::WARNING);
+function number2rgb(int $number){
+    return array($number & 0xff, $number << 8 & 0xff, $number << 16 & 0xff, $number << 24 & 0xff);
+}
+function imagepixelsarray($image, int $x = null, int $y = null, int $width = null, int $height = null){
+    if(!is_gd($image))
         return false;
-    }
-    $pixels = [];
-    $w = imagesx($image);
-    $h = imagesy($image);
+    $pixels = array();
     if($x == -1 || $x === null)$x = 0;
     if($y == -1 || $y === null)$y = 0;
-    if($width == -1 || $width === null)$width = $w - $x;
-    if($height == -1 || $height === null)$height = $h - $y;
-    if($x < 0 || $x > $w){
-        new XNError('imagepixelscolor', "width position [$x] is out of bound", XNError::WARNING);
-        return false;
-    }
-    if($y < 0 || $y > $h){
-        new XNError('imagepixelscolor', "height position [$y] is out of bound", XNError::WARNING);
-        return false;
-    }
-    if($width + $x < 0 || $width + $x > $w){
-        new XNError('imagepixelscolor', 'width position [' . ($x + $width) . '] is out of bound', XNError::WARNING);
-        return false;
-    }
-    if($height + $y < 0 || $height + $y > $h){
-        new XNError('imagepixelscolor', 'height position [' . ($y + $height) . '] is out of bound', XNError::WARNING);
-        return false;
-    }
+    if($width == -1 || $width === null)$width = imagesx($image) - $x;
+    if($height == -1 || $height === null)$height = imagesy($image) - $y;
     for($a = 0;$a < $width;++$a){
-        $pixels[$a] = [];
+        $pixels[$a] = array();
         for($b = 0;$b < $height;++$b)
             $pixels[$a][$b] = imagecolorat($image, $a + $x, $b + $y);
     }
     return $pixels;
+}
+function imagefrompixels(array $pixels, int $width = null, int $height = null){
+    if($pixels === array()){
+        if($width === null)$width = 1;
+        if($height === null)$height = 1;
+    }else{
+        if($width === null)
+            $width = call_user_func_array('max', array_map(function($x){
+                if($x === array())return 1;
+                return call_user_func_array('max', array_keys($x));
+            }, $pixels));
+        if($height === null)
+            $height = call_user_func_array('max', array_keys($pixels));
+    }
+    $image = imagecreatetruecolor($width, $height);
+    foreach($pixels as $y => $height)
+        foreach($height as $x => $color)
+            imagesetpixel($image, $x, $y, $color);
+    return $image;
 }
 function imageresize($image, $width = null, $height = null, int $crop = null){
     if(!is_gd($image)){
@@ -14019,7 +14134,7 @@ function imageborderpolygon($image, array $point, int $count, int $color, int $b
     return true;
 }
 class XNTelegram {
-    public $session = [], $settings = [], $history = [], $socket;
+    public $session = array(), $settings = array(), $history = array(), $socket;
 
     // constants
     const VERSION = '1';
@@ -14051,7 +14166,7 @@ class XNTelegram {
         $b = hash('sha256', substr($key, 40 + $x, 36).$msg, true);
         $key = substr($a, 0, 8).substr($b, 8, 16).substr($a, 24, 8);
         $iv = substr($b, 0, 8).substr($a, 8, 16).substr($b, 24, 8);
-        return [$key, $iv];
+        return array($key, $iv);
     }
     public function old_aescalc($msg, $auth, $to_server = true){
         $x = $to_server ? 0 : 8;
@@ -14061,15 +14176,15 @@ class XNTelegram {
         $d = sha1($msg.substr($auth, 96 + $x, 32), true);
         $key = substr($a, 0, 8).substr($b, 8, 12).substr($c, 4, 12);
         $iv = substr($a, 8, 12).substr($b, 0, 8).substr($c, 16, 4).substr($d, 0, 8);
-        return [$key, $iv];
+        return array($key, $iv);
     }
     
     // elements parser
-    public $elements = [], $flush = [];
+    public $elements = array(), $flush = array();
     public function load_elements(){
         $file = $this->settings['flush']['elements_file'];
-        if($file && file_exists($file) && ($data = file_get_contents($file)) && ($data = json_decode($file)));
-        elseif(($data = file_get_contents('https://core.telegram.org/schema/json')) && ($data = json_decode($file)));
+        if($file && file_exists($file) && ($data = file_get_contents($file)) && ($data = json_decode($data)));
+        elseif(($data = file_get_contents('https://core.telegram.org/schema/json')) && ($data = json_decode($data)));
         else
             throw new XNError("XNTelegram loadElements", "can not Connect to https://core.telegram.org", XNError::NETWORK);
         $this->elements = $data;
@@ -14095,8 +14210,8 @@ class XNTelegram {
             }
         }
         $elements = $this->elements;
-        $flush['methods'] = [];
-        $flush['predicates'] = [];
+        $flush['methods'] = array();
+        $flush['predicates'] = array();
         if($level == 2){
             foreach($elements['methods'] as &$method){
                 $flush['methods'][$method['method']] = &$method;
@@ -14255,11 +14370,11 @@ class XNTelegram {
                 else
                     return "\xed" . substr(pack('l', $l), 0, 3) . $content . str_repeat("\0", XNMath::posmod(-$l, 4));
             case 'Bool':
-                return pack('l', $this->find_predicate((bool)$content ? 'boolTrue' : 'boolFalse')['id']);
+                return pack('l', array_key($this->find_predicate((bool)$content ? 'boolTrue' : 'boolFalse'), 'id'));
             case '!X':
                 return $content;
             case 'Vector':
-                $data = pack('l', $this->find_predicate('vector')['id']);
+                $data = pack('l', array_key($this->find_predicate('vector'), 'id'));
             case 'vector':
                 if(!isset($data))
                     $data = '';
@@ -14286,7 +14401,7 @@ class XNTelegram {
     }
     public function type_read($stream,$type = false){
         if(!$type)
-            $type = $this->find_id($id = unpack('l', fread($stream,4))[1]);
+            $type = array_key($this->find_id($id = unpack('l', fread($stream,4)), 1));
         if($type === false)
             throw new XNError("XNTelegram id@" . bin2hex($id), 'invalid type id', XNError::TYPE);
         $p = strpos($type, '<');
@@ -14296,7 +14411,7 @@ class XNTelegram {
         }
         switch($type){
             case 'int':
-                return unpack('l', fread($stream, 4))[1];
+                return array_key(unpack('l', fread($stream, 4)), 1);
             case 'int128':
                 return fread($stream, 16);
             case 'int256':
@@ -14304,14 +14419,14 @@ class XNTelegram {
             case 'int512':
                 return fread($stream, 64);
             case '#':
-                return unpack('V', fread($stream, 4))[1];
+                return array_key(unpack('V', fread($stream, 4)), 1);
             case 'double':
-                return unpack('d', fread($stream, 8))[1];
+                return array_key(unpack('d', fread($stream, 8)), 1);
             case 'bytes':
             case 'string':
                 $l = ord(fgetc($stream));
                 if($l >= 254){
-                    $l = unpack('V', fgetc($stream) . "\0")[1];
+                    $l = array_key(unpack('V', fgetc($stream) . "\0"), 1);
                     $str = fread($stream, $l);
                     $res = XNMath::posmod(-$l, 4);
                     if($res > 0)
@@ -14322,26 +14437,26 @@ class XNTelegram {
                     if($res > 0)
                         fseek($stream, $res, SEEK_CUR);
                 }
-                return $type == 'bytes' ? ['bytes', 'bytes' => base64_encode($str)] : $str;
+                return $type == 'bytes' ? array('bytes', 'bytes' => base64_encode($str)) : $str;
             case 'gzip_packed':
                 return gzdecode($this->type_read($stream, 'string'));
             case 'Vector':
                 fseek($stream, 4, SEEK_CUR);
             case 'vector':
-                $count = unpack('V', fread($stream, 4))[1];
-                $res = [];
+                $count = array_key(unpack('V', fread($stream, 4)), 1);
+                $res = array();
                 while($count --> 0)
                     $res[] = $this->type_read($stream, $sub);
                 return $res;
             case 'Bool':
-                return $this->find_id(unpack('l', fread($stream, 4))[1])['predicate'] == 'boolTrue';
+                return array_key($this->find_id(array_key(unpack('l', fread($stream, 4)), 1)), 'predicate') == 'boolTrue';
             case 'long':
                 $content = fread($stream, 8);
                 if(SYS_64BIT)
-                    return unpack('q', $content)[1];
+                    return array_key(unpack('q', $content), 1);
                 switch($this->settings['number']){
                     case 1:
-                        return unpack('l', substr($content, 0, 4))[1] * 4294967296;
+                        return array_key(unpack('l', substr($content, 0, 4)), 1) * 4294967296;
                     case 2:
                         return xnmath::ascii2number(strrev($content));
                     break;
@@ -14352,7 +14467,7 @@ class XNTelegram {
 	}
 	public function type_decode($string,$type = false){
 		if(!$type)
-			$type = $this->find_id($id = unpack('l', substr($string, 0, $c = 4))[1]);
+			$type = $this->find_id($id = array_key(unpack('l', substr($string, 0, $c = 4)), 1));
 		else $c = 0;
 		if($type === false)
 			throw new XNError("XNTelegram id@" . bin2hex($id), 'invalid type id', XNError::TYPE);
@@ -14363,57 +14478,57 @@ class XNTelegram {
         }
         switch($type){
 			case 'int':
-                return [unpack('l', substr($string, $c, 4))[1], $c + 4];
+                return array(array_key(unpack('l', substr($string, $c, 4)), 1), $c + 4);
             case 'int128':
-                return [substr($string, $c, 16), $c + 16];
+                return array(substr($string, $c, 16), $c + 16);
             case 'int256':
-                return [substr($string, $c, 32), $c + 32];
+                return array(substr($string, $c, 32), $c + 32);
             case 'int512':
-                return [substr($string, $c, 64), $c + 64];
+                return array(substr($string, $c, 64), $c + 64);
             case '#':
-                return [unpack('V', substr($string, $c, 4))[1], $c + 4];
+                return array(array_key(unpack('V', substr($string, $c, 4)), 1), $c + 4);
             case 'double':
-                return [unpack('d', substr($string, $c, 8))[1], $c + 8];
+                return array(array_key(unpack('d', substr($string, $c, 8)), 1), $c + 8);
             case 'bytes':
             case 'string':
                 $l = ord($string[$c++]);
                 if($l >= 254){
-                    $l = unpack('V', $string[$c++] . "\0")[1];
+                    $l = array_key(unpack('V', $string[$c++] . "\0"), 1);
                     $str = substr($string, $c, $l);
                     $res = XNMath::posmod(-$l, 4);
                 }else{
                     $str = $l > 0 ? substr($string, $c, $l) : '';
                     $res = XNMath::posmod(-$l - 1, 4);
                 }
-                return [$type == 'bytes' ? ['bytes', 'bytes' => base64_encode($str)] : $str, $c + $l];
+                return array($type == 'bytes' ? array('bytes', 'bytes' => base64_encode($str)) : $str, $c + $l);
             case 'gzip_packed':
-                return [gzdecode($this->type_decode(substr($string, $c), 'string')), strlen($string)];
+                return array(gzdecode($this->type_decode(substr($string, $c), 'string')), strlen($string));
             case 'Vector':
                 $c += 4;
             case 'vector':
-				$count = unpack('V', substr($string, $c, 4))[1];
+				$count = array_key(unpack('V', substr($string, $c, 4)), 1);
 				$c += 4;
-                $res = [];
+                $res = array();
                 while($count --> 0){
 					$r = $this->type_decode(substr($string, $c), $sub);
 					$c+= $r[1];
 					$res[] = $r[0];
 				}
-                return [$res, $c];
+                return array($res, $c);
             case 'Bool':
-                return [$this->find_id(unpack('l', substr($string, $c, 4))[1])['predicate'] == 'boolTrue', $c + 4];
+                return array(array_key($this->find_id(array_key(unpack('l', substr($string, $c, 4)), 1)), 'predicate') == 'boolTrue', $c + 4);
             case 'long':
 				$content = substr($string, $c, 8);
                 if(SYS_64BIT)
-                    return unpack('q', $content)[1];
+                    return array_key(unpack('q', $content), 1);
                 switch($this->settings['number']){
                     case 1:
-                        return [unpack('l', substr($content, 0, 4))[1] * 0xffffffff, $c + 8];
+                        return array(array_key(unpack('l', substr($content, 0, 4)), 1) * 0xffffffff, $c + 8);
                     case 2:
-                        return [xnmath::ascii2number(strrev($content)), $c + 8];
+                        return array(xnmath::ascii2number(strrev($content)), $c + 8);
                     break;
                     case 3:
-                        return [xnnumber::base_convert(strrev($content), 'ascii', 10), $c + 8];
+                        return array(xnnumber::base_convert(strrev($content), 'ascii', 10), $c + 8);
                 }
         }
     }
@@ -14421,16 +14536,16 @@ class XNTelegram {
         if(!is_resource($stream))
 			return false;
 		if(!is_array($input))
-			return $this->type_read_all($stream, explodek(['/', ':'], $input));
-        $res = [];
+			return $this->type_read_all($stream, explodek(array('/', ':'), $input));
+        $res = array();
         foreach($input as $key => $content)
             $res[$key] = $this->type_read($stream, $content);
         return $res;
     }
     public function type_decode_all($content, $input){
 		if(!is_array($input))
-			return $this->type_decode_all($content, explodek(['/', ':'], $input));
-		$res = [];
+			return $this->type_decode_all($content, explodek(array('/', ':'), $input));
+		$res = array();
 		$c = 0;
 		foreach($input as $key => $data){
 			$res[$key] = $this->type_decode(substr($content, $c), $data);
@@ -14441,7 +14556,7 @@ class XNTelegram {
     }
     public function type_encode_all($input){
 		if(!is_array($input))
-			return $this->type_encode_all(explodek(['/', ':'], $input));
+			return $this->type_encode_all(explodek(array('/', ':'), $input));
 		$res = '';
         foreach($input as $content)
             if(isset($content[1]))
@@ -14450,7 +14565,7 @@ class XNTelegram {
     }
     public function type_write_all($stream, $input){
 		if(!is_array($input))
-			return $this->type_write_all($stream, explodek(['/', ':'], $input));
+			return $this->type_write_all($stream, explodek(array('/', ':'), $input));
         if(!is_resource($stream))
             return false;
         return fwrite($stream, $this->type_encode_all($input));
@@ -14527,49 +14642,31 @@ class XNTelegram {
         if($id[strlen($id) - 1] != "\x02")
             return false;
         $file = substr($id, 4);
-        $id = unpack('l', substr($id, 0, 4))[1];
-        $files = [
-            0 => [
-                "thumb", 'dc_id:int/id:long/access_hash:long/volume_id:long/secret:long/local_id:int'
-            ],
-            2 => [
-                "photo", 'dc_id:int/id:long/access_hash:long/volume_id:long/secret:long/local_id:int'
-            ],
-            3 => [
-                "voice", 'dc_id:int/id:long/access_hash:long'
-            ],
-            4 => [
-                "video", 'dc_id:int/id:long/access_hash:long'
-            ],
-            5 => [
-                "document", 'dc_id:int/id:long/access_hash:long'
-            ],
-            8 => [
-                "sticker", 'dc_id:int/id:long/access_hash:long'
-            ],
-            9 => [
-                "audio", 'dc_id:int/id:long/access_hash:long'
-            ],
-            10 => [
-                "gif", 'dc_id:int/id:long/access_hash:long'
-            ],
-            12 => [
-                "video_note", 'dc_id:int/id:long/access_hash:long'
-            ]
-        ];
+        $id = array_key(unpack('l', substr($id, 0, 4)), 1);
+        $files = array(
+            0 => array("thumb", 'dc_id:int/id:long/access_hash:long/volume_id:long/secret:long/local_id:int'),
+            2 => array("photo", 'dc_id:int/id:long/access_hash:long/volume_id:long/secret:long/local_id:int'),
+            3 => array("voice", 'dc_id:int/id:long/access_hash:long'),
+            4 => array("video", 'dc_id:int/id:long/access_hash:long'),
+            5 => array("document", 'dc_id:int/id:long/access_hash:long'),
+            8 => array("sticker", 'dc_id:int/id:long/access_hash:long'),
+            9 => array("audio", 'dc_id:int/id:long/access_hash:long'),
+            10 => array("gif", 'dc_id:int/id:long/access_hash:long'),
+            12 => array("video_note", 'dc_id:int/id:long/access_hash:long')
+		);
         if(!isset($files[$id]))
             return false;
         $id = $files[$id];
         $name = $id[0];
         $file = $this->type_decode_all($file, $id[1]);
-        return [$name, $file];
+        return array($name, $file);
     }
 
 	// settings
 	const RESULT_DEFUALT_MODEL = 0;
 	const RESULT_XN_MODEL      = 1;
 
-    public function parse_settings(array $options = []){
+    public function parse_settings(array $options = array()){
 		try{
             $model = php_uname('s');
         }catch(Exception $e) {
@@ -14581,105 +14678,106 @@ class XNTelegram {
             $version = phpversion();
         }
 		if($lang = getenv('LANG'))
-            $lang = explode('_', $lang, 2)[0];
+            $lang = array_key(explode('_', $lang, 2), 0);
         elseif($lang = getenv('HTTP_ACCEPT_LANGUAGE'))
             $lang = substr($lang, 0, 2);
         else
             $lang = 'en';
-        $settings = [
+        $settings = array(
             'serialization' => self::SERIALIZATION_COMPRESS,
-            'session' => [
+            'session' => array(
                 'serialization' => self::SESSION_FLUSH + self::SESSION_CONNECT + self::SESSION_SELF + self::SESSION_TIMER + self::SESSION_APPDATA + self::SESSION_LOGIN + self::SESSION_SETTINGS,
                 'password' => false,
-                'file' => 'xntelegram' . getenv('subOTE_ADDR') . ':' . getenv('subOTE_PORT') . '.session',
+                'file' => 'xntelegram' . getenv('REMOTE_ADDTR') . '.session',
                 'mode' => 600
-            ],
-            'time' => [
+            ),
+            'time' => array(
                 'last_modified' => microtime(true),
                 'created' => microtime(true),
                 'serialized' => 0,
                 'unserialized' => 0,
                 'logined' => 0
-            ],
+            ),
             'number' => self::NUMBER_LEVEL_3,
-            'subdomains' => [
+            'subdomains' => array(
                 'pluto',
                 'venus',
                 'aurora',
                 'vesta',
                 'flora'
-            ],
-            'rsa_keys' => [
+            ),
+            'rsa_keys' => array(
             "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEAwVACPi9w23mF3tBkdZz+zwrzKOaaQdr01vAbU4E1pvkfj4sqDsm6\nlyDONS789sVoD/xCS9Y0hkkC3gtL1tSfTlgCMOOul9lcixlEKzwKENj1Yz/s7daS\nan9tqw3bfUV/nqgbhGX81v/+7RFAEd+RwFnK7a+XYl9sluzHRyVVaTTveB2GazTw\nEfzk2DWgkBluml8OsubvfraX3bkHZJTKX4EQSjBbbdJ2ZXIsRrYOXfaA+xayEGB+\n8hdlLmAjbCVfaigxX0CDqWeR1yFL9kwd9P0NsZRPsmoqVwMbMu7mStFai6aIhc3n\nSlv8kg9qv1m6XHVQY3PnEw+QQtqSIXklHwIDAQAB\n-----END RSA PUBLIC KEY-----",
             "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEAxq7aeLAqJR20tkQQMfRn+ocfrtMlJsQ2Uksfs7Xcoo77jAid0bRt\nksiVmT2HEIJUlRxfABoPBV8wY9zRTUMaMA654pUX41mhyVN+XoerGxFvrs9dF1Ru\nvCHbI02dM2ppPvyytvvMoefRoL5BTcpAihFgm5xCaakgsJ/tH5oVl74CdhQw8J5L\nxI/K++KJBUyZ26Uba1632cOiq05JBUW0Z2vWIOk4BLysk7+U9z+SxynKiZR3/xdi\nXvFKk01R3BHV+GUKM2RYazpS/P8v7eyKhAbKxOdRcFpHLlVwfjyM1VlDQrEZxsMp\nNTLYXb6Sce1Uov0YtNx5wEowlREH1WOTlwIDAQAB\n-----END RSA PUBLIC KEY-----",
             "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEAsQZnSWVZNfClk29RcDTJQ76n8zZaiTGuUsi8sUhW8AS4PSbPKDm+\nDyJgdHDWdIF3HBzl7DHeFrILuqTs0vfS7Pa2NW8nUBwiaYQmPtwEa4n7bTmBVGsB\n1700/tz8wQWOLUlL2nMv+BPlDhxq4kmJCyJfgrIrHlX8sGPcPA4Y6Rwo0MSqYn3s\ng1Pu5gOKlaT9HKmE6wn5Sut6IiBjWozrRQ6n5h2RXNtO7O2qCDqjgB2vBxhV7B+z\nhRbLbCmW0tYMDsvPpX5M8fsO05svN+lKtCAuz1leFns8piZpptpSCFn7bWxiA9/f\nx5x17D7pfah3Sy2pA+NDXyzSlGcKdaUmwQIDAQAB\n-----END RSA PUBLIC KEY-----",
             "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEAwqjFW0pi4reKGbkc9pK83Eunwj/k0G8ZTioMMPbZmW99GivMibwa\nxDM9RDWabEMyUtGoQC2ZcDeLWRK3W8jMP6dnEKAlvLkDLfC4fXYHzFO5KHEqF06i\nqAqBdmI1iBGdQv/OQCBcbXIWCGDY2AsiqLhlGQfPOI7/vvKc188rTriocgUtoTUc\n/n/sIUzkgwTqRyvWYynWARWzQg0I9olLBBC2q5RQJJlnYXZwyTL3y9tdb7zOHkks\nWV9IMQmZmyZh/N7sMbGWQpt4NMchGpPGeJ2e5gHBjDnlIf2p1yZOYeUYrdbwcS0t\nUiggS4UeE8TzIuXFQxw7fzEIlmhIaq3FnwIDAQAB\n-----END RSA PUBLIC KEY-----"
-            ],
-            'connection' => [
-                'protocol' => 'tcp',
+            ),
+            'connection' => array(
                 'ipv6' => false,
                 'timeout' => 2,
 				'proxy' => false,
 				'dc' => 1
-			],
-			'datacenters' => [
-				'main' => [
-					[
+			),
+			'datacenters' => array(
+				'main' => array(
+					array(
 						'ipv4' => '149.154.175.50',
 						'ipv6' => '2001:0b28:f23d:f001:0000:0000:0000:000a',
 						'port' => 443
-					],
-					[
+					),
+					array(
 						'ipv4' => '149.154.167.51',
 						'ipv6' => '2001:067c:04e8:f002:0000:0000:0000:000a',
 						'port' => 443
-					],
-					[
+					),
+					array(
 						'ipv4' => '149.154.175.100',
 						'ipv6' => '2001:0b28:f23d:f003:0000:0000:0000:000a',
 						'port' => 443
-					],
-					[
+					),
+					array(
 						'ipv4' => '149.154.167.91',
 						'ipv6' => '2001:067c:04e8:f004:0000:0000:0000:000a',
 						'port' => 443
-					],
-					[
+					),
+					array(
 						'ipv4' => '149.154.171.5',
 						'ipv6' => '2001:0b28:f23f:f005:0000:0000:0000:000a',
 						'port' => 443
-					]
-				],
-				'test' => [
-					[
+					)
+				),
+				'test' => array(
+					array(
 						'ipv4' => '149.154.175.10',
 						'ipv6' => '2001:0b28:f23d:f001:0000:0000:0000:000e',
 						'port' => 443
-					],
-					[
+					),
+					array(
 						'ipv4' => '149.154.167.40',
 						'ipv6' => '2001:067c:04e8:f002:0000:0000:0000:000e',
 						'port' => 443
-					],
-					[
+					),
+					array(
 						'ipv4' => '149.154.175.117',
 						'ipv6' => '2001:0b28:f23d:f003:0000:0000:0000:000e',
 						'port' => 443
-					]
-				]
-			],
-            'app' => [
+					)
+				)
+			),
+            'app' => array(
                 'id' => 6,
                 'hash' => '',
                 'device_model' => $model,
                 'system_version' => $version,
                 'app_version' => 'Unicorn',
                 'lang' => $lang
-			],
-			'result_model' => 1
-        ];
+			),
+			'result_model' => 1,
+			'flush' => array(
+			)
+		);
 		$settings = array_replace_recursive($settings, $options);
-		$settings['dc'] = [];
+		$settings['dc'] = array();
         if(isset($settings['session']['file']) && file_exists($settings['session']['file']) && is_numeric($settings['session']['mode']))
 			fmod($settings['session']['file'], $settings['session']['mode']);
         $this->settings = $settings;
@@ -14688,7 +14786,7 @@ class XNTelegram {
 function obfuscated2_create_random(&$crypted = 48384387897423){
     do{
         $random = random_bytes(64);
-    }while(in_array(substr($random, 0, 4), ['PVrG', 'GET ', 'POST', 'HEAD', "\xee\xee\xee\xee"]) || $random[0] == "\xef" || substr($random, 4, 4) == "\0\0\0\0");
+    }while(in_array(substr($random, 0, 4), array('PVrG', 'GET ', 'POST', 'HEAD', "\xee\xee\xee\xee")) || $random[0] == "\xef" || substr($random, 4, 4) == "\0\0\0\0");
     $random[56] = $random[57] = $random[58] = $random[59] = "\xef";
 	if($crypted !== 48384387897423)
 		$crypted = substr_replace($random, substr(openssl_encrypt($random, 'aes-256-ctr', substr($random, 8, 32), 1, substr($random, 40, 16)), 56, 8), 56, 8);
@@ -14696,17 +14794,17 @@ function obfuscated2_create_random(&$crypted = 48384387897423){
 }
 function obfuscated2_get_info(string $random){
 	$reversed = strrev(substr($random, 8, 48));
-    return [
+    return array(
         'algo' => 'aes-256-ctr',
-        'encryption' => [
+        'encryption' => array(
             'key' => substr($random, 8, 32),
             'iv'  => substr($random, 40, 16)
-        ],
-        'decryption' => [
+        ),
+        'decryption' => array(
             'key' => substr($reversed, 0, 32),
             'iv'  => substr($reversed, 32, 16)
-		]
-    ];
+		)
+		);
 }
 function obfuscated2_get_crypted(string $random){
 	return substr_replace($random, substr(openssl_encrypt($random, 'aes-256-ctr', substr($random, 8, 32), 1, substr($random, 40, 16)), 56, 8), 56, 8);
@@ -14798,7 +14896,7 @@ function tcpfull_read_message($socket, int &$in_seq_no = null){
 	elseif(get_resource_type($socket) == 'socket')
 		$pl = socket_read($socket, 4);
 	else return false;
-	$l = unpack('V', $pl)[1];
+	$l = array_key(unpack('V', $pl), 1);
 	if(get_resource_type($socket) == 'stream')
 		$p = fread($socket, $l - 4);
 	elseif(get_resource_type($socket) == 'socket')
@@ -14809,16 +14907,16 @@ function tcpfull_read_message($socket, int &$in_seq_no = null){
 		$in_seq_no = fread($socket, 4);
 	elseif(get_resource_type($socket) == 'socket')
 		$in_seq_no = socket_read($socket, 4);
-	$in_seq_no = unpack('V', $in_seq_no)[1];
+	$in_seq_no = array_key(unpack('V', $in_seq_no), 1);
 	return $m;
 }
 function tcpintermediate_read_message($socket){
 	if(!is_resource($socket))
 		return false;
 	if(get_resource_type($socket) == 'stream')
-		return fread($socket, unpack('V', fread($socket, 4))[1]);
+		return fread($socket, array_key(unpack('V', fread($socket, 4)), 1));
 	if(get_resource_type($socket) == 'socket')
-		return socket_read($socket, unpack('V', socket_read($socket, 4))[1]);
+		return socket_read($socket, array_key(unpack('V', socket_read($socket, 4)), 1));
 	return false;
 }
 function tcpabridged_read_message($socket){
@@ -14826,10 +14924,10 @@ function tcpabridged_read_message($socket){
 		return false;
 	if(get_resource_type($socket) == 'stream'){
 		$l = ord(fgetc($socket));
-		return fread($l < 127 ? $l << 2 : unpack('V', fread($socket, 3) . "\0")[1] << 2);
+		return fread($l < 127 ? $l << 2 : array_key(unpack('V', fread($socket, 3) . "\0"), 1) << 2);
 	}if(get_resource_type($socket) == 'socket'){
 		$l = ord(socket_read($socket, 1));
-		return socket_read($l < 127 ? $l << 2 : unpack('V', socket_read($socket, 3) . "\0")[1] << 2);
+		return socket_read($l < 127 ? $l << 2 : array_key(unpack('V', socket_read($socket, 3) . "\0"), 1) << 2);
 	}return false;
 }
 function explodee(array $delimiters, string $string, int $limit = null){
@@ -14863,7 +14961,7 @@ function explodek(array $delimiters, string $string, int $limit = null){
 	return call_user_func_array('array_merge', $arr);
 }
 function array_keyval(array $array, bool $ending = null){
-	$arr = [];
+	$arr = array();
 	for($c = 0;isset($array[$c + 1]);)
 		$arr[$array[$c++]] = $array[$c++];
 	if($ending !== false && isset($array[$c]))
@@ -14887,7 +14985,7 @@ function treelow_encode(string $str){
     $tree = str_split($str);
     foreach($tree as &$value){
         $value = xnmath::tree(ord($value));
-        $value = array_merge([count($value)], $value);
+        $value = array_merge(array(count($value)), $value);
     }
     $tree = call_user_func_array('array_merge', $tree);
     return implode('', array_map('chr', $tree));
@@ -14920,7 +15018,7 @@ function power_func($x, $n, $i, $f) {
     return $y;
 }
 function implodet(string $gule, array $pieces){
-    return $pieces === [] ? $gule : $gule . implode($gule, $pieces) . $gule;
+    return $pieces === array() ? $gule : $gule . implode($gule, $pieces) . $gule;
 }
 function explodet(string $delimiter, string $string, int $limit = null){
 	if(substr($string, 0, $l = strlen($delimiter)) == $delimiter)
@@ -14948,21 +15046,21 @@ function array_val2key(array $array){
 	return array_combine($array, array_keys($array));
 }
 function array_val2keys(array $array){
-	$arr = [];
+	$arr = array();
 	$keys = array_keys($array);
 	foreach(array_values($array) as $num => $value){
 		if(!isset($arr[$value]))
-			$arr[$value] = [$keys[$num]];
+			$arr[$value] = array($keys[$num]);
 		else
 			$arr[$value][] = $keys[$num];
 	}
 	return $arr;
 }
 function array_key_at(int $key, array $array){
-	return array_keys($array)[$key];
+	return array_key(array_keys($array), $key);
 }
 function array_value_at(int $value, array $array){
-	return array_values($array)[$value];
+	return array_key(array_values($array), $value);
 }
 function array_key_of(string $key, array $array){
 	return array_search($key, array_keys($array));
@@ -15008,7 +15106,7 @@ function str_rsplit(string $str, int $length = null){
 	$l = $length - strlen($str) % $length;
 	if($l == $length)
 		return str_split($str, $length);
-	return array_merge([substr($str, 0, $l)], str_split(substr($str, $l), $length));
+	return array_merge(array(substr($str, 0, $l)), str_split(substr($str, $l), $length));
 }
 function mb_strrev(string $str){
 	return implode('', array_reverse(preg_split('//u', $str)));
@@ -15057,7 +15155,7 @@ function putty_generate_symmetric_key(string $password, int $length, bool $raw =
     return substr($key, 0, $length);
 }
 function crc16(string $str){
-    $table = [
+    $table = array(
         0,     49345, 49537, 320,   49921, 960,   640,   49729,
         50689, 1728,  1920,  51009, 1280,  50625, 50305, 1088,
         52225, 3264,  3456,  52545, 3840,  53185, 52865, 3648,
@@ -15090,7 +15188,7 @@ function crc16(string $str){
         19968, 36545, 36737, 20288, 36097, 19904, 19584, 35905,
         17408, 33985, 34177, 17728, 34561, 18368, 18048, 34369,
         33281, 17088, 17280, 33601, 16640, 33217, 32897, 16448
-    ];
+    );
     $c = 0;
     for($i = 0;isset($str[$i]);++$i)
         $c = ($c >> 8) ^ $table[($c ^ ord($str[$i])) & 0xff];
@@ -15116,7 +15214,7 @@ define('OBFUCT_STRING_ALL',            511);
 function obfuct_string(string $str, int $options = null, array $variable = null){
     if($options < 1 || $str === '')
         return $str;
-    $opt = [];
+    $opt = array();
     if($options & 1 == 1)
         $opt[0] = true;
     else $opt[0] = false;
@@ -15131,7 +15229,7 @@ function obfuct_string(string $str, int $options = null, array $variable = null)
         $ls = $str[0];
         $str = eval("return $str;");
     }else $ls = $str[0];
-    $option = [];
+    $option = array();
     foreach($opt as $num => $op)
         if($op == true && $num != 5)
             $option[] = $num;
@@ -15182,14 +15280,14 @@ function obfuct_string(string $str, int $options = null, array $variable = null)
                 $s = substr($str, $c - 1, $l);
                 $c+= $l - 1;
                 if($opt[5])
-                    $s = '"' . str_replace(['\\', '"', '$'], ['\\\\', '\\"', '\\$'], $s) . '"';
+                    $s = '"' . str_replace(array('\\', '"', '$'), array('\\\\', '\\"', '\\$'), $s) . '"';
                 $s = obfuct_string($s, $options, $variable);
                 if(is_array($s)){
                     $vars .= $s[0];
                     $s = $s[1];
                 }
                 if(!$opt[5])
-                    $s = '"' . str_replace(['\\', '"', '$'], ['\\\\', '\\"', '\\$'], $s) . '"';
+                    $s = '"' . str_replace(array('\\', '"', '$'), array('\\\\', '\\"', '\\$'), $s) . '"';
                 $vars .= "$$var=" . $s . ';';
                 if(rand(0, 1) === 1)
                     $obfuct .= '${' . $var . '}';
@@ -15228,9 +15326,9 @@ function obfuct_string(string $str, int $options = null, array $variable = null)
         }
     }
     if($opt[5])
-        $obfuct = '"' . str_replace(["\n", '{${'], ['\n', '{"."${'], $obfuct) . '"';
+        $obfuct = '"' . str_replace(array("\n", '{${'), array('\n', '{"."${'), $obfuct) . '"';
     if($vars !== '' && $opt[6])
-        return [str_replace("\n", '\n', $vars), $obfuct];
+        return array(str_replace("\n", '\n', $vars), $obfuct);
     return $obfuct;
 }
 function obfuct_namefunc_hash(string $algo){
@@ -15296,7 +15394,7 @@ function tdesktop_md5(string $data, bool $raw = null){
 }
 define('DIRECTORY_NSEPARATOR', DIRECTORY_SEPARATOR == '/' ? '\\' : '/');
 function absolute_file(string $file){
-	if(($file[0] !== '/') && ($file[1] !== ':') && !in_array(substr($file, 0, 4), ['phar', 'http']))
+	if(($file[0] !== '/') && ($file[1] !== ':') && !in_array(substr($file, 0, 4), array('phar', 'http')))
 		$file = getcwd() . '/' . $file;
 	elseif(strpos($file, DIRECTORY_SEPARATOR) !== false && strpos($file, DIRECTORY_NSEPARATOR) !== false)
 		return strtr(DIRECTORY_NSEPARATOR, DIRECTORY_SEPARATOR, $file);
@@ -15369,10 +15467,10 @@ function socket_write_origin($socket, string $origin){
 	return socket_write_header($socket, 'Origin', $origin);
 }
 function socket_write_content_type($socket, int $length, string $type){
-	return socket_write_headers($socket, [
+	return socket_write_headers($socket, array(
 		'Content-Type' => $type,
 		'Content-Length' => $length
-	]);
+	));
 }
 if(!function_exists('preg_replace_array')){
 	function preg_replace_array(array $patterns_and_replacements, $subject, int $limit = null, int $count = null){
@@ -15397,11 +15495,11 @@ function search_block_error(){
     return $GLOBALS['-XN-']['searchBlockError'];
 }
 function search_block_error_msg(){
-    return array_key([
+    return array_key(array(
         'No error',
         'Do not find the start block',
         'Do not find the end block'
-    ],$GLOBALS['-XN-']['searchBlockError']);
+    ),$GLOBALS['-XN-']['searchBlockError']);
 }
 function search_block_position(string $string, string $start_block = null, string $end_block = null, int $offset = null){
     if(!$start_block)$start_block = '{';
@@ -15436,7 +15534,7 @@ function search_block_position(string $string, string $start_block = null, strin
     }
     if($block !== 0)
         $GLOBALS['-XN-']['searchBlockError'] = 2;
-    return [$start + $sl, ($block !== 0 ? $end : $end - $el)];
+    return array($start + $sl, ($block !== 0 ? $end : $end - $el));
 }
 function search_block(string $string, string $start_block = null, string $end_block = null, int $offset = null){
 	$pos = search_block_position($string, $start_block, $end_block, $offset);
@@ -15444,8 +15542,8 @@ function search_block(string $string, string $start_block = null, string $end_bl
 }
 function search_all_block(string $string, string $start_block = null, string $end_block = null, int $offset = null, int $limit = null){
 	if($limit === null)$limit = PHP_INT_MAX;
-	$searchs = [];
-	$jumpeds = [];
+	$searchs = array();
+	$jumpeds = array();
 	while($limit --> 0){
 		$pos = search_block_position($string, $start_block, $end_block, $offset);
 		if($pos === false)
@@ -15454,7 +15552,7 @@ function search_all_block(string $string, string $start_block = null, string $en
 		$jumpeds[] = substr($string, $offset, $pos[0]);
 		$offset = $pos[1];
 	}
-	return [$searchs, $jumpeds];
+	return array($searchs, $jumpeds);
 }
 
 function search_cancel_block_position(string $string, string $start_block = null, string $end_block = null,
@@ -15519,7 +15617,7 @@ function search_cancel_block_position(string $string, string $start_block = null
     }
     if($block !== 0)
         $GLOBALS['-XN-']['searchBlockError'] = 2;
-    return [$start + $sl, ($block !== 0 ? $end : $end - $el)];
+    return array($start + $sl, ($block !== 0 ? $end : $end - $el));
 }
 function search_cancel_block(string $string, string $start_block = null, string $end_block = null,
 							 string $cancel_block = null, int $offset = null, bool $right = null){
@@ -15529,8 +15627,8 @@ function search_cancel_block(string $string, string $start_block = null, string 
 function search_all_cancel_block(string $string, string $start_block = null, string $end_block = null, 
 								string $cancel_block = null, int $offset = null, int $right = null, int $limit = null){
 	if($limit === null)$limit = PHP_INT_MAX;
-	$searchs = [];
-	$jumpeds = [];
+	$searchs = array();
+	$jumpeds = array();
 	while($limit --> 0){
 		$pos = search_cancel_block_position($string, $start_block, $end_block, $cancel_block, $offset, $right);
 		if($pos === false)
@@ -15539,7 +15637,7 @@ function search_all_cancel_block(string $string, string $start_block = null, str
 		$jumpeds[] = substr($string, $offset, $pos[0]);
 		$offset = $pos[1];
 	}
-	return [$searchs, $jumpeds];
+	return array($searchs, $jumpeds);
 }
 function split_block_position(string $string, string $split_block = null, string $cancel_block = null, int $offset = null, bool $right = null){
 	if(!$split_block)$split_block = ',';
@@ -15561,7 +15659,7 @@ function split_all_block(string $string, string $split_block = null, string $can
 						 int $offset = null, int $limit = null, bool $right = null){
 	if($limit === null)$limit = PHP_INT_MAX;
 	if($offset === null)$offset = 0;
-	$searchs = [];
+	$searchs = array();
 	$l = strlen($split_block);
 	while($limit --> 0){
 		$pos = split_block_position($string, $split_block, $cancel_block, $offset, $right);
@@ -15596,7 +15694,7 @@ function split_cancel_all_block(string $string, string $split_block = null, stri
 								string $cancel_cancel_block = null, int $offset = null, int $limit = null, bool $right = null){
 	if($limit === null)$limit = PHP_INT_MAX;
 	if($offset === null)$offset = 0;
-	$searchs = [];
+	$searchs = array();
 	$l = strlen($split_block);
 	while($limit --> 0){
 		$pos = split_block_position($string, $split_block, $cancel_block, $cancel_cancel_block, $offset, $right);
@@ -15611,7 +15709,7 @@ function split_cancel_all_block(string $string, string $split_block = null, stri
 function strposs(string $hystack, string $needle, int $offset = null, int $limit = null){
 	if($limit === null)$limit = PHP_INT_MAX;
 	if($offset === null)$offset = 0;
-	$pos = [];
+	$pos = array();
 	$l = strlen($needle);
 	while($limit --> 0){
 		$offset = strpos($hystack, $needle, $offset);
@@ -15704,14 +15802,14 @@ function pregpos(string $pattern, string $subject, int $offset = null){
 		return false;
 	return strpos($subject, $match[0], $offset);
 }
-function preg_test(string $pattern, string $subject, array &$matches = [], int $flags = null){
+function preg_test(string $pattern, string $subject, array &$matches = array(), int $flags = null){
 	if(!preg_match($pattern, $subject, $match, $flags !== null ? $flags : 0))
 		return false;
 	if($subject == $match[0]){
 		$matches = $match;
 		return true;
 	}
-	$matches = [];
+	$matches = array();
 	return false;
 }
 function gzcompressloop(string $string, int $level = null, int $encoding = null){
@@ -15746,7 +15844,7 @@ function xml_find_all_urls(string $xml){
     $doc = new DOMDocument;
     @$doc->loadHTML($xml);
     $doc = classarray_to_array($doc->getElementsByTagName('*'));
-    $links = [];
+    $links = array();
     foreach($doc as $elm){
         if($elm->hasAttribute('src'))
             $links[] = $elm->getAttribute('src');
@@ -15763,7 +15861,7 @@ function site_find_all_urls(string $link, bool $private = null){
 	$doc = new DOMDocument;
     @$doc->loadHTML($xml);
     $doc = classarray_to_array($doc->getElementsByTagName('*'));
-    $links = [];
+    $links = array();
     foreach($doc as $elm){
         if($elm->hasAttribute('src'))
             $links[] = $elm->getAttribute('src');
@@ -15800,18 +15898,18 @@ function site_find_all_urls(string $link, bool $private = null){
             $src = $link . $src;
     }
     foreach($srcs as &$src)
-        $src = explode('?', explode('#', $src, 2)[0], 2)[0];
+        $src = explode('?', array_key(array_key(explode('#', $src, 2), 0), 2), 0);
     return array_unique(array_values($srcs));
 }
 function site_fullfind_all_urls(string $link, bool $private = null){
     if($link === '')
-        return [];
+        return array();
     if($link[strlen($link) - 1] != '/')
         $link .= '/';
-    $urls = [site_find_all_urls($link, $private)];
-    if($urls === [[]])
-        return [];
-    $links = [$link];
+    $urls = array(site_find_all_urls($link, $private));
+    if($urls === array(array()))
+        return array();
+    $links = array($link);
     for($c = 0;isset($urls[$c]);){
         $u = $urls[$c++];
         for($p = 0;isset($u[$p]);){
@@ -15820,7 +15918,7 @@ function site_fullfind_all_urls(string $link, bool $private = null){
             if(array_search($u[$p], $links) === false){
                 $links[] = $u[$p];
                 $url = site_find_all_urls($u[$p++], $private);
-                if($url !== [] && array_search($url, $urls) === false)
+                if($url !== array() && array_search($url, $urls) === false)
                     $urls[] = $url;
             }else ++$p;
         }
@@ -15828,7 +15926,7 @@ function site_fullfind_all_urls(string $link, bool $private = null){
     return $links;
 }
 function array_tree(array $array){
-    $tree = [];
+    $tree = array();
     $last = null;
     $now = &$tree;
     foreach($array as $x){
@@ -15843,7 +15941,7 @@ function array_tree(array $array){
                 if(!isset($now[$y])){
                     if(($s = array_search($y, $now)) !== false)
                         unset($now[$s]);
-                    $now[$y] = [];
+                    $now[$y] = array();
                 }
                 $now = &$now[$y];
             }
@@ -15855,7 +15953,7 @@ function array_tree(array $array){
 function site_private_urls_tree(string $link){
     $urls = site_fullfind_all_urls($link, true);
     foreach($urls as &$url){
-        $url = explode('/', trim(str_replace('//', '/', parse_url($url)['path']), '/'));
+        $url = explode('/', trim(str_replace('//', '/', array_key(parse_url($url), 'path')), '/'));
         if($url[$c = count($url) - 1] === '')
             unset($url[$c]);
     }
@@ -15900,21 +15998,21 @@ function str_replace_loop($from, $to, $string){
 	return $string;
 }
 class VideoCaption {
-    public $info = [], $frames = [], $format = true;
+    public $info = array(), $frames = array(), $format = true;
     public function setFrame(float $from, float $length, string $caption){
-        $this->frames[] = [$from, $from + $length, $caption];
+        $this->frames[] = array($from, $from + $length, $caption);
     }
     public function append(float $from, float $to, string $caption){
-        $this->frames[] = [$from, $to, $caption];
+        $this->frames[] = array($from, $to, $caption);
     }
     public function getFrame(float $time){
         foreach($this->frames as $frame)
             if($frame[0] <= $time && $frame[1] > $time)
-                return [
+                return array(
                     'start' => $frame[0],
                     'stop' => $frame[1],
                     'caption' => $frame[2]
-                ];
+				);
         return null;
 	}
 	public function setZoom(int $zoom = null){
@@ -15956,7 +16054,7 @@ class VideoCaption {
 			$time = explode(',', $time, 2);
 		else
 			$time = explode(':', $time, 2);
-        return [$this->TimeUnformat($time[0]), $this->TimeUnformat($time[1])];
+        return array($this->TimeUnformat($time[0]), $this->TimeUnformat($time[1]));
 	}
 	private function StringFormat(string $string, int $type = null){
 		if(!$this->format)
@@ -16078,7 +16176,7 @@ class VideoCaption {
 			if($line === '' || $line[0] != '{')
 				continue;
 			$line = explode('}{', substr($line, 1), 2);
-			$time = [$line[0], substr($line[1], 0, $p = strpos($line[1], '}'))];
+			$time = array($line[0], substr($line[1], 0, $p = strpos($line[1], '}')));
 			$content = substr($line[1], $p + 1);
 			$this->setFrame($time[0], $time[1], $content);
 		}
@@ -16157,12 +16255,13 @@ function vcaption_convert(string $from, string $format, string $to = null){
 	return $vc->toCaption($format, $to);
 }
 function vcaption_get(string $caption){
-	return (new VideoCaption)->getCaption($caption);
+	$tmp = new VideoCaption;
+	return $tmp->getCaption($caption);
 }
 function xogame_create(){
-    return [0, 0, 0, 
+    return array(0, 0, 0, 
             0, 0, 0,
-            0, 0, 0];
+            0, 0, 0);
 }
 function xogame_set(array &$table, $p, int $user){
     if(is_array($p))
@@ -16175,7 +16274,7 @@ function xogame_get(array $table, $p, int $user){
     return $table[$p];
 }
 function xogame_check(array $table){
-    foreach([[0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 4, 8], [2, 4, 6]] as $t)
+    foreach(array(array(0, 3, 6), array(1, 4, 7), array(2, 5, 8), array(0, 1, 2), array(3, 4, 5), array(6, 7, 8), array(0, 4, 8), array(2, 4, 6)) as $t)
         if($table[$t[0]] == $table[$t[1]] && $table[$t[1]] == $table[$t[2]] && $table[$t[0]] !== 0)
             return $table[$t[0]];
     foreach($table as $t)
@@ -16195,28 +16294,28 @@ define('XOGAME_HARD', 4);
 define('XOGAME_VERY_HARD', 5);
 
 function xogame_go(array &$table, int $level = null){
-    $list = [
-        [0, 3, 6], [3, 0, 6], [6, 3, 0], [1, 4, 7], [4, 1, 7],
-        [7, 1, 4], [2, 5, 8], [5, 2, 8], [8, 2, 5], [0, 1, 2],
-        [1, 0, 2], [2, 0, 1], [3, 4, 5], [4, 3, 5], [5, 3, 4],
-        [6, 7, 8], [7, 6, 8], [8, 6, 7], [0, 4, 5], [4, 0, 8],
-        [8, 0, 4], [8, 0, 4], [2, 4, 6], [4, 2, 6], [6, 2, 4],
-    ];
-    $uns = $use = [];
+    $list = array(
+        array(0, 3, 6), array(3, 0, 6), array(6, 3, 0), array(1, 4, 7), array(4, 1, 7),
+        array(7, 1, 4), array(2, 5, 8), array(5, 2, 8), array(8, 2, 5), array(0, 1, 2),
+        array(1, 0, 2), array(2, 0, 1), array(3, 4, 5), array(4, 3, 5), array(5, 3, 4),
+        array(6, 7, 8), array(7, 6, 8), array(8, 6, 7), array(0, 4, 5), array(4, 0, 8),
+        array(8, 0, 4), array(8, 0, 4), array(2, 4, 6), array(4, 2, 6), array(6, 2, 4),
+    );
+    $uns = $use = array();
     foreach($list as $t)
         if($table[$t[1]] == $table[$t[2]] && $table[$t[0]] === 0)
             $use[] = $t[0];
-    $list = [
-        [0, [1, 3, 4, 1, 3, 4]],
-        [1, [0, 3, 5, 0, 3, 4, 5, 2]],
-        [2, [1, 4, 5, 1, 4, 5]],
-        [3, [0, 6, 4, 0, 1, 4, 6, 7]],
-        [4, [0, 1, 2, 3, 5, 6, 7, 8, 0, 1, 2, 3, 5, 6, 7, 8]],
-        [5, [2, 4, 8, 1, 2, 4, 7, 8]],
-        [6, [3, 4, 7, 3, 4, 7]],
-        [7, [6, 4, 8, 6, 3, 4, 5, 8]],
-        [8, [4, 5, 7, 4, 5, 7]]
-    ];
+    $list = array(
+        array(0, array(1, 3, 4, 1, 3, 4)),
+        array(1, array(0, 3, 5, 0, 3, 4, 5, 2)),
+        array(2, array(1, 4, 5, 1, 4, 5)),
+        array(3, array(0, 6, 4, 0, 1, 4, 6, 7)),
+        array(4, array(0, 1, 2, 3, 5, 6, 7, 8, 0, 1, 2, 3, 5, 6, 7, 8)),
+        array(5, array(2, 4, 8, 1, 2, 4, 7, 8)),
+        array(6, array(3, 4, 7, 3, 4, 7)),
+        array(7, array(6, 4, 8, 6, 3, 4, 5, 8)),
+        array(8, array(4, 5, 7, 4, 5, 7))
+	);
     foreach($list as $t)
         if($table[$t[0]] == 2 && brand())
             foreach($t[1] as $p)
@@ -16224,7 +16323,7 @@ function xogame_go(array &$table, int $level = null){
                     $uns[] = $p;
     switch($level){
         case 1:
-            if($uns !== [])
+            if($uns !== array())
                 $use = $uns;
         break;
         case 2:
@@ -16238,23 +16337,23 @@ function xogame_go(array &$table, int $level = null){
             $use = array_merge($use, $use, $use, $use, $use, $use, $use, $uns);
         break;
         case 5:
-            if($use === [])
+            if($use === array())
                 $use = $uns;
     }
-    if($use === [])
-        foreach([0, 0, 0, 1, 1, 2,
+    if($use === array())
+        foreach(array(0, 0, 0, 1, 1, 2,
                  2, 2, 3, 3, 4, 4,
                  4, 4, 5, 5, 6, 6,
-                 6, 7, 7, 8, 8, 8] as $t)
+                 6, 7, 7, 8, 8, 8) as $t)
             if($table[$t] === 0)
                 $use[] = $t;
     $table[$use[array_rand($use)]] = 2;
 }
 function chrviw(int $x){
-	return XNString::VIW_RANGE[$x % 103];
+	return array_key(XNString::VIW_RANGE, $x % 103);
 }
 function chrcrk(int $x){
-	return XNString::CRK_RANGE[$x % 66];
+	return array_key(XNString::CRK_RANGE, $x % 66);
 }
 function ordviw(string $x){
 	if($x === '')
@@ -16267,7 +16366,7 @@ function ordcrk(string $x){
 	return strpos(XNString::CRK_RANGE, $x[0]);
 }
 function hash_length(string $algo){
-	$algos = [
+	$algos = array(
 		"md2" => 16,
 		"md4" => 16,
 		"md5" => 16,
@@ -16322,11 +16421,11 @@ function hash_length(string $algo){
 		"haval192,5" => 24,
 		"haval224,5" => 28,
 		"haval256,5" => 32
-	];
+	);
 	return isset($algos[$algo]) ? $algos[$algo] : false;
 }
 function compress_php_src($src){
-    $IW = [
+    $IW = array(
         T_CONCAT_EQUAL,             // .=
         T_DOUBLE_ARROW,             // =>
         T_BOOLEAN_AND,              // &&
@@ -16355,7 +16454,7 @@ function compress_php_src($src){
         T_SR,                       // >>
         T_SL_EQUAL,                 // <<=
         T_SR_EQUAL,                 // >>=
-	];
+	);
     if(is_file($src))
         if(!$src = file_get_contents($src))
             return false;
@@ -16456,41 +16555,6 @@ function string_randoms(string $string, int $count){
 function string_range($from, $to){
 	return implode('', range($from, $to));
 }
-function _range_join(array $range, int $c = null, bool $left = null, array $array = []){
-    if($c === null)$c = count($range);
-    if($array === []){
-        $array = $range;
-        --$c;
-    }
-    if($c <= 0 || $range === [])
-        return $array;
-    $arr = [];
-    if($left === true)
-        foreach($array as $x)
-            foreach($range as $y)
-                $arr[] = $y . $x;
-    else
-        foreach($array as $x)
-            foreach($range as $y)
-                $arr[] = $x . $y;
-    return _range_join($range, $c - 1, $left, $arr);
-}
-function range_join($range, int $c = null, bool $left = null, bool $from_end = null){
-    if(!is_array($range)){
-        if(is_int($range) || is_float($range) || is_string($range))
-            $range = str_split($range);
-        elseif(is_object($range)){
-            try{
-                $range = (string)$range;
-            }catch(Exception $e){
-                return false;
-            }
-        }elseif(is_bool($range))
-            $range = $range ? '1' : '0';
-        else return false;
-    }
-    return $from_end === true ? _range_join($range, $c, $left) : array_reverse(_range_join($range, $c, $left));
-}
 function debug_hash(string $algo, string $hash, string $content, int $length = null, string $chars = null){
     $length = $length === null || $length === 0 ? 1 : ($length > 0 ? $length : strlen($content) + $length);
     if($chars === null)$chars = ASCII_CHARS();
@@ -16532,11 +16596,11 @@ function debug_backtrace_count(int $options = null){
 	return count(debug_backtrace($options === null ? 1 : $options));
 }
 function func_last_arg(){
-    return end(debug_backtrace(1, 2)[1]['args']);
+    return array_key(array_key(end(debug_backtrace(1, 2), 1), 'args'));
 }
 function func_get_params(int $offset = null, int $length = null){
-	return $length === null ? array_slice(debug_backtrace(1, 2)[1]['args'], $offset === null ? 0 : $offset) :
-		array_slice(debug_backtrace(1, 2)[1]['args'], $offset === null ? 0 : $offset, $length);
+	return $length === null ? array_key(array_key(array_slice(debug_backtrace(1, 2), 1), 'args'), $offset === null ? 0 : $offset) :
+array_key(		array_slice(array_key(debug_backtrace(1, 2), 1), 'args'), $offset === null ? 0 : $offset, $length);
 }
 function strarev(string $str){
 	for($c = 1;isset($str[$c]);++$c)
@@ -16555,7 +16619,7 @@ function strnrev(string $str){
 	return $c;
 }
 class XNAPK {
-	private $file, $icons, $content = ['ns' => []], $xml, $length, $data, $manifest, $line, $dictionary;
+	private $file, $icons, $content = array('ns' => array()), $xml, $length, $data, $manifest, $line, $dictionary;
 	public function dictionary(){
 		if($this->dictionary !== null)
 			return $this->dictionary;
@@ -16583,66 +16647,66 @@ class XNAPK {
 	public function getIcons(){
 		if($this->icons !== null)
 			return $this->icons;
-		$files = [
+		$files = array(
 			'ic_launcher.png',
 			'icon.png',
 			'app_icon.png',
 			'ic_launcher_auto_media.png',
 			'ic_launcher_auto_messaging.png'
-		];
-		$paths = [
-			['res/mipmap-xxxhdpi', 192],
-			['res/drawable-xxxhdpi', 192],
-			['res/drawable-xxhdpi', 144],
-			['res/mipmap-xxhdpi', 144],
-			['res/drawable-xxhdpi-v0', 144],
-			['res/drawable-xxhdpi-v1', 144],
-			['res/drawable-xxhdpi-v2', 144],
-			['res/drawable-xxhdpi-v3', 144],
-			['res/drawable-xxhdpi-v4', 144],
-			['res/drawable-xxhdpi-v5', 144],
-			['res/mipmap-xhdpi', 96],
-			['res/drawable-xhdpi', 96],
-			['res/drawable-xhdpi-v0', 96],
-			['res/drawable-xhdpi-v1', 96],
-			['res/drawable-xhdpi-v2', 96],
-			['res/drawable-xhdpi-v3', 96],
-			['res/drawable-xhdpi-v4', 96],
-			['res/drawable-xhdpi-v5', 96],
-			['res/mipmap-hdpi', 72],
-			['res/drawable-hdpi', 72],
-			['res/drawable-hdpi-v0', 72],
-			['res/drawable-hdpi-v1', 72],
-			['res/drawable-hdpi-v2', 72],
-			['res/drawable-hdpi-v3', 72],
-			['res/drawable-hdpi-v4', 72],
-			['res/drawable-hdpi-v5', 72],
-			['res/mipmap-mdpi', 48],
-			['res/drawable-mdpi', 48],
-			['res/drawable-mdpi-v0', 48],
-			['res/drawable-mdpi-v1', 48],
-			['res/drawable-mdpi-v2', 48],
-			['res/drawable-mdpi-v3', 48],
-			['res/drawable-mdpi-v4', 48],
-			['res/drawable-mdpi-v5', 48],
-			['res/drawable-ldpi', 36],
-			['res/drawable', 72],
-		];
-		$this->icons = [];
+		);
+		$paths = array(
+			array('res/mipmap-xxxhdpi', 192),
+			array('res/drawable-xxxhdpi', 192),
+			array('res/drawable-xxhdpi', 144),
+			array('res/mipmap-xxhdpi', 144),
+			array('res/drawable-xxhdpi-v0', 144),
+			array('res/drawable-xxhdpi-v1', 144),
+			array('res/drawable-xxhdpi-v2', 144),
+			array('res/drawable-xxhdpi-v3', 144),
+			array('res/drawable-xxhdpi-v4', 144),
+			array('res/drawable-xxhdpi-v5', 144),
+			array('res/mipmap-xhdpi', 96),
+			array('res/drawable-xhdpi', 96),
+			array('res/drawable-xhdpi-v0', 96),
+			array('res/drawable-xhdpi-v1', 96),
+			array('res/drawable-xhdpi-v2', 96),
+			array('res/drawable-xhdpi-v3', 96),
+			array('res/drawable-xhdpi-v4', 96),
+			array('res/drawable-xhdpi-v5', 96),
+			array('res/mipmap-hdpi', 72),
+			array('res/drawable-hdpi', 72),
+			array('res/drawable-hdpi-v0', 72),
+			array('res/drawable-hdpi-v1', 72),
+			array('res/drawable-hdpi-v2', 72),
+			array('res/drawable-hdpi-v3', 72),
+			array('res/drawable-hdpi-v4', 72),
+			array('res/drawable-hdpi-v5', 72),
+			array('res/mipmap-mdpi', 48),
+			array('res/drawable-mdpi', 48),
+			array('res/drawable-mdpi-v0', 48),
+			array('res/drawable-mdpi-v1', 48),
+			array('res/drawable-mdpi-v2', 48),
+			array('res/drawable-mdpi-v3', 48),
+			array('res/drawable-mdpi-v4', 48),
+			array('res/drawable-mdpi-v5', 48),
+			array('res/drawable-ldpi', 36),
+			array('res/drawable', 72),
+		);
+		$this->icons = array();
 		foreach($paths as $path)
 			foreach($files as $file){
 				$file = $path[0] . '/' . $file;
 				if(($get = $this->file->getFromName($file)) !== false)
-					$this->icons[] = [
+					$this->icons[] = array(
 						'path' => $file,
 						'size' => $path[1],
 						'icon' => $get
-					];
+					);
 			}
 		return $this->icons;
 	}
 	public function existsIcons(){
-		return $this->getIcons() !== [];
+		return $this->getIcons() !== array();
 	}
 	public function parseManifest(){
 		if(is_array($this->manifest))
@@ -16660,8 +16724,8 @@ class XNAPK {
 		return $parse;
 	}
 	private function _parseXML(){
-		$type = unpack('V', substr($this->xml, 0, 4))[1];
-		$size = unpack('V', substr($this->xml, 4, 4))[1];
+		$type = array_key(unpack('V', substr($this->xml, 0, 4)), 1);
+		$size = array_key(unpack('V', substr($this->xml, 4, 4)), 1);
 		if($size < 8 || $size > $this->length)
 			throw new Exception('Block Size Error', 2);
 		$left = $this->length - $size;
@@ -16669,23 +16733,23 @@ class XNAPK {
 		$o = 8;
 		switch($type) {
 			case 0x00080003:
-				$props = [
+				$props = array(
 					'line' => 0,
 					'tag'  => '<?xml version="1.0" encoding="utf-8"?>'
-				];
+				);
 			break;
 			case 0x001C0001:
-				$this->data->stringCount = unpack('V', substr($this->xml, $o, 4))[1];
-				$this->data->styleCount = unpack('V', substr($this->xml, $o + 4, 4))[1];
-				$strOffset = unpack('V', substr($this->xml, $o + 12, 4))[1];
-				$styOffset = unpack('V', substr($this->xml, $o + 16, 4))[1];
+				$this->data->stringCount = array_key(unpack('V', substr($this->xml, $o, 4)), 1);
+				$this->data->styleCount = array_key(unpack('V', substr($this->xml, $o + 4, 4)), 1);
+				$strOffset = array_key(unpack('V', substr($this->xml, $o + 12, 4)), 1);
+				$styOffset = array_key(unpack('V', substr($this->xml, $o + 16, 4)), 1);
 				$o += 20;
 				$strListOffset = $this->data->stringCount <= 0 ? null : unpack('V*', substr($this->xml, $o, $this->data->stringCount * 4));
 				$o += $this->data->stringCount * 4;
 				$styListOffset = $this->data->styleCount <= 0 ? null : unpack('V*', substr($this->xml, $o, $this->data->styleCount * 4));
 				$o += $this->data->styleCount * 4;
-				$this->data->stringTab = $this->data->stringCount > 0 ? $this->getStringTab($strOffset, $strListOffset) : [];
-				$this->data->styleTab = $this->data->styleCount > 0 ? $this->getStringTab($styOffset, $styListOffset) : [];
+				$this->data->stringTab = $this->data->stringCount > 0 ? $this->getStringTab($strOffset, $strListOffset) : array();
+				$this->data->styleTab = $this->data->styleCount > 0 ? $this->getStringTab($styOffset, $styListOffset) : array();
 				$o = $size;
 			break;
 			case 0x00080180:
@@ -16694,47 +16758,47 @@ class XNAPK {
 				$o += $count * 4;
 			break;
 			case 0x00100100:
-				$prefix = unpack('V', substr($this->xml, $o + 8, 4))[1];
-				$uri = unpack('V', substr($this->xml, $o + 12, 4))[1];
+				$prefix = array_key(unpack('V', substr($this->xml, $o + 8, 4)), 1);
+				$uri = array_key(unpack('V', substr($this->xml, $o + 12, 4)), 1);
 				$o += 16;
 				if(empty($this->data->cur_ns)) {
-					$this->data->cur_ns = [];
+					$this->data->cur_ns = array();
 					$this->data->ns[] = &$this->data->cur_ns;
 				}
 				$this->data->cur_ns[$uri] = $prefix;
 			break;
 			case 0x00100101:
-				$prefix = unpack('V', substr($this->xml, $o + 8, 4))[1];
-				$uri = unpack('V', substr($this->xml, $o + 12, 4))[1];
+				$prefix = array_key(unpack('V', substr($this->xml, $o + 8, 4)), 1);
+				$uri = array_key(unpack('V', substr($this->xml, $o + 12, 4)), 1);
 				$o += 16;
 				if(empty($this->data->cur_ns)) break;
 				unset($this->data->cur_ns[$uri]);
 			break;
 			case 0x00100102:
-				$line = unpack('V', substr($this->xml, $o, 4))[1];
+				$line = array_key(unpack('V', substr($this->xml, $o, 4)), 1);
 				$o += 8;
-				$attrs = [];
-				$props = [
+				$attrs = array();
+				$props = array(
 					'line'  => $line,
-					'ns'    => $this->getNameSpace(unpack('V', substr($this->xml, $o, 4))[1]),
-					'name'  => $this->getString(unpack('V', substr($this->xml, $o + 4, 4))[1]),
-					'flag'  => unpack('V', substr($this->xml, $o + 8, 4))[1],
-					'count' => unpack('v', substr($this->xml, $o + 12, 2))[1],
-					'id'    => unpack('v', substr($this->xml, $o + 14, 2))[1] - 1,
-					'class' => unpack('v', substr($this->xml, $o + 16, 2))[1] - 1,
-					'style' => unpack('v', substr($this->xml, $o + 18, 2))[1] - 1,
+					'ns'    => $this->getNameSpace(array_key(unpack('V', substr($this->xml, $o, 4)), 1)),
+					'name'  => $this->getString(array_key(unpack('V', substr($this->xml, $o + 4, 4)), 1)),
+					'flag'  => array_key(unpack('V', substr($this->xml, $o + 8, 4)), 1),
+					'count' => array_key(unpack('v', substr($this->xml, $o + 12, 2)), 1),
+					'id'    => array_key(unpack('v', substr($this->xml, $o + 14, 2)), 1) - 1,
+					'class' => array_key(unpack('v', substr($this->xml, $o + 16, 2)), 1) - 1,
+					'style' => array_key(unpack('v', substr($this->xml, $o + 18, 2)), 1) - 1,
 					'attrs' => &$attrs
-				];
+				);
 				$o += 20;
 				$props['ns_name'] = $props['ns'] . $props['name'];
 				for($i = 0; $i < $props['count']; $i++) {
-					$a = [
-					'ns'       => $this->getNameSpace(unpack('V', substr($this->xml, $o, 4))[1]),
-					'name'     => $this->getString(unpack('V', substr($this->xml, $o + 4, 4))[1]),
-					'val_str'  => unpack('V', substr($this->xml, $o + 8, 4))[1],
-					'val_type' => unpack('V', substr($this->xml, $o + 12, 4))[1],
-					'val_data' => unpack('V', substr($this->xml, $o + 16, 4))[1]
-					];
+					$a = array(
+						'ns'       => $this->getNameSpace(array_key(unpack('V', substr($this->xml, $o, 4)), 1)),
+						'name'     => $this->getString(array_key(unpack('V', substr($this->xml, $o + 4, 4)), 1)),
+						'val_str'  => array_key(unpack('V', substr($this->xml, $o + 8, 4)), 1),
+						'val_type' => array_key(unpack('V', substr($this->xml, $o + 12, 4)), 1),
+						'val_data' => array_key(unpack('V', substr($this->xml, $o + 16, 4)), 1)
+					);
 					$o += 20;
 					$a['ns_name'] = $a['ns'] . $a['name'];
 					$a['val_type'] >>= 24;
@@ -16754,17 +16818,17 @@ class XNAPK {
 				$tag .= '>';
 				$props['tag'] = $tag;
 				unset($this->data->cur_ns);
-				$this->data->cur_ns = [];
+				$this->data->cur_ns = array();
 				$this->data->ns[] = &$this->data->cur_ns;
 				$left = -1;
 			break;
 			case 0x00100103:
-				$line = unpack('V', substr($this->xml, $o, 4))[1];
-				$props = [
+				$line = array_key(unpack('V', substr($this->xml, $o, 4)), 1);
+				$props = array(
 					'line' => $line,
-					'ns'   => $this->getNameSpace(unpack('V', substr($this->xml, $o + 8, 4))[1]),
-					'name' => $this->getString(unpack('V', substr($this->xml, $o + 12, 4))[1])
-				];
+					'ns'   => $this->getNameSpace(array_key(unpack('V', substr($this->xml, $o + 8, 4)), 1)),
+					'name' => $this->getString(array_key(unpack('V', substr($this->xml, $o + 12, 4)), 1))
+				);
 				$o += 16;
 				$props['ns_name'] = $props['ns'] . $props['name'];
 				$props['tag'] = "</{$props['ns_name']}>";
@@ -16776,9 +16840,9 @@ class XNAPK {
 				}
 			break;
 			case 0x00100104:
-				$props = [
-					'tag' => $this->getString(unpack('V', substr($this->xml, $o + 8, 4))[1])
-				];
+				$props = array(
+					'tag' => $this->getString(array_key(unpack('V', substr($this->xml, $o + 8, 4)), 1))
+				);
 				$o += 20;
 			break;
 			default:
@@ -16786,7 +16850,7 @@ class XNAPK {
 		}
 		$this->xml = substr($this->xml, $o);
 		$this->length -= $o;
-		$child = [];
+		$child = array();
 		while($this->length > $left) {
 			$c = $this->_parseXML();
 			if($props && $c)
@@ -16806,10 +16870,10 @@ class XNAPK {
 		return $props;
 	}
     private function getStringTab($base, $list) {
-		$tab = [];
+		$tab = array();
 		foreach ($list as $off) {
 			$off+= $base;
-			$len = unpack('v', substr($this->xml, $off, 2))[1];
+			$len = array_key(unpack('v', substr($this->xml, $off, 2)), 1);
 			$off+= 2;
 			$mask= ($len >> 0x8) & 0xFF;
 			$len = $len & 0xFF;
@@ -16869,9 +16933,9 @@ class XNAPK {
 			case 31:
 				return sprintf('#%08X', $data);
 			case 5:
-				return xnmath::complex2float($data) . array_key(["%", "%p", "", "", "", "", "", ""], $data & 15);
+				return xnmath::complex2float($data) . array_key(array("%", "%p", "", "", "", "", "", ""), $data & 15);
 			case 6:
-				return xnmath::complex2float($data) . array_key(["%", "%p", "", "", "", "", "", ""], $data & 15);
+				return xnmath::complex2float($data) . array_key(array("%", "%p", "", "", "", "", "", ""), $data & 15);
 			case 4:
 				return xnmath::int2float($data);
 		}
@@ -16951,9 +17015,9 @@ class XNAPK {
 		return $this->getAttribute('manifest', 'package');
 	}
     public function getUsesPermissionsDictionary() {
-		$collection = [];
+		$collection = array();
 		$dictionary = $this->dictionary();
-		$permissions = [];
+		$permissions = array();
 		for($i = 0; true; ++$i) {
 			$item = $this->getAttribute("manifest/uses-permission[{$i}]", 'android:name');
 			if(!$item)break;
@@ -16963,7 +17027,7 @@ class XNAPK {
 		return $collection;
     }
     public function getUsesPermissions() {
-		$collection = [];
+		$collection = array();
 		$dictionary = $this->dictionary();
 		for($i = 0; true; ++$i) {
 			$item = $this->getAttribute("manifest/uses-permission[{$i}]", 'android:name');
@@ -16983,15 +17047,15 @@ class XNAPK {
 		return false;
 	}
     public function getUsesFeature() {
-		$collection = [];
+		$collection = array();
 		for($i = 0; true; $i += 1) {
 			$item_name = $this->getAttribute("manifest/uses-feature[{$i}]", 'android:name');
 			if (!$item_name) break;
 			$item_requirement = $this->getAttribute("manifest/uses-feature[{$i}]", 'android:required');
-			array_push($collection, [
+			array_push($collection, array(
 				"name"        => $item_name,
 				"is_required" => $item_requirement
-			]);
+			));
 		}
 		return $collection;
     }
@@ -17002,7 +17066,7 @@ class XNAPK {
       return $this->getAttribute('manifest/uses-sdk', 'android:targetSdkVersion');
     }
     public function getApplicationMetaData(){
-		$collection = [];
+		$collection = array();
 		for($i = 0; true; $i += 1) {
 			$item_name = $this->getAttribute("manifest/application/meta-data[{$i}]", 'android:name');
 			$item_value = $this->getAttribute("manifest/application/meta-data[{$i}]", 'android:value');
@@ -17019,7 +17083,7 @@ function xml_beauty(string $xml){
     $token   = strtok($xml, "\n");
     $result  = '';
     $pad     = 0; 
-    $matches = [];
+    $matches = array();
     while($token !== false){
         if(preg_match('/.+<\/\w[^>]*>$/', $token, $matches))
         	$indent = 0;
@@ -17041,6 +17105,356 @@ function fullurlencode(string $str){
 	if($str === '')
 		return '';
 	return '%' . implode('%', str_split(strtoupper(bin2hex($str)), 2));
+}
+function wss_secaccept(string $key, string $magic = null){
+    return sha1($key . ($magic ? $magic : '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'), true);
+}
+function wss_makekey(){
+    return random_bytes(20);
+}
+define("WSS_CONTINUATION", 0);
+define("WSS_TEXT", 1);
+define("WSS_BINARY", 2);
+define("WSS_CLOSE", 8);
+define("WSS_PING", 9);
+define("WSS_PONG", 10);
+define("WSS_BINARY_BLOB", "\x81");
+define("WSS_BINARY_TEXT", "\x82");
+function wss_receive_clear($socket){
+    return stream_get_contents($socket);
+}
+function wss_encode($data, int $opcode = null, bool $masked = null, bool $final = null){
+    if($opcode === null)$opcode = 1;
+    $l = strlen($data);
+    $head = (bool)$final ? '1' : '0';
+    $head .= '000' . sprintf('%04b', $opcode);
+    $head .= (bool)$masked ? '1' : '0';
+    if($l > 65535) {
+        $head .= decbin(127);
+        $head .= sprintf('%064b', $l);
+    }elseif($l > 125) {
+        $head .= decbin(126);
+        $head .= sprintf('%016b', $l);
+    }else
+        $head .= sprintf('%07b', $l);
+    $frame = '';
+    foreach(str_split($head, 8) as $binstr)
+        $frame .= chr(bindec($binstr));
+    $mask = '';
+    if($masked) {
+        for($i = 0;$i < 4;++$i)
+            $mask .= chr(rand(0, 255));
+        $frame .= $mask;
+    }
+    for($i = 0;$i < $l;++$i)
+        $frame .= ($masked === true) ? $data[$i] ^ $mask[$i % 4] : $data[$i];
+    return $frame;
+}
+function wss_write($socket, $data, int $opcode = null, bool $masked = null, bool $final = null){
+    if(!is_resource($socket))
+        throw new XNError('wss_write', 'Invalid socket', XNError::WARNING);
+    return fwrite($socket, wss_encode($data, $opcode, $masked, $final));
+}
+function wss_receive($socket){
+    if(!is_resource($socket))
+        throw new XNError('wss_receive', 'Invalid socket', XNError::WARNING);
+    $data = fread($socket, 2);
+    if($data === false)
+        throw new XNError('wss_receive', 'Could not receive data', XNError::WARNING);
+    if(strlen($data) === 1)
+        $data .= fgetc($socket);
+    if($data === false || strlen($data) < 2)
+        throw new XNError('wss_receive', 'Could not receive data', XNError::WARNING);
+    $final = ord($data[0]) & 1 << 7;
+    $rsv1 = ord($data[0]) & 1 << 6;
+    $rsv2 = ord($data[0]) & 1 << 5;
+    $rsv3 = ord($data[0]) & 1 << 4;
+    $opcode = ord($data[0]) & 31;
+    $masked = ord($data[1]) >> 7;
+    $payload = '';
+    $length = ord($data[1]) & 127;
+    if($length > 125) {
+        $temp = $length === 126 ? fread($socket, 2) : fread($socket, 8);
+        if($temp === false)
+            throw new XNError('wss_receive', 'Could not receive data', XNError::WARNING);
+        $length = '';
+        for($i = 0;$i < strlen($temp);++$i)
+            $length .= sprintf('%08b', ord($temp[$i]));
+        $length = bindec($length);
+    }
+    $mask = '';
+    if($masked) {
+        $mask = fread($socket, 4);
+        if($mask === false)
+            throw new XNError('wss_receive', 'Could not receive mask data', XNError::WARNING);
+    }
+    if($length > 0) {
+        $temp = stream_get_contents($socket);
+        if($masked)
+            for($i = 0;$i < $length;++$i)
+                $payload .= $temp[$i] ^ $mask[$i % 4];
+        else
+            $payload = $temp;
+    }
+    if($opcode === WSS_CLOSE)
+        throw new XNError('wss_receive', 'Client disconnect', XNError::NETWORK);
+    return $final ? $payload : $payload . wss_receive($socket);
+}
+function preg_string(string $pattern, string $subject, int $flags = null, int $offset = null){
+	preg_match_all($pattern, $subject, $matches, $flags, $offset === null ? 0 : $offset);
+	return implode('', $matches[0]);
+}
+function preg_range_list(string $list){
+    if($list[0] == '^'){
+        $not = true;
+        $list = substr($list, 1);
+    }else
+        $not = false;
+    $list = preg_replace_callback("/\\\\\\\\|\\\\-|(?:.|\n)-(?:.|\n)/", function($range){
+        if($range[0] == '\\\\')
+            return '\\';
+        if($range[0] == '\\-')
+            return '-';
+        return string_range($range[0][0], $range[0][2]);
+    }, $list);
+    if($not)
+        $list = XNString::xor_chars(XNString::ASCII_RANGE, $list);
+    return str_split($list);
+}
+function preg_range_repeat(array $list, int $from = null, int $to = null){
+    if($from === null)$from = 0;
+    if($to === null)$to = count($list);
+    if($from < 0 || $to < 0)return false;
+    if($to < $from)$to = 0;
+    $ranges = array();
+    while($from++ <= $to){
+        if($from == 1)
+            continue;
+        $range = $list;
+        for($i = 1;$i < $from - 1;++$i){
+            $arr = array();
+            foreach($range as $r)
+                foreach($list as $c)
+                    $arr[] = $r . $c;
+            $range = $arr;
+        }
+        $ranges[] = $range;
+    }
+    if($ranges === array())
+        return array();
+    return call_user_func_array('array_merge', $ranges);
+}
+function preg_range(string $pattern){
+    if($pattern === '')
+        return array();
+    if(in_array($pattern[0], array('/', '#', '|')) && ($p = strrpos($pattern, $pattern[0])) !== 0){
+        $flags = substr($pattern, $p);
+        $pattern = substr($pattern, 1, $p - 1);
+    }else $flags = '';
+    $i = strpos($flags, 'i') !== false;
+    $range = array('');
+    preg_replace_callback("/\\\\\\\\|\\\\[0-7]{1,3}|\\\\x[0-9a-fA-F]{1,2}|\\\\b[01]{1,8}|\\\\u[0-9a-fA-F]{1,4}|\\\\[^x0-9bnrtveu]|".
+        "\|(?:.|\n)*|\+(?:.|\n)*|\*(?:.|\n)*|\^(?:.|\n)*|".
+        "\[(?:\\\]|[^\]])+\](?:\{(?:[0-9]+|[0-9]+,[0-9]+|,[0-9]+|[0-9]+,)\}|)|".
+        "(?<x>\((?:\g<x>\\\\\)|\[(?:\\\]|[^\]])+\]|[^\)])*\))(?:\{(?:[0-9]+|[0-9]+,[0-9]+|,[0-9]+|[0-9]+,)\}|)|".
+        "(?:.|\n)(?:\{(?:[0-9]+|[0-9]+,[0-9]+|,[0-9]+|[0-9]+,)\}|)/", function($block)use(&$range, $i){
+        switch($block){
+            case '\\\\':
+                $range = array_map(function($x){
+                    return $x . '\\';
+                }, $range);
+            break;
+            case '\"':
+                $range = array_map(function($x){
+                    return $x . '"';
+                }, $range);
+            break;
+            case '\\\'':
+                $range = array_map(function($x){
+                    return $x . "'";
+                }, $range);
+            break;
+            case '\n':
+                $range = array_map(function($x){
+                    return $x . "\n";
+                }, $range);
+            break;
+            case '\r':
+                $range = array_map(function($x){
+                    return $x . "\r";
+                }, $range);
+            break;
+            case '\t':
+                $range = array_map(function($x){
+                    return $x . "\t";
+                }, $range);
+            break;
+            case '\e':
+                $range = array_map(function($x){
+                    return $x . "\e";
+                }, $range);
+            break;
+            case '\v':
+                $range = array_map(function($x){
+                    return $x . "\v";
+                }, $range);
+            break;
+            case '\f':
+                $range = array_map(function($x){
+                    return $x . "\f";
+                }, $range);
+            break;
+            default:
+                switch($block[0][0]){
+                    case '\\':
+                        if(is_numeric($block[0][1])){
+                            $block = chr(octdec(substr($block[0], 1)));
+                            $range = array_map(function($x)use($block){
+                                return $x . $block;
+                            }, $range);
+                            break;  
+                        }
+                        if($block[0][1] == 'x'){
+                            $block = chr(hexdec(substr($block[0], 2)));
+                            $range = array_map(function($x)use($block){
+                                return $x . $block;
+                            }, $range);
+                            break;
+                        }
+                        if($block[0][1] == 'b'){
+                            $block = chr(bindec(substr($block[0], 2)));
+                            $range = array_map(function($x)use($block){
+                                return $x . $block;
+                            }, $range);
+                            break;
+                        }
+                        if($block[0][1] == 'u'){
+                            $block = json_decode('"' . $block[0] . '"');
+                            $range = array_map(function($x)use($block){
+                                return $x . $block;
+                            }, $range);
+                            break;
+                        }
+                        $block = $block[0][1];
+                        $range = array_map(function($x)use($block){
+                            return $x . $block;
+                        }, $range);
+                    break;
+                    case '|':
+                        $range = array_merge($range, preg_range(substr($block[0], 1)));
+                    break;
+                    case '+':
+                        $list = preg_range(substr($block[0], 1));
+                        $arr = array();
+                        foreach($range as $r)
+                            foreach($list as $c)
+                                $arr[] = $r . $c;
+                        $range = array_merge($range, $arr);
+                    break;
+                    case '*':
+                        $list = preg_range(substr($block[0], 1));
+                        $arr = array();
+                        foreach($range as $r)
+                            foreach($list as $c)
+                                $arr[] = $r . $c;
+                        $range = array_merge($range, $list, $arr);
+                    break;
+                    case '^':
+                        $list = preg_range(substr($block[0], 1));
+                        $arr = array();
+                        foreach($range as $r)
+                            if(array_search($list, $r) === false)
+                                $arr[] = $r;
+                        $range = $arr;
+                    break;
+                    case '[':
+                        if($block[0][strlen($block[0]) - 1] == '}'){
+                            $p = strrpos($block[0], ']');
+                            $repeat = explode(',', substr($block[0], $p + 2, -1), 2);
+                            $block = substr($block[0], 1, $p - 1);
+                            if($repeat[0] === '')
+                                $repeat[0] = 0;
+                            else $repeat[0] = (int)$repeat[0];
+                            if(!isset($repeat[1]))
+                                $repeat[1] = $repeat[0];
+                            elseif($repeat[1] === '')
+                                $repeat[1] = null;
+                            else
+                                $repeat[1] = (int)$repeat[1];
+                        }else{
+                            $block = substr($block[0], 1, -1);
+                            $repeat = array(1, 1);
+                        }
+                        $list = preg_range_repeat(preg_range_list($block), $repeat[0], $repeat[1]);
+                        $arr = array();
+                        foreach($range as $r)
+                            foreach($list as $c)
+                                $arr[] = $r . $c;
+                        $range = $arr;
+                    break;
+                    case '(':
+                        if($block[0][strlen($block[0]) - 1] == '}'){
+                            $p = strrpos($block[0], ')');
+                            $repeat = explode(',', substr($block[0], $p + 2, -1), 2);
+                            $block = substr($block[0], 1, $p - 1);
+                            if($repeat[0] === '')
+                                $repeat[0] = 0;
+                            else $repeat[0] = (int)$repeat[0];
+                            if(!isset($repeat[1]))
+                                $repeat[1] = $repeat[0];
+                            elseif($repeat[1] === '')
+                                $repeat[1] = null;
+                            else
+                                $repeat[1] = (int)$repeat[1];
+                        }else{
+                            $block = substr($block[0], 1, -1);
+                            $repeat = array(1, 1);
+                        }
+                        $list = preg_range_repeat(preg_range($block), $repeat[0], $repeat[1]);
+                        $arr = array();
+                        foreach($range as $r)
+                            foreach($list as $c)
+                                $arr[] = $r . $c;
+                        $range = $arr;
+                    break;
+                    default:
+                        if(isset($block[0][1]) && $block[0][1] == '{'){
+                            $repeat = explode(',', substr($block[0], 2, -1));
+                            $block = $block[0][0];
+                            if($repeat[0] === '')
+                                $repeat[0] = 0;
+                            else $repeat[0] = (int)$repeat[0];
+                            if(!isset($repeat[1]))
+                                $repeat[1] = $repeat[0];
+                            elseif($repeat[1] === '')
+                                $repeat[1] = null;
+                            else
+                                $repeat[1] = (int)$repeat[1];
+                        }else{
+                            $block = $block[0][0];
+                            $repeat = array(1, 1);
+                        }
+                        $block = $i ? array(strtolower($block), strtoupper($block)) : array($block);
+                        $list = preg_range_repeat(array_unique($block), $repeat[0], $repeat[1]);
+                        $arr = array();
+                        foreach($range as $r)
+                            foreach($list as $c)
+                                $arr[] = $r . $c;
+                        $range = $arr;
+                    break;
+                }
+        }
+        return '';
+    }, $pattern);
+    if($range === array(''))
+        return '';
+    return $range;
+}
+function preg_rand(string $pattern){
+    $range = preg_range($pattern);
+    if($range === array())
+        return false;
+    return $range[array_rand($range)];
 }
 
 $GLOBALS['-XN-']['endTime'] = microtime(true);
