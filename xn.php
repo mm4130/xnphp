@@ -1,6 +1,6 @@
 <?php // xn php v2.3
 
-if(defined('XNLIB')){
+if(defined('XNVERSION')){
 	new XNError('xnInclude', 'library before loaded', XNError::WARNING);
 	return;
 }
@@ -61,8 +61,8 @@ class xnlib {
 __xnlib_data::$startTime =  microtime(true);
 __xnlib_data::$dirname = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
 
+if(!defined('PHP_INT_MIN'))define('PHP_INT_MIN', ~PHP_INT_MAX);
 define("XNVERSION", "2.3");
-define("XNLIB", true);
 
 xnlib::$random = rand(PHP_INT_MIN, PHP_INT_MAX);
 xnlib::$method = getenv('REQUEST_METHOD');
@@ -111,17 +111,17 @@ if(!xnlib::$isApache && (strpos(xnlib::$SoftWare, 'Microsoft-IIS') !== false || 
 if(xnlib::$isIIS && (int)substr(xnlib::$SoftWare, strpos(xnlib::$SoftWare, 'Microsoft-IIS/') + 14) >= 7)xnlib::$isIIS7 = true;
 
 if(!function_exists('call_user_method_array')){
-	function call_user_method_array($method, $class, $params){
+	eval('function call_user_method_array($method, $class, $params){
 		return $class::$method(...$params);
-	};
+	};');
 }
 if(!function_exists('call_user_method')){
-	function call_user_method($method, $class, ...$params){
+	eval('function call_user_method($method, $class, ...$params){
 		return $class::$method(...$params);
-	};
+	};');
 }
 if(!function_exists('call_user_func')){
-	function call_user_func($func, ...$params){
+	eval('function call_user_func($func, ...$params){
 		if(is_array($func)){
 			$funct = $func[0];
 			unset($func[0]);
@@ -130,10 +130,10 @@ if(!function_exists('call_user_func')){
 			$func = $funct;
 		}
 		return $func(...$params);
-	}
+	}');
 }
 if(!function_exists('call_user_func_array')){
-	function call_user_func_array($func, $params){
+	eval('function call_user_func_array($func, $params){
 		if(is_array($func)){
 			$funct = $func[0];
 			unset($func[0]);
@@ -142,7 +142,7 @@ if(!function_exists('call_user_func_array')){
 			$func = $funct;
 		}
 		return $func(...$params);
-	}
+	}');
 }
 
 class ThumbCode {
@@ -3843,7 +3843,7 @@ function mustbe($input, string $type, bool $return = null){
 		}
 	}
 	if($return !== true){
-		$trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1];
+		$trace = array_key(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2), 1);
 		$now = gettype($input);
 		switch($now){
 			case 'object':
@@ -3969,7 +3969,7 @@ function canbe($input, string $type, bool $return = null){
 		}
 	}
 	if($return !== true){
-		$trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1];
+		$trace = array_key(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2), 1);
 		$now = gettype($input);
 		switch($now){
 			case 'object':
@@ -4531,7 +4531,6 @@ class XNString {
 	const ALPHBA_NUMBERS_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 	const WORD_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_';
 	const GMAIL_USERNAME_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_';
-	const HIDE_RANGE = array("\x0c", "\xe2\x80\x8c");
 	const TOKEN_REGEX = "/[0-9]{4,16}:AA[GFHE][a-zA-Z0-9-_]{32}/";
 	const NUMBER_REGEX = "/[0-9]+(?:\.[0-9]+){0,1}|\.[0-9]+|[0-9]+\./";
 	const HEX_REGEX = "/[0-9a-fA-F]+/";
@@ -9782,7 +9781,7 @@ class XNMath {
 	}
 	public static function datdc(float $num){
 		if(strpos($num, '.') === false)return 0;
-		$e = explode('.', $num, 2)[1];
+		$e = array_key(explode('.', $num, 2), 1);
 		return $e == 0 ? 0 : strlen($e);
 	}
 	public static function rand(float $min = null, float $max = null){
@@ -10024,7 +10023,7 @@ class XNNumber {
 		return $a;
 	}
 	public static function _th($a){
-		return self::_im($a) ? self::_mo($a)[1] : '0';
+		return self::_im($a) ? array_key(self::_mo($a), 1) : '0';
 	}
 	// retry calc functions
 	public static function _powTen0($a, $b){
@@ -11904,7 +11903,7 @@ class XNCrypt {
             array(-2147483648, -2147450872)
         );
         for ($round = 0; $round < 24; ++$round) {
-            $parity = $rotated = [];
+            $parity = $rotated = array();
             for ($i = 0; $i < 5; $i++) {
                 $parity[] = array(
                     $s[0][$i][0] ^ $s[1][$i][0] ^ $s[2][$i][0] ^ $s[3][$i][0] ^ $s[4][$i][0],
@@ -12516,9 +12515,10 @@ class XNCrypt {
 
     public static function to64itoa($b2, $b1, $b0, $n){
         $w = ($b2 << 16) | ($b1 << 8) | $b0;
+        $range = xnstring::BCRYPT64_RANGE;
         $buf = '';
         while(--$n >= 0){
-            $buf .= xnstring::BCRYPT64_RANGE[$w & 0x3f];
+            $buf .= $range[$w & 0x3f];
             $w >>= 6;
         }
         return $buf;
@@ -13012,7 +13012,7 @@ class XNCrypt {
         }
         if($obj[0] == 'd'){
             $d = ord($obj[1]);
-            $e = unpack('v', $obj[2] . $obj[3])[1];
+            $e = array_key(unpack('v', $obj[2] . $obj[3]), 1);
             $l = ord($obj[4]);
             $num = substr($obj, 5, $l > 127 ? 256 - $l : $l);
             $num = $l > 127 ? -base_convert(self::hexencode($num), 16, 10) : base_convert(self::hexencode($num), 16, 10);
