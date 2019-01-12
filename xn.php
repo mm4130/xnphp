@@ -13470,7 +13470,7 @@ class XNCrypt {
 		}
 		return str_pad($str, $min, "\0", STR_PAD_RIGHT);
 	}
-	public static function intbe($word, bool $sync = false, bool $signed = false){
+	public static function intbe($word, bool $sync = null, bool $signed = null){
 		$res = 0;
 		$l = strlen($word);
 		if($l === 0)
