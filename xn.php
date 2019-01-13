@@ -166,13 +166,13 @@ function thumbCode($func){
 	return new ThumbCode($func);
 }
 function xnupdate($data = null){
-	$code = @xncrypt::gzinflate(file_get_contents('http://xntm.ir/lib/download.php?#php'));
+	$code = @xncrypt::inflate(file_get_contents('http://xntm.ir/lib/download.php?#php'));
 	if(!$code){
 		$code = file_get_contents('https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php');
 		if($data === true)
 			$datas = file_get_contents('https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.xnd.php');
 	}elseif($data === true)
-		$datas = xncrypt::gzinflate(file_get_contents('http://xntm.ir/lib/download.php?#phpdata'));
+		$datas = xncrypt::inflate(file_get_contents('http://xntm.ir/lib/download.php?#phpdata'));
 	file_put_contents('xn.php', $code);
 	if($data === true)
 		file_put_contents('xndata.xnd', $datas);
@@ -5708,7 +5708,7 @@ function printEncoding($content){
 	}
 	if(strpos($accept, 'deflate') !== false){
 		header('Content-Encoding: deflate');
-		print gzdeflate($content, 9, 31);
+		print xncrypt::deflate($content, 9, 31);
 		return 'deflate';
 	}
 	print $content;
