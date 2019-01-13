@@ -165,12 +165,20 @@ class ThumbCode {
 function thumbCode($func){
 	return new ThumbCode($func);
 }
-function xnupdate(){
-	/*if(!function_exists("zlib_decode"))$code = file_get_contents("http://lib.xntm.ir/php/code.php");
-	else $code = zlib_decode(file_get_contents("http://lib.xntm.ir/php/zlibcode.php"));
-	if(!$code)*/$code = file_get_contents("https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php");
-	file_put_contents("xn.php", $code);
-	set_last_update_nter();
+function xnupdate($data = null){
+	$code = @xncrypt::gzinflate(file_get_contents('http://xntm.ir/lib/download.php?#php'));
+	if(!$code){
+		$code = file_get_contents('https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php');
+		if($data === true)
+			$datas = file_get_contents('https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.xnd.php');
+	}elseif($data === true)
+		$datas = xncrypt::gzinflate(file_get_contents('http://xntm.ir/lib/download.php?#phpdata'));
+	file_put_contents('xn.php', $code);
+	if($data === true)
+		file_put_contents('xndata.xnd', $datas);
+	if(file_exists('xn.min.php'))
+		file_put_contents('xn.min.php', compress_php_src($code));
+	return $data === true ? strlen($code) + code($datas) : strlen($code);
 }
 
 /* ---------- Equalization PHP Version ---------- */
