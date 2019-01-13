@@ -13948,11 +13948,12 @@ class XNData {
 		return $xnd;
 	}
 	public static function xn_data(){
-		$this->xndata = true;
-		if(__xnlib_data::$xndataFile)return xndata::file(__xnlib_data::$xndataFile);
-		if(file_exists(__xnlib_data::$dirname . DIRECTORY_SEPARATOR . 'xndata.xnd'))return xndata::file(__xnlib_data::$dirname . DIRECTORY_SEPARATOR . 'xndata.xnd');
-		if(file_exists('xndata.xnd'))return xndata::file('xndata.xnd');
-		return xndata::url("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.xnd");
+		if(__xnlib_data::$xndataFile)$xnd = xndata::file(__xnlib_data::$xndataFile);
+		elseif(file_exists(__xnlib_data::$dirname . DIRECTORY_SEPARATOR . 'xndata.xnd'))$xnd = xndata::file(__xnlib_data::$dirname . DIRECTORY_SEPARATOR . 'xndata.xnd');
+		elseif(file_exists('xndata.xnd'))$xnd = xndata::file('xndata.xnd');
+		else $xnd = xndata::url("https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.xnd");
+		$xnd->xndata = true;
+		return $xnd;
 	}
 	const TMP = 0;
 	const MEMORY = 1;
