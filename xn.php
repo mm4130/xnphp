@@ -13948,6 +13948,7 @@ class XNData {
 		return $xnd;
 	}
 	public static function xn_data(){
+		$this->xndata = true;
 		if(__xnlib_data::$xndataFile)return xndata::file(__xnlib_data::$xndataFile);
 		if(file_exists(__xnlib_data::$dirname . DIRECTORY_SEPARATOR . 'xndata.xnd'))return xndata::file(__xnlib_data::$dirname . DIRECTORY_SEPARATOR . 'xndata.xnd');
 		if(file_exists('xndata.xnd'))return xndata::file('xndata.xnd');
@@ -14151,12 +14152,13 @@ class XNData {
 	}
 
 	// savers
-	public $save = false;
+	public $save = false, $xndata = false;
 	public function save(){
 		if($this->type != 'url' && $this->xnd->isChild())
 			return $this->xnd->save();
 	}
 	public function __destruct(){
+		if($this->xndata === true)return;
 		if($this->type != 'url')
 			$this->setLastModified();
 		if(!$this->save)
