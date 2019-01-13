@@ -13707,6 +13707,7 @@ class xncryptInflate {
 /* ---------- XNData ---------- */
 class XNData {
 	const VERSION = '4.2.4';
+	public $zlib = false;
 
 	public static function encodesz($l){
 		$l = base_convert($l,10,16);
