@@ -14152,7 +14152,7 @@ class XNData {
 	// savers
 	public $save = false;
 	public function save(){
-		if($this->type != 'url' && $this->xnd->parent !== false)
+		if($this->type != 'url' && $this->xnd->isChild())
 			return $this->xnd->save();
 	}
 	public function __destruct(){
@@ -14160,6 +14160,9 @@ class XNData {
 			$this->setLastModified();
 		if(!$this->save)
 			$this->save();
+	}
+	public function isChild(){
+		return $this->xnd->isChild();
 	}
 
 	// get location
@@ -15436,6 +15439,9 @@ class XNDataString {
 	public function __construct($data = null){
 		$this->data = $data !== null ? $data : '';
 	}
+	public function isChild(){
+		return $this->parent === true;
+	}
 	public function setme($parent){
 		$this->parent = $parent;
 	}
@@ -15961,6 +15967,9 @@ class XNDataFile {
 			rewind($file);
 		}else
 			fclose($file);
+	}
+	public function isChild(){
+		return $this->parent === true;
 	}
 	public function setme($parent){
 		$this->parent = $parent;
