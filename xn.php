@@ -1886,14 +1886,13 @@ class TelegramBot {
 					if(isset($args['file'])){
 						$file = $args['file'];
 						unset($args['file']);
-					}
-					elseif(isset($args['file_id'])){
+					}elseif(isset($args['file_id'])){
 						$file = $args['file_id'];
 						unset($args['file_id']);
 					}
 					else break;
 				}
-				if(file_exists($file))
+				if(is_string($file) && file_exists($file))
 					$file = new CURLFile($file);
 				switch($method){
 					case 'sendPhoto':
@@ -13253,7 +13252,52 @@ class XNCrypt {
 			return self::$func2(self::$func1($string));
 		return self::$func1($string);
 	}
+
+	const KEYBOARD_CONVERTER_AKAN 	  = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nɛ\nw\ne\nr\nt\ny\nu\ni\no\np\nq\nc\na\ns\nd\nf\ng\nh\nj\nk\nl\n;\n'\n\\\nz\nx\nɔ\nv\nb\nn\nm\n,\n.\n/\n~\n!\n@\n#\n$\n%\n^\n&\n*\n(\n)\n_\n+\nƐ\nW\nE\nR\nT\nY\nU\nI\nO\nP\nQ\nC\nA\nS\nD\nF\nG\nH\nJ\nK\nL\n:\n\"\n|\nZ\nX\nƆ\nV\nB\nN\nM\n<\n>\n?";
+	const KEYBOARD_CONVERTER_ALBANIAN = "\\\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nq\nw\ne\nr\nt\nz\nu\ni\no\np\nç\n@\na\ns\nd\nf\ng\nh\nj\nk\nl\në\n[\n]\ny\nx\nc\nv\nb\nn\nm\n,\n.\n/\n|\n!\n\"\n#\n$\n%\n^\n&\n*\n(\n)\n_\n+\nQ\nW\nE\nR\nT\nZ\nU\nI\nO\nP\nÇ\n'\nA\nS\nD\nF\nG\nH\nJ\nK\nL\nË\n{\n}\nY\nX\nC\nV\nB\nN\nM\n;\n:\n?";
+	const KEYBOARD_CONVERTER_ARABIC   = "ذ\n١\n٢\n٣\n٤\n٥\n٦\n٧\n٨\n٩\n٠\n-\n=\nض\nص\nث\nق\nف\nغ\nع\nه\nخ\nح\nج\nد\nش\nس\nي\nب\nل\nا\nت\nن\nم\nك\nط\n\\\nئ\nء\nؤ\nر\nلا\nى\nة\nو\nز\nظ\nّ\n!\n@\n#\n$\n%\n^\n&\n*\n)\n(\n_\n+\nَ\nً\nُ\nٌ\nﻹ\nإ\n’\n÷\n×\n؛\n>\n<\nِ\nٍ\n]\n[\nلأ\nأ\nـ\n،\n/\n:\n\"\n|\n~\nْ\n{\n}\nلآ\nآ\n‘\n,\n.\n؟";
+	const KEYBOARD_CONVERTER_AZERI    = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nq\nü\ne\nr\nt\ny\nu\ni\no\np\nö\nğ\na\ns\nd\nf\ng\nh\nj\nk\nl\nı\nə\n\\\nz\nx\nc\nv\nb\nn\nm\nç\nş\n.\n~\n!\n\"\nⅦ\n;\n%\n:\n?\n*\n(\n)\n_\n+\nQ\nÜ\nE\nR\nT\nY\nU\nİ\nO\nP\nÖ\nĞ\nA\nS\nD\nF\nG\nH\nJ\nK\nL\nI\nƏ\n/\nZ\nX\nC\nV\nB\nN\nM\nÇ\nŞ\n,";
+	const KEYBOARD_CONVERTER_BANGLA   = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\nৃ\nৌ\nৈ\nা\nী\nূ\nব\nহ\nগ\nদ\nজ\nড\n়\nো\nে\n্\nি\nু\nপ\nর\nক\nত\nচ\nট\n\\\n\nং\nম\nন\nব\nল\nস\n,\n.\nয\n~\n!\n\n\n\n\n\n\n\n(\n)\nঃ\nঋ\nঔ\nঐ\nআ\nঈ\nঊ\nভ\nঙ\nঘ\nধ\nঝ\nঢ\nঞ\nও\nএ\nঅ\nই\nউ\nফ\n\nখ\nথ\nছ\nঠ\n|\n\nঁ\nণ\n\n\n\nশ\nষ\n{\nয়";
+	const KEYBOARD_CONVERTER_COPTIC   = "̈\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n·\n⸗\nⲑ\nⲱ\nⲉ\nⲣ\nⲧ\nⲯ\nⲩ\nⲓ\nⲟ\nⲡ\n[\n]\nⲁ\nⲥ\nⲇ\nⲫ\nⲅ\nⲏ\nϫ\nⲕ\nⲗ\n;\nʼ\ǹⲍ\nⲝ\nⲭ\nϣ\nⲃ\nⲛ\nⲙ\n,\n.\ń\n̑\n̄\n̆\nʹ\n͵\ṅ\ṇ\nⳤ\n*\n(\n)\n-\n̅\nⲐ\nⲰ\nⲈ\nⲢ\nⲦ\nⲮ\nⲨ\nⲒ\nⲞ\nⲠ\n{\n}\nⲀ\nⲤ\nⲆ\nⲪ\nⲄ\nⲎ\nϪ\nⲔ\nⲖ\n:\n⳿\n|\nⲌ\nⲜ\nⲬ\nϢ\nⲂ\nⲚ\nⲘ\n<\n>\n⳾";
+	const KEYBOARD_CONVERTER_CROATIAN = "ş\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n'\n+\nq\nw\ne\nr\nt\nz\nu\ni\no\np\nš\nđ\na\ns\nd\nf\ng\nh\nj\nk\nl\nč\nć\nž\ny\nx\nc\nv\nb\nn\nm\n,\n.\n-\nÄ\n!\n\"\n#\n$\n%\n&\n/\n(\n)\n=\n?\n*\nQ\nW\nE\nR\nT\nZ\nU\nI\nO\nP\nŠ\nĐ\nA\nS\nD\nF\nG\nH\nJ\nK\nL\nČ\nĆ\nŽ\nY\nX\nC\nV\nB\nN\nM\n;\n:\n_";
+	const KEYBOARD_CONVERTER_ENGLISH  = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nq\nw\ne\nr\nt\ny\nu\ni\no\np\n[\n]\na\ns\nd\nf\ng\nh\nj\nk\nl\n;\n'\n\\\nz\nx\nc\nv\nb\nn\nm\n,\n.\n/\n~\n!\n@\n#\n$\n%\n^\n&\n*\n(\n)\n_\n+\nQ\nW\nE\nR\nT\nY\nU\nI\nO\nP\n{\n}\nA\nS\nD\nF\nG\nH\nJ\nK\nL\n:\n\"\n|\nZ\nX\nC\nV\nB\nN\nM\n<\n>\n?";
+	const KEYBOARD_CONVERTER_FARSI    = "`‍‍‍\n۱\n۲\n۳\n۴\n۵\n۶\n۷\n۸\n۹\n۰\n-\n=\nض\nص\nث\nق\nف\nغ\nع\nه\nخ\nح\nج\nچ\nش\nس\nی\nب\nل\nا\nت\nن\nم\nک\nگ\n\\\nظ\nط\nز\nر\nذ\nد\nپ\nو\n.\n/\n~\n!\n٫\n؍\n﷼\n٪n\×\n٬\n٭\n(\n)\n_\n+\nْ\nٌ\nٍ\nً\nُ\nِ\nَ\nّ\n[\n]\n{\n}\nؤ\nُ\nي\nإ\nأ\nآ\nة\n«\n»\n:\n؛\n|\nك\nٓ\nژ\nٰ\n‌\nٔ\nء\n<\n>\n؟";
+	const KEYBOARD_CONVERTER_FRENCH   = "²\n&\né\n\"\n'\n(\n-\nè\n_\nç\nà\n)\n=\na\nz\ne\nr\nt\ny\nu\ni\no\np\nâ\n$\nq\ns\nd\nf\ng\nh\nj\nk\nl\nm\nù\n*\nw\nx\nc\nv\nb\nn\n,\n;\n:\n!\n\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n°\n+\nA\nZ\nE\nR\nT\nY\nU\nI\nO\nP\nÄ\n£\nQ\nS\nD\nF\nG\nH\nJ\nK\nL\nM\n%\nµ\nW\nX\nC\nV\nB\nN\n?\n.\n/\n§";
+	private static function kcglks($lang){
+		switch($lang){
+			case 'AK': case "AKAN": return self::KEYBOARD_CONVERTER_AKAN; break;
+			case 'AL': case "ALBANIAN": return self::KEYBOARD_CONVERTER_ALBANIAN; break;
+			case 'AR': case "ARABIC": return self::KEYBOARD_CONVERTER_ARABIC; break;
+			case 'AZ': case "AZERI": return self::KEYBOARD_CONVERTER_AZERI; break;
+			case 'BA': case "BANGLA": return self::KEYBOARD_CONVERTER_BANGLA; break;
+			case 'CO': case "COPTIC": return self::KEYBOARD_CONVERTER_COPTIC; break;
+			case 'CR': case "CROATIAN": return self::KEYBOARD_CONVERTER_CROATIAN; break;
+			case 'EN': case "ENGLISH": return self::KEYBOARD_CONVERTER_ENGLISH; break;
+			case 'FA': case "FARSI": return self::KEYBOARD_CONVERTER_FARSI; break;
+			case 'FR': case "FRENCH": return self::KEYBOARD_CONVERTER_FRENCH; break;
+			default: return false;
+		}
+	}
+	public static function keyconv($text, $from, $to){
+		$from = strtoupper($from);
+		$to = strtoupper($to);
+		$from = self::kcglks($from);
+		if($from === false)return $text;
+		$to = self::kcglks($to);
+		if($to === false)return $text;
+		return str_replace(explode("\n", $from), explode("\n", $to), $text);
+	}
+	public static function keyget($text){
+		foreach(array('AK', 'AL', 'AR', 'AZ', 'BA', 'CO', 'CR', 'EN', 'FA') as $lang)
+			if(str_replace(explode("\n", self::kcglks($lang)), '', $text) === '')
+				return $lang;
+		return false;
+	}
+
+	// https://www.branah.com/
 }
+
+
 
 /* ---------- XNData ---------- */
 class XNData {
@@ -17930,7 +17974,7 @@ class XNStream {
 	public static function prev($stream, $preving = null){
 		fseek($stream, -1, SEEK_CUR);
 		$c = fgetc($stream);
-		if($priving === true)
+		if($preving === true)
 			fseek($stream, -1, SEEK_CUR);
 		return $c;
 	}
