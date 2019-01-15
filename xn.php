@@ -55,10 +55,19 @@ class xnlib {
 	static $link = '';
 	static $server = '';
 	static $remoter = '';
+
+	static $includeAt = array();
 }
 
 __xnlib_data::$startTime =  microtime(true);
 __xnlib_data::$dirname = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
+
+xnlib::$includeAt = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1);
+if(!isset(xnlib::$includeAt[0])){
+	trigger_error('Can not run directly', E_USER_WARNING);
+	exit;
+}
+xnlib::$includeAt = xnlib::$includeAt[0];
 
 if(!defined('PHP_INT_MIN'))define('PHP_INT_MIN', ~PHP_INT_MAX);
 define("XNVERSION", "2.3");
@@ -166,13 +175,13 @@ function thumbCode($func){
 	return new ThumbCode($func);
 }
 function xnupdate($data = null){
-	$code = @xncrypt::inflate(file_get_contents('http://xntm.ir/lib/download.php?#php'));
+	$code = @gzinflate(file_get_contents('http://xntm.ir/lib/download.php?#php'));
 	if(!$code){
 		$code = file_get_contents('https://raw.githubusercontent.com/xnlib/xnphp/master/xn.php');
 		if($data === true)
 			$datas = file_get_contents('https://raw.githubusercontent.com/xnlib/xnphp/master/xndata.xnd.php');
 	}elseif($data === true)
-		$datas = xncrypt::inflate(file_get_contents('http://xntm.ir/lib/download.php?#phpdata'));
+		$datas = gzinflate(file_get_contents('http://xntm.ir/lib/download.php?#phpdata'));
 	file_put_contents('xn.php', $code);
 	if($data === true)
 		file_put_contents('xndata.xnd', $datas);
@@ -703,6 +712,10 @@ function thefile(){
 		if(isset($t[$c]['file']))
 			return $t[$c]['file'];
 	return false;
+}
+function in_eval(){
+	$t = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1);
+	return substr($t[0]['file'], -16) == ' : eval()\'d code';
 }
 define('THEFILE', thefile());
 function thedir(){
@@ -2667,41 +2680,27 @@ function dircreate($dir){
 	}
 	return true;
 }
+function curl_get($file){
+	$ch = @curl_init($file);
+	if($ch) {
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$r = curl_exec($ch);
+		curl_close($ch);
+		if($size === null || $size === true || $size === false || $size == -1)
+			return substr($r, $offset);
+		return substr($r, $offset, $size < 0 ? $size + 1 : $size);
+	}return $ch;
+}
 function fget($file, $size = -1, $offset = 0,$x = false, $y = false){
-	if(file_exists($file)) {
-		if($size === null || $size === true || $size === false)
-			$size = filesize($file);
-		if($y)$f = fopen($file, 'rb', $x, stream_context_create($y));
-		else $f = fopen($file, 'rb', $x);
-		if(!$f) {
-			new XNError("fget", "No such file or directory.", XNError::NOTIC);
-			return false;
-		}
-		$r = stream_get_contents($f, $size, $offset);
-	}else{
-		$ch = @curl_init($file);
-		if($ch) {
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			$r = curl_exec($ch);
-			curl_close($ch);
-			if($size === null || $size === true || $size === false || $size == -1)
-				return substr($r, $offset);
-			return substr($r, $offset, $size < 0 ? $size + 1 : $size);
-		}
-		else {
-			if($size === null || $size === true || $size === false)
-				$size = -1;
-			if($y)$f = fopen($file, 'rb', $x, stream_context_create($y));
-			else $f = fopen($file, 'rb', $x);
-			if(!$f) {
-				new XNError("fget", "No such file or directory.", XNError::NOTIC);
-				return false;
-			}
-			$r = stream_get_contents($f, $size, $offset);
-		}
+	if($size === null || $size === true || $size === false)
+		$size = filesize($file);
+	if($y)$f = fopen($file, 'rb', $x, stream_context_create($y));
+	else $f = fopen($file, 'rb', $x);
+	if(!$f) {
+		new XNError("fget", "No such file or directory.", XNError::NOTIC);
+		return false;
 	}
-	fclose($f);
-	return $r;
+	return stream_get_contents($f, $size, $offset);
 }
 function fput($file, $con){
 	$f = fopen($file, 'wb');
@@ -2717,58 +2716,12 @@ function fadd($file, $con){
 	fclose($f);
 	return $r;
 }
-function faddln($file, $con){
-	$f = fopen($file, 'a+b');
-	if(!$f)return false;
-	fseek($f, -1, SEEK_END);
-	$h = fgetc($f);
-	rewind($f);
-	if($h === false || $h == "\n")
-		$r = fwrite($f, $con . "\n");
-	else
-		$r = fwrite($f, "\n" . $con . "\n");
-	fclose($f);
-	return $r;
-}
-function fdel($file){
-	return unlink($file);
-}
-function fsdel($file){
-	if(!is_stream($file))
-		return false;
-	return unlink(fname($file));
-}
-function fgetu($file){
-	fseek($file, -1, SEEK_CUR);
-	return fgetc($file);
-}
-function fgetp($file){
-	fseek($file, -2, SEEK_CUR);
-	return fgetc($file);
-}
-function fsreset($file){
-	if(!is_stream($file))
-		return false;
-	ftruncate($file, 0);
-	fseek($file, 0);
-	return true;
-}
 function fsempty($file){
 	if(!is_stream($file))
 		return false;
 	if(($g = fgetc($file)) === false)
 		return true;
 	fseek($file, -1, SEEK_CUR);
-	return false;
-}
-function fpreg_match($file, $regex, $flags = 0){
-	if(!is_stream($file))
-		return false;
-	do{
-		$l = fgets($file);
-		if(preg_match($regex, $l, $r, $flags))
-			return $r;
-	}while(!feof($file));
 	return false;
 }
 function array_array_merge(){
@@ -2787,63 +2740,6 @@ function array_array_merge(){
 	}
 	return $arr;
 }
-function fpreg_match_all($file, $regex, $flags = 0){
-	if(!is_stream($file))
-		return false;
-	$a = array();
-	do{
-		$l = fgets($file);
-		if(preg_match_all($regex, $l, $r, $flags))
-			$a[] = $r;
-	}while(!feof($file));
-	if($a === array())
-		return false;
-	return call_user_func_array('array_array_merge', $a);
-}
-function listarray(){
-	return func_get_args();
-}
-function file_preg_match($file, $regex, $flags = 0){
-	$f = fopen($file, 'r');
-	$r = fpreg_match($f, $regex, $flags);
-	fclose($f);
-	return $r;
-}
-function file_preg_match_all($file, $regex, $flags = 0){
-	$f = fopen($file, 'r');
-	if(!$f)return false;
-	$r = fpreg_match_all($f, $regex, $flags);
-	fclose($f);
-	return $r;
-}
-function fputjson($file, $con, $json = false){
-	return fput($file, json_encode($con, $json));
-}
-function fgetjson($file, $json = false){
-	return json_decode(fget($file), $json);
-}
-function faddjson($file, $con, $json = false){
-	$f = fopen($file, 'r+b');
-	if(!$f)return false;
-	$r = '';
-	while($c = fgetc($f))$r.= $c;
-	rewind($f);
-	$r = json_decode($r, true);
-	$r = array_merge($r, (array)$con);
-	$w = fwrite($f, json_encode($con, $json));
-	fclose($f);
-	return $w;
-}
-function fexists($file){
-	return file_exists($file);
-}
-function fsize($file){
-	$l = ftell($file);
-	fseek($file, 0, SEEK_END);
-	$s = ftell($file);
-	fseek($file, $l);
-	return $s;
-}
 function freset($file){
 	$f = fopen($file, 'w');
 	if(!$f)return false;
@@ -2858,35 +2754,12 @@ function file_size($file){
 	fclose($f);
 	return $s;
 }
-function fempty($file){
-	$f = fopen($file, 'r');
-	if(!$f)return false;
-	$e = fgetc($f) === false;
-	fclose($f);
-	return $e;
-}
-function fspeed($file, $type = 'r'){
-	if($f = fopen($file, $type))$f = fclose($f);
-	return $f;
-}
-function ftype($file){
-	return filetype($file);
-}
-function fdir($file){
-	return dirname($file);
-}
 function filename($file){
 	return xnstring::end($file, DIRECTORY_SEPARATOR);
 }
 function fileformat($file){
 	$f = xnstring::end($file, '.');
 	return strhave($f, DIRECTORY_SEPARATOR)? false : $f;
-}
-function fname($stream){
-	return @array_value(stream_get_meta_data($stream), 'uri');
-}
-function fmode($stream){
-	return @array_value(stream_get_meta_data($stream), 'mode');
 }
 function fcmp($file1, $file2){
 	$stream1 = fopen($file1, 'r');
@@ -2897,12 +2770,6 @@ function fcmp($file1, $file2){
 		if(fread($stream1, 1048576) !== fread($stream2, 1048576))
 			return false;
 	return true;
-}
-function fclone($stream, $mode = false){
-	$data = @stream_get_meta_data($stream);
-	if(!$data)return false;
-	if(!$mode)$mode = $data['mode'];
-	return fopen($data['uri'], $mode);
 }
 function fwget($file, $limit = 1){
 	$f = fopen($file, 'r');
@@ -2916,18 +2783,6 @@ function fwget($file, $limit = 1){
 	}while($p !== '' || --$l >= 0);
 	fclose($f);
 	return $r;
-}
-function fwait($file, $limit = 1){
-	$t = ftell($file);
-	$l = $limit + 1;
-	do{
-		$p = stream_get_contents($file);
-		if($p !== '')
-			$l = $limit;
-	}while($p !== '' || --$l >= 0);
-	$s = ftell($file);
-	fseek($file, $t);
-	return $s;
 }
 function filewait($file, $limit = 1){
 	$f = fopen($file, 'r');
@@ -2979,10 +2834,14 @@ function get_resource_id($resource){
 }
 function dirdel($dir){
 	$s = scandir($dir);
-	if(@$s[0] == '.')unset($s[0]);
-	if(@$s[1] == '.')unset($s[1]);
-	if(@$s[0] == '..')unset($s[0]);
-	if(@$s[1] == '..')unset($s[1]);
+	if(isset($s[0])){
+		if($s[0] == '.')unset($s[0]);
+		if($s[0] == '..')unset($s[0]);
+		if(isset($s[1])){
+			if($s[1] == '.')unset($s[1]);
+			if($s[1] == '..')unset($s[1]);
+		}
+	}
 	foreach($s as $f) {
 		if(is_dir($dir .DIRECTORY_SEPARATOR. $f))dirdel($dir .DIRECTORY_SEPARATOR. $f);
 		else unlink($dir .DIRECTORY_SEPARATOR. $f);
@@ -3027,158 +2886,8 @@ function preg_dirsearch($dir, $search){
 	}
 	return $r;
 }
-function dirread($dir){
-	$s = scandir($dir);
-	$r = array();
-	foreach($s as $file) {
-		if($file == '..')$r[$file] = true;
-		elseif($file == '.')$r[$file] = &$r;
-		elseif(filetype($dir .DIRECTORY_SEPARATOR. $file) == 'dir') {
-			$r[$file] = dirread($dir .DIRECTORY_SEPARATOR. $file);
-			$r[$file]['..'] = &$r;
-		}
-		else $r = (object)array("read" =>
-		function()use($dir, $file){
-			return fget($dir .DIRECTORY_SEPARATOR. $file);
-		}
-		, "write" =>
-		function($con)use($dir, $file){
-			return fput($dir .DIRECTORY_SEPARATOR. $file, $con);
-		}
-		, "add" =>
-		function($con)use($dir, $file){
-			return fadd($dir .DIRECTORY_SEPARATOR. $file, $con);
-		}
-		, "pos" =>
-		function($pos)use($dir, $file){
-			return fpos("$dir,$file", $pos);
-		}
-		, "explode" =>
-		function($ex)use($dir, $file){
-			return fexplode($dir .DIRECTORY_SEPARATOR. $file, $ex);
-		}
-		, "size" => filesize($dir .DIRECTORY_SEPARATOR. $file), "mode" => fileperms($dir .DIRECTORY_SEPARATOR. $file), "address" => $dir .DIRECTORY_SEPARATOR. $file);
-	}
-}
-function fperms($file){
-	return fileperms($file);
-}
-function fpos($file, $str, $from = false){
-	$f = fopen($file, 'r');
-	if($from)fseek($f, $from);
-	$s = '';
-	$m = 0;
-	$o = 0;
-	while(($c = fgetc($f)) !== false && $s != $str) {
-		if($str[$m] == $c) {
-			++$m;
-			$s = "$s$c";
-		}
-		else {
-			$s = '';
-			$m = 0;
-		}
-		++$o;
-	}
-	fclose($f);
-	if($s == $str)return $o - 1;
-	return false;
-}
-function mb_fgetc($file){
-	$l = '';
-	$s = '';
-	while(mb_strlen($s)< 2 && !feof($file)) {
-		$l = $s;
-		$s = $s . fgetc($file);
-	}
-	fseek($file, -1, SEEK_CUR);
-	return $l;
-}
-function mb_fpos($file, $str, $from = false){
-	$f = fopen($file, 'r');
-	if($from)fseek($f, $from);
-	$s = '';
-	$m = 0;
-	$o = 0;
-	while(($c = mb_fgetc($f)) && $s != $str) {
-		if($str[$m] == $c) {
-			++$m;
-			$s = "$s$c";
-		}
-		else {
-			$s = '';
-			$m = 0;
-		}
-		++$o;
-	}
-	fclose($f);
-	if($s == $str)return $o - 1;
-	return false;
-}
-function fexplode($file, $str){
-	$f = fopen($file, 'r');
-	$s = '';
-	$m = 0;
-	$r = array();
-	$k = '';
-	$p = true;
-	while(($c = fgetc($f)) !== false) {
-		$l = $c;
-		if($s == $str) {
-			$r[] = $k;
-			$s = '';
-			$m = 0;
-			$k = '';
-		}
-		if($str[$m] == $c) {
-			++$m;
-			$s = "$s$c";
-		}
-		else {
-			$k = "$k$s$c";
-			$s = '';
-			$m = 0;
-		}
-	}
-	$r[] = $k;
-	fclose($f);
-	if($str == $l || $str == '')$r[] = '';
-	return $r;
-}
 function is_url($file){
 	return filter_var($file, FILTER_VALIDATE_URL) && !file_exists($file) && fvalid($file);
-}
-function fsubget($file, $from = 0, $to = false){
-	if($to === false)$t = filesize($file);
-	elseif($to < 0)$to = filesize($file)+ $to;
-	$f = fopen($file, 'r');
-	fseek($f, $from);
-	$r = '';
-	while(($c = fgetc($f)) !== false && $to != 0) {
-		$r.= $c;
-		--$to;
-	}
-	fclose($r);
-	return $r;
-}
-function mb_fsubget($file, $from = 0, $to = false){
-	if($to === false)$t = filesize($file);
-	elseif($to < 0)$to = filesize($file)+ $to;
-	$f = fopen($file, 'r');
-	fseek($f, $from);
-	$r = '';
-	while(($c = mb_fgetc($f)) && $to != 0) {
-		$r.= $c;
-		--$to;
-	}
-	fclose($r);
-	return $r;
-}
-function fcopy($from, $to){
-	$to = fopen($to, 'w');
-	if(!$to)return false;
-	$w = fwrite($to, fget($from));
-	return fclose($to)? $w : false;
 }
 function freplace($file, $str, $to){
 	$f = fopen($file, 'r');
@@ -4154,7 +3863,7 @@ function unce($data){
 		return 'false';
 		break;
 	case 'string':
-		return '"' . str_replace(array('"', '\\'), array("\\\"", '\\\\'), $data). '"';
+		return '"' . str_replace(array('\\', '"'), array('\\\\', '\\"'), $data). '"';
 		break;
 	case 'integer':
 	case 'double':
@@ -4437,7 +4146,7 @@ class XNString {
 		return range(call_user_func_array(array('XNString', 'min'), $chars),call_user_func_array(array('XNString', 'max'), $chars));
 	}
 	public static function end($str, $im){
-		return substr($str, strrpos($str, $im)+ 1);
+		return substr($str, strrpos($str, $im) + 1);
 	}
 	public static function start($str, $im){
 		return substr($str, 0, strpos($str, $im));
@@ -4446,10 +4155,10 @@ class XNString {
 		return substr($str, 0, strrpos($str, $im));
 	}
 	public static function nostart($str, $im){
-		return substr($str, strpos($str, $im)+ 1);
+		return substr($str, strpos($str, $im) + 1);
 	}
 	public static function endi($str, $im){
-		return substr($str, strripos($str, $im)+ 1);
+		return substr($str, strripos($str, $im) + 1);
 	}
 	public static function starti($str, $im){
 		return substr($str, 0, stripos($str, $im));
@@ -4458,7 +4167,7 @@ class XNString {
 		return substr($str, 0, strripos($str, $im));
 	}
 	public static function nostarti($str, $im){
-		return substr($str, stripos($str, $im)+ 1);
+		return substr($str, stripos($str, $im) + 1);
 	}
 	public static function char($str, $x){
 		return @$str[$x];
@@ -4531,6 +4240,7 @@ class XNString {
 	const BASE64T_RANGE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	const BASE64URL_RANGE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 	const BCRYPT64_RANGE = './ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	const BASE32_RANGE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ23456789=';
 	const ALPHBA_NUMBERS_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 	const WORD_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_';
 	const GMAIL_USERNAME_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_';
@@ -4646,6 +4356,11 @@ class XNString {
 		if($l == $length)
 			return str_split($str, $length);
 		return array_merge(array(substr($str, 0, $l)), str_split(substr($str, $l), $length));
+	}
+	public static function equlen($string1, $string2){
+		$l1 = strlen($string1);
+		$l2 = strlen($string2);
+		return substr(str_repeat($string2, ceil($l1 / $l2)), 0, $l1);
 	}
 }
 function script_runtime(){
@@ -5708,7 +5423,7 @@ function printEncoding($content){
 	}
 	if(strpos($accept, 'deflate') !== false){
 		header('Content-Encoding: deflate');
-		print xncrypt::deflate($content, 9, 31);
+		print gzdeflate($content, 9, 31);
 		return 'deflate';
 	}
 	print $content;
@@ -11265,7 +10980,7 @@ class XNCrypt {
 		0x4400, 0x84C1, 0x8581, 0x4540, 0x8701, 0x47C0, 0x4680, 0x8641,
 		0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
 	);
-    public static $crc32table = array(
+    protected static $crc32table = array(
         0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F,
         0xE963A535, 0x9E6495A3, 0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988,
         0x09B64C2B, 0x7EB17CBD, 0xE7B82D07, 0x90BF1D91, 0x1DB71064, 0x6AB020F2,
@@ -11931,10 +11646,10 @@ class XNCrypt {
 	}
 	public static function verhoeff($number){
 		$ck = 0;
-		$l = strlen($data);
+		$l = strlen($number);
 		$i = $l - 1;
 		while(--$i >= 0)
-			$ck = self::$verhoeffmul[$ck][self::$verhoeffper[($l - $i) % 8][(int)$data[$i]]];
+			$ck = self::$verhoeffmul[$ck][self::$verhoeffper[($l - $i) % 8][(int)$number[$i]]];
 		return self::$verhoeffinv[$ck];
 	}
 	public static function damm($number){
@@ -12014,7 +11729,15 @@ class XNCrypt {
 		}
         trigger_error("XNCrypt::hash(): Unknown hashing algorithm: $algo", E_USER_WANING);
         return false;
-    }
+	}
+	public static function hash_repeat($algo, $data, $length = null, $raw = null){
+		if($length === null)$length = strlen($data);
+		$hash = self::hash($algo, $data, $raw);
+		while(strlen($hash) < $length){
+			$hash .= self::hash($algo, $hash . $data, $raw);
+		}
+		return substr($hash, 0, $length);
+	}
     public static function hash_length($algo, $raw = null){
         $algos = array(
             "md2" => 16,         "md4" => 16,         "md5" => 16,
@@ -12224,13 +11947,6 @@ class XNCrypt {
         if(self::hash($algo, $data, $raw) == $hash)
             return $algo;
         return false;
-    }
-    public static function json_hash($algo, $input, $raw = null){
-        if(!in_array($algo, self::hash_algos()) && !in_array($algo, self::crcalgos())){
-            trigger_error("XNCrypt::hash(): Unknown hashing algorithm: $algo", E_USER_WANING);
-            return false;
-        }
-        return self::hash($algo, json_encode($input), $raw);
     }
 
     public static function crctable($poly, $bitlen = 32, $revin = null, $revout = null){
@@ -12659,8 +12375,8 @@ class XNCrypt {
         }
     }
     public static function base64decode($string){
-        $l = strlen($string);
-        if($l % 4 === 1)$string = 'A' . $string;
+		$l = strlen($string);
+		if($l % 4 !== 0)$string .= str_repeat('=', 4 - $l % 4);
         if(function_exists('base64_decode'))return base64_decode($string);
         $s = xnstring::BASE64T_RANGE;
         $bin = '';
@@ -12668,10 +12384,10 @@ class XNCrypt {
             $a1 = strpos($s, $string[$i]);
             $a2 = strpos($s, $string[$i + 1]);
             $bin .= ord(($a1 << 2) | ($a2 >> 4));
-            if(isset($string[$i + 2]) && $string[$i + 2] != '='){
+            if($string[$i + 2] != '='){
                 $a3 = strpos($s, $string[$i + 2]);
                 $bin .= ord((($a2 & 15) << 4) | ($a3 >> 2));
-                if(isset($string[$i + 3]) && $string[$i + 3] != '='){
+                if($string[$i + 3] != '='){
                     $a4 = strpos($s, $string[$i + 3]);
                     $bin .= ord((($a3 & 3) << 6) | $a4);
                 }
@@ -12690,7 +12406,69 @@ class XNCrypt {
     }
     public static function base64urldecode($string){
         return self::base64decode(str_pad(strtr($string, '-_', '+/'), strlen($string) % 4, '=', STR_PAD_RIGHT));
-    }
+	}
+	public static function base32encode($string){
+		$s = xnstring::BASE32_RANGE;
+		$res = '';
+		for($i = 0; isset($string[$i]); $i += 5){
+			$i1 = isset($string[$i + 1]);
+			$a1 = ord($string[$i]);
+			$res .= $s[$a1 >> 3];
+			if($i1){
+				$i2 = isset($string[$i + 2]);
+				$a2 = ord($string[$i + 1]);
+				$res .= $s[(($a1 & 7) << 2) | ($a2 >> 6)];
+				$res .= $s[($a2 >> 1) & 0x1f];
+				if($i2){
+					$i3 = isset($string[$i + 3]);
+					$a3 = ord($string[$i + 2]);
+					$res .= $s[(($a2 & 1) << 4) | ($a3 >> 4)];
+					if($i3){
+						$i4 = isset($string[$i + 4]);
+						$a4 = ord($string[$i + 3]);
+						$res .= $s[(($a3 & 0xf) << 1) | ($a4 >> 7)];
+						$res .= $s[($a4 >> 2) & 0x1f];
+						if($i4){
+							$a5 = ord($string[$i + 4]);
+							$res .= $s[(($a4 & 3) << 3) | ($a5 >> 5)];
+							$res .= $s[$a5 & 0x1f];
+						}else $res .= $s[($a4 & 3) << 3] . '=';
+					}else $res .= $s[($a3 & 0xf) << 1] . '===';
+				}else $res .= $s[($a2 & 1) << 4] . '====';
+			}else $res .= $s[($a1 & 7) << 2] . '======';
+		}
+		return $res;
+	}
+	public static function base32decode($string){
+		$l = strlen($string);
+		if($l % 8 !== 0)$string .= str_repeat('=', 8 - $l % 8);
+		$s = xnstring::BASE32_RANGE;
+		$bin = '';
+		for($i = 0; isset($string[$i]); $i += 8){
+			$a1 = strpos($s, $string[$i]);
+			$a2 = strpos($s, $string[$i + 1]);
+			$bin .= chr(($a1 << 3) | ($a2 >> 2));
+			if($string[$i + 2] != '='){
+				$a3 = strpos($s, $string[$i + 2]);
+				$a4 = strpos($s, $string[$i + 3]);
+				$bin .= chr((($a2 & 3) << 6) | ($a3 << 1) | ($a4 >> 4));
+				if($string[$i + 4] != '='){
+					$a5 = strpos($s, $string[$i + 4]);
+					$bin .= chr((($a4 & 0xf) << 4) | ($a5 >> 1));
+					if($string[$i + 5] != '='){
+						$a6 = strpos($s, $string[$i + 5]);
+						$a7 = strpos($s, $string[$i + 6]);
+						$bin .= chr((($a5 & 1) << 7) | ($a6 << 2) | ($a7 >> 3));
+						if($string[$i + 6] != '='){
+							$a8 = strpos($s, $string[$i + 7]);
+							$bin .= chr((($a7 & 7) << 5) | $a8);
+						}
+					}
+				}
+			}
+		}
+		return $bin;
+	}
     public static function rleencode($string){
         $new = '';
         $count = 0;
@@ -13095,39 +12873,6 @@ class XNCrypt {
 		);
 	}
 
-	public static function deflate($data){
-		if(function_exists('gzdeflate'))
-			return gzdeflate($data);
-	}
-	public static function inflate($data){
-		if(function_exists('gzinflate'))
-			return gzinflate($data);
-		$inflate = new xncryptInflate;
-		return $inflate->inflate($data);
-	}
-	public static function compress($data){
-		if(function_exists('gzcompress'))
-			return gzcompress($data);
-		return "\x78\x01" . self::deflate($data) . self::hash('adler32', true);
-	}
-	public static function uncompress($data){
-		if(function_exists('gzuncompress'))
-			return gzuncompress($data);
-		if(substr($data, 0, 2) != "\x78\x01"){
-			trigger_error('data error', E_USER_WARNING);
-			return false;
-		}
-		$text = substr($data, 2, -4);
-		$text = self::inflate($text);
-		if($text === false)return false;
-		$adler32 = substr($data, -4);
-		if(self::hash('adler32', true) !== $adler32){
-			trigger_error('data error', E_USER_WARNING);
-			return false;
-		}
-		return $text;
-	}
-
 	protected static $iconvcharset = array(
 		'iso-8859-1' => array(
 			'utf-8'    => 'iso88591utf8',
@@ -13269,26 +13014,28 @@ class XNCrypt {
 		$iso88591 = '';
 		$i = 0;
 		while(isset($string[$i])) {
-			if((ord($string[$i]) | 0x07) == 0xF7) {
-				$char = ((ord($string[$i    ]) & 0x07) << 18) &
+			$cur = ord($string[$i]);
+			if(($cur | 0x07) == 0xF7) {
+				$char = (($cur                 & 0x07) << 18) &
 						((ord($string[$i + 1]) & 0x3F) << 12) &
 						((ord($string[$i + 2]) & 0x3F) <<  6) &
 						 (ord($string[$i + 3]) & 0x3F);
 				$i += 4;
-			}elseif((ord($string[$i]) | 0x0F) == 0xEF) {
-				$char = ((ord($string[$i    ]) & 0x0F) << 12) &
+			}elseif(($cur | 0x0F) == 0xEF) {
+				$char = (($cur                 & 0x0F) << 12) &
 						((ord($string[$i + 1]) & 0x3F) <<  6) &
 						 (ord($string[$i + 2]) & 0x3F);
 				$i += 3;
-			}elseif((ord($string[$i]) | 0x1F) == 0xDF) {
-				$char = ((ord($string[$i + 0]) & 0x1F) <<  6) &
+			}elseif(($cur | 0x1F) == 0xDF) {
+				$char = (($cur                 & 0x1F) <<  6) &
 						 (ord($string[$i + 1]) & 0x3F);
 				$i += 2;
-			}elseif((ord($string[$i]) | 0x7F) == 0x7F)
-				$char = ord($string[$i++]);
-			else{
+			}elseif(($cur | 0x7F) == 0x7F){
+				$char = $cur;
+				++$i;
+			}else{
 				$char = false;
-				++$offset;
+				++$i;
 			}
 			if($char !== false)
 				$iso88591 .= $char < 256 ? chr($char) : '?';
@@ -13505,202 +13252,6 @@ class XNCrypt {
 		if($func2 !== '')
 			return self::$func2(self::$func1($string));
 		return self::$func1($string);
-	}
-}
-class xncryptInflate {
-	private $output,
-			$outcnt,
-			$input,
-			$inlen,
-			$incnt,
-			$bitbuf,
-			$bitcnt;
-	private $lencode = null;
-	private $distcode = null;
-	private $lens = array(
-        3,  4,  5,  6,  7,  8,  9,  10,  11,  13,  15,  17,  19, 23, 27, 31,
-		35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258
-	);
-	private $lext = array(
-        0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
-		3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0
-	);
-	private $dists = array(
-        1,    2,     3,     4,   5,    7,    9,    13,   17,   25, 33, 49, 65, 97, 129, 193,
-        257,  385,   513,   769, 1025, 1537, 2049, 3073, 4097, 6145,
-		8193, 12289, 16385, 24577
-	);
-	private $dext = array(
-        0, 0, 0, 0, 1, 1, 2,  2,  3,  3,  4,  4,  5,  5, 6, 6,
-		7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13
-	);
-	private $order = array(
-	  16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
-	);
-	public function inflate($input) {
-		$this->output = '';
-		$this->outcnt = 0;
-		$this->input = $input;
-		$this->inlen = strlen($input);
-		$this->bitcnt =
-		$this->bitbuf =
-		$this->incnt = 0;
-		if(!isset($input[0])){
-			trigger_error('inflate(): data is empty', E_USER_WARNING);
-			return false;
-		}
-		do {
-			$last = $this->bits(1);
-			$type = $this->bits(2);
-			$error = $type == 0 ? $this->stored()  :
-					($type == 1 ? $this->fixed()   :
-					($type == 2 ? $this->dynamic() : -1));
-			if($error !== 0)break;
-		}while($last === 1);
-		if($error <= 0 || $error == 2)
-			return $this->output;
-		return false;
-	}
-	private function bits($length) {
-		$value = $this->bitbuf;
-		while($this->bitcnt < $length) {
-			if($this->incnt == $this->inlen)
-				trigger_error("out of input", E_USER_ERROR);
-			$value |= ord($this->input[$this->incnt++]) << $this->bitcnt;
-			$this->bitcnt += 8;
-		}
-		$this->bitbuf = $value >> $length;
-		$this->bitcnt -= $length;
-		return (int)($value & ((1 << $length) - 1));
-	}
-	private function stored() {
-		$this->bitcnt = $this->bitbuf = 0;
-		if($this->incnt + 4 > $this->inlen)return 2;
-		$len = $this->input[$this->incnt++];
-		$len |= $this->input[$this->incnt++] << 8;
-		if($this->input[$this->incnt++] != (~$len & 0xff) ||
-		   $this->input[$this->incnt++] != ((~$len >> 8) & 0xff))
-			return -2;
-		if($this->incnt + $len > $this->inlen)return 2;
-		while(--$len >= 0)
-			$this->output[$this->outcnt++] = $this->input[$this->incnt++];
-		return 0;
-	}
-	private function fixed() {
-		if($this->lencode == null) {
-			$lengths = array();
-			for($symbol = 0; $symbol < 144; ++$symbol)
-				$lengths[$symbol] = 8;
-			while($symbol < 256)
-				$lengths[$symbol++] = 9;
-			while($symbol < 280)
-				$lengths[$symbol++] = 7;
-			while($symbol < 288)
-				$lengths[$symbol++] = 8;
-			$this->lencode = xncrypt::huffmantable($lengths, 288);
-			for($symbol = 0; $symbol < 30; ++$symbol) 
-				$lengths[$symbol] = 5;
-			$this->distcode = xncrypt::huffmantable($lengths, 30);
-		}
-		return $this->codes($this->lencode, $this->distcode);
-	}
-	private function dynamic() {
-		$nlen = $this->bits(5) + 257;
-		$ndist = $this->bits(5) + 1;
-		$ncode = $this->bits(4) + 4;
-		if($nlen > 286 || $ndist > 30)
-			return -3;
-		$lengths = array();
-		for($index = 0; $index < $ncode; $index++)
-			$lengths[$this->order[$index]] = $this->bits(3);
-		while($index < 19)
-			$lengths[$this->order[$index++]] = 0;
-		$lencode = xncrypt::huffmantable($lengths, 19);
-		$err = $lencode['error'];
-		if($err != 0)return -4;
-		$index = 0;
-		while($index < $nlen + $ndist) {
-			$symbol = $this->decode($lencode);
-			if($symbol < 16)
-				$lengths[$index++] = $symbol;
-			else {
-				$len = 0;
-				if($symbol == 16) {
-					if($index == 0)return -5;
-					$len = $lengths[$index - 1];
-					$symbol = $this->bits(2) + 3;
-				}elseif($symbol == 17)
-					$symbol = $this->bits(3) + 3;
-				else
-					$symbol = $this->bits(7) + 11;
-				if($index + $symbol > $nlen + $ndist)
-					return -6;
-				while(--$symbol >= 0)
-					$lengths[$index++] = $len;
-			}
-		}
-		$lencode = xncrypt::huffmantable($lengths, $nlen);
-		$err = $lencode['error'];
-		if($err < 0 || ($err > 0 && $nlen - $lencode->count[0] != 1))
-			return -7;
-		$distcode = xncrypt::huffmantable(array_slice($lengths, $nlen), $ndist);
-		$err = $distcode['error'];
-		if($err < 0 || ($err > 0 && $ndist - $distcode->count[0] != 1))
-			return -8;
-		return $this->codes($lencode, $distcode);
-	}
-	private function codes($lencode, $distcode) {
-		do {
-			$symbol = $this->decode($lencode);
-			if($symbol < 0)return $symbol;
-			if($symbol < 256) {
-				$this->output .= chr($symbol);
-				++$this->outcnt;
-			}elseif($symbol > 256) {
-				$symbol -= 257;
-				if($symbol >= 29)return -9;
-				$len = $this->lens[$symbol] + $this->bits($this->lext[$symbol]);
-				$symbol = $this->decode($distcode);
-				if($symbol < 0)return $symbol;
-				$dist = $this->dists[$symbol] + $this->bits($this->dext[$symbol]);
-				while(--$len >= 0) {
-					$this->output .= $this->output[$this->outcnt - $dist];
-					++$this->outcnt;
-				}
-			}
-		}while($symbol != 256);
-		return 0;
-	}
-	private function decode($huffman) {
-		$bitbuf = $this->bitbuf;
-		$left = $this->bitcnt;
-		$code = $first = $index = 0;
-		$len = 1;
-		reset($huffman['count']);
-		while(true) {
-			while(--$left >= 0) {
-				$code |= $bitbuf & 1;
-				$bitbuf >>= 1;
-				$count = next($huffman['count']);
-				if($code < $first + $count) {
-					$this->bitbuf = $bitbuf;
-					$this->bitcnt = ($this->bitcnt - $len) & 7;
-					return $huffman['symbol'][$index + $code - $first];
-				}
-				$index += $count;
-				$first += $count;
-				$first <<= 1;
-				$code <<= 1;
-				++$len;
-			}
-			$left = 16 - $len;
-			if($left == 0)break;
-			if($this->incnt == $this->inlen)
-				trigger_error("out of input", E_USER_ERROR);
-			$bitbuf = ord($this->input[$this->incnt++]);
-			if($left > 8)$left = 8;
-		}
-		return -9;
 	}
 }
 
@@ -14268,9 +13819,9 @@ class XNData {
 							if(!file_exists($file))
 								return false;
 							else $file = fopen($file,"r+b");
-						}elseif(!is_resource($file) || !fmode($file))
+						}elseif(!is_resource($file) || !xnstream::mode($file))
 							return false;
-						if(fmode($file) != 'r+b')
+						if(xnstream::mode($file) != 'r+b')
 							$file = fclone($file,'r+b');
 						fwrite($file,$this->xnd->get());
 						$this->type = "file";
@@ -14297,9 +13848,9 @@ class XNData {
 							if(!file_exists($file))
 								return false;
 							else $file = fopen($file,"r+b");
-						}elseif(!is_resource($file) || !fmode($file))
+						}elseif(!is_resource($file) || !xnstream::mode($file))
 							return false;
-						if(fmode($file) != 'r+b')
+						if(xnstream::mode($file) != 'r+b')
 							$file = fclone($file,'r+b');
 						stream_copy_to_stream($this->xnd->stream(),$file);
 						$this->xnd = new XNDataFile($file);
@@ -14324,9 +13875,9 @@ class XNData {
 							if(!file_exists($file))
 								return false;
 							else $file = fopen($file,"r+b");
-						}elseif(!is_resource($file) || !fmode($file))
+						}elseif(!is_resource($file) || !xnstream::mode($file))
 							return false;
-						if(fmode($file) != 'r+b')
+						if(xnstream::mode($file) != 'r+b')
 							$file = fclone($file,'r+b');
 						stream_copy_to_stream($this->xnd->stream(),$file);
 						$this->xnd = new XNDataFile($file);
@@ -15964,7 +15515,7 @@ class XNDataFile {
 			if(!file_exists($file))
 				touch($file);
 			$file = fopen($file,"r+b");
-		}elseif(is_resource($file)&&fmode($file)=="r+b");
+		}elseif(is_resource($file)&&xnstream::mode($file)=="r+b");
 		else return;
 		if($file){
 			$this->file = $file;
@@ -16039,7 +15590,7 @@ class XNDataFile {
 		}
 	}
 	public function locate(){
-		return fname($this->file);
+		return xnstream::name($this->file);
 	}
 	public function get(){
 		$r = stream_get_contents($this->file);
@@ -16959,7 +16510,7 @@ class xncolor {
 	public static function unrgba($color){
 		return array(($color >> 16) & 0xff, ($color >> 8) & 0xff, $color & 0xff, ($color >> 24) & 0xff);
 	}
-	public static function hue($a, $b, $h){
+	private static function _hue($a, $b, $h){
 		if($h < 0)
             $h += 1;
         if($h > 1)
@@ -16981,9 +16532,9 @@ class xncolor {
 			$a = ($l + $s) - ($s * $l);
 		$b = 2 * $l - $a;
 		return array(
-			255 * self::hue($b, $a, $h + 1 / 3),
-			255 * self::hue($b, $a, $h),
-			255 * self::hue($b, $a, $h - 1 / 3)
+			255 * self::_hue($b, $a, $h + 1 / 3),
+			255 * self::_hue($b, $a, $h),
+			255 * self::_hue($b, $a, $h - 1 / 3)
 		);
 	}
 	public static function rgbhsl($r, $g, $b){
@@ -17108,7 +16659,7 @@ class xncolor {
 	}
 	public static function alpha($color, $a = null){
 		if($a === null)return ($color >> 24) & 0xff;
-		return ($color & 0xffffff) | ($a & 0xff);
+		return ($color & 0xffffff) | (($a & 0xff) << 24);
 	}
 	public static function rgbhex($r, $g, $b){
 		return str_pad(dechex(self::rgb($r, $g, $b)), 6, '0');
@@ -17121,6 +16672,110 @@ class xncolor {
 	}
 	public static function hexrgba($hex){
 		return self::unrgba(hexdec($hex));
+	}
+	public static function islight($r, $g, $b, $threshold = 130){
+		return (($r * 299 + $g * 587 + $b * 114 ) / 1000 > $threshold);
+	}
+	public static function isdark($r, $g, $b, $threshold = 130){
+		return (($r * 299 + $g * 587 + $b * 114 ) / 1000 <= $threshold);
+	}
+	public static function mixrgb($r1, $g1, $b1, $r2, $g2, $b2, $amount = 0){
+		$m1 = $amount / 100 + 1;
+		$m2 = 2 - $r1;
+		return array(
+			($r1 * $m1 + $r2 * $m2) / 2,
+			($g1 * $m1 + $g2 * $m2) / 2,
+			($b1 * $m1 + $b2 * $m2) / 2
+		);
+	}
+	public static function mixrgba($r1, $g1, $b1, $a1, $r2, $g2, $b2, $a2, $amount = 0){
+		$m1 = $amount / 100 + 1;
+		$m2 = 2 - $r1;
+		return array(
+			($r1 * $a1 * (1 - $a2) * $m1 + $r2 * $a2 * $m2) / 2,
+			($g1 * $a1 * (1 - $a2) * $m1 + $g2 * $a2 * $m2) / 2,
+			($b1 * $a1 * (1 - $a2) * $m1 + $b2 * $a2 * $m2) / 2,
+			($a1 * (1 - $a2) * $m1 + $a2 * $m2) / 2
+		);
+	}
+	public static function mix($c1, $c2, $amount = 0){
+		$c1 = self::unrgb($c1);
+		$c2 = self::unrgb($c2);
+		return self::mixrgba($c1[0], $c1[1], $c1[2], $c2[0], $c2[1], $c2[2], $amount);
+	}
+	public static function mixa($c1, $c2, $amount = 0){
+		$c1 = self::unrgba($c1);
+		$c2 = self::unrgba($c2);
+		return self::mixrgba($c1[0], $c1[1], $c1[2], $c1[3], $c2[0], $c2[1], $c2[2], $c2[3], $amount);
+	}
+	public static function grayscale($r, $g, $b){
+		$x = $r * 0.3 + $g * 0.59 + $b * 0.11;
+		return array($x, $x, $x);
+	}
+	public static function invert($r, $g, $b){
+		return array(255 - $r, 255 - $g, 255 - $b);
+	}
+	public static function random(){
+		return array(rand(0, 255), rand(0, 255), rand(0, 255));
+	}
+	public static function lighten($r, $g, $b, $amount = 1){
+		$amount /= 100;
+		return self::modrgb($r + $r * $amount, $g + $g * $amount, $b + $b * $amount);
+	}
+	public static function brightness($r, $g, $b, $l){
+		$hsl = self::rgbhsl($r, $g, $b);
+		$hsl[2] = $l < 0 ? $l - floor($l) + 1 : $l - floor($l);
+		return self::rgb($hsl[0], $hsl[1], $hsl[2]);
+	}
+	public static function modrgb($r, $g, $b){
+		return array(
+			$r < 0 ? $r % 256 + 256 : $r % 256,
+			$g < 0 ? $g % 256 + 256 : $g % 256,
+			$b < 0 ? $b % 256 + 256 : $b % 256
+		);
+	}
+	public static function modrgba($r, $g, $b, $a){
+		return array(
+			$r < 0 ? $r % 256 + 256 : $r % 256,
+			$g < 0 ? $g % 256 + 256 : $g % 256,
+			$b < 0 ? $b % 256 + 256 : $b % 256,
+			$a < 0 ? $a % 256 + 256 : $a % 256
+		);
+	}
+	public static function modhsl($h, $s, $l){
+		return array(
+			$h < 0 ? $h - floor($h) + 1 : $h - floor($h),
+			$s < 0 ? $s - floor($s) + 1 : $s - floor($s),
+			$l < 0 ? $l - floor($l) + 1 : $l - floor($l)
+		);
+	}
+	public static function modhsv($h, $s, $l){
+		return array(
+			$h < 0 ? $h - floor($h) + 1 : $h - floor($h),
+			$s < 0 ? $s - floor($s) + 1 : $s - floor($s),
+			$v < 0 ? $v - floor($v) + 1 : $v - floor($v)
+		);
+	}
+	public static function saturate($r, $g, $b, $amount = 1){
+		$hsl = self::rgbhsl($r, $g, $b);
+		$hsl[1] = $hsl[1] + $hsl[1] * ($amount / 100);
+		$hsl[1] = $hsl[1] < 0 ? $hsl[1] - floor($hsl[1]) + 1 : $hsl[1] - floor($hsl[1]);
+		return self::rgb($hsl[0], $hs[1], $hsl[2]);
+	}
+	public static function sepia($r, $g, $b){
+		return array(
+			$r * 0.393 + $g * 0.769 + $b * 0.189,
+			$r * 0.349 + $g * 0.686 + $b * 0.168,
+			$r * 0.272 + $g * 0.534 + $g * 0.131
+		);
+	}
+	public static function contrast($r, $g, $b, $amount = 1){
+		return self::modrgb($r + $amount, $g + $amount, $b + $amount);
+	}
+	public static function hue($r, $g, $b, $h){
+		$hsl = self::rgbhsl($r, $g, $b);
+		$hsl[0] = $h < 0 ? $h - floor($h) + 1 : $h - floor($h);
+		return self::rgb($hsl[0], $hsl[1], $hsl[2]);
 	}
 }
 
@@ -17136,6 +16791,7 @@ class XNGraphicPNG {
 		   $comments = array(),
 		   $pixels = array();
 	public function parse($content){
+		$this->error = self::E_NONE;
 		if(substr($content, 0, 8) != "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A")
 			return $this->error = self::E_INVALID_HEADER;
 		$length = strlen($content);
@@ -17157,13 +16813,16 @@ class XNGraphicPNG {
 					$this->compression_method = ord($data[10]);
 					$this->filter_method = ord($data[11]);
 					$this->interlace_method = ord($data[12]);
-					if($this->compression_method)$this->compression_method = 'zlib';
+					if($this->compression_method === 0)$this->compression_method = 'zlib';
 					$this->color_palette = (bool)($this->color_type & 1);
 					$this->true_color = (bool)($this->color_type & 2);
 					$this->color_alpha = (bool)($this->color_type & 4);
 				break;
+				case 'CgBI':
+					$this->iphone = true;
+				break;
 				case 'PLTE':
-					$this->pallete = array();
+					$this->palette = array();
 					for($i = 0; $i < 256; ++$i){
 						$red   = ord($data[$i * 3]);
 						$green = ord($data[$i * 3 + 1]);
@@ -17232,7 +16891,7 @@ class XNGraphicPNG {
 					$compression = ord($otherdata[0]);
 					$text = substr($otherdata, 1);
 					if($compression === 0)
-						$text = xncrypt::uncompress($text);
+						$text = gzuncompress($text);
 					if(!isset($this->comments[$keyword]))$this->comments[$keyword] = array();
 					$this->comments[$keyword][] = $text;
 				break;
@@ -17242,7 +16901,7 @@ class XNGraphicPNG {
 					$compression_method = ord($otherdata[1]);
 					list($language_tag, $translated_keyword, $text) = explode("\0", substr($otherdata, 2), 3);
 					if($compression === true && $compression_method === 0)
-						$text = xncrypt::uncompress($text);
+						$text = gzuncompress($text);
 					if(!isset($this->comments[$keyword]))$this->comments[$keyword] = array();
 					$this->comments[$keyword][] = array(
 						'translated_keyword' => $translated_keyword,
@@ -17389,22 +17048,116 @@ class XNGraphicPNG {
 					++$this->extension_count;
 				break;
 				case 'IDAT':
-					$this->data .= xncrypt::uncompress($data);
+					if($this->compression_method == 'zlib')
+						if(isset($this->iphone) && $this->iphone)
+							$this->data .= $data;
+						else
+							$this->data .= gzinflate(substr($data, 2, -4));
+					else
+						$this->data .= $data;
 				break;
 				case 'IEND':
 				break 2;
 			}
 		}
 		$offset = 0;
-		for($x = 0; $x < $this->width; ++$x){
-			$this->pixels[$x] = array();
-			++$offset;
+		if($this->color_alpha)
 			for($y = 0; $y < $this->height; ++$y){
-				$this->pixels[$x][$y] = xncrypt::intbe(substr($this->data, $offset, 4));
-				$offset += $this->bit_depth;
+				$this->pixels[$y] = array();
+				++$offset;
+				for($x = 0; $x < $this->width; ++$x){
+					$this->pixels[$y][$x] = xncrypt::intbe(substr($this->data, $offset, 3));
+					$alpha = 127 - ord($this->data[$offset + 3]);
+					$this->pixels[$y][$x] = xncolor::alpha($this->pixels[$y][$x], $alpha < 0 ? $alpha + 256 : $alpha);
+					$offset += 4;
+				}
 			}
-		}
+		else
+			for($y = 0; $y < $this->height; ++$y){
+				$this->pixels[$y] = array();
+				++$offset;
+				for($x = 0; $x < $this->width; ++$x){
+					$this->pixels[$y][$x] = xncrypt::intbe(substr($this->data, $offset, 3));
+					$offset += 3;
+				}
+			}
+		$this->data = '';
 		return true;
+	}
+	public static function make(){
+		$file = "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A";
+		$data = '';
+		if($this->bit_depth)
+			foreach($this->pixels as $row){
+				$data .= "\0";
+				foreach($row as $col){
+					$rgb = xncolor::unrgb($col);
+					$rgb[3] = $rgb[3] > 127 ? -($rgb[3] - 256 - 127) : -($rgb[3] - 127);
+					$file .= xncrypt::strbe(xncolor::rgb($rgb[0], $rgb[1], $rgb[2], $rgb[3]));
+				}
+			}
+		else
+			foreach($this->pixels as $row){
+				$data .= "\0";
+				foreach($row as $col)
+					$data .= color::strbe($col, 3);
+			}
+		foreach(array('IHDR', 'CgBI', 'PLTE', 'tRNS', 'gAMA', 'cHRM', 'cHRM', 'sRGB', 'iCCP', 'tEXt', 'zTxt', 'iTXt', 'bKGD',
+					  'pHYs', 'sBIT', 'sPLT', 'hIST', 'tIME', 'oFFs', 'pCAL', 'sCAL', 'gIFg', 'gIFx', 'IDAT', 'IEND') as $header){
+			$content = '';
+			switch($header){
+				case 'IHDR':
+					$content .= pack('N', $this->width);
+					$content .= pack('N', $this->height);
+					$content .= chr($this->bit_depth);
+					$content .= chr($this->color_type);
+					$content .= chr($this->compression_method);
+					$content .= chr($this->filter_method);
+					$content .= chr($this->interlace_method);
+				break;
+				case 'CgBI':
+					if($this->iphone !== true)
+						continue;
+				break;
+				case 'PLTE':
+					if(!isset($this->palette))continue;
+					for($i = 0; $i < 256; ++$i){
+						$rgb = xncolor::unrgb($this->palette[$i]);
+						$content .= chr($rgb[0]) . chr($rgb[1]) . chr($rgb[2]);
+					}
+				break;
+				case 'tRNS':
+					switch($this->color_type){
+						case 0:
+							if(!isset($this->transparent_color_gray))
+							   continue;
+							$content .= pack('n', $this->transparent_color_gray);
+						break;
+						case 2:
+							if(!isset($this->transparent_color_red) ||
+							   !isset($this->transparent_color_green) ||
+							   !isset($this->transparent_color_blue))
+							   continue;
+							$content .= pack('n', $this->transparent_color_red);
+							$content .= pack('n', $this->transparent_color_green);
+							$content .= pack('n', $this->transparent_color_blue);
+						break;
+						case 3:
+							if(!isset($this->palette_opacity))
+								continue;
+							for($i = 0; isset($this->palette_opacity[$i]); ++$i)
+								$content .= chr($this->palette_opacity[$i]);
+						break;
+					}
+				break;
+				case 'gAMA':
+					if(isset($this->gamma))
+						$content .= xncrypt::strbe($this->gamma * 100000);
+				break;
+			}
+			$file .= xncrypt::strbe(strlen($content)) . $header . $content . xncrypt::hash('crc32', $content);
+		}
+		return $file;
 	}
 }
 class XNBigGraphicPNG {
@@ -17418,21 +17171,23 @@ class XNBigGraphicPNG {
 		   $comments = array(),
 		   $pixels;
 
-	public function parse($file, $res = false){
+	public function parse($file){
+		$this->error = self::E_NONE;
 		if(!is_resource($file)){
 			$file = @fopen($file, 'r');
 			if($file === false)
-			return $this->error = self::E_INVALID_FILE;
-		}if(!is_resource($file))$res = tmpfile();
-		$this->pixels = $res;
+				return $this->error = self::E_INVALID_FILE;
+		}else rewind($file);
+		$this->pixels = tmpfile();
 		if(fread($file, 8) != "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A")
 			return $this->error = self::E_INVALID_HEADER;
-		$length = fsize($file);
+		$length = xnstream::size($file, true);
 		while(ftell($file) < $length){
 			$dlen = array_value(unpack('N', fread($file, 4)), 1);
 			$type = fread($file, 4);
 			$raw = array_value(unpack('N', $type), 1);
-			$data = fread($file, $dlen);
+			$data = $dlen !== 0 ? fread($file, $dlen) : '';
+			$crc = fread($file, 4);
 			switch($type){
 				case 'IHDR':
 					$this->width  = array_value(unpack('N', substr($data, 0, 4)), 1);
@@ -17447,8 +17202,11 @@ class XNBigGraphicPNG {
 					$this->true_color = (bool)($this->color_type & 2);
 					$this->color_alpha = (bool)($this->color_type & 4);
 				break;
+				case 'CgBI':
+					$this->iphone = true;
+				break;
 				case 'PLTE':
-					$this->pallete = array();
+					$this->palette = array();
 					for($i = 0; $i < 256; ++$i){
 						$red   = ord($data[$i * 3]);
 						$green = ord($data[$i * 3 + 1]);
@@ -17517,7 +17275,7 @@ class XNBigGraphicPNG {
 					$compression = ord($otherdata[0]);
 					$text = substr($otherdata, 1);
 					if($compression === 0)
-						$text = xncrypt::uncompress($text);
+						$text = gzuncompress($text);
 					if(!isset($this->comments[$keyword]))$this->comments[$keyword] = array();
 					$this->comments[$keyword][] = $text;
 				break;
@@ -17527,7 +17285,7 @@ class XNBigGraphicPNG {
 					$compression_method = ord($otherdata[1]);
 					list($language_tag, $translated_keyword, $text) = explode("\0", substr($otherdata, 2), 3);
 					if($compression === true && $compression_method === 0)
-						$text = xncrypt::uncompress($text);
+						$text = gzuncompress($text);
 					if(!isset($this->comments[$keyword]))$this->comments[$keyword] = array();
 					$this->comments[$keyword][] = array(
 						'translated_keyword' => $translated_keyword,
@@ -17674,13 +17432,439 @@ class XNBigGraphicPNG {
 					++$this->extension_count;
 				break;
 				case 'IDAT':
-					fwrite($this->pixels, xncrypt::uncompress($data));
+					if($this->compression_method == 'zlib')
+						if(isset($this->iphone) && $this->iphone)
+							fwrite($this->pixels, $data);
+						else
+							fwrite($this->pixels, gzinflate(substr($data, 2, -4)));
+					else
+						fwrite($this->pixels, $data);
 				break;
 				case 'IEND':
 				break 2;
 			}
 		}
+		fseek($this->pixels, 0);
 		return true;
+	}
+	public function make($file){
+		$this->error = self::E_NONE;
+		if(!is_resource($file)){
+			$file = @fopen($file, 'r');
+			if($file === false)
+				return $this->error = self::E_INVALID_FILE;
+		}else rewind($file);
+		fwrite($file, "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A");
+	}
+}
+class XNGraphicArray {
+	const E_NONE = 0;
+	const E_INVALID_PIXELS = 0;
+
+	public $error = 0,
+		   $width = 0,
+		   $height = 0,
+		   $pixels = array();
+	public function parse($array){
+		$this->error = self::E_NONE;
+		if(!isset($array[0][0]))
+			return $this->error = self::E_INVALID_PIXELS;
+		$width = count($array[0]);
+		$height = count($array);
+		foreach($array as $row)
+			if(!is_array($row) || count($row) != $width)
+				return $this->error = self::E_INVALID_PIXELS;
+		$this->width = $width;
+		$this->height = $height;
+		$this->pixels = $array;
+		return true;
+	}
+	public function make(){
+		return $this->pixels;
+	}
+}
+
+/* ---------- XNStream ---------- */
+class XNStream {
+	public static function seek($stream, $index, $curent = null){
+		if($curent === true)
+			return fseek($stream, $index, SEEK_CUR);
+		if($index < 0)
+			return fseek($stream, $index + 1, SEEK_END);
+		return fseek($stream, $index, SEEK_SET);
+	}
+	public static function size($stream, $back = null){
+		if($back === true){
+			$locate = ftell($stream);
+			fseek($stream, 0, SEEK_END);
+			$size = ftell($stream);
+			fseek($stream, $locate);
+			return $size;
+		}fseek($stream, 0, SEEK_END);
+		return ftell($stream);
+	}
+	public static function eofsize($stream, $back = null){
+		if($back === true){
+			$locate = ftell($stream);
+			fseek($stream, 0, SEEK_END);
+			$size = ftell($stream);
+			fseek($stream, $locate);
+			return $size - $locate;
+		}$locate = ftell($stream);
+		fseek($stream, 0, SEEK_END);
+		return ftell($stream) - $locate;
+	}
+	public static function hasIndex($stream, $index, $back = null){
+		$locate = ftell($stream);
+		if($locate > $index)return true;
+		if($back === true){
+			fseek($stream, 0, SEEK_END);
+			$size = ftell($stream);
+			fseek($stream, $locate);
+			return $size > $index;
+		}fseek($stream, 0, SEEK_END);
+		return ftell($stream) > $index;
+	}
+	public static function index($stream, $index, $back = null){
+		if($back === true){
+			self::seek($stream, $index);
+			return fgetc($stream);
+		}$locate = ftell($stream);
+		self::seek($stream, $index);
+		$c = fgetc($stream);
+		fseek($stream, $locate);
+		return $c;
+	}
+	public static function slice($stream, $offset, $limit = null, $back = null){
+		if($limit === 0)return '';
+		if($back === true){
+			if($limit === null){
+				self::seek($stream, $offset);
+				return stream_get_contents($stream);
+			}if($limit < 0)
+				$limit += self::size($stream) - $offset;
+			self::seek($stream, $offset);
+			return fread($stream, $limit);
+		}$locate = ftell($stream);
+		if($limit === null){
+			self::seek($stream, $offset);
+			$slice = stream_get_contents($stream);
+		}else{
+			if($limit < 0)
+				$limit += self::size($stream) - $offset;
+			self::seek($stream, $offset);
+			$slice = fread($stream, $limit);
+		}fseek($stream, $locate);
+		return $slice;
+	}
+	public static function slicing($stream, $offset, $limit = null, $back = null){
+		if($limit !== null && $limit >= $offset)$limit -= $offset;
+		return self::slicing($stream, $offset, $limit, $back);
+	}
+	public static function name($stream){
+		return @array_value(stream_get_meta_data($stream), 'uri');
+	}
+	public static function mode($stream){
+		return @array_value(stream_get_meta_data($stream), 'mode');
+	}
+	public static function pos($stream, $search, $offset = null, $back = null){
+		if($search == '')
+			return 0;
+		if($back === true)$locate = ftell($stream);
+		$l = strlen($search);
+		for($i = $offset === null ? ftell($stream) : $offset; true;){
+			$read = fread($stream, $l);
+			if($read == $search){
+				$pos = $i;break;
+			}if(strlen($read) <= $l){
+				$pos = false;break;
+			}fseek($stream, ++$i);
+		}
+		if($back === true)fseek($stream, $locate);
+		return $pos;
+	}
+	public static function ipos($stream, $search, $offset = null, $back = null){
+		if($search == '')
+			return 0;
+		if($back === true)$locate = ftell($stream);
+		$search = strtolower($search);
+		$l = strlen($search);
+		for($i = $offset === null ? ftell($stream) : $offset; true;){
+			$read = strtolower(fread($stream, $l));
+			if($read == $search){
+				$pos = $i;break;
+			}if(strlen($read) <= $l){
+				$pos = false;break;
+			}fseek($stream, ++$i);
+		}
+		if($back === true)fseek($stream, $locate);
+		return $pos;
+	}
+	public static function rpos($stream, $search, $offset = null, $back = null){
+		if($search == '')
+			return 0;
+		if($back === true)$locate = ftell($stream);
+		$l = strlen($search);
+		for($i = $offset === null ? ftell($stream) : $offset; true;){
+			$read = fread($stream, $l);
+			if($read == $search){
+				$pos = $i;break;
+			}if($i <= 0){
+				$pos = false;break;
+			}
+			fseek($stream, --$i);
+		}
+		if($back === true)fseek($stream, $locate);
+		return $pos;
+	}
+	public static function ripos($stream, $search, $offset = null, $back = null){
+		if($search == '')
+			return 0;
+		if($back === true)$locate = ftell($stream);
+		$search = strtolower($search);
+		$l = strlen($search);
+		for($i = $offset === null ? ftell($stream) : $offset; true;){
+			$read = strtolower(fread($stream, $l));
+			if($read == $search){
+				$pos = $i;break;
+			}if($i <= 0){
+				$pos = false;break;
+			}
+			fseek($stream, --$i);
+		}
+		if($back === true)fseek($stream, $locate);
+		return $pos;
+	}
+	public static function read($stream, $limit = null, $back = null){
+		if($limit == null){
+			if($back === true){
+				$locate = ftell($stream);
+				$read = stream_get_contents($stream);
+				fseek($stream, $locate);
+				return $read;
+			}return stream_get_contents($stream);
+		}if($back === true){
+			$locate = ftell($stream);
+			$read = fread($stream, $limit);
+			fseek($stream, $locate);
+			return $read;
+		}return fread($stream, $limit);
+	}
+	public static function prevread($stream, $limit = null){
+		if($limit === null)$limit = ftell($stream);
+		fseek($stream, -$limit, SEEK_CUR);
+		return fread($stream, $limit);
+	}
+	public static function next($stream, $smallnexting = null){
+		fseek($stream, 1, SEEK_CUR);
+		$c = fgetc($stream);
+		if($smallnexting === true)
+			fseek($stream, -1, SEEK_CUR);
+		return $c;
+	}
+	public static function current($stream, $currecting = null){
+		$c = fgetc($stream);
+		if($currecting === true)
+			fseek($stream, -1, SEEK_CUR);
+		return $c;
+	}
+	public static function prev($stream, $preving = null){
+		fseek($stream, -1, SEEK_CUR);
+		$c = fgetc($stream);
+		if($priving === true)
+			fseek($stream, -1, SEEK_CUR);
+		return $c;
+	}
+	public static function first($stream, $back = null){
+		if($back === true){
+			$locate = ftell($stream);
+			fseek($stream, 0);
+			$c = fgetc($stream);
+			fseek($stream, $locate);
+			return $c;
+		}fseek($stream, 0);
+		$c = fgetc($stream);
+		fseek($stream, 0);
+		return $c;
+	}
+	public static function last($stream, $back = null){
+		if($back === true){
+			$locate = ftell($stream);
+			fseek($stream, -1, SEEK_END);
+			$c = fgetc($stream);
+			fseek($sream, $locate);
+			return $c;
+		}fseek($stream, -1, SEEK_END);
+		return fgetc($stream);
+	}
+	public static function packet($stream, $length = 1, $format = null, $back = null){
+		if($length === 0)return 0;
+		if($back === true){
+			$locate = ftell($stream);
+			$read = fread($stream, $length);
+			fseek($stream, $locate);
+		}else $read = fread($stream, $length);
+		if($format === null || $format == 'be')
+			return xncrypt::intbe($read);
+		if($format == 'le')
+			return xncrypt::intle($read);
+		if($fromat == 'int')
+			return xncrypt::decdecode($read);
+		return unpack($format, $read);
+	}
+	public static function match($stream, $regex, $flags = 0, $offset = null, $back = null){
+		if($back === true)$locate = ftell($stream);
+		if($offset !== null)fseek($stream, $offset);
+		do{
+			$line = fgets($stream);
+			if(preg_match($regex, $line, $match, $flags))break;
+		}while(!feof($stream));
+		if($back === true)fseek($stream, $locate);
+		return $match === array() ? false : $match;
+	}
+	public static function match_all($stream, $regex, $flags = 0, $offset = null, $back = null){
+		if($back === true)$locate = ftell($stream);
+		if($offset !== null)fseek($stream, $offset);
+		$matches = array();
+		do{
+			$line = fgets($stream);
+			if(preg_match($regex, $line, $match, $flags))
+				$matches[] = $match;
+		}while(!feof($stream));
+		if($back === true)fseek($stream, $locate);
+		if($matches === array())return false;
+		return call_user_func_array('array_array_merge', $matches);
+	}
+	public static function delete($stream, $context = null){
+		$name = self::name($stream);
+		if(!$name)return $name;
+		if($context === null)
+			unlink($name);
+		else
+			unlink($name, $context);
+	}
+	public static function fclone($stream, $mode = null){
+		$data = @stream_get_meta_data($stream);
+		if(!$data)return false;
+		return fopen($data['uri'], $mode === null ? $data['mode'] : $mode);
+	}
+	public static function reopen($stream, $mode = null){
+		$data = @stream_get_meta_data($stream);
+		if(!$data)return false;
+		fclose($stream);
+		return fopen($data['uri'], $mode === null ? $data['mode'] : $mode);
+	}
+	public static function output(){
+		return fopen('php://output', 'w');
+	}
+	public static function input(){
+		return fopen('php://input', 'r');
+	}
+	public static function wait($stream, $limit = 2, $back = null){
+		if($back === true)$locate = ftell($file);
+		$l = $limit + 1;
+		$c = 0;
+		do{++$c;
+			$read = stream_get_contents($stream);
+			if($read !== '')
+				$l = $limit;
+		}while($read !== '' || --$l >= 0);
+		if($back === true)fseek($file, $locate);
+		return $c;
+	}
+	public static function canmode($file){
+		$file = strtolower($file);
+		if($file == 'php://output')return 'w';
+		if($file == 'php://input') return 'r';
+		if(substr($file, 0, 7) == 'http://' ||
+		   substr($file, 0, 8) == 'https://')
+			return 'r';
+		if(substr($file, 0, 6) == 'ftp://' ||
+		   substr($file, 0, 6) == 'php://')return 'rw';
+		$mode = '';
+		if(is_readable($file))$mode .= 'r';
+		if(is_writable($file))$mode .= 'w';
+		return $mode;
+	}
+	public static function utf8get($stream, $back = null){
+		if($back === true)$locate = ftell($stream);
+		$cur = fgetc($stream);
+		if($cur === false)return false;
+		$cur = ord($cur);
+		if(($cur | 0x07) == 0xF7)
+			$char = (($cur                & 0x07) << 18) &
+					((ord(fgetc($stream)) & 0x3F) << 12) &
+					((ord(fgetc($stream)) & 0x3F) <<  6) &
+					 (ord(fgetc($stream)) & 0x3F);
+		elseif(($cur | 0x0F) == 0xEF)
+			$char = (($cur                & 0x0F) << 12) &
+					((ord(fgetc($stream)) & 0x3F) <<  6) &
+					 (ord(fgetc($stream)) & 0x3F);
+		elseif(($cur | 0x1F) == 0xDF)
+			$char = (($cur                & 0x1F) <<  6) &
+					 (ord(fgetc($stream)) & 0x3F);
+		elseif(($cur | 0x7F) == 0x7F)
+			$char = $cur;
+		else
+			$char = false;
+		if($char !== false)
+			$char = $char < 256 ? chr($char) : '?';
+		if($back === true)fseek($stream, $locate);
+		return $char === false ? '' : $char;
+	}
+	public static function utf8read($stream, $limit = null, $back = null){
+		if($limit = null){
+			if($back === true){
+				$locate = ftell($stream);
+				$read = xncrypt::iconv(stream_get_contents($stream), 'utf-8', 'iso-8859-1');
+				fseek($stream, $locate);
+				return $read;
+			}return xncrypt::iconv(stream_get_contents($stream), 'utf-8', 'iso-8859-1');
+		}if($back === true){
+			$locate = ftell($stream);
+			$read = '';
+			for($i = 0; $i < $limit; ++$i)
+				$read .= self::utf8get($stream);
+			fseek($stream, $locate);
+			return $read;
+		}$read = '';
+		for($i = 0; $i < $limit; ++$i)
+			$read .= self::utf8get($stream);
+		return $read;
+	}
+	public static function utf8prevread($stream, $limit = null){
+		if($limit === null)$limit = ftell($stream);
+		fseek($stream, -$limit, SEEK_CUR);
+		$read = '';
+		for($i = 0; $i < $limit; ++$i)
+			$read .= self::utf8get($stream);
+		return $read;
+	}
+	public static function utf8next($stream, $smallnexting = null){
+		fseek($stream, 1, SEEK_CUR);
+		$c = self::utf8get($stream, $smallnexting);
+		return $c;
+	}
+	public static function utf8current($stream, $currecting = null){
+		$c = self::utf8get($stream, $currecting);
+		return $c;
+	}
+	public static function utf8prev($stream, $preving = null){
+		fseek($stream, -1, SEEK_CUR);
+		$c = self::utf8get($stream, $preving);
+		return $c;
+	}
+	public static function utf8first($stream, $back = null){
+		if($back === true){
+			$locate = ftell($stream);
+			fseek($stream, 0);
+			$c = self::utf8get($stream);
+			fseek($stream, $locate);
+			return $c;
+		}fseek($stream, 0);
+		$c = self::utf8get($stream);
+		fseek($stream, 0);
+		return $c;
 	}
 }
 
