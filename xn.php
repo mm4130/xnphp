@@ -16860,18 +16860,18 @@ class XNGraphicPNG {
 					$this->blue_y  = array_value(unpack('N', substr($data, 0, 4)), 1) / 100000;
 				break;
 				case 'sRGB':
-					$this->reindering_intent = xncrypt::intbe($data) / 100000;
+					$this->reindering_intent = array_value(unpack('N', $data), 1);
 					switch($this->reindering_intent){
 						case 0:
 							$this->reindering_intent = 'Perceptual';
 						break;
-						case 1:
+						case 100000:
 							$this->reindering_intent = 'Relative colorimetric';
 						break;
-						case 2:
+						case 200000:
 							$this->reindering_intent = 'Saturation';
 						break;
-						case 3:
+						case 300000:
 							$this->reindering_intent = 'Absolute colorimetric';
 					}
 				break;
@@ -16884,7 +16884,9 @@ class XNGraphicPNG {
 				case 'tEXt':
 					list($keyword, $text) = explode("\0", $data, 2);
 					if(!isset($this->comments[$keyword]))$this->comments[$keyword] = array();
-					$this->comments[$keyword][] = $text;
+					$this->comments[$keyword][] = array(
+						'text' => $text
+					);
 				break;
 				case 'zTXt':
 					list($keyword, $otherdata) = explode("\0", $data, 2);
@@ -16893,7 +16895,10 @@ class XNGraphicPNG {
 					if($compression === 0)
 						$text = gzuncompress($text);
 					if(!isset($this->comments[$keyword]))$this->comments[$keyword] = array();
-					$this->comments[$keyword][] = $text;
+					$this->comments[$keyword][] = array(
+						'compression' => $compression,
+						'text' => $text
+					);
 				break;
 				case 'iTXt':
 					list($keyword, $otherdata) = explode("\0", $data, 2);
@@ -16906,6 +16911,7 @@ class XNGraphicPNG {
 					$this->comments[$keyword][] = array(
 						'translated_keyword' => $translated_keyword,
 						'language_tag' => $language_tag,
+						'compression' => $compression === true ? $compression_method : false,
 						'content' => $text
 					);
 				break;
@@ -16913,7 +16919,7 @@ class XNGraphicPNG {
 					switch($this->color_type){
 						case 0:
 						case 4:
-							$this->background_gray = xncrypt::intbe($data);
+							$this->background_gray = array_value(unpack('N', $data), 1);
 						break;
 						case 2:
 						case 6:
@@ -16922,7 +16928,7 @@ class XNGraphicPNG {
 							$this->background_blue  = array_value(unpack('N', substr($data, $this->bit_depth * 2, $this->bit_depth)), 1);
 						break;
 						case 3:
-							$this->background_index = xncrypt::intbe($data);
+							$this->background_index = array_value(unpack('N', $data), 1);
 					}
 				break;
 				case 'pHYs':
@@ -17052,7 +17058,7 @@ class XNGraphicPNG {
 						if(isset($this->iphone) && $this->iphone)
 							$this->data .= $data;
 						else
-							$this->data .= gzinflate(substr($data, 2, -4));
+							$this->data .= gzuncompress($data);
 					else
 						$this->data .= $data;
 				break;
@@ -17093,7 +17099,7 @@ class XNGraphicPNG {
 				foreach($row as $col){
 					$rgb = xncolor::unrgb($col);
 					$rgb[3] = $rgb[3] > 127 ? -($rgb[3] - 256 - 127) : -($rgb[3] - 127);
-					$file .= xncrypt::strbe(xncolor::rgb($rgb[0], $rgb[1], $rgb[2], $rgb[3]));
+					$file .= xncrypt::strbe(xncolor::rgba($rgb[0], $rgb[1], $rgb[2], $rgb[3]));
 				}
 			}
 		else
@@ -17102,7 +17108,11 @@ class XNGraphicPNG {
 				foreach($row as $col)
 					$data .= color::strbe($col, 3);
 			}
-		foreach(array('IHDR', 'CgBI', 'PLTE', 'tRNS', 'gAMA', 'cHRM', 'cHRM', 'sRGB', 'iCCP', 'tEXt', 'zTxt', 'iTXt', 'bKGD',
+		if(isset($this->idat_length))
+			$data = str_split($data, max(1, min($this->idat_length, 4228250625)));
+		else
+			$data = str_split($data, 1677721600);
+		foreach(array('IHDR', 'CgBI', 'PLTE', 'tRNS', 'gAMA', 'cHRM', 'cHRM', 'sRGB', 'iCCP', 'tEXt', 'bKGD',
 					  'pHYs', 'sBIT', 'sPLT', 'hIST', 'tIME', 'oFFs', 'pCAL', 'sCAL', 'gIFg', 'gIFx', 'IDAT', 'IEND') as $header){
 			$content = '';
 			switch($header){
@@ -17151,11 +17161,260 @@ class XNGraphicPNG {
 					}
 				break;
 				case 'gAMA':
-					if(isset($this->gamma))
-						$content .= xncrypt::strbe($this->gamma * 100000);
+					if(!isset($this->gamma))continue;
+					$content .= xncrypt::strbe($this->gamma * 100000);
+				break;
+				case 'cHRM':
+					if(!isset($this->white_x) ||
+					   !isset($this->white_y) ||
+					   !isset($this->red_x) ||
+					   !isset($this->red_y) ||
+					   !isset($this->green_x) ||
+					   !isset($this->green_y) ||
+					   !isset($this->blue_x) ||
+					   !isset($this->blue_y))continue;
+					$content .=
+						pack('N', $this->white_x * 100000) .
+						pack('N', $this->white_y * 100000) .
+						pack('N', $this->red_x   * 100000) .
+						pack('N', $this->red_y   * 100000) .
+						pack('N', $this->green_x * 100000) .
+						pack('N', $this->green_y * 100000) .
+						pack('N', $this->blue_x  * 100000) .
+						pack('N', $this->blue_y  * 100000);
+				break;
+				case 'sRGB':
+					if(!isset($this->reindering_intent))
+						continue;
+					switch($this->reindering_intent){
+						case 'Perceptual':
+							$content .= pack('N', 0);
+						break;
+						case 'Relative colorimetric':
+							$content .= pack('N', 100000);
+						break;
+						case 'Saturation':
+							$content .= pack('N', 200000);
+						break;
+						case 'Absolute colorimetric':
+							$content .= pack('N', 300000);
+					}
+				break;
+				case 'iCCP':
+					if(!isset($this->profile_name) ||
+					   !isset($this->compression_method) ||
+					   !isset($this->compression_file))continue;
+					$content .= $this->profile_name . "\0";
+					$content .= chr($this->compression_method == 'zlib' ? 0 : $this->compression_method);
+					$content .= $this->compression_profile;
+				break;
+				case 'tEXt':
+					foreach($this->comments as $keyword => $comment){
+						$content = $keyword . "\0";
+						if(isset($comment['language_tag'])){
+							$content .= $comment['compression'] === false ? "\0\0" : "\1" . ord($comment['compression']);
+							$content .= $comment['language_tag'] . "\0" . $comment['translated_keyword'] . "\0";
+							$content .= $comment['compression'] === 0 ? gzcompress($comment['text'], 9) : $comment['text'];
+							$header = 'iEXt';
+						}elseif(isset($comment['compression'])){
+							$context .= chr($comment['compression']);
+							$content .= $comment['compression'] === 0 ? gzcompress($comment['text']) : $comment['text'];
+							$header = 'zEXt';
+						}else{
+							$comment .= $comment['text'];
+							$header = 'tEXt';
+						}
+						$file .= pack('N', strlen($content)) . $header . $content . xncrypt::hash('crc32', $content);
+					}
+				continue;
+				case 'bKGD':
+					switch($this->color_type){
+						case 0:
+						case 4:
+							if(!isset($this->background_gray))continue;
+							$content .= pack('N', $this->background_gray);
+						break;
+						case 2:
+						case 6:
+							if(!isset($this->background_red) ||
+							   !isset($this->background_green) ||
+							   !isset($this->background_blue))continue;
+							$content .= pack('N', $this->background_red);
+							$content .= pack('N', $this->background_green);
+							$content .= pack('N', $this->background_blue);
+						break;
+						case 3:
+							if(!isset($this->background_index))
+								continue;
+							$content .= pack('N', $this->background_index);
+					}
+				break;
+				case 'pHYs':
+					if(!isset($this->pixels_per_unit_x) ||
+					   !isset($this->pixels_per_unit_y) ||
+					   !isset($this->unit))continue;
+					switch($this->unit){
+						case 'unknown': $unit = 0; break;
+						case 'meter'  : $unit = 1; break;
+						default       : $unit = $this->unit; break;
+					}
+					$content .= pack('N', $this->pixels_per_unit_x);
+					$content .= pack('N', $this->pixels_per_unit_y);
+					$content .= chr($unit);
+				break;
+				case 'sBIT':
+					switch($this->color_type){
+						case 0:
+							if(!isset($this->significant_bits_gray))
+								continue;
+							$content .= chr($this->significant_bits_gray);
+						break;
+						case 2:
+						case 3:
+							if(!isset($this->significant_bits_red) ||
+							   !isset($this->significant_bits_green) ||
+							   !isset($this->significant_bits_blue))continue;
+							$content .= chr($this->significant_bits_red);
+							$content .= chr($this->significant_bits_green);
+							$content .= chr($this->significant_bits_blue);
+						break;
+						case 4:
+							if(!isset($this->significant_bits_gray) ||
+							   !isset($this->significant_bits_alpha))continue;
+								$content .= chr($this->significant_bits_gray);
+								$content .= chr($this->significant_bits_alpha);
+						break;
+						case 6:
+							if(!isset($this->significant_bits_red) ||
+							   !isset($this->significant_bits_green) ||
+							   !isset($this->significant_bits_blue) ||
+							   !isset($this->significant_bits_alpha))continue;
+							$content .= chr($this->significant_bits_red);
+							$content .= chr($this->significant_bits_green);
+							$content .= chr($this->significant_bits_blue);
+							$content .= chr($this->significant_bits_alpha);
+						break;
+					}
+				break;
+				case 'sPLT':
+					if(!isset($this->palette_name) ||
+					   !isset($this->sample_depth_bits) ||
+					   !isset($this->sample_depth_bytes) ||
+					   !isset($this->suggested_palette))continue;
+					$content .= $this->palette_name . "\0";
+					$content .= chr($this->sample_depth_bits);
+					$count = count($this->suggested_palette['red']);
+					for($i = 0; $i < $count; ++$i){
+						$content .= xncrypt::strbe($this->suggested_palette['red'][$i]  , $this->sample_depth_bytes);
+						$content .= xncrypt::strbe($this->suggested_palette['green'][$i], $this->sample_depth_bytes);
+						$content .= xncrypt::strbe($this->suggested_palette['blue'][$i] , $this->sample_depth_bytes);
+						$content .= xncrypt::strbe($this->suggested_palette['alpha'][$i], $this->sample_depth_bytes);
+					}
+				break;
+				case 'tIME':
+					if(isset($this->update_last_modification) && $this->update_last_modification === true)
+						$this->last_modification = gmmktime(gmdate("H"), gmdate("i"), gmdate("s"), gmdate("n"), gmdate("j"), gmdate("Y"));
+					if(!isset($this->last_modification))continue;
+					$last_modification = getdate($this->last_modification);
+					$this->last_modification = gmmktime(
+						ord($data[4]),
+						ord($data[5]),
+						ord($data[6]),
+						ord($data[2]),
+						ord($data[3]),
+						array_key(unpack('n', substr($data, 0, 2)), 1)
+					);
+					$content .= pack('n', $last_modification['year']);
+					$content .= chr($last_modification['mon']);
+					$content .= chr($last_modification['mday']);
+					$content .= chr($last_modification['hours']);
+					$content .= chr($last_modification['minutes']);
+					$content .= chr($last_modification['seconds']);
+				break;
+				case 'oFFs':
+					if(!isset($this->position_x) ||
+					   !isset($this->position_y) ||
+					   !isset($this->offset_unit))continue;
+					switch($this->offset_unit){
+						case 'unknown': $unit = 0; break;
+						case 'meter':   $unit = 1; break;
+						default:        $unit = $this->offset_unit; break;
+					}
+					$content .= xncrypt::strbe($this->position_x, 4, false, true);
+					$content .= xncrypt::strbe($this->position_y, 4, false, true);
+					$content .= chr($unit);
+				break;
+				case 'pCAL':
+					if(!isset($this->calibration_name) ||
+					   !isset($this->original_zero) ||
+					   !isset($this->original_max) ||
+					   !isset($this->equation_type) ||
+					   !isset($this->parameter_count) ||
+					   !isset($this->parameters))continue;
+					$content .= $calibration_name . "\0";
+					$content .= xncrypt::strbe($this->original_zero, 4, false, true);
+					$content .= xncrypt::strbe($this->original_max , 4, false, true);
+					switch($this->equation_type){
+						case 'Linear mapping':
+							$equation_type = 0;
+						break;
+						case 'Base-e exponential mapping':
+							$equation_type = 1;
+						break;
+						case 'Arbitrary-base exponential mapping':
+							$equation_type = 2;
+						break;
+						case 'Hyperbolic mapping':
+							$equation_type = 3;
+					}
+					$content .= chr($equation_type);
+					$content .= chr($this->parameter_count);
+					$content .= implode("\0", $this->parameters);
+				break;
+				case 'sCAL':
+					if(!isset($this->scale_unit) ||
+					   !isset($this->pixel_width) ||
+					   !isset($this->pixel_height))continue;
+					switch($this->scale_unit){
+						case 'unknown': $unit = 0; break;
+						case 'meter':   $unit = 1; break;
+						default:        $unit = $this->scale_unit; break;
+					}
+					$content .= chr($unit);
+					$content .= $this->pixel_width . "\0" . $this->pixel_height;
+				break;
+				case 'gIFg':
+					if(!isset($this->gifs))continue;
+					foreach($this->gifs as $gif){
+						$content = chr($gif['disposal_method']);
+						$content.= chr($gif['user_input_flag']);
+						$content.= pack('n', $gif['delay_time']);
+						$file .= pack('N', strlen($content)) . $header . $content . xncrypt::hash('crc32', $content);
+					}
+				continue;
+				case 'gIFx':
+					if(!isset($this->extenstions))continue;
+					foreach($this->extenstions as $extenstion){
+						$content = $extenstion['application_identifier'];
+						$content.= $extenstion['authentication_code'];
+						$content.= $extenstion['application_data'];
+						$file .= pack('N', strlen($content)) . $header . $content . xncrypt::hash('crc32', $content);
+					}
+				continue;
+				case 'IDAT':
+					if($this->compression_method == 'zlib' && (!isset($this->iphone) || !$this->iphone))
+						foreach($data as $packet){
+							$packet = gzcompress($packet, 9);
+							$file .= pack('N', strlen($content)) . $header . $content . xncrypt::hash('crc32', $content);
+						}
+					else
+						foreach($data as $packet)
+							$file .= pack('N', strlen($content)) . $header . $content . xncrypt::hash('crc32', $content);
+				continue;
+				case 'IEND':
 				break;
 			}
-			$file .= xncrypt::strbe(strlen($content)) . $header . $content . xncrypt::hash('crc32', $content);
+			$file .= pack('N', strlen($content)) . $header . $content . xncrypt::hash('crc32', $content);
 		}
 		return $file;
 	}
@@ -17244,18 +17503,18 @@ class XNBigGraphicPNG {
 					$this->blue_y  = array_value(unpack('N', substr($data, 0, 4)), 1) / 100000;
 				break;
 				case 'sRGB':
-					$this->reindering_intent = xncrypt::intbe($data) / 100000;
+					$this->reindering_intent = array_value(unpack('N', $data), 1);
 					switch($this->reindering_intent){
 						case 0:
 							$this->reindering_intent = 'Perceptual';
 						break;
-						case 1:
+						case 100000:
 							$this->reindering_intent = 'Relative colorimetric';
 						break;
-						case 2:
+						case 200000:
 							$this->reindering_intent = 'Saturation';
 						break;
-						case 3:
+						case 300000:
 							$this->reindering_intent = 'Absolute colorimetric';
 					}
 				break;
@@ -17297,7 +17556,7 @@ class XNBigGraphicPNG {
 					switch($this->color_type){
 						case 0:
 						case 4:
-							$this->background_gray = xncrypt::intbe($data);
+							$this->background_gray = array_value(unpack('N', $data), 1);
 						break;
 						case 2:
 						case 6:
@@ -17306,7 +17565,7 @@ class XNBigGraphicPNG {
 							$this->background_blue  = array_value(unpack('N', substr($data, $this->bit_depth * 2, $this->bit_depth)), 1);
 						break;
 						case 3:
-							$this->background_index = xncrypt::intbe($data);
+							$this->background_index = array_value(unpack('N', $data), 1);
 					}
 				break;
 				case 'pHYs':
@@ -17436,7 +17695,7 @@ class XNBigGraphicPNG {
 						if(isset($this->iphone) && $this->iphone)
 							fwrite($this->pixels, $data);
 						else
-							fwrite($this->pixels, gzinflate(substr($data, 2, -4)));
+							fwrite($this->pixels, gzuncompress($data));
 					else
 						fwrite($this->pixels, $data);
 				break;
@@ -17697,6 +17956,9 @@ class XNStream {
 		}fseek($stream, -1, SEEK_END);
 		return fgetc($stream);
 	}
+	public static function skip($stream){
+		fseek($stream, 1, SEEK_CUR);
+	}
 	public static function packet($stream, $length = 1, $format = null, $back = null){
 		if($length === 0)return 0;
 		if($back === true){
@@ -17865,6 +18127,97 @@ class XNStream {
 		$c = self::utf8get($stream);
 		fseek($stream, 0);
 		return $c;
+	}
+	public static function utf8skip($stream){
+		return self::utf8get($stream) !== false;
+	}
+	public static function copy($from, $to, $offset = null, $length = null, $back = null){
+		if($back === true)$locate = ftell($from);
+		if($offset !== null)
+			self::seek($from, $offset);
+		if($length === null)$length = -1;
+		elseif($length < 0)$length -= 1;
+		$res = stream_copy_to_stream($from, $to, $length);
+		if($back === true)fseek($from, $locate);
+		return $res;
+	}
+	public static function xnsizeread($stream){
+		$l = fgetc($stream);
+		$r = fread($stream, $l);
+		$l = xncrypt::sizedecode($l . $r);
+		return fread($stream, $l);
+	}
+	public static function xnsizewrite($stream, $message){
+		return fwrite($stream, xncrypt::sizeencode($message) . $message);
+	}
+	public static function forcewrite($stream, $message, $length = null){
+		if($length === null)$length = strlen($message);
+		$writed = 0;
+		while($writed !== $length){
+			$writed += $result = fwrite($stream, substr($message, $writed), $length - $writed);
+			if($result === false || $result === 0)
+				return false;
+		}
+		return true;
+	}
+	public static function predict($stream, $predict, $back = null){
+		if($back === true){
+			$length = strlen($predict);
+			$res = fread($stream, $length) == $predict;
+			fseek($stream, -$length, SEEK_CUR);
+			return $res;
+		}return fread($stream, strlen($predict)) == $predict;
+	}
+	public static function predoned($stream, $predoned){
+		$length = strlen($predict);
+		fseek($stream, -$length, SEEK_CUR);
+		return fread($stream, $length) == $predoned;
+	}
+	public static function writeln($stream, $content, $length = null){
+		if($length === null)
+			return fwrite($stream, $content . "\n");
+		$res = fwrite($stream, $content, $length);
+		return fwrite($stream, "\n", 1) + $res;
+	}
+	public static function readto($stream, $to = "\n", $length = null, $back = null){
+		if($back === true)$locate = ftell($stream);
+		if($to == "\n"){
+			if($length === null)
+				$res = feof($stream) ? substr(fgets($stream), 0, -1) : false;
+			else
+				$res = feof($stream) ? rtrim(fgets($stream, $length), "\n") : false;
+			if($back === true)fseek($stream, $locate);
+			return $res;
+		}
+		$res = '';
+		if($length === null){
+			while(($c = fgetc($stream)) !== $to && $c !== false)
+				$res .= $c;
+			if($res === '' && $c === false)return false;
+			if($back === true)fseek($stream, $locate);
+			return $res;
+		}
+		while(($c = fgetc($stream)) !== $to && $c !== false && --$length >= 0)
+			$res .= $c;
+		if($res === '' && $c === false)return false;
+		if($back === true)fseek($stream, $locate);
+		return $res;
+	}
+	public static function readrto($stream, $to = "\n", $length = null, $back = null){
+		if($back === true)$locate = ftell($stream);
+		$res = '';
+		if($length === null){
+			while(($c = self::prev($stream)) !== $to && $c !== false)
+				$res .= $c;
+			if($res === '' && $c === false)return false;
+			if($back === true)fseek($stream, $locate);
+			return $res;
+		}
+		while(($c = self::prev($stream)) !== $to && $c !== false && --$length >= 0)
+			$res .= $c;
+		if($res === '' && $c === false)return false;
+		if($back === true)fseek($stream, $locate);
+		return $res;
 	}
 }
 
