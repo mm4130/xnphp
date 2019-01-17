@@ -630,11 +630,10 @@ class XNError extends Exception {
 		$this->from = $from;
 		$debug = debug_backtrace();
 		$debug = end($debug);
-		$date = date("Y-n-j G:i:s");
 		$this->file = $debug['file'];
 		$this->line = $debug['line'];
-		$console = "[$date]XN $level > $from: $text in {$debug['file']} on line {$debug['line']}";
-		$message = "[$date]<b>XN $level</b> &gt; <i>$from</i>: " . nl2br($text). " in <b>{$debug['file']}</b> on line <b>{$debug['line']}</b><br />";
+		$console = "XN $level > $from: $text in {$debug['file']} on line {$debug['line']}";
+		$message = "<b>XN $level</b> &gt; <i>$from</i>: " . nl2br($text). " in <b>{$debug['file']}</b> on line <b>{$debug['line']}</b><br />";
 		$this->HTMLMessage = $message;
 		$this->consoleMessage = $console;
 		$this->message = "XN $level > $from: $text";
@@ -1351,15 +1350,16 @@ class TelegramBot {
 	}
 	public function deleteMessage($chat, $message, $level = 3){
 		if(is_array($message)){
+			$now = $this->getMessage();
+			if($now === false)$now = 0;
 			foreach($message as $msg)
 				$this->request("deleteMessage", array(
-					"chat_id"	=> $chat,
-					"message_id" => $msg
+					"chat_id"	 => $chat,
+					"message_id" => $msg < 0 ? abs($now + $msg) : $msg
 				), $level);
 			return true;
-		}
-		return $this->request("deleteMessage", array(
-			"chat_id"	=> $chat,
+		}return $this->request("deleteMessage", array(
+			"chat_id"	 => $chat,
 			"message_id" => $message
 		), $level);
 	}
@@ -1583,23 +1583,23 @@ class TelegramBot {
 	public function getUser($update = false){
 		$update = $this->getUpdateInType($update);
 		if(!$update)return false;
-		if(isset($update->message))return (object)array("chat" => $update->message->chat, "from" => $update->from);
-		if(!isset($update->chat))return (object)array("chat" => $update->from, "from" => $update->from);
-		return (object)array("chat" => $update->chat, "from" => $update->from);
+		if(isset($update->message))return (object)array('chat' => $update->message->chat, 'from' => $update->message->from);
+		if(isset($update->chat))return (object)array('chat' => $update->chat, 'from' => $update->from);
+		if(isset($update->from))return (object)array('chat' => $update->from, 'from' => $update->from);
+		return false;
 	}
 	public function getMessage($update = false){
 		$update = $this->getUpdateInType($update);
 		if(!$update)return false;
-		if(isset($update->message))
-			return $update->message->message_id;
-		if(isset($update->message_id))
-			return $update->message_id;
+		if(isset($update->message_id))return $update->message_id;
+		if(isset($update->message))return $update->message->message_id;
 		return false;
 	}
 	public function getDate($update = false){
 		$update = $this->getUpdateInType($update);
 		if(!$update)return false;
 		if(isset($update->date))return $update->date;
+		if(isset($update->message))return $update->message->date;
 		return false;
 	}
 	public function getData($update = false){
@@ -1607,6 +1607,7 @@ class TelegramBot {
 		if(!$update)return false;
 		if(isset($update->text))return $update->text;
 		if(isset($update->query))return $update->query;
+		if(isset($update->caption))return $update->caption;
 		return false;
 	}
 	public function isChat($user, $update = false){
@@ -1643,6 +1644,7 @@ class TelegramBot {
 		if(isset($message->sticker))return "sticker";
 		if(isset($message->document))return "document";
 		if(isset($message->video_note))return "videonote";
+		if(isset($message->thumb_nail))return "thumb_nail";
 		return false;
 	}
 	public function fileInfo($message = false){
@@ -1655,6 +1657,7 @@ class TelegramBot {
 		if(isset($message->sticker))return $message->sticker;
 		if(isset($message->document))return $message->document;
 		if(isset($message->video_note))return $message->video_note;
+		if(isset($message->thumb_nail))return $message->thumb_nail;
 		return false;
 	}
 	public function isFile($message = false){
@@ -1672,33 +1675,6 @@ class TelegramBot {
 		else unlink($name);
 		return $r;
 	}
-	public function toGFile($file){
-		$file = xncrypt::base64urldecode($file);
-		$token = xncrypt::base64urldecode($this->token);
-		$file = chr(strlen($file)). $file;
-		return xncrypt::base64urlencode($file . $token);
-	}
-	public function fromGFile($chat, $file, $name, $type = "document", $level = 3){
-		$r = xncrypt::base64urldecode($file);
-		$p = ord($r[0]);
-		$file = substr($r, 1, $p);
-		$token = substr($r, $p + 1);
-		$bot = new TelegramBot($token);
-		$get = false;
-		if(file_exists($name))$get = file_get_contents($name);
-		file_put_contents($name, $bot->downloadFile($file, $level));
-		$bot->sendMedia($chat, $type, new CURLFile($name), $level);
-		if($get)file_put_contents($name, $get);
-		else unlink($name);
-	}
-	public function downloadGFile($file, $level = 3){
-		$r = xncrypt::base64urldecode($file);
-		$p = ord($r[0]);
-		$file = substr($r, 1, $p);
-		$token = substr($r, $p + 1);
-		$bot = new TelegramBot($token);
-		return $bot->downloadFile($file, $level);
-	}
 	public function sendUpdate($url, $update = false){
 		if($update === false)$update = $this->dataUpdate();
 		$c = curl_init($url);
@@ -1709,385 +1685,114 @@ class TelegramBot {
 		curl_close($c);
 		return $r;
 	}
-	public function sendMessageFromUpdate($chat, $update = false, $args = array(), $level = 3){
-		if($update)$update = $this->dataUpdate()->message;
+	public function requestFromUpdate($chat, $update = false, $args = array(), $level = 3){
+		if(!$update)$update = $this->lastUpdate()->message;
 		elseif(isset($update->message))$update = $update->message;
-		$args['file'] = isset($args['file']) 				? $args['file'] :
-						isset($args['document']) 			? $args['document'] :
-						isset($args['video']) 				? $args['video'] :
-						isset($args['voice']) 				? $args['voice'] :
-						isset($args['video_note']) 			? $args['video_note'] :
-						isset($args['audio']) 				? $args['audio'] :
-						isset($args['sticker']) 			? $args['sticker'] :
-						isset($args['photo_file_id'])   	? $args['photo_file_id'] :
-						isset($args['document_file_id'])	? $args['document_file_id'] :
-						isset($args['video_file_id'])   	? $args['video_file_id'] :
-						isset($args['voice_file_id']) 		? $args['voice_file_id'] :
-						isset($args['video_note_file_id']) 	? $args['video_note_file_id'] :
-						isset($args['audio_file_id']) 		? $args['audio_file_id'] :
-						isset($args['sticker_file_id']) 	? $args['sticker_file_id'] :
-						isset($args['photo_url']) 			? $args['photo_url'] :
-						isset($args['document_url']) 		? $args['document_url'] :
-						isset($args['video_url']) 			? $args['video_url'] :
-						isset($args['voice_url']) 			? $args['voice_url'] :
-						isset($args['video_note_url']) 		? $args['video_note_url'] :
-						isset($args['audio_url']) 			? $args['audio_url'] :
-						isset($args['sticker_url']) 		? $args['sticker_url'] :
-						isset($args['file_id']) 			? $args['file_id'] :
-						isset($args['photo']) 				? $args['photo'] :
-						false;
-		if($args['file']) {
-			$args['photo'] = $args['document'] = $args['video'] = $args['voice'] = $args['video_note'] = $args['audio'] = $args['sticker'] = $args['photo_file_id'] = $args['document_file_id'] = $args['video_file_id'] = $args['voice_file_id'] = $args['video_note_file_id'] = $args['audio_file_id'] = $args['sticker_file_id'] = $args['photo_url'] = $args['document_url'] = $args['video_url'] = $args['voice_url'] = $args['video_note_url'] = $args['audio_url'] = $args['sticker_url'] = $args['file_id'] = $args['file'];
-			if(isset($update->caption))	  $args['caption'] = isset($args['caption']) ? $args['caption'] : $update->caption;
-			if(isset($update->photo))	  return $this->sendPhoto($chat, 	 isset($args['photo']) 		? $args['photo'] 	  : end($update->photo)->file_id, $args, $level);
-			if(isset($update->video))	  return $this->sendVideo($chat, 	 isset($args['video']) 		? $args['video'] 	  : $update->video->file_id, 	  $args, $level);
-			if(isset($update->voice))	  return $this->sendVoice($chat, 	 isset($args['voice']) 		? $args['voice'] 	  : $update->voice->file_id, 	  $args, $level);
-			if(isset($update->audio))	  return $this->sendAudio($chat,	 isset($args['audio']) 		? $args['audio'] 	  : $update->audio->file_id, 	  $args, $level);
-			if(isset($update->video_note))return $this->sendVideoNote($chat, isset($args['video_note']) ? $args['video_note'] : $update->video_note->file_id, $args, $level);
-			if(isset($update->sticker))	  return $this->sendSticker($chat, 	 isset($args['sticker']) 	? $args['sticker'] 	  : $update->sticker->file_id, 	  $args, $level);
-			if(isset($update->document))  return $this->sendDocument($chat,  isset($args['document']) 	? $args['document']   : $update->document->file_id,   $args, $level);
-		}
-		if(isset($update->text))return $this->sendMessage($chat, isset($args['text'])? $args['text'] : $update->text, $args, $level);
-		if(isset($update->contact)) {
-			$args['phone'] = isset($args['phone'])? $args['phone'] : isset($args['number'])? $args['number'] : isset($args['phone_number'])? $args['phone_number'] : false;
-			$args['first_name'] = isset($args['first_name'])? $args['first_name'] : $update->contact->first_name;
-			$args['last_name'] = isset($args['last_name'])? $args['last_name'] : isset($update->contact->last_name)? $update->contact->last_name : false;
+		if(!isset($update->message_id))return false;
+		if(isset($update->photo)){$method = 'sendPhoto';$obj = $update->photo;}
+		elseif(isset($update->video)){$method = 'sendVideo';$obj = $update->video;}
+		elseif(isset($update->voice)){$method = 'sendVoice';$obj = $update->voice;}
+		elseif(isset($update->audio)){$method = 'sendAudio';$obj = $update->audio;}
+		elseif(isset($update->video_note)){$method = 'sendVideoNote';$obj = $update->video_note;}
+		elseif(isset($update->sticker)){$method = 'sendSticker';$obj = $update->sticker;}
+		elseif(isset($update->document)){$method = 'sendDocument';$obj = $update->document;}
+		elseif(isset($update->text)){$method = 'sendMessage';$obj = $update;}
+		elseif(isset($update->contact)){$method = 'sendContact';$obj = $update->contact;}
+		elseif(isset($update->location)){$method = 'sendLocation';$obj = $update->location;}
+		elseif(isset($update->venue)){$method = 'sendVenue';$obj = $update->venue;}
+		else return false;
+		if(isset($update->caption))$args['caption'] = isset($args['caption']) ? $args['caption'] : $update->caption;
+		if($chat !== '' && $chat !== 'chat')$args['chat'] = $chat;
+		elseif($chat === 'from')$args['chat'] = $update->from->id;
+		else $args['chat'] = $update->chat->id;
+		$args = $this->parse_args($method, $args);
+		$args['file_id'] = isset($args['file_id']) ? $args['file_id'] : $obj->file_id;
+		if($method == 'sendContact'){
+			$args['phone_number'] = isset($args['phone_number']) ? $args['phone_number'] : $obj->phone_number;
+			$args['first_name'] = isset($args['first_name'])? $args['first_name'] : $obj->first_name;
+			$args['last_name'] = isset($args['last_name']) ? $args['last_name'] : (isset($update->last_name) ? $update->last_name : false);
 			if($args['last_name'] === false)unset($args['last_name']);
-			return $this->sendContact($chat, $args['phone'] ? $args['phone'] : $update->contact->phone_number, $args, $level);
-		}
-		if(isset($update->location)) {
-			$latitude = isset($args['latitude']) ? $args['latitude'] : $update->location->latitude;
-			$longitude = isset($args['longitude']) ? $args['longitude'] : $update->location->longitude;
-			return $this->sendLocation($chat, $latitude, $longitude, $args, $level);
-		}
-		if(isset($update->venue)) {
-			$latitude = isset($args['latitude']) ? $args['latitude'] : $update->venue->latitude;
-			$longitude = isset($args['longitude']) ? $args['longitude'] : $update->venue->longitude;
-			$address = isset($args['address']) ? $args['address'] : $update->venue->address;
-			$title = isset($args['title']) ? $args['title'] : $update->venue->title;
-			return $this->sendVenue($laitude, $longitude, $address, $title, $args, $level);
-		}
-		return false;
+		}elseif($method == 'sendLocation'){
+			$args['latitude'] = isset($args['latitude']) ? $args['latitude'] : $obj->latitude;
+			$args['longitude'] = isset($args['longitude']) ? $args['longitude'] : $obj->longitude;
+		}elseif($method == 'sendVenue'){
+			$args['latitude'] = isset($args['latitude']) ? $args['latitude'] : $obj->latitude;
+			$args['longitude'] = isset($args['longitude']) ? $args['longitude'] : $obj->longitude;
+			$args['address'] = isset($args['address']) ? $args['address'] : $obj->address;
+			$args['title'] = isset($args['title']) ? $args['title'] : $obj->title;
+		}return $this->requset($method, $args, $level);
 	}
 	public function parse_args($method, $args = array()){
 		if(!$this->parser)return $args;
-		if(isset($args['user'])){
-			$args['user_id'] = $args['user'];
-			unset($args['user']);
-		}
-		if(isset($args['chat'])){
-			$args['chat_id'] = $args['chat'];
-			unset($args['chat']);
-		}
-		if(isset($args['message'])){
-			$args['message_id'] = $args['message'];
-			unset($args['message']);
-		}
-		elseif(isset($args['msg'])){
-			$args['message_id'] = $args['msg'];
-			unset($args['msg']);
-		}
-		elseif(isset($args['msg_id'])){
-			$args['message_id'] = $args['msg_id'];
-			unset($args['msg_id']);
-		}
-		if(!isset($args['chat_id']) && isset($args['message_id'])) {
-			$args['inline_message_id'] = $args['message_id'];
-			unset($args['message_id']);
-		}
-		if(isset($args['id'])){
-			if($method == 'answerCallbackQuery')
-				$args['callback_query_id'] = $args['id'];
-			else
-				$args['inline_query_id'] = $args['id'];
+		$method = strtolower($method);
+		array_key_alias($args, 'user_id', 'user');
+		array_key_alias($args, 'chat_id', 'chat', 'peer');
+		array_key_alias($args, 'message_id', 'message', 'msg', 'msg_id');
+		if(!isset($args['chat_id']))
+			array_key_alias($args, 'inline_message_id', 'message_id');
+		if($method == 'answercallbackquery')
+			array_key_alias($args, 'callback_query_id', 'id');
+		elseif($method == 'answerinlinequery')
+			array_key_alias($args, 'inline_query_id', 'id');
+		elseif(isset($args['id']))
 			unset($args['id']);
-		}
-		if(isset($args['alert'])){
-			$args['show_alert'] = (bool)$args['alert'];
-			unset($args['alert']);
-		}
-		if(isset($args['mode'])){
-			$args['parse_mode'] = $args['mode'];
-			unset($args['mode']);
-		}
-		elseif(isset($args['parse'])){
-			$args['parse_mode'] = $args['parse'];
-			unset($args['parse']);
-		}
-		if(isset($args['markup'])){
-			$args['reply_markup'] = $args['markup'];
-			unset($args['markup']);
-		}
-		if(isset($args['reply'])){
-			$args['reply_to_message_id'] = $args['reply'];
-			unset($args['reply']);
-		}
-		if(isset($args['from_chat'])){
-			$args['from_chat_id'] = $args['from_chat'];
-			unset($args['from_chat']);
-		}
-		if(isset($args['phone'])){
-			$args['phone_number'] = $args['phone'];
-			unset($args['phone']);
-		}
+		array_key_alias($args, 'show_alert', 'alert');
+		array_key_alias($args, 'parse_mode', 'parse', 'mode');
+		array_key_alias($args, 'reply_markup', 'markup');
+		array_key_alias($args, 'reply_to_message_id', 'reply_to_message', 'reply_to_msg_id', 'reply_to_msg', 'reply_to', 'reply');
+		array_key_alias($args, 'from_chat_id', 'from_chat');
+		array_key_alias($args, 'phone_number', 'phone');
 		if(isset($args['allowed_updates']) && (is_array($args['allowed_updates']) || is_object($args['allowed_updates'])))
 			$args['allowed_updates'] = json_encode($args['allowed_updates']);
 		if(isset($args['reply_markup']) && is_string($args['reply_markup']) && $this->menu->exists($args['reply_markup']))
 			$args['reply_markup'] = $this->menu->get($args['reply_markup']);
 		if(isset($args['reply_markup']) && (is_array($args['reply_markup']) || is_object($args['reply_markup'])))
 			$args['reply_markup'] = json_encode($args['reply_markup']);
-		if(isset($args['chat_id']) && is_object($args['chat_id'])) {
-			if(isset($args['chat_id']) && isset($args['chat_id']->update_id)) {
-				$args['chat_id'] = @$this->getUpdateInType($args['chat_id']);
-				$args['chat_id'] = isset($args['chat_id']->chat) ? $args['chat_id']->chat->id : @$args['chat_id']->from->id;
-			}
-			else $args['chat_id'] = isset($args['chat_id']->chat)? $args['chat_id']->chat->id : @$args['chat_id']->from->id;
-		}
-		if(isset($args['user_id']) && is_object($args['user_id'])) {
-			if(isset($args['user_id']->update_id)) {
-				$args['user_id'] = @$this->getUpdateInType($args['user_id']);
-				$args['user_id'] = isset($args['user_id']->chat)? $args['user_id']->chat->id : @$args['user_id']->from->id;
-			}
-			else $args['user_id'] = isset($args['user_id']->chat)? $args['user_id']->chat->id : @$args['user_id']->from->id;
-		}
 		switch($method){
 			case 'getFile':
-				if(isset($args['file'])){
-					$args['file_id'] = $args['file'];
-					unset($args['file']);
-				}
+				array_key_alias($args, 'file_id', 'file');
 			break;
 			default:
 				switch($method){
-					case 'sendPhoto':
-						$file = isset($args['photo_id'])?$args['photo_id']:false;
-					break;
-					case 'sendAudio':
-						$file = isset($args['audio_id'])?$args['audio_id']:false;
-					break;
-					case 'sendVideo':
-						$file = isset($args['video_id'])?$args['video_id']:false;
-					break;
-					case 'sendVoice':
-						$file = isset($args['voice_id'])?$args['voice_id']:false;
-					break;
-					case 'sendSticker':
-						$file = isset($args['sticker_id'])?$args['sticker_id']:false;
-					break;
-					case 'sendDocuement':
-						$file = isset($args['document_id'])?$args['document_id']:false;
-					break;
-					case 'sendVideoNote':
-						$file = isset($args['video_note_id'])?$args['video_note_id']:false;
-					break;
+					case 'sendphoto': $argname = 'photo_id'; break;
+					case 'sendaudio': $argname = 'audio_id'; break;
+					case 'sendvideo': $argname = 'video_id'; break;
+					case 'sendvoice': $argname = 'voice_id'; break;
+					case 'sendsticker': $argname = 'sticker_id'; break;
+					case 'senddocuement': $argname = 'document_id'; break;
+					case 'sendvideonote': $argname = 'video_note_id'; break;
+					default: break 2;
 				}
-				if(!isset($file))break;
-				if($file === false){
-					if(isset($args['file'])){
-						$file = $args['file'];
-						unset($args['file']);
-					}elseif(isset($args['file_id'])){
-						$file = $args['file_id'];
-						unset($args['file_id']);
-					}
-					else break;
-				}
+				array_key_alias($args, 'file', $argname, 'file_id');
+				if(isset($args['file'])){
+					$file = $args['file'];
+					unset($args['file']);
+				}else break;
 				if(is_string($file) && file_exists($file))
 					$file = new CURLFile($file);
-				switch($method){
-					case 'sendPhoto':
-						$args['photo_id'] = $file;
-					break;
-					case 'sendAudio':
-						$args['audio_id'] = $file;
-					break;
-					case 'sendVideo':
-						$args['video_id'] = $file;
-					break;
-					case 'sendVoice':
-						$args['voice_id'] = $file;
-					break;
-					case 'sendSticker':
-						$args['sticker_id'] = $file;
-					break;
-					case 'sendDocuement':
-						$args['document_id'] = $file;
-					break;
-					case 'sendVideoNote':
-						$args['video_note_id'] = $file;
-					break;
-				}
-				unset($file);
+				$args[$argname] = $file;
 		}
-		if(isset($args['chat_id']) && ($args['chat_id'] == 'chat' || $args['chat_id'] === ''))
-			$args['chat_id'] = $this->getUser()->chat;
-		elseif(isset($args['chat_id']) && $args['chat_id'] == 'user')
-			$args['chat_id'] = $this->getUser()->from;
-		if(isset($args['from_chat_id']) && ($args['from_chat_id'] == 'chat' || $args['from_chat_id'] === ''))
-			$args['from_chat_id'] = $this->getUser()->chat;
-		elseif(isset($args['from_chat_id']) && $args['from_chat_id'] == 'user')
-			$args['from_chat_id'] = $this->getUser()->from;
-		if(isset($args['user_id']) && $args['user_id'] == 'chat')
-			$args['user_id'] = $this->getUser()->chat;
-		elseif(isset($args['user_id']) && ($args['user_id'] == 'user' || $args['user_id'] === ''))
-			$args['user_id'] = $this->getUser()->from;
-		$msg = $this->getMessage();
-		if($msg !== false && isset($args['message_id']) && ($args['message_id'] == 'message' || $args['message_id'] === ''))
-			$args['message_id'] = $msg;
-		if($msg !== false && isset($args['reply_from_message_id']) && ($args['reply_from_message_id'] == 'message' || $args['reply_from_message_id'] === ''))
-			$args['reply_from_message_id'] = $msg;
-		return $args;
-	}
-}
-class TelegramBotTestOutput extends TelegramBot {
-	public function __construct($token = ''){
-		$this->token = $token;
-		$this->keyboard = new TelegramBotKeyboard;
-		$this->inlineKeyboard = new TelegramBotInlineKeyboard;
-		$this->queryResult = new TelegramBotQueryResult;
-		$this->menu = new TelegramBotButtonSave;
-		$this->send = new TelegramBotSends($this);
-		$this->msgs = new TelegramBotSaveMsgs;
-		$this->forceReply = array("force_reply" => true);
-		$this->removeKeyboard = array("remove_keyboard" => true);
-		println("token : $token\n");
-	}
-	public function request($method, $args = array(), $level = 3, $result = array()){
-		$args = $this->parse_args($method, $args);
-		if($this->autoaction && isset($args['chat_id'])) {
-			switch(strtolower($method)) {
-			case "sendmessage":
-				$action = "typing";
-			break;
-			case "sendphoto":
-				$action = "upload_photo";
-			break;
-			case "sendvoice":
-				$action = "record_audio";
-			break;
-			case "sendvideo":
-				$action = "upload_video";
-			break;
-			case "sendvideonote":
-				$action = "uplaod_video_note";
-			break;
-			case "sendaudio":
-				$action = "upload_audio";
-			break;
-			case "senddocument":
-				$action = "upload_document";
-			break;
-			default:
-				$action = false;
-			}
-			if($action)
-				$this->request("sendChatAction", array(
-					"chat_id" => $args['chat_id'],
-					"action" => $action
-				));
-		}
-		println("# $method");
-		foreach($args as $name => $arg)
-			switch($name){
-				case 'chat_id':
-					println("| to : $arg");
-				break;
-				case 'from_chat_id':
-					println("| from : $arg");
-				break;
-				case 'user_id':
-					println("| to : $arg");
-				break;
-				case 'text':
-					println("| text : $arg");
-				break;
-				case 'photo_id':
-				case 'video_id':
-				case 'voice_id':
-				case 'audio_id':
-				case 'thumb':
-				case 'thumb_id':
-				case 'file_id':
-				case 'file':
-				case 'document_id':
-				case 'sticker_id':
-					println("| " . array_value(explode('_', $name), 0) . " : $arg");
-				break;
-				case 'video_note_id':
-					println("| video note : $arg");
-				break;
-				case 'longitude':
-				case 'latitude':
-				case 'address':
-					println("| location $name : $arg");
-				break;
-				case 'title':
-					println("| title : $arg");
-				break;
-				case 'parse_mode':
-					println("| parse mode : $arg");
-				break;
-				case 'message_id':
-					println("| message : $arg");
-				break;
-				case 'reply_to_message_id':
-					println("| reply to message : $arg");
-				break;
-				case 'mark_down':
-					$data = '| ';
-					$args = json_decode($arg, true);
-					if(isset($arg['keyboard'])){
-						if(isset($arg['keyboard_resize']) && $arg['keyboard_resize'])
-							$data .= 'small ';
-						$data .= 'keyboard ';
-						$arg = $arg['keyboard'];
-					}elseif(isset($arg['inline_keyboard'])){
-						$data .= 'inline keyboard';
-						$arg = $arg['inline_keyboard'];
-					}else break;
-					println($data);
-					foreach($arg as $line){
-						println('| line ' . count($line) . 'buttons');
-						foreach($line as $btn){
-							println('| | ' . $btn['text']);
-							if(isset($btn['url']))
-								println('| | | URL ' . $btn['url']);
-							elseif(isset($btn['switch_inline_query']))
-								println('| | | switch inline query : ' . $btn['switch_inline_query']);
-							elseif(isset($btn['switch_inline_query_current_chat']))
-								println('| | | switch inline query current chat : ' . $btn['switch_inline_query_current_chat']);
-							elseif(isset($btn['callback_data']))
-								println('| | | callback query : ' . $btn['callback_query']);
-							else continue;
-						}
-					}
-				break;
-				case 'caption':
-					println("| caption : $arg");
-				break;
-				case 'phone_number':
-					println("| phone number : $arg");
-				break;
-				case 'duration':
-					println("| $name : $arg");
-				break;
-				case 'first_name':
-					println("| first name : $arg");
-				break;
-				case 'last_name':
-					println("| last name : $arg");
-				break;
-				case 'callback_query_id':
-					println("| callback query id : $arg");
-				break;
-				case 'inline_query_id':
-					println("| inline query id : $arg");
-				break;
-				default:
-					println("| $name : $arg");
-			}
-		echo "\n";
-		return (object)array('ok' => true, 'result' => json_decode(json_encode($result)));
+		$user = $this->getUser();
+		if($user !== false){
+			if(isset($args['chat_id']) && ($args['chat_id'] == 'chat' || $args['chat_id'] === ''))
+				$args['chat_id'] = $this->getUser()->chat->id;
+			elseif(isset($args['chat_id']) && $args['chat_id'] == 'user')
+				$args['chat_id'] = $this->getUser()->from->id;
+			if(isset($args['from_chat_id']) && ($args['from_chat_id'] == 'chat' || $args['from_chat_id'] === ''))
+				$args['from_chat_id'] = $this->getUser()->chat->id;
+			elseif(isset($args['from_chat_id']) && $args['from_chat_id'] == 'user')
+				$args['from_chat_id'] = $this->getUser()->from->id;
+			if(isset($args['user_id']) && $args['user_id'] == 'chat')
+				$args['user_id'] = $this->getUser()->chat->id;
+			elseif(isset($args['user_id']) && ($args['user_id'] == 'user' || $args['user_id'] === ''))
+				$args['user_id'] = $this->getUser()->from->id;
+		}$msg = $this->getMessage();
+		if($msg !== false){
+			if(isset($args['message_id']) && ($args['message_id'] == 'message' || $args['message_id'] === ''))
+				$args['message_id'] = $msg;
+			if(isset($args['reply_to_message_id']) && ($args['reply_to_message_id'] == 'message' || $args['reply_to_message_id'] === ''))
+				$args['reply_to_message_id'] = $msg;
+		}return $args;
 	}
 }
 class TelegramLink {
@@ -3822,26 +3527,6 @@ function chrget($chr){
 	$chr%= 256;
 	return $chr < 0 ? $chr + 256 : $chr;
 }
-function str_offset($str, $algo = 'x+y'){
-	for($c = 0; isset($str[$c]); ++$c)$str[$c] = chr(chrget((int)eval("return " . str_replace(array('x', 'y'), array(ord($str[$c]), $c), $algo). ";")));
-	return $str;
-}
-function str_offset_encode($str, $key = 'x'){
-	if($key === null)$key = "\x01";
-	for($c = 0; isset($key[$c]); ++$c)$algo.= '+' . ord($key[$c]). '*y';
-	return str_foffset($str, $algo);
-}
-function str_offset_decode($str, $key = 'x'){
-	if($key === null)$key = "\x01";
-	for($c = 0; isset($key[$c]); ++$c)$algo.= '-' . ord($key[$c]). '*y';
-	return str_foffset($str, $algo);
-}
-function REMOTE_ADDTR_encode($r){
-	return pack('c*', explode('.', $r));
-}
-function REMOTE_ADDTR_decode($r){
-	return implode('.', unpack('c*', $r));
-}
 define("SET_BYTES_RIGHT",1);
 define("SET_BYTES_LEFT",2);
 function set_bytes($data,$count,$by = "\0",$type = 2){
@@ -4360,6 +4045,15 @@ class XNString {
 		$l1 = strlen($string1);
 		$l2 = strlen($string2);
 		return substr(str_repeat($string2, ceil($l1 / $l2)), 0, $l1);
+	}
+	public static function translit($string){
+		return xncrypt::dictencode($string, xncrypt::dictget(xndata("encoding-translit")));
+	}
+	public static function toupper($string){
+		return xncrypt::dictencode($string, xncrypt::dictget(xndata("encoding_upperlower")));
+	}
+	public static function tolower($string){
+		return xncrypt::dictdecode($string, xncrypt::dictget(xndata("encoding_upperlower")));
 	}
 }
 function script_runtime(){
@@ -6768,6 +6462,17 @@ if(!is_function('class_alias')){
 		eval("class $to extends $from {}");
 	}
 }
+function array_key_alias(&$array, $key){
+	foreach(array_slice(func_get_args(), 2) as $arg){
+		if(isset($array[$arg]) && $array[$arg] !== null)
+			$res = $array[$arg];
+		unset($array[$arg]);
+	}
+	if(isset($res))
+		$array[$key] = $res;
+	else return false;
+	return true;
+}
 function treelow_encode($str){
 	$tree = str_split($str);
 	foreach($tree as &$value){
@@ -8932,7 +8637,15 @@ class XNMath {
 		return $r;
 	}
 	public static function gcd($a, $b){
-		return $b > 0 ? self::gcd($b, $a % $b): $a;
+		return $b > 0 ? self::gcd($b, $a % $b) : $a;
+	}
+	public static function lcm($a, $b){
+		return $a * $b / self::gcd($a, $b);
+	}
+	public static function infdiv($a, $b){
+		if($a == 0 && $b == 0)return 0;
+		if($b == 0)return INF;
+		return $a / $b;
 	}
 	public static function floord($a, $x){
 		if($a == floor($a))
@@ -9088,7 +8801,7 @@ class XNMath {
 				$bin |= $clone & 0x1;
 				$clone >>= 1;
 			}
-		return $bin;
+		return (int)$bin;
 	}
 	public static function bin($x){
 		$l = strlen(decbin(PHP_INT_MAX));
@@ -9100,6 +8813,9 @@ class XNMath {
 	}
 	public static function neg($x){
 		return bindec(xnbinary::neg(decbin($x)));
+	}
+	public static function isneg($x){
+		return ((string)$x)[0] === '-';
 	}
 	public static function bmax($x){
 		return (1 << strlen(decbin($x < 0 ? -$x : $x))) - 1;
@@ -9148,6 +8864,9 @@ class XNMath {
 		$l = strlen(decbin($number < 0 ? -$number : $number));
 		return $length === null ? ($number & ((1 << $start) - 1)) | ($to << $start) | (($number & ((1 << ($l - $start)) - 1)) << ($start + $tl)) :
 			($number & ((1 << $start) - 1)) | (($to & ((1 << $length) - 1)) << $start) | (($number & ((1 << ($l - $start - $length)) - 1)) << $start);
+	}
+	public static function wrev($number){
+		return self::unbin(array_map('strrev', str_split(self::bit($number), 2)));
 	}
 	public static function clamp($x, $y, $z){
 		return max($y, min($x, $z));
@@ -9271,6 +8990,57 @@ class XNMath {
 	public static function shll($a, $b){
 		return ($t = ($a & 0xffffffff) << ($b & 0x1f)) & 0x80000000 ? $t | 0xffffffff00000000 : $t & 0xffffffff;
 	}
+	public static function safeint($x){
+		if(is_int($x) || (php_uname('m') & "\xDF\xDF\xDF") != 'ARM')
+            return $x;
+        return (fmod($x, 0x80000000) & 0x7FFFFFFF) | ((fmod(floor($x / 0x80000000), 2) & 1) << 31);
+	}
+	public static function rtr($x, $y){
+		$l = strlen(decbin($x < 0 ? -$x : $x));
+		return ($x >> $y) | (($x & ((1 << $y) - 1)) << $l - $y);
+	}
+	public static function rtl($x, $y){
+		$l = strlen(decbin($x < 0 ? -$x : $x));
+		return (($x & ((1 << $l - $y) - 1)) << $y) | ($x >> $l - $y);
+	}
+	public static function zerotrim($x){
+		if($x == 0)return 0;
+		while(($x & 1) === 0)$x >>= 1;
+		return $x;
+	}
+	public static function onetrim($x){
+		while(($x & 1) === 1)$x >>= 1;
+		return $x;
+	}
+	public static function tentrim($x){
+		if($x === 0)return 0;
+		while(fmod($x, 10) === 0.0)$x /= 10;
+		return $x;
+	}
+	public static function twotrim($x){
+		if($x === 0)return 0;
+		while(fmod($x, 2) === 0.0)$x /= 2;
+		return $x;
+	}
+	public static function mdsrem($a, $b){
+        for($i = 0; $i < 8; ++$i) {
+            $t = 0xff & ($b >> 24);
+            $b = ($b << 8) | (0xff & ($a >> 24));
+            $a <<= 8;
+            $u = $t << 1;
+            if($t & 0x80)$u ^= 0x14d;
+            $b ^= $t ^ ($u << 16);
+            $u ^= 0x7fffffff & ($t >> 1);
+            if($t & 0x01)$u ^= 0xa6;
+            $b ^= ($u << 24) | ($u << 8);
+        }
+        return array(
+            0xff & $b >> 24,
+            0xff & $b >> 16,
+            0xff & $b >>  8,
+			0xff & $b
+		);
+    }
 	public static function baseconvert($text, $from = false, $to = false){
 		if(is_string($from) && strtolower($from) == "ascii")return self::baseconvert(bin2hex($text), xnstring::HEX_RANGE, $to);
 		if(is_string($to) && strtolower($to) == "ascii"){
@@ -10082,6 +9852,11 @@ class XNNumber {
 		if(!self::_check($a))return false;
 		if(!self::_check($b))return false;
 		return $b ? self::gcd($b, self::mod($a, $b)) : $a;
+	}
+	public static function lcm($a, $b){
+		$gcd = self::gcd($a, $b);
+		if($gcd === false)return false;
+		return self::div(self::mul($a, $b), $gcd);
 	}
 	public static function time(){
 		$time = microtime();
@@ -11130,6 +10905,26 @@ class XNCrypt {
 		array(0x80000000, 0x00008002), array(0x80000000, 0x00000080), array(0x00000000, 0x0000800a), array(0x80000000, 0x8000000a),
 		array(0x80000000, 0x80008081), array(0x80000000, 0x00008080), array(0x00000000, 0x80000001), array(0x80000000, 0x80008008)
 	);
+	protected static $md2s = array(
+		41,  46,  67,  201, 162, 216, 124, 1,   61,  54,  84,  161, 236, 240, 6,
+		19,  98,  167, 5,   243, 192, 199, 115, 140, 152, 147, 43,  217, 188,
+		76,  130, 202, 30,  155, 87,  60,  253, 212, 224, 22,  103, 66,  111, 24,
+		138, 23,  229, 18,  190, 78,  196, 214, 218, 158, 222, 73,  160, 251,
+		245, 142, 187, 47,  238, 122, 169, 104, 121, 145, 21,  178, 7,   63,
+		148, 194, 16,  137, 11,  34,  95,  33,  128, 127, 93,  154, 90,  144, 50,
+		39,  53,  62,  204, 231, 191, 247, 151, 3,   255, 25,  48,  179, 72,  165,
+		181, 209, 215, 94,  146, 42,  172, 86,  170, 198, 79,  184, 56,  210,
+		150, 164, 125, 182, 118, 252, 107, 226, 156, 116, 4,   241, 69,  157,
+		112, 89,  100, 113, 135, 32,  134, 91,  207, 101, 230, 45,  168, 2,   27,
+		96,  37,  173, 174, 176, 185, 246, 28,  70,  97,  105, 52,  64,  126, 15,
+		85,  71,  163, 35,  221, 81,  175, 58,  195, 92,  249, 206, 186, 197,
+		234, 38,  44,  83,  13,  110, 133, 40,  132, 9,   211, 223, 205, 244, 65,
+		129, 77,  82,  106, 220, 55,  200, 108, 193, 171, 250, 36,  225, 123,
+		8,   12,  189, 177, 74,  120, 136, 149, 139, 227, 99,  232, 109, 233,
+		203, 213, 254, 59,  0,   29,  57,  242, 239, 183, 14,  102, 88,  208, 228,
+		166, 119, 114, 248, 235, 117, 75,  10,  49,  68,  80,  180, 143, 237,
+		31,  26,  219, 153, 141, 51,  159, 17,  131, 20
+	);
 
     private static function keccakf64(&$st, $rounds) {
         $keccakf_rotc = array(1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44);
@@ -11669,6 +11464,33 @@ class XNCrypt {
 		return chr($hash[0]) . chr($hash[1]) . chr($hash[2]) . chr($hash[3]) .
 			   chr($hash[4]) . chr($hash[5]) . chr($hash[6]) . chr($hash[7]);
 	}
+	private static function md2($m){
+		$length = strlen($m);
+		$pad = 16 - ($length & 0xf);
+		$m .= str_repeat(chr($pad), $pad);
+		$length |= 0xf;
+        $c = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+        $l = "\0";
+        for($i = 0; $i < $length; $i += 16)
+            for($j = 0; $j < 16; ++$j)
+                $l = $c[$j] = chr(self::$md2s[ord($m[$i + $j] ^ $l)] ^ ord($c[$j]));
+        $m .= $c;
+        $length += 16;
+        $x = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+        for($i = 0; $i < $length; $i += 16) {
+            for($j = 0; $j < 16; ++$j) {
+                $x[$j + 16] = $m[$i + $j];
+                $x[$j + 32] = $x[$j + 16] ^ $x[$j];
+            }
+            $t = "\0";
+            for($j = 0; $j < 18; ++$j) {
+                for($k = 0; $k < 48; ++$k)
+                    $x[$k] = $t = $x[$k] ^ chr(self::$md2s[ord($t)]);
+                $t = chr(ord($t) + $j);
+            }
+        }
+        return $x;
+    }
     public static function hash($algo, $data, $raw = null){
         if(function_exists('hash_algos') && in_array($algo, hash_algos()))
             return hash($algo, $data, $raw === true);
@@ -11702,7 +11524,9 @@ class XNCrypt {
             case 'shake256':
                 return self::keccak($data, 256, 512, 0x1f, $raw === true);
             case 'sha3-224':
-                return substr(self::sha3($data, 448, 1152, 28, 2, $raw === true), 0, -8);
+				return substr(self::sha3($data, 448, 1152, 28, 2, $raw === true), 0, -8);
+			case 'sha3-224f':
+                return self::sha3($data, 448, 1152, 28, 2, $raw === true);
             case 'sha3-256':
                 return self::sha3($data, 512, 1088, 32, 2, $raw === true);
             case 'sha3-384':
@@ -11711,6 +11535,10 @@ class XNCrypt {
 				return self::sha3($data, 1024, 576, 64, 2, $raw === true);
 			case 'pearson16':
 				return $raw === true ? self::pearson16($data) : self::hexencode(self::pearson16($data));
+			case 'md2':
+				return $raw === true ? substr(self::md2($data), 0, 16) : self::hexencode(substr(self::md2($data), 0, 16));
+			case 'md2f':
+				return $raw === true ? self::md2($data) : self::hexencode(self::md2($data));
         }
         if(in_array($algo, self::crcalgos())){
 			$length = self::crcalgo($algo);
@@ -12248,7 +12076,10 @@ class XNCrypt {
         if(function_exists('hex2bin'))
 			return hex2bin($string);
 		return pack('H*', $string);
-    }
+	}
+	public static function hexstrlen($string){
+		return ceil(strlen($string) / 2);
+	}
     public static function binencode($string){
         if(function_exists('bin2hex'))
             	return strtr(bin2hex($string), array(
@@ -12277,7 +12108,10 @@ class XNCrypt {
         for($i = 0; isset($string[$i]); $i += 8)
             $bin .= chr(bindec(substr($string, $i, 8)));
         return $bin;
-    }
+	}
+	public static function binstrlen($string){
+		return ceil(strlen($string) / 8);
+	}
     public static function base4encode($string){
         if(function_exists('bin2hex'))
             	return strtr(bin2hex($string), array(
@@ -12291,7 +12125,7 @@ class XNCrypt {
         for($i = 0; isset($string[$i]); ++$i)
             $bin = substr(base_convert(ord($string[$i]) | 256, 10, 4), 1);
         return $bin;
-    }
+	}
     public static function base4decode($string){
         $l = strlen($string);
         if($l % 4 !== 0)$string = str_repeat('0', 4 - $l) . $string;
@@ -12306,7 +12140,10 @@ class XNCrypt {
         for($i = 0; isset($string[$i]); $i += 4)
             $bin .= chr(base_convert(substr($string, $i, 4), 4, 10));
         return $bin;
-    }
+	}
+	public static function base4strlen($string){
+		return ceil(strlen($string) / 4);
+	}
     public static function octencode($string){
         $oct = '';
         for($i = 0; isset($string[$i]); $i += 3){
@@ -12352,7 +12189,10 @@ class XNCrypt {
             }
         }
         return $bin;
-    }
+	}
+	public static function octstrlen($string){
+		return ceil(strlen($string) / 8 * 3);
+	}
     public static function base64encode($string){
         if(function_exists('base64_encode'))return base64_encode($string);
         $s = xnstring::BASE64T_RANGE;
@@ -12393,6 +12233,9 @@ class XNCrypt {
             }
         }
         return $bin;
+	}
+	public static function base64strlen($string){
+		return ceil(strlen($string) / 4 * 3);
 	}
 	public static function bcrypt64encode($string){
 		return strtr(rtrim(self::base64encode($string), '='), xnstring::BASE64T_RANGE, xnstring::BCRYPT64_RANGE);
@@ -12468,6 +12311,9 @@ class XNCrypt {
 		}
 		return $bin;
 	}
+	public static function base32strlen($string){
+		return ceil(strlen($string) / 8 * 5);
+	}
     public static function rleencode($string){
         $new = '';
         $count = 0;
@@ -12498,12 +12344,6 @@ class XNCrypt {
         }
         return $new . $last;
     }
-    public static function decencode($string){
-        return xnnumber::base_convert($string, 'ascii', 10);
-    }
-    public static function decdecode($string){
-        return xnnumber::base_convert($string, 10, 'ascii');
-	}
 
     public static function sizeencode($l){
         $arr = array("c*");
@@ -12872,6 +12712,16 @@ class XNCrypt {
 		);
 	}
 
+	public static function xorcrypt($string, $key){
+		return $string ^ xnstring::equlen($string, $key);
+	}
+	public static function xorhash($string, $length = 1){
+		$hash = substr($string, 0, $length);
+		for($i = $length; isset($string[$i]); $i += $length)
+			$hash ^= str_pad(substr($string, $i, $length), $length, "\0");
+		return $hash;
+	}
+
 	protected static $iconvcharset = array(
 		'iso-8859-1' => array(
 			'utf-8'    => 'iso88591utf8',
@@ -13206,9 +13056,6 @@ class XNCrypt {
 		lsort($dict);
 		return strtr($string, array_combine($dict, array_keys($dict)));
 	}
-	public static function translit($string){
-		return self::dictencode($string, self::dictget(xndata("encoding-translit")));
-	}
 	public static function iconv($string, $from, $to = null){
 		if($to === null){
 			$to = $from;
@@ -13240,14 +13087,14 @@ class XNCrypt {
 				new XNError('xncrypt::iconv', "Unknown encoding charset $from", XNError::WARNING, XNError::TTHROW);
 			if($todict === null)
 				new XNError('xncrypt::iconv', "Unknown encoding charset $to", XNError::WARNING, XNError::TTHROW);
-			if(count($fromdict) == count($todict) && array_keys($fromdict) === arary_keys($todict))
+			if(count($fromdict) == count($todict) && array_keys($fromdict) === array_keys($todict))
 				return self::dictencode($string, array_combine(array_values($from), array_values($to)));
 			$string = self::dictencode(self::dictdecode($string, $fromdict), $todict);
 			if(isset($toe))
 				return self::iconv($string, 'iso-8859-1', $toe);
 			return $string;
 		}
-		list($func1, $func2) = explode('/', $func . '/', 3);
+		list($func1, $func2) = explode('/', $func . '/');
 		if($func2 !== '')
 			return self::$func2(self::$func1($string));
 		return self::$func1($string);
@@ -13263,6 +13110,18 @@ class XNCrypt {
 	const KEYBOARD_CONVERTER_ENGLISH  = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nq\nw\ne\nr\nt\ny\nu\ni\no\np\n[\n]\na\ns\nd\nf\ng\nh\nj\nk\nl\n;\n'\n\\\nz\nx\nc\nv\nb\nn\nm\n,\n.\n/\n~\n!\n@\n#\n$\n%\n^\n&\n*\n(\n)\n_\n+\nQ\nW\nE\nR\nT\nY\nU\nI\nO\nP\n{\n}\nA\nS\nD\nF\nG\nH\nJ\nK\nL\n:\n\"\n|\nZ\nX\nC\nV\nB\nN\nM\n<\n>\n?";
 	const KEYBOARD_CONVERTER_FARSI    = "`‍‍‍\n۱\n۲\n۳\n۴\n۵\n۶\n۷\n۸\n۹\n۰\n-\n=\nض\nص\nث\nق\nف\nغ\nع\nه\nخ\nح\nج\nچ\nش\nس\nی\nب\nل\nا\nت\nن\nم\nک\nگ\n\\\nظ\nط\nز\nر\nذ\nد\nپ\nو\n.\n/\n~\n!\n٫\n؍\n﷼\n٪n\×\n٬\n٭\n(\n)\n_\n+\nْ\nٌ\nٍ\nً\nُ\nِ\nَ\nّ\n[\n]\n{\n}\nؤ\nُ\nي\nإ\nأ\nآ\nة\n«\n»\n:\n؛\n|\nك\nٓ\nژ\nٰ\n‌\nٔ\nء\n<\n>\n؟";
 	const KEYBOARD_CONVERTER_FRENCH   = "²\n&\né\n\"\n'\n(\n-\nè\n_\nç\nà\n)\n=\na\nz\ne\nr\nt\ny\nu\ni\no\np\nâ\n$\nq\ns\nd\nf\ng\nh\nj\nk\nl\nm\nù\n*\nw\nx\nc\nv\nb\nn\n,\n;\n:\n!\n\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n°\n+\nA\nZ\nE\nR\nT\nY\nU\nI\nO\nP\nÄ\n£\nQ\nS\nD\nF\nG\nH\nJ\nK\nL\nM\n%\nµ\nW\nX\nC\nV\nB\nN\n?\n.\n/\n§";
+	const KEYBOARD_CONVERTER_GEORGIAN = "„\n!\n?\n№\n§\n%\n:\n.\n;\n,\n/\n–\n=\nღ\nჯ\nუ\nკ\nე\nნ\nგ\nშ\nწ\nზ\nხ\nც\nფ\nძ\nვ\nთ\nა\nპ\nრ\nო\nლ\nდ\nჟ\n(\nჭ\nჩ\nყ\nს\nმ\nი\nტ\nქ\nბ\nჰ\n“\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n+\nღ\nჯ\nუ\nკ\nე\nნ\nგ\nშ\nწ\nზ\nხ\nც\nფ\nძ\nვ\nთ\nა\nპ\nრ\nო\nლ\nდ\nჟ\n)\nჭ\nჩ\nყ\nს\nმ\nი\nტ\nქ\nბ\nჰ";
+	const KEYBOARD_CONVERTER_GREEK    = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\n;\nς\nε\nρ\nτ\nυ\nθ\nι\nο\nπ\n[\n]\nα\nσ\nδ\nφ\nγ\nη\nξ\nκ\nλ\nέ\n'\n\\\nζ\nχ\nψ\nω\nβ\nν\nμ\n,\n.\n/\n~\n!\n@\n#\n$\n%\n^\n&\n*\n(\n)\n_\n+\n:\n\nΕ\nΡ\nΤ\nΥ\nΘ\nΙ\nΟ\nΠ\n{\n}\nΑ\nΣ\nΔ\nΦ\nΓ\nΗ\nΞ\nΚ\nΛ\nΪ\n\n\"\n|\nΖ\nΧ\nΨ\nΩ\nΒ\nΝ\nΜ\n<\n>\n?";
+	const KEYBOARD_CONVERTER_GUJARATI = "\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\nૌ\nૈ\nા\nી\nૂ\nબ\nહ\nગ\nદ\nજ\nડ\n઼\nો\nે\n્\nિ\nુ\nપ\nર\nક\nત\nચ\nટ\nૉ\n\nં\nમ\nન\nવ\nલ\nસ\n,\n.\nય\n\nઍ\nૅ\n\n\n\n\n\n\n(\n)\nઃ\nઋ\nઔ\nઐ\nઆ\nઈ\nઊ\nભ\nઙ\nઘ\nધ\nઝ\nઢ\nઞ\nઓ\nએ\nઅ\nઇ\nઉ\nફ\n\nખ\nથ\nછ\nઠ\nઑ\n\nઁ\nણ\n\n\nળ\nશ\nષ\n।\n";
+	const KEYBOARD_CONVERTER_HEBREW   = ";\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\n/\n'\nק\nר\nא\nט\nו\nן\nם\nפ\n]\n[\nש\nד\nג\nכ\nע\nי\nח\nל\nך\nף\n,\\\nז\nס\nב\nה\nנ\nמ\nצ\nת\nץ\n.\n~\n!\n@\n#\n$\n%\n^\n&\n*\n)\n(\n_\n+\n<\n>\nקּ\nרּ\nאּ\nטּ\nוּ\nןּ\nּ\nפּ\n}\n{\nשּ\nדּ\nגּ\nכּ\n׳\nיּ\n״\nלּ\nךּ\n:\n\"\n|\nזּ\nסּ\nבּ\nהּ\nנּ\nמּ\nצּ\nתּ\n׆\n?";
+	const KEYBOARD_CONVERTER_HINDI    = "\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\nृ\nौ\nै\nा\nी\nू\nब\nह\nग\nद\nज\nड\n़\nो\nे\n्\nि\nु\nप\nर\nक\nत\nच\nट\nॉ\n\nं\nम\nन\nव\nल\nस\n,\n.\nय\n\nऍ\nॅ\n#\n$\n\n\n\n\n(\n)\nः\nऋ\nऔ\nऐ\nआ\nई\nऊ\nभ\nङ\nघ\nध\nझ\nढ\nञ\nओ\nए\nअ\nइ\nउ\nफ\nऱ\nख\nथ\nछ\nठ\nऑ\n\nँ\nण\n\n\nळ\nश\nष\n।\nय़";
+	const KEYBOARD_CONVERTER_JAPANESE = "ろ\nぬ\nふ\nあ\nう\nえ\nお\nや\nゆ\nよ\nわ\nほ\nへ\nた\nて\nい\nす\nか\nん\nな\nに\nら\nせ\n゛\n゜\nち\nと\nし\nは\nき\nく\nま\nの\nり\nれ\nけ\nむ\nつ\nさ\nそ\nひ\nこ\nみ\nも\nね\nる\nめ\n\n\nぁ\nぅ\nぇ\nぉ\nゃ\nゅ\nょ\nを\nー\n\n\n\nぃ\n\n\n\n\n\n\n\n「\n」\n\n\n\n\n\n\n\n\n\n\n\n\nっ\n\n\n\n\n\n\n、\n。\n・";
+	const KEYBOARD_CONVERTER_KAZAKH   = "(\n\"\nә\nі\nң\nғ\n,\n.\nү\nұ\nқ\nө\nһ\nй\nц\nу\nк\nе\nн\nг\nш\nщ\nз\nх\nъ\nф\nы\nв\nа\nп\nр\nо\nл\nд\nж\nэ\n\\\nя\nч\nс\nм\nи\nт\nь\nб\nю\n№\n)\n!\nӘ\nІ\nҢ\nҒ\n;\n:\nҮ\nҰ\nҚ\nӨ\nҺ\nЙ\nЦ\nУ\nК\nЕ\nН\nГ\nШ\nЩ\nЗ\nХ\nЪ\nФ\nЫ\nВ\nА\nП\nР\nО\nЛ\nД\nЖ\nЭ\n/\nЯ\nЧ\nС\nМ\nИ\nТ\nЬ\nБ\nЮ\n?";
+	const KEYBOARD_CONVERTER_KHMER    = "«\n១\n២\n៣\n៤\n៥\n៦\n៧\n៨\n៩\n០\nគ\nធ\nឆ\nឹ\nេ\nរ\nត\nយ\nុ\nិ\nោ\nផ\nៀ\nឨ\nា\nស\nដ\nថ\nង\nហ\n្\nក\nល\nើ\n់\nឮ\nឋ\nខ\nច\nវ\nប\nន\nម\nំុ\n។\n៊​\n»\n!\nៗ\n\"\n៛\n%\n៌\n័\n៏\n(\n)\n៝\nឪ\nឈ\nឺ\nែ\nឬ\nទ\nួ\nូ\nី\nៅ\nភ\nឿ\nឧ\nាំ\nៃ\nឌ\nធ\nឣ\nះ\nញ\nគ\nឡ\nោៈ\n៉\nឭ\nឍ\nឃ\nជ\nេះ\nព\nណ\nំ\nុះ\n៕\n?";
+	const KEYBOARD_CONVERTER_KOREAN   = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nㅂ\nㅈ\nㄷ\nㄱ\nㅅ\nㅛ\nㅕ\nㅑ\nㅐ\nㅔ\n[\n]\nㅁ\nㄴ\nㅇ\nㄹ\nㅎ\nㅗ\nㅓ\nㅏ\nㅣ\n;\n'\n\\\nㅋ\nㅌ\nㅊ\nㅍ\nㅠ\nㅜ\nㅡ\n,\n.\n/\n~\n!\n@\n#\n$\n%\n^\n&\n*\n(\n)\n_\n+\nㅃ\nㅉ\nㄸ\nㄲ\nㅆ\n\n\n\nㅒ\nㅖ\n{\n}\n\n\n\n\n\n\n\n\n\n:\n\"\n|\n\n\n\n\n\n\n\n<\n>\n?";
+	const KEYBOARD_CONVERTER_LAO      = "*\nຢ\nຟ\nໂ\nຖ\nຸ\n\nູຄ\nຕ\nຈ\nຂ\nຊ\nໍ\nົ\nໄ\nຳ\nພ\nະ\nິ\nີ\nຮ\nນ\nຍ\nບ\nລ\nັ\nຫ\nກ\nດ\nເ\n້\n່\nາ\nສ\nວ\nງ\n“\nຜ\nປ\nແ\nອ\nຶ\nື\nທ\nມ\nໃ\nຝ\n/\n໑\n໒\n໓\n໔\n໌\nຼ\n໕\n໖\n໗\n໘\n໙\nໍ່\nົ້\n໐\nຳ້\n_\n+\nິ້\nີ້\nຣ\nໜ\nຽ\n-\nຫຼ\nັ້\n;\n.\n,\n:\n໊\n໋\n!\n?\n%\n=\n”\n₭\n(\nຯ\nx\nຶ້\nື້\nໆ\nໝ\n$\n)";
+	const KEYBOARD_CONVERTER_MALAYALAM= "ൊ\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\nൃ\nൌ\nൈ\nാ\nീ\nൂ\nബ\nഹ\nഗ\nദ\nജ\nഡ\nർ\nോ\nേ\n്\nിു\nപ\nര\nക\nത\nച\nട\n\nെ\nം\nമ\nന\nവ\nല\nസ\n,\n.\nയ\nഒ\n\n\n\n\n\n\n\n\n(\n)\nഃ\nഋ\nഔ\nഐ\nആ\nഈ\nഊ\nഭ\nങ\nഘ\nധ\nഝ\nഢ\nഞ\nഓ\nഏ\nഅ\nഇ\nഉ\nഫ\nറ\nഖ\nഥ\nഛ\nഠ\n\nഎ\n\nണ\n\nഴ\nള\nശ\nഷ\n\n\n";
+	const KEYBOARD_CONVERTER_RUSSIAN  = "ё\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nй\nц\nу\nк\nе\nн\nг\nш\nщ\nз\nх\nъ\nф\nы\nв\nа\nп\nр\nо\nл\nд\nж\nэ\n\\\nя\nч\nс\nм\nи\nт\nь\nб\nю\n.\n!\n\"\n№\n;\n%\n:\n?\n*\n(\n)\n_\n+\nЙ\nЦ\nУ\nК\nЕ\nН\nГ\nШ\nЩ\nЗ\nХ\nЪ\nФ\nЫ\nВ\nА\nП\nР\nО\nЛ\nД\nЖ\nЭ\n/\nЯ\nЧ\nС\nМ\nИ\nТ\nЬ\nБ\nЮ\n,";
 	private static function kcglks($lang){
 		switch($lang){
 			case 'AK': case "AKAN": return self::KEYBOARD_CONVERTER_AKAN; break;
@@ -13275,6 +13134,18 @@ class XNCrypt {
 			case 'EN': case "ENGLISH": return self::KEYBOARD_CONVERTER_ENGLISH; break;
 			case 'FA': case "FARSI": return self::KEYBOARD_CONVERTER_FARSI; break;
 			case 'FR': case "FRENCH": return self::KEYBOARD_CONVERTER_FRENCH; break;
+			case 'GE': case "GEORGIAN": return self::KEYBOARD_CONVERTER_GEORGIAN; break;
+			case 'GR': case "GREEK": return self::KEYBOARD_CONVERTER_GREEK; break;
+			case 'GU': case "GUJARATI": return self::KEYBOARD_CONVERTER_GUJARATI; break;
+			case 'HE': case "HEBREW": return self::KEYBOARD_CONVERTER_HEBREW; break;
+			case 'HI': case "HINDI": return self::KEYBOARD_CONVERTER_HINDI; break;
+			case 'JA': case "JAPANESE": return self::KEYBOARD_CONVERTER_JAPANESE; break;
+			case 'KA': case "KAZAKH": return self::KEYBOARD_CONVERTER_KAZAKH; break;
+			case 'KH': case "KHMER": return self::KEYBOARD_CONVERTER_KHMER; break;
+			case 'KO': case "KOREAN": return self::KEYBOARD_CONVERTER_KOREAN; break;
+			case 'LA': case "LAO": return self::KEYBOARD_CONVERTER_LAO; break;
+			case 'MA': case "MALAYALAM": return self::KEYBOARD_CONVERTER_MALAYALAM; break;
+			case 'RU': case "RUSSIAN": return self::KEYBOARD_CONVERTER_RUSSIAN; break;
 			default: return false;
 		}
 	}
@@ -13288,13 +13159,1182 @@ class XNCrypt {
 		return str_replace(explode("\n", $from), explode("\n", $to), $text);
 	}
 	public static function keyget($text){
-		foreach(array('AK', 'AL', 'AR', 'AZ', 'BA', 'CO', 'CR', 'EN', 'FA') as $lang)
-			if(str_replace(explode("\n", self::kcglks($lang)), '', $text) === '')
-				return $lang;
-		return false;
+		$len = strlen($text);
+		$coding = '';
+		foreach(array('AK', 'AL', 'AR', 'AZ', 'BA', 'CO', 'CR', 'EN', 'FA', 'FR', 'GE',
+					  'GR', 'GU', 'HE', 'HI', 'JA', 'KA', 'KH', 'KO', 'LA', 'MA', 'RU') as $lang)
+			if(($now = strlen(str_replace(explode("\n", self::kcglks($lang)), '', $text))) < $len){
+				$len = $now;
+				$coding = $lang;
+			}
+		return $coding === '' ? false : $coding;
 	}
 
-	// https://www.branah.com/
+	public static function increment($string){
+		for($i = 4; isset($string[$i]); $i += 4) {
+            $tmp = substr($string, -$i, 4);
+            switch($tmp) {
+                case "\xFF\xFF\xFF\xFF":
+                    $var = substr_replace($var, "\x00\x00\x00\x00", -$i, 4);
+                break;
+                case "\x7F\xFF\xFF\xFF":
+                    $var = substr_replace($var, "\x80\x00\x00\x00", -$i, 4);
+                    return $var;
+				default:
+					$tmp = unpack('N', $tmp);
+                    $var = substr_replace($var, pack('N', $tmp + 1), -$i, 4);
+                    return $var;
+            }
+        }
+        $remainder = strlen($string) % 4;
+        if($remainder == 0)
+            return $string;
+        $tmp = unpack('N', str_pad(substr($string, 0, $remainder), 4, "\0", STR_PAD_LEFT));
+        $tmp = substr(pack('N', $tmp[1] + 1), -$remainder);
+        return substr_replace($string, $tmp, 0, $remainder);
+	}
+	public static function endianness($x){
+		$r = '';
+        for($i = strlen($x) - 1; $i >= 0; --$i) {
+            $b = ord($x[$i]);
+            $p1 = ($b * 0x0802) & 0x22110;
+            $p2 = ($b * 0x8020) & 0x88440;
+            $r .= chr((($p1 | $p2) * 0x10101) >> 16);
+        }
+        return $r;
+	}
+
+	const MODE_CBC  = 0;
+	const MODE_CFB  = 1;
+	const MODE_CFB8 = 2;
+	const MODE_CTR  = 3;
+	const MODE_ECB  = 4;
+	const MODE_NCFB = 5;
+	const MODE_NOFB = 6;
+	const MODE_OFB  = 7;
+	const MODE_PCBC = 8;
+	const MODE_RAW  = 9;
+	const MODE_STREAM = 10;
+	const MODE_GCM  = 11;
+
+	protected static $bfs = array(
+		array(
+			0xd1310ba6, 0x98dfb5ac, 0x2ffd72db, 0xd01adfb7, 0xb8e1afed, 0x6a267e96, 0xba7c9045, 0xf12c7f99,
+			0x24a19947, 0xb3916cf7, 0x0801f2e2, 0x858efc16, 0x636920d8, 0x71574e69, 0xa458fea3, 0xf4933d7e,
+			0x0d95748f, 0x728eb658, 0x718bcd58, 0x82154aee, 0x7b54a41d, 0xc25a59b5, 0x9c30d539, 0x2af26013,
+			0xc5d1b023, 0x286085f0, 0xca417918, 0xb8db38ef, 0x8e79dcb0, 0x603a180e, 0x6c9e0e8b, 0xb01e8a3e,
+			0xd71577c1, 0xbd314b27, 0x78af2fda, 0x55605c60, 0xe65525f3, 0xaa55ab94, 0x57489862, 0x63e81440,
+			0x55ca396a, 0x2aab10b6, 0xb4cc5c34, 0x1141e8ce, 0xa15486af, 0x7c72e993, 0xb3ee1411, 0x636fbc2a,
+			0x2ba9c55d, 0x741831f6, 0xce5c3e16, 0x9b87931e, 0xafd6ba33, 0x6c24cf5c, 0x7a325381, 0x28958677,
+			0x3b8f4898, 0x6b4bb9af, 0xc4bfe81b, 0x66282193, 0x61d809cc, 0xfb21a991, 0x487cac60, 0x5dec8032,
+			0xef845d5d, 0xe98575b1, 0xdc262302, 0xeb651b88, 0x23893e81, 0xd396acc5, 0x0f6d6ff3, 0x83f44239,
+			0x2e0b4482, 0xa4842004, 0x69c8f04a, 0x9e1f9b5e, 0x21c66842, 0xf6e96c9a, 0x670c9c61, 0xabd388f0,
+			0x6a51a0d2, 0xd8542f68, 0x960fa728, 0xab5133a3, 0x6eef0b6c, 0x137a3be4, 0xba3bf050, 0x7efb2a98,
+			0xa1f1651d, 0x39af0176, 0x66ca593e, 0x82430e88, 0x8cee8619, 0x456f9fb4, 0x7d84a5c3, 0x3b8b5ebe,
+			0xe06f75d8, 0x85c12073, 0x401a449f, 0x56c16aa6, 0x4ed3aa62, 0x363f7706, 0x1bfedf72, 0x429b023d,
+			0x37d0d724, 0xd00a1248, 0xdb0fead3, 0x49f1c09b, 0x075372c9, 0x80991b7b, 0x25d479d8, 0xf6e8def7,
+			0xe3fe501a, 0xb6794c3b, 0x976ce0bd, 0x04c006ba, 0xc1a94fb6, 0x409f60c4, 0x5e5c9ec2, 0x196a2463,
+			0x68fb6faf, 0x3e6c53b5, 0x1339b2eb, 0x3b52ec6f, 0x6dfc511f, 0x9b30952c, 0xcc814544, 0xaf5ebd09,
+			0xbee3d004, 0xde334afd, 0x660f2807, 0x192e4bb3, 0xc0cba857, 0x45c8740f, 0xd20b5f39, 0xb9d3fbdb,
+			0x5579c0bd, 0x1a60320a, 0xd6a100c6, 0x402c7279, 0x679f25fe, 0xfb1fa3cc, 0x8ea5e9f8, 0xdb3222f8,
+			0x3c7516df, 0xfd616b15, 0x2f501ec8, 0xad0552ab, 0x323db5fa, 0xfd238760, 0x53317b48, 0x3e00df82,
+			0x9e5c57bb, 0xca6f8ca0, 0x1a87562e, 0xdf1769db, 0xd542a8f6, 0x287effc3, 0xac6732c6, 0x8c4f5573,
+			0x695b27b0, 0xbbca58c8, 0xe1ffa35d, 0xb8f011a0, 0x10fa3d98, 0xfd2183b8, 0x4afcb56c, 0x2dd1d35b,
+			0x9a53e479, 0xb6f84565, 0xd28e49bc, 0x4bfb9790, 0xe1ddf2da, 0xa4cb7e33, 0x62fb1341, 0xcee4c6e8,
+			0xef20cada, 0x36774c01, 0xd07e9efe, 0x2bf11fb4, 0x95dbda4d, 0xae909198, 0xeaad8e71, 0x6b93d5a0,
+			0xd08ed1d0, 0xafc725e0, 0x8e3c5b2f, 0x8e7594b7, 0x8ff6e2fb, 0xf2122b64, 0x8888b812, 0x900df01c,
+			0x4fad5ea0, 0x688fc31c, 0xd1cff191, 0xb3a8c1ad, 0x2f2f2218, 0xbe0e1777, 0xea752dfe, 0x8b021fa1,
+			0xe5a0cc0f, 0xb56f74e8, 0x18acf3d6, 0xce89e299, 0xb4a84fe0, 0xfd13e0b7, 0x7cc43b81, 0xd2ada8d9,
+			0x165fa266, 0x80957705, 0x93cc7314, 0x211a1477, 0xe6ad2065, 0x77b5fa86, 0xc75442f5, 0xfb9d35cf,
+			0xebcdaf0c, 0x7b3e89a0, 0xd6411bd3, 0xae1e7e49, 0x00250e2d, 0x2071b35e, 0x226800bb, 0x57b8e0af,
+			0x2464369b, 0xf009b91e, 0x5563911d, 0x59dfa6aa, 0x78c14389, 0xd95a537f, 0x207d5ba2, 0x02e5b9c5,
+			0x83260376, 0x6295cfa9, 0x11c81968, 0x4e734a41, 0xb3472dca, 0x7b14a94a, 0x1b510052, 0x9a532915,
+			0xd60f573f, 0xbc9bc6e4, 0x2b60a476, 0x81e67400, 0x08ba6fb5, 0x571be91f, 0xf296ec6b, 0x2a0dd915,
+			0xb6636521, 0xe7b9f9b6, 0xff34052e, 0xc5855664, 0x53b02d5d, 0xa99f8fa1, 0x08ba4799, 0x6e85076a
+		), array(
+			0x4b7a70e9, 0xb5b32944, 0xdb75092e, 0xc4192623, 0xad6ea6b0, 0x49a7df7d, 0x9cee60b8, 0x8fedb266,
+			0xecaa8c71, 0x699a17ff, 0x5664526c, 0xc2b19ee1, 0x193602a5, 0x75094c29, 0xa0591340, 0xe4183a3e,
+			0x3f54989a, 0x5b429d65, 0x6b8fe4d6, 0x99f73fd6, 0xa1d29c07, 0xefe830f5, 0x4d2d38e6, 0xf0255dc1,
+			0x4cdd2086, 0x8470eb26, 0x6382e9c6, 0x021ecc5e, 0x09686b3f, 0x3ebaefc9, 0x3c971814, 0x6b6a70a1,
+			0x687f3584, 0x52a0e286, 0xb79c5305, 0xaa500737, 0x3e07841c, 0x7fdeae5c, 0x8e7d44ec, 0x5716f2b8,
+			0xb03ada37, 0xf0500c0d, 0xf01c1f04, 0x0200b3ff, 0xae0cf51a, 0x3cb574b2, 0x25837a58, 0xdc0921bd,
+			0xd19113f9, 0x7ca92ff6, 0x94324773, 0x22f54701, 0x3ae5e581, 0x37c2dadc, 0xc8b57634, 0x9af3dda7,
+			0xa9446146, 0x0fd0030e, 0xecc8c73e, 0xa4751e41, 0xe238cd99, 0x3bea0e2f, 0x3280bba1, 0x183eb331,
+			0x4e548b38, 0x4f6db908, 0x6f420d03, 0xf60a04bf, 0x2cb81290, 0x24977c79, 0x5679b072, 0xbcaf89af,
+			0xde9a771f, 0xd9930810, 0xb38bae12, 0xdccf3f2e, 0x5512721f, 0x2e6b7124, 0x501adde6, 0x9f84cd87,
+			0x7a584718, 0x7408da17, 0xbc9f9abc, 0xe94b7d8c, 0xec7aec3a, 0xdb851dfa, 0x63094366, 0xc464c3d2,
+			0xef1c1847, 0x3215d908, 0xdd433b37, 0x24c2ba16, 0x12a14d43, 0x2a65c451, 0x50940002, 0x133ae4dd,
+			0x71dff89e, 0x10314e55, 0x81ac77d6, 0x5f11199b, 0x043556f1, 0xd7a3c76b, 0x3c11183b, 0x5924a509,
+			0xf28fe6ed, 0x97f1fbfa, 0x9ebabf2c, 0x1e153c6e, 0x86e34570, 0xeae96fb1, 0x860e5e0a, 0x5a3e2ab3,
+			0x771fe71c, 0x4e3d06fa, 0x2965dcb9, 0x99e71d0f, 0x803e89d6, 0x5266c825, 0x2e4cc978, 0x9c10b36a,
+			0xc6150eba, 0x94e2ea78, 0xa5fc3c53, 0x1e0a2df4, 0xf2f74ea7, 0x361d2b3d, 0x1939260f, 0x19c27960,
+			0x5223a708, 0xf71312b6, 0xebadfe6e, 0xeac31f66, 0xe3bc4595, 0xa67bc883, 0xb17f37d1, 0x018cff28,
+			0xc332ddef, 0xbe6c5aa5, 0x65582185, 0x68ab9802, 0xeecea50f, 0xdb2f953b, 0x2aef7dad, 0x5b6e2f84,
+			0x1521b628, 0x29076170, 0xecdd4775, 0x619f1510, 0x13cca830, 0xeb61bd96, 0x0334fe1e, 0xaa0363cf,
+			0xb5735c90, 0x4c70a239, 0xd59e9e0b, 0xcbaade14, 0xeecc86bc, 0x60622ca7, 0x9cab5cab, 0xb2f3846e,
+			0x648b1eaf, 0x19bdf0ca, 0xa02369b9, 0x655abb50, 0x40685a32, 0x3c2ab4b3, 0x319ee9d5, 0xc021b8f7,
+			0x9b540b19, 0x875fa099, 0x95f7997e, 0x623d7da8, 0xf837889a, 0x97e32d77, 0x11ed935f, 0x16681281,
+			0x0e358829, 0xc7e61fd6, 0x96dedfa1, 0x7858ba99, 0x57f584a5, 0x1b227263, 0x9b83c3ff, 0x1ac24696,
+			0xcdb30aeb, 0x532e3054, 0x8fd948e4, 0x6dbc3128, 0x58ebf2ef, 0x34c6ffea, 0xfe28ed61, 0xee7c3c73,
+			0x5d4a14d9, 0xe864b7e3, 0x42105d14, 0x203e13e0, 0x45eee2b6, 0xa3aaabea, 0xdb6c4f15, 0xfacb4fd0,
+			0xc742f442, 0xef6abbb5, 0x654f3b1d, 0x41cd2105, 0xd81e799e, 0x86854dc7, 0xe44b476a, 0x3d816250,
+			0xcf62a1f2, 0x5b8d2646, 0xfc8883a0, 0xc1c7b6a3, 0x7f1524c3, 0x69cb7492, 0x47848a0b, 0x5692b285,
+			0x095bbf00, 0xad19489d, 0x1462b174, 0x23820e00, 0x58428d2a, 0x0c55f5ea, 0x1dadf43e, 0x233f7061,
+			0x3372f092, 0x8d937e41, 0xd65fecf1, 0x6c223bdb, 0x7cde3759, 0xcbee7460, 0x4085f2a7, 0xce77326e,
+			0xa6078084, 0x19f8509e, 0xe8efd855, 0x61d99735, 0xa969a7aa, 0xc50c06c2, 0x5a04abfc, 0x800bcadc,
+			0x9e447a2e, 0xc3453484, 0xfdd56705, 0x0e1e9ec9, 0xdb73dbd3, 0x105588cd, 0x675fda79, 0xe3674340,
+			0xc5c43465, 0x713e38d8, 0x3d28f89e, 0xf16dff20, 0x153e21e7, 0x8fb03d4a, 0xe6e39f2b, 0xdb83adf7
+		), array(
+			0xe93d5a68, 0x948140f7, 0xf64c261c, 0x94692934, 0x411520f7, 0x7602d4f7, 0xbcf46b2e, 0xd4a20068,
+			0xd4082471, 0x3320f46a, 0x43b7d4b7, 0x500061af, 0x1e39f62e, 0x97244546, 0x14214f74, 0xbf8b8840,
+			0x4d95fc1d, 0x96b591af, 0x70f4ddd3, 0x66a02f45, 0xbfbc09ec, 0x03bd9785, 0x7fac6dd0, 0x31cb8504,
+			0x96eb27b3, 0x55fd3941, 0xda2547e6, 0xabca0a9a, 0x28507825, 0x530429f4, 0x0a2c86da, 0xe9b66dfb,
+			0x68dc1462, 0xd7486900, 0x680ec0a4, 0x27a18dee, 0x4f3ffea2, 0xe887ad8c, 0xb58ce006, 0x7af4d6b6,
+			0xaace1e7c, 0xd3375fec, 0xce78a399, 0x406b2a42, 0x20fe9e35, 0xd9f385b9, 0xee39d7ab, 0x3b124e8b,
+			0x1dc9faf7, 0x4b6d1856, 0x26a36631, 0xeae397b2, 0x3a6efa74, 0xdd5b4332, 0x6841e7f7, 0xca7820fb,
+			0xfb0af54e, 0xd8feb397, 0x454056ac, 0xba489527, 0x55533a3a, 0x20838d87, 0xfe6ba9b7, 0xd096954b,
+			0x55a867bc, 0xa1159a58, 0xcca92963, 0x99e1db33, 0xa62a4a56, 0x3f3125f9, 0x5ef47e1c, 0x9029317c,
+			0xfdf8e802, 0x04272f70, 0x80bb155c, 0x05282ce3, 0x95c11548, 0xe4c66d22, 0x48c1133f, 0xc70f86dc,
+			0x07f9c9ee, 0x41041f0f, 0x404779a4, 0x5d886e17, 0x325f51eb, 0xd59bc0d1, 0xf2bcc18f, 0x41113564,
+			0x257b7834, 0x602a9c60, 0xdff8e8a3, 0x1f636c1b, 0x0e12b4c2, 0x02e1329e, 0xaf664fd1, 0xcad18115,
+			0x6b2395e0, 0x333e92e1, 0x3b240b62, 0xeebeb922, 0x85b2a20e, 0xe6ba0d99, 0xde720c8c, 0x2da2f728,
+			0xd0127845, 0x95b794fd, 0x647d0862, 0xe7ccf5f0, 0x5449a36f, 0x877d48fa, 0xc39dfd27, 0xf33e8d1e,
+			0x0a476341, 0x992eff74, 0x3a6f6eab, 0xf4f8fd37, 0xa812dc60, 0xa1ebddf8, 0x991be14c, 0xdb6e6b0d,
+			0xc67b5510, 0x6d672c37, 0x2765d43b, 0xdcd0e804, 0xf1290dc7, 0xcc00ffa3, 0xb5390f92, 0x690fed0b,
+			0x667b9ffb, 0xcedb7d9c, 0xa091cf0b, 0xd9155ea3, 0xbb132f88, 0x515bad24, 0x7b9479bf, 0x763bd6eb,
+			0x37392eb3, 0xcc115979, 0x8026e297, 0xf42e312d, 0x6842ada7, 0xc66a2b3b, 0x12754ccc, 0x782ef11c,
+			0x6a124237, 0xb79251e7, 0x06a1bbe6, 0x4bfb6350, 0x1a6b1018, 0x11caedfa, 0x3d25bdd8, 0xe2e1c3c9,
+			0x44421659, 0x0a121386, 0xd90cec6e, 0xd5abea2a, 0x64af674e, 0xda86a85f, 0xbebfe988, 0x64e4c3fe,
+			0x9dbc8057, 0xf0f7c086, 0x60787bf8, 0x6003604d, 0xd1fd8346, 0xf6381fb0, 0x7745ae04, 0xd736fccc,
+			0x83426b33, 0xf01eab71, 0xb0804187, 0x3c005e5f, 0x77a057be, 0xbde8ae24, 0x55464299, 0xbf582e61,
+			0x4e58f48f, 0xf2ddfda2, 0xf474ef38, 0x8789bdc2, 0x5366f9c3, 0xc8b38e74, 0xb475f255, 0x46fcd9b9,
+			0x7aeb2661, 0x8b1ddf84, 0x846a0e79, 0x915f95e2, 0x466e598e, 0x20b45770, 0x8cd55591, 0xc902de4c,
+			0xb90bace1, 0xbb8205d0, 0x11a86248, 0x7574a99e, 0xb77f19b6, 0xe0a9dc09, 0x662d09a1, 0xc4324633,
+			0xe85a1f02, 0x09f0be8c, 0x4a99a025, 0x1d6efe10, 0x1ab93d1d, 0x0ba5a4df, 0xa186f20f, 0x2868f169,
+			0xdcb7da83, 0x573906fe, 0xa1e2ce9b, 0x4fcd7f52, 0x50115e01, 0xa70683fa, 0xa002b5c4, 0x0de6d027,
+			0x9af88c27, 0x773f8641, 0xc3604c06, 0x61a806b5, 0xf0177a28, 0xc0f586e0, 0x006058aa, 0x30dc7d62,
+			0x11e69ed7, 0x2338ea63, 0x53c2dd94, 0xc2c21634, 0xbbcbee56, 0x90bcb6de, 0xebfc7da1, 0xce591d76,
+			0x6f05e409, 0x4b7c0188, 0x39720a3d, 0x7c927c24, 0x86e3725f, 0x724d9db9, 0x1ac15bb4, 0xd39eb8fc,
+			0xed545578, 0x08fca5b5, 0xd83d7cd3, 0x4dad0fc4, 0x1e50ef5e, 0xb161e6f8, 0xa28514d9, 0x6c51133c,
+			0x6fd5c7e7, 0x56e14ec4, 0x362abfce, 0xddc6c837, 0xd79a3234, 0x92638212, 0x670efa8e, 0x406000e0
+		), array(
+			0x3a39ce37, 0xd3faf5cf, 0xabc27737, 0x5ac52d1b, 0x5cb0679e, 0x4fa33742, 0xd3822740, 0x99bc9bbe,
+			0xd5118e9d, 0xbf0f7315, 0xd62d1c7e, 0xc700c47b, 0xb78c1b6b, 0x21a19045, 0xb26eb1be, 0x6a366eb4,
+			0x5748ab2f, 0xbc946e79, 0xc6a376d2, 0x6549c2c8, 0x530ff8ee, 0x468dde7d, 0xd5730a1d, 0x4cd04dc6,
+			0x2939bbdb, 0xa9ba4650, 0xac9526e8, 0xbe5ee304, 0xa1fad5f0, 0x6a2d519a, 0x63ef8ce2, 0x9a86ee22,
+			0xc089c2b8, 0x43242ef6, 0xa51e03aa, 0x9cf2d0a4, 0x83c061ba, 0x9be96a4d, 0x8fe51550, 0xba645bd6,
+			0x2826a2f9, 0xa73a3ae1, 0x4ba99586, 0xef5562e9, 0xc72fefd3, 0xf752f7da, 0x3f046f69, 0x77fa0a59,
+			0x80e4a915, 0x87b08601, 0x9b09e6ad, 0x3b3ee593, 0xe990fd5a, 0x9e34d797, 0x2cf0b7d9, 0x022b8b51,
+			0x96d5ac3a, 0x017da67d, 0xd1cf3ed6, 0x7c7d2d28, 0x1f9f25cf, 0xadf2b89b, 0x5ad6b472, 0x5a88f54c,
+			0xe029ac71, 0xe019a5e6, 0x47b0acfd, 0xed93fa9b, 0xe8d3c48d, 0x283b57cc, 0xf8d56629, 0x79132e28,
+			0x785f0191, 0xed756055, 0xf7960e44, 0xe3d35e8c, 0x15056dd4, 0x88f46dba, 0x03a16125, 0x0564f0bd,
+			0xc3eb9e15, 0x3c9057a2, 0x97271aec, 0xa93a072a, 0x1b3f6d9b, 0x1e6321f5, 0xf59c66fb, 0x26dcf319,
+			0x7533d928, 0xb155fdf5, 0x03563482, 0x8aba3cbb, 0x28517711, 0xc20ad9f8, 0xabcc5167, 0xccad925f,
+			0x4de81751, 0x3830dc8e, 0x379d5862, 0x9320f991, 0xea7a90c2, 0xfb3e7bce, 0x5121ce64, 0x774fbe32,
+			0xa8b6e37e, 0xc3293d46, 0x48de5369, 0x6413e680, 0xa2ae0810, 0xdd6db224, 0x69852dfd, 0x09072166,
+			0xb39a460a, 0x6445c0dd, 0x586cdecf, 0x1c20c8ae, 0x5bbef7dd, 0x1b588d40, 0xccd2017f, 0x6bb4e3bb,
+			0xdda26a7e, 0x3a59ff45, 0x3e350a44, 0xbcb4cdd5, 0x72eacea8, 0xfa6484bb, 0x8d6612ae, 0xbf3c6f47,
+			0xd29be463, 0x542f5d9e, 0xaec2771b, 0xf64e6370, 0x740e0d8d, 0xe75b1357, 0xf8721671, 0xaf537d5d,
+			0x4040cb08, 0x4eb4e2cc, 0x34d2466a, 0x0115af84, 0xe1b00428, 0x95983a1d, 0x06b89fb4, 0xce6ea048,
+			0x6f3f3b82, 0x3520ab82, 0x011a1d4b, 0x277227f8, 0x611560b1, 0xe7933fdc, 0xbb3a792b, 0x344525bd,
+			0xa08839e1, 0x51ce794b, 0x2f32c9b7, 0xa01fbac9, 0xe01cc87e, 0xbcc7d1f6, 0xcf0111c3, 0xa1e8aac7,
+			0x1a908749, 0xd44fbd9a, 0xd0dadecb, 0xd50ada38, 0x0339c32a, 0xc6913667, 0x8df9317c, 0xe0b12b4f,
+			0xf79e59b7, 0x43f5bb3a, 0xf2d519ff, 0x27d9459c, 0xbf97222c, 0x15e6fc2a, 0x0f91fc71, 0x9b941525,
+			0xfae59361, 0xceb69ceb, 0xc2a86459, 0x12baa8d1, 0xb6c1075e, 0xe3056a0c, 0x10d25065, 0xcb03a442,
+			0xe0ec6e0e, 0x1698db3b, 0x4c98a0be, 0x3278e964, 0x9f1f9532, 0xe0d392df, 0xd3a0342b, 0x8971f21e,
+			0x1b0a7441, 0x4ba3348c, 0xc5be7120, 0xc37632d8, 0xdf359f8d, 0x9b992f2e, 0xe60b6f47, 0x0fe3f11d,
+			0xe54cda54, 0x1edad891, 0xce6279cf, 0xcd3e7e6f, 0x1618b166, 0xfd2c1d05, 0x848fd2c5, 0xf6fb2299,
+			0xf523f357, 0xa6327623, 0x93a83531, 0x56cccd02, 0xacf08162, 0x5a75ebb5, 0x6e163697, 0x88d273cc,
+			0xde966292, 0x81b949d0, 0x4c50901b, 0x71c65614, 0xe6c6c7bd, 0x327a140a, 0x45e1d006, 0xc3f27b9a,
+			0xc9aa53fd, 0x62a80f00, 0xbb25bfe2, 0x35bdd2f6, 0x71126905, 0xb2040222, 0xb6cbcf7c, 0xcd769c2b,
+			0x53113ec0, 0x1640e3d3, 0x38abbd60, 0x2547adf0, 0xba38209c, 0xf746ce76, 0x77afa1c5, 0x20756060,
+			0x85cbfe4e, 0x8ae88dd8, 0x7aaaf9b0, 0x4cf9aa7e, 0x1948c25c, 0x02fb8a8c, 0x01c36ae4, 0xd6ebe1f9,
+			0x90d4f869, 0xa65cdea0, 0x3f09252d, 0xc208e69f, 0xb74e6132, 0xce77e25b, 0x578fdfe3, 0x3ac372e6
+		)
+	);
+	protected static $bfp = array(
+        0x243f6a88, 0x85a308d3, 0x13198a2e, 0x03707344, 0xa4093822, 0x299f31d0,
+        0x082efa98, 0xec4e6c89, 0x452821e6, 0x38d01377, 0xbe5466cf, 0x34e90c6c,
+        0xc0ac29b7, 0xc97c50dd, 0x3f84d5b5, 0xb5470917, 0x9216d5d9, 0x8979fb1b
+	);
+	private static function bff($i, $sbox){
+		$x0 = $i & 0xff;
+		$x1 = ($i >> 8)  & 0xff;
+		$x2 = ($i >> 16) & 0xff;
+		$x3 = ($i >> 24) & 0xff;
+		$f  = ($sbox[0][$x3] + $sbox[1][$x2]) & 0xffffffff;
+		$f  = ($f ^ $sbox[2][$x1]) & 0xffffffff;
+		return ($f + $sbox[3][$x0]) & 0xffffffff;
+	}
+
+	protected static $tfq = array(
+		array(
+			0xA9, 0x67, 0xB3, 0xE8, 0x04, 0xFD, 0xA3, 0x76,
+			0x9A, 0x92, 0x80, 0x78, 0xE4, 0xDD, 0xD1, 0x38,
+			0x0D, 0xC6, 0x35, 0x98, 0x18, 0xF7, 0xEC, 0x6C,
+			0x43, 0x75, 0x37, 0x26, 0xFA, 0x13, 0x94, 0x48,
+			0xF2, 0xD0, 0x8B, 0x30, 0x84, 0x54, 0xDF, 0x23,
+			0x19, 0x5B, 0x3D, 0x59, 0xF3, 0xAE, 0xA2, 0x82,
+			0x63, 0x01, 0x83, 0x2E, 0xD9, 0x51, 0x9B, 0x7C,
+			0xA6, 0xEB, 0xA5, 0xBE, 0x16, 0x0C, 0xE3, 0x61,
+			0xC0, 0x8C, 0x3A, 0xF5, 0x73, 0x2C, 0x25, 0x0B,
+			0xBB, 0x4E, 0x89, 0x6B, 0x53, 0x6A, 0xB4, 0xF1,
+			0xE1, 0xE6, 0xBD, 0x45, 0xE2, 0xF4, 0xB6, 0x66,
+			0xCC, 0x95, 0x03, 0x56, 0xD4, 0x1C, 0x1E, 0xD7,
+			0xFB, 0xC3, 0x8E, 0xB5, 0xE9, 0xCF, 0xBF, 0xBA,
+			0xEA, 0x77, 0x39, 0xAF, 0x33, 0xC9, 0x62, 0x71,
+			0x81, 0x79, 0x09, 0xAD, 0x24, 0xCD, 0xF9, 0xD8,
+			0xE5, 0xC5, 0xB9, 0x4D, 0x44, 0x08, 0x86, 0xE7,
+			0xA1, 0x1D, 0xAA, 0xED, 0x06, 0x70, 0xB2, 0xD2,
+			0x41, 0x7B, 0xA0, 0x11, 0x31, 0xC2, 0x27, 0x90,
+			0x20, 0xF6, 0x60, 0xFF, 0x96, 0x5C, 0xB1, 0xAB,
+			0x9E, 0x9C, 0x52, 0x1B, 0x5F, 0x93, 0x0A, 0xEF,
+			0x91, 0x85, 0x49, 0xEE, 0x2D, 0x4F, 0x8F, 0x3B,
+			0x47, 0x87, 0x6D, 0x46, 0xD6, 0x3E, 0x69, 0x64,
+			0x2A, 0xCE, 0xCB, 0x2F, 0xFC, 0x97, 0x05, 0x7A,
+			0xAC, 0x7F, 0xD5, 0x1A, 0x4B, 0x0E, 0xA7, 0x5A,
+			0x28, 0x14, 0x3F, 0x29, 0x88, 0x3C, 0x4C, 0x02,
+			0xB8, 0xDA, 0xB0, 0x17, 0x55, 0x1F, 0x8A, 0x7D,
+			0x57, 0xC7, 0x8D, 0x74, 0xB7, 0xC4, 0x9F, 0x72,
+			0x7E, 0x15, 0x22, 0x12, 0x58, 0x07, 0x99, 0x34,
+			0x6E, 0x50, 0xDE, 0x68, 0x65, 0xBC, 0xDB, 0xF8,
+			0xC8, 0xA8, 0x2B, 0x40, 0xDC, 0xFE, 0x32, 0xA4,
+			0xCA, 0x10, 0x21, 0xF0, 0xD3, 0x5D, 0x0F, 0x00,
+			0x6F, 0x9D, 0x36, 0x42, 0x4A, 0x5E, 0xC1, 0xE0
+		), array(
+			0x75, 0xF3, 0xC6, 0xF4, 0xDB, 0x7B, 0xFB, 0xC8,
+			0x4A, 0xD3, 0xE6, 0x6B, 0x45, 0x7D, 0xE8, 0x4B,
+			0xD6, 0x32, 0xD8, 0xFD, 0x37, 0x71, 0xF1, 0xE1,
+			0x30, 0x0F, 0xF8, 0x1B, 0x87, 0xFA, 0x06, 0x3F,
+			0x5E, 0xBA, 0xAE, 0x5B, 0x8A, 0x00, 0xBC, 0x9D,
+			0x6D, 0xC1, 0xB1, 0x0E, 0x80, 0x5D, 0xD2, 0xD5,
+			0xA0, 0x84, 0x07, 0x14, 0xB5, 0x90, 0x2C, 0xA3,
+			0xB2, 0x73, 0x4C, 0x54, 0x92, 0x74, 0x36, 0x51,
+			0x38, 0xB0, 0xBD, 0x5A, 0xFC, 0x60, 0x62, 0x96,
+			0x6C, 0x42, 0xF7, 0x10, 0x7C, 0x28, 0x27, 0x8C,
+			0x13, 0x95, 0x9C, 0xC7, 0x24, 0x46, 0x3B, 0x70,
+			0xCA, 0xE3, 0x85, 0xCB, 0x11, 0xD0, 0x93, 0xB8,
+			0xA6, 0x83, 0x20, 0xFF, 0x9F, 0x77, 0xC3, 0xCC,
+			0x03, 0x6F, 0x08, 0xBF, 0x40, 0xE7, 0x2B, 0xE2,
+			0x79, 0x0C, 0xAA, 0x82, 0x41, 0x3A, 0xEA, 0xB9,
+			0xE4, 0x9A, 0xA4, 0x97, 0x7E, 0xDA, 0x7A, 0x17,
+			0x66, 0x94, 0xA1, 0x1D, 0x3D, 0xF0, 0xDE, 0xB3,
+			0x0B, 0x72, 0xA7, 0x1C, 0xEF, 0xD1, 0x53, 0x3E,
+			0x8F, 0x33, 0x26, 0x5F, 0xEC, 0x76, 0x2A, 0x49,
+			0x81, 0x88, 0xEE, 0x21, 0xC4, 0x1A, 0xEB, 0xD9,
+			0xC5, 0x39, 0x99, 0xCD, 0xAD, 0x31, 0x8B, 0x01,
+			0x18, 0x23, 0xDD, 0x1F, 0x4E, 0x2D, 0xF9, 0x48,
+			0x4F, 0xF2, 0x65, 0x8E, 0x78, 0x5C, 0x58, 0x19,
+			0x8D, 0xE5, 0x98, 0x57, 0x67, 0x7F, 0x05, 0x64,
+			0xAF, 0x63, 0xB6, 0xFE, 0xF5, 0xB7, 0x3C, 0xA5,
+			0xCE, 0xE9, 0x68, 0x44, 0xE0, 0x4D, 0x43, 0x69,
+			0x29, 0x2E, 0xAC, 0x15, 0x59, 0xA8, 0x0A, 0x9E,
+			0x6E, 0x47, 0xDF, 0x34, 0x35, 0x6A, 0xCF, 0xDC,
+			0x22, 0xC9, 0xC0, 0x9B, 0x89, 0xD4, 0xED, 0xAB,
+			0x12, 0xA2, 0x0D, 0x52, 0xBB, 0x02, 0x2F, 0xA9,
+			0xD7, 0x61, 0x1E, 0xB4, 0x50, 0x04, 0xF6, 0xC2,
+			0x16, 0x25, 0x86, 0x56, 0x55, 0x09, 0xBE, 0x91
+		)
+	);
+	protected static $tfm = array(
+		array(
+			0xBCBC3275, 0xECEC21F3, 0x202043C6, 0xB3B3C9F4, 0xDADA03DB, 0x02028B7B, 0xE2E22BFB, 0x9E9EFAC8,
+			0xC9C9EC4A, 0xD4D409D3, 0x18186BE6, 0x1E1E9F6B, 0x98980E45, 0xB2B2387D, 0xA6A6D2E8, 0x2626B74B,
+			0x3C3C57D6, 0x93938A32, 0x8282EED8, 0x525298FD, 0x7B7BD437, 0xBBBB3771, 0x5B5B97F1, 0x474783E1,
+			0x24243C30, 0x5151E20F, 0xBABAC6F8, 0x4A4AF31B, 0xBFBF4887, 0x0D0D70FA, 0xB0B0B306, 0x7575DE3F,
+			0xD2D2FD5E, 0x7D7D20BA, 0x666631AE, 0x3A3AA35B, 0x59591C8A, 0x00000000, 0xCDCD93BC, 0x1A1AE09D,
+			0xAEAE2C6D, 0x7F7FABC1, 0x2B2BC7B1, 0xBEBEB90E, 0xE0E0A080, 0x8A8A105D, 0x3B3B52D2, 0x6464BAD5,
+			0xD8D888A0, 0xE7E7A584, 0x5F5FE807, 0x1B1B1114, 0x2C2CC2B5, 0xFCFCB490, 0x3131272C, 0x808065A3,
+			0x73732AB2, 0x0C0C8173, 0x79795F4C, 0x6B6B4154, 0x4B4B0292, 0x53536974, 0x94948F36, 0x83831F51,
+			0x2A2A3638, 0xC4C49CB0, 0x2222C8BD, 0xD5D5F85A, 0xBDBDC3FC, 0x48487860, 0xFFFFCE62, 0x4C4C0796,
+			0x4141776C, 0xC7C7E642, 0xEBEB24F7, 0x1C1C1410, 0x5D5D637C, 0x36362228, 0x6767C027, 0xE9E9AF8C,
+			0x4444F913, 0x1414EA95, 0xF5F5BB9C, 0xCFCF18C7, 0x3F3F2D24, 0xC0C0E346, 0x7272DB3B, 0x54546C70,
+			0x29294CCA, 0xF0F035E3, 0x0808FE85, 0xC6C617CB, 0xF3F34F11, 0x8C8CE4D0, 0xA4A45993, 0xCACA96B8,
+			0x68683BA6, 0xB8B84D83, 0x38382820, 0xE5E52EFF, 0xADAD569F, 0x0B0B8477, 0xC8C81DC3, 0x9999FFCC,
+			0x5858ED03, 0x19199A6F, 0x0E0E0A08, 0x95957EBF, 0x70705040, 0xF7F730E7, 0x6E6ECF2B, 0x1F1F6EE2,
+			0xB5B53D79, 0x09090F0C, 0x616134AA, 0x57571682, 0x9F9F0B41, 0x9D9D803A, 0x111164EA, 0x2525CDB9,
+			0xAFAFDDE4, 0x4545089A, 0xDFDF8DA4, 0xA3A35C97, 0xEAEAD57E, 0x353558DA, 0xEDEDD07A, 0x4343FC17,
+			0xF8F8CB66, 0xFBFBB194, 0x3737D3A1, 0xFAFA401D, 0xC2C2683D, 0xB4B4CCF0, 0x32325DDE, 0x9C9C71B3,
+			0x5656E70B, 0xE3E3DA72, 0x878760A7, 0x15151B1C, 0xF9F93AEF, 0x6363BFD1, 0x3434A953, 0x9A9A853E,
+			0xB1B1428F, 0x7C7CD133, 0x88889B26, 0x3D3DA65F, 0xA1A1D7EC, 0xE4E4DF76, 0x8181942A, 0x91910149,
+			0x0F0FFB81, 0xEEEEAA88, 0x161661EE, 0xD7D77321, 0x9797F5C4, 0xA5A5A81A, 0xFEFE3FEB, 0x6D6DB5D9,
+			0x7878AEC5, 0xC5C56D39, 0x1D1DE599, 0x7676A4CD, 0x3E3EDCAD, 0xCBCB6731, 0xB6B6478B, 0xEFEF5B01,
+			0x12121E18, 0x6060C523, 0x6A6AB0DD, 0x4D4DF61F, 0xCECEE94E, 0xDEDE7C2D, 0x55559DF9, 0x7E7E5A48,
+			0x2121B24F, 0x03037AF2, 0xA0A02665, 0x5E5E198E, 0x5A5A6678, 0x65654B5C, 0x62624E58, 0xFDFD4519,
+			0x0606F48D, 0x404086E5, 0xF2F2BE98, 0x3333AC57, 0x17179067, 0x05058E7F, 0xE8E85E05, 0x4F4F7D64,
+			0x89896AAF, 0x10109563, 0x74742FB6, 0x0A0A75FE, 0x5C5C92F5, 0x9B9B74B7, 0x2D2D333C, 0x3030D6A5,
+			0x2E2E49CE, 0x494989E9, 0x46467268, 0x77775544, 0xA8A8D8E0, 0x9696044D, 0x2828BD43, 0xA9A92969,
+			0xD9D97929, 0x8686912E, 0xD1D187AC, 0xF4F44A15, 0x8D8D1559, 0xD6D682A8, 0xB9B9BC0A, 0x42420D9E,
+			0xF6F6C16E, 0x2F2FB847, 0xDDDD06DF, 0x23233934, 0xCCCC6235, 0xF1F1C46A, 0xC1C112CF, 0x8585EBDC,
+			0x8F8F9E22, 0x7171A1C9, 0x9090F0C0, 0xAAAA539B, 0x0101F189, 0x8B8BE1D4, 0x4E4E8CED, 0x8E8E6FAB,
+			0xABABA212, 0x6F6F3EA2, 0xE6E6540D, 0xDBDBF252, 0x92927BBB, 0xB7B7B602, 0x6969CA2F, 0x3939D9A9,
+			0xD3D30CD7, 0xA7A72361, 0xA2A2AD1E, 0xC3C399B4, 0x6C6C4450, 0x07070504, 0x04047FF6, 0x272746C2,
+			0xACACA716, 0xD0D07625, 0x50501386, 0xDCDCF756, 0x84841A55, 0xE1E15109, 0x7A7A25BE, 0x1313EF91
+		), array(
+			0xA9D93939, 0x67901717, 0xB3719C9C, 0xE8D2A6A6, 0x04050707, 0xFD985252, 0xA3658080, 0x76DFE4E4,
+			0x9A084545, 0x92024B4B, 0x80A0E0E0, 0x78665A5A, 0xE4DDAFAF, 0xDDB06A6A, 0xD1BF6363, 0x38362A2A,
+			0x0D54E6E6, 0xC6432020, 0x3562CCCC, 0x98BEF2F2, 0x181E1212, 0xF724EBEB, 0xECD7A1A1, 0x6C774141,
+			0x43BD2828, 0x7532BCBC, 0x37D47B7B, 0x269B8888, 0xFA700D0D, 0x13F94444, 0x94B1FBFB, 0x485A7E7E,
+			0xF27A0303, 0xD0E48C8C, 0x8B47B6B6, 0x303C2424, 0x84A5E7E7, 0x54416B6B, 0xDF06DDDD, 0x23C56060,
+			0x1945FDFD, 0x5BA33A3A, 0x3D68C2C2, 0x59158D8D, 0xF321ECEC, 0xAE316666, 0xA23E6F6F, 0x82165757,
+			0x63951010, 0x015BEFEF, 0x834DB8B8, 0x2E918686, 0xD9B56D6D, 0x511F8383, 0x9B53AAAA, 0x7C635D5D,
+			0xA63B6868, 0xEB3FFEFE, 0xA5D63030, 0xBE257A7A, 0x16A7ACAC, 0x0C0F0909, 0xE335F0F0, 0x6123A7A7,
+			0xC0F09090, 0x8CAFE9E9, 0x3A809D9D, 0xF5925C5C, 0x73810C0C, 0x2C273131, 0x2576D0D0, 0x0BE75656,
+			0xBB7B9292, 0x4EE9CECE, 0x89F10101, 0x6B9F1E1E, 0x53A93434, 0x6AC4F1F1, 0xB499C3C3, 0xF1975B5B,
+			0xE1834747, 0xE66B1818, 0xBDC82222, 0x450E9898, 0xE26E1F1F, 0xF4C9B3B3, 0xB62F7474, 0x66CBF8F8,
+			0xCCFF9999, 0x95EA1414, 0x03ED5858, 0x56F7DCDC, 0xD4E18B8B, 0x1C1B1515, 0x1EADA2A2, 0xD70CD3D3,
+			0xFB2BE2E2, 0xC31DC8C8, 0x8E195E5E, 0xB5C22C2C, 0xE9894949, 0xCF12C1C1, 0xBF7E9595, 0xBA207D7D,
+			0xEA641111, 0x77840B0B, 0x396DC5C5, 0xAF6A8989, 0x33D17C7C, 0xC9A17171, 0x62CEFFFF, 0x7137BBBB,
+			0x81FB0F0F, 0x793DB5B5, 0x0951E1E1, 0xADDC3E3E, 0x242D3F3F, 0xCDA47676, 0xF99D5555, 0xD8EE8282,
+			0xE5864040, 0xC5AE7878, 0xB9CD2525, 0x4D049696, 0x44557777, 0x080A0E0E, 0x86135050, 0xE730F7F7,
+			0xA1D33737, 0x1D40FAFA, 0xAA346161, 0xED8C4E4E, 0x06B3B0B0, 0x706C5454, 0xB22A7373, 0xD2523B3B,
+			0x410B9F9F, 0x7B8B0202, 0xA088D8D8, 0x114FF3F3, 0x3167CBCB, 0xC2462727, 0x27C06767, 0x90B4FCFC,
+			0x20283838, 0xF67F0404, 0x60784848, 0xFF2EE5E5, 0x96074C4C, 0x5C4B6565, 0xB1C72B2B, 0xAB6F8E8E,
+			0x9E0D4242, 0x9CBBF5F5, 0x52F2DBDB, 0x1BF34A4A, 0x5FA63D3D, 0x9359A4A4, 0x0ABCB9B9, 0xEF3AF9F9,
+			0x91EF1313, 0x85FE0808, 0x49019191, 0xEE611616, 0x2D7CDEDE, 0x4FB22121, 0x8F42B1B1, 0x3BDB7272,
+			0x47B82F2F, 0x8748BFBF, 0x6D2CAEAE, 0x46E3C0C0, 0xD6573C3C, 0x3E859A9A, 0x6929A9A9, 0x647D4F4F,
+			0x2A948181, 0xCE492E2E, 0xCB17C6C6, 0x2FCA6969, 0xFCC3BDBD, 0x975CA3A3, 0x055EE8E8, 0x7AD0EDED,
+			0xAC87D1D1, 0x7F8E0505, 0xD5BA6464, 0x1AA8A5A5, 0x4BB72626, 0x0EB9BEBE, 0xA7608787, 0x5AF8D5D5,
+			0x28223636, 0x14111B1B, 0x3FDE7575, 0x2979D9D9, 0x88AAEEEE, 0x3C332D2D, 0x4C5F7979, 0x02B6B7B7,
+			0xB896CACA, 0xDA583535, 0xB09CC4C4, 0x17FC4343, 0x551A8484, 0x1FF64D4D, 0x8A1C5959, 0x7D38B2B2,
+			0x57AC3333, 0xC718CFCF, 0x8DF40606, 0x74695353, 0xB7749B9B, 0xC4F59797, 0x9F56ADAD, 0x72DAE3E3,
+			0x7ED5EAEA, 0x154AF4F4, 0x229E8F8F, 0x12A2ABAB, 0x584E6262, 0x07E85F5F, 0x99E51D1D, 0x34392323,
+			0x6EC1F6F6, 0x50446C6C, 0xDE5D3232, 0x68724646, 0x6526A0A0, 0xBC93CDCD, 0xDB03DADA, 0xF8C6BABA,
+			0xC8FA9E9E, 0xA882D6D6, 0x2BCF6E6E, 0x40507070, 0xDCEB8585, 0xFE750A0A, 0x328A9393, 0xA48DDFDF,
+			0xCA4C2929, 0x10141C1C, 0x2173D7D7, 0xF0CCB4B4, 0xD309D4D4, 0x5D108A8A, 0x0FE25151, 0x00000000,
+			0x6F9A1919, 0x9DE01A1A, 0x368F9494, 0x42E6C7C7, 0x4AECC9C9, 0x5EFDD2D2, 0xC1AB7F7F, 0xE0D8A8A8
+		), array(
+			0xBC75BC32, 0xECF3EC21, 0x20C62043, 0xB3F4B3C9, 0xDADBDA03, 0x027B028B, 0xE2FBE22B, 0x9EC89EFA,
+			0xC94AC9EC, 0xD4D3D409, 0x18E6186B, 0x1E6B1E9F, 0x9845980E, 0xB27DB238, 0xA6E8A6D2, 0x264B26B7,
+			0x3CD63C57, 0x9332938A, 0x82D882EE, 0x52FD5298, 0x7B377BD4, 0xBB71BB37, 0x5BF15B97, 0x47E14783,
+			0x2430243C, 0x510F51E2, 0xBAF8BAC6, 0x4A1B4AF3, 0xBF87BF48, 0x0DFA0D70, 0xB006B0B3, 0x753F75DE,
+			0xD25ED2FD, 0x7DBA7D20, 0x66AE6631, 0x3A5B3AA3, 0x598A591C, 0x00000000, 0xCDBCCD93, 0x1A9D1AE0,
+			0xAE6DAE2C, 0x7FC17FAB, 0x2BB12BC7, 0xBE0EBEB9, 0xE080E0A0, 0x8A5D8A10, 0x3BD23B52, 0x64D564BA,
+			0xD8A0D888, 0xE784E7A5, 0x5F075FE8, 0x1B141B11, 0x2CB52CC2, 0xFC90FCB4, 0x312C3127, 0x80A38065,
+			0x73B2732A, 0x0C730C81, 0x794C795F, 0x6B546B41, 0x4B924B02, 0x53745369, 0x9436948F, 0x8351831F,
+			0x2A382A36, 0xC4B0C49C, 0x22BD22C8, 0xD55AD5F8, 0xBDFCBDC3, 0x48604878, 0xFF62FFCE, 0x4C964C07,
+			0x416C4177, 0xC742C7E6, 0xEBF7EB24, 0x1C101C14, 0x5D7C5D63, 0x36283622, 0x672767C0, 0xE98CE9AF,
+			0x441344F9, 0x149514EA, 0xF59CF5BB, 0xCFC7CF18, 0x3F243F2D, 0xC046C0E3, 0x723B72DB, 0x5470546C,
+			0x29CA294C, 0xF0E3F035, 0x088508FE, 0xC6CBC617, 0xF311F34F, 0x8CD08CE4, 0xA493A459, 0xCAB8CA96,
+			0x68A6683B, 0xB883B84D, 0x38203828, 0xE5FFE52E, 0xAD9FAD56, 0x0B770B84, 0xC8C3C81D, 0x99CC99FF,
+			0x580358ED, 0x196F199A, 0x0E080E0A, 0x95BF957E, 0x70407050, 0xF7E7F730, 0x6E2B6ECF, 0x1FE21F6E,
+			0xB579B53D, 0x090C090F, 0x61AA6134, 0x57825716, 0x9F419F0B, 0x9D3A9D80, 0x11EA1164, 0x25B925CD,
+			0xAFE4AFDD, 0x459A4508, 0xDFA4DF8D, 0xA397A35C, 0xEA7EEAD5, 0x35DA3558, 0xED7AEDD0, 0x431743FC,
+			0xF866F8CB, 0xFB94FBB1, 0x37A137D3, 0xFA1DFA40, 0xC23DC268, 0xB4F0B4CC, 0x32DE325D, 0x9CB39C71,
+			0x560B56E7, 0xE372E3DA, 0x87A78760, 0x151C151B, 0xF9EFF93A, 0x63D163BF, 0x345334A9, 0x9A3E9A85,
+			0xB18FB142, 0x7C337CD1, 0x8826889B, 0x3D5F3DA6, 0xA1ECA1D7, 0xE476E4DF, 0x812A8194, 0x91499101,
+			0x0F810FFB, 0xEE88EEAA, 0x16EE1661, 0xD721D773, 0x97C497F5, 0xA51AA5A8, 0xFEEBFE3F, 0x6DD96DB5,
+			0x78C578AE, 0xC539C56D, 0x1D991DE5, 0x76CD76A4, 0x3EAD3EDC, 0xCB31CB67, 0xB68BB647, 0xEF01EF5B,
+			0x1218121E, 0x602360C5, 0x6ADD6AB0, 0x4D1F4DF6, 0xCE4ECEE9, 0xDE2DDE7C, 0x55F9559D, 0x7E487E5A,
+			0x214F21B2, 0x03F2037A, 0xA065A026, 0x5E8E5E19, 0x5A785A66, 0x655C654B, 0x6258624E, 0xFD19FD45,
+			0x068D06F4, 0x40E54086, 0xF298F2BE, 0x335733AC, 0x17671790, 0x057F058E, 0xE805E85E, 0x4F644F7D,
+			0x89AF896A, 0x10631095, 0x74B6742F, 0x0AFE0A75, 0x5CF55C92, 0x9BB79B74, 0x2D3C2D33, 0x30A530D6,
+			0x2ECE2E49, 0x49E94989, 0x46684672, 0x77447755, 0xA8E0A8D8, 0x964D9604, 0x284328BD, 0xA969A929,
+			0xD929D979, 0x862E8691, 0xD1ACD187, 0xF415F44A, 0x8D598D15, 0xD6A8D682, 0xB90AB9BC, 0x429E420D,
+			0xF66EF6C1, 0x2F472FB8, 0xDDDFDD06, 0x23342339, 0xCC35CC62, 0xF16AF1C4, 0xC1CFC112, 0x85DC85EB,
+			0x8F228F9E, 0x71C971A1, 0x90C090F0, 0xAA9BAA53, 0x018901F1, 0x8BD48BE1, 0x4EED4E8C, 0x8EAB8E6F,
+			0xAB12ABA2, 0x6FA26F3E, 0xE60DE654, 0xDB52DBF2, 0x92BB927B, 0xB702B7B6, 0x692F69CA, 0x39A939D9,
+			0xD3D7D30C, 0xA761A723, 0xA21EA2AD, 0xC3B4C399, 0x6C506C44, 0x07040705, 0x04F6047F, 0x27C22746,
+			0xAC16ACA7, 0xD025D076, 0x50865013, 0xDC56DCF7, 0x8455841A, 0xE109E151, 0x7ABE7A25, 0x139113EF
+		), array(
+			0xD939A9D9, 0x90176790, 0x719CB371, 0xD2A6E8D2, 0x05070405, 0x9852FD98, 0x6580A365, 0xDFE476DF,
+			0x08459A08, 0x024B9202, 0xA0E080A0, 0x665A7866, 0xDDAFE4DD, 0xB06ADDB0, 0xBF63D1BF, 0x362A3836,
+			0x54E60D54, 0x4320C643, 0x62CC3562, 0xBEF298BE, 0x1E12181E, 0x24EBF724, 0xD7A1ECD7, 0x77416C77,
+			0xBD2843BD, 0x32BC7532, 0xD47B37D4, 0x9B88269B, 0x700DFA70, 0xF94413F9, 0xB1FB94B1, 0x5A7E485A,
+			0x7A03F27A, 0xE48CD0E4, 0x47B68B47, 0x3C24303C, 0xA5E784A5, 0x416B5441, 0x06DDDF06, 0xC56023C5,
+			0x45FD1945, 0xA33A5BA3, 0x68C23D68, 0x158D5915, 0x21ECF321, 0x3166AE31, 0x3E6FA23E, 0x16578216,
+			0x95106395, 0x5BEF015B, 0x4DB8834D, 0x91862E91, 0xB56DD9B5, 0x1F83511F, 0x53AA9B53, 0x635D7C63,
+			0x3B68A63B, 0x3FFEEB3F, 0xD630A5D6, 0x257ABE25, 0xA7AC16A7, 0x0F090C0F, 0x35F0E335, 0x23A76123,
+			0xF090C0F0, 0xAFE98CAF, 0x809D3A80, 0x925CF592, 0x810C7381, 0x27312C27, 0x76D02576, 0xE7560BE7,
+			0x7B92BB7B, 0xE9CE4EE9, 0xF10189F1, 0x9F1E6B9F, 0xA93453A9, 0xC4F16AC4, 0x99C3B499, 0x975BF197,
+			0x8347E183, 0x6B18E66B, 0xC822BDC8, 0x0E98450E, 0x6E1FE26E, 0xC9B3F4C9, 0x2F74B62F, 0xCBF866CB,
+			0xFF99CCFF, 0xEA1495EA, 0xED5803ED, 0xF7DC56F7, 0xE18BD4E1, 0x1B151C1B, 0xADA21EAD, 0x0CD3D70C,
+			0x2BE2FB2B, 0x1DC8C31D, 0x195E8E19, 0xC22CB5C2, 0x8949E989, 0x12C1CF12, 0x7E95BF7E, 0x207DBA20,
+			0x6411EA64, 0x840B7784, 0x6DC5396D, 0x6A89AF6A, 0xD17C33D1, 0xA171C9A1, 0xCEFF62CE, 0x37BB7137,
+			0xFB0F81FB, 0x3DB5793D, 0x51E10951, 0xDC3EADDC, 0x2D3F242D, 0xA476CDA4, 0x9D55F99D, 0xEE82D8EE,
+			0x8640E586, 0xAE78C5AE, 0xCD25B9CD, 0x04964D04, 0x55774455, 0x0A0E080A, 0x13508613, 0x30F7E730,
+			0xD337A1D3, 0x40FA1D40, 0x3461AA34, 0x8C4EED8C, 0xB3B006B3, 0x6C54706C, 0x2A73B22A, 0x523BD252,
+			0x0B9F410B, 0x8B027B8B, 0x88D8A088, 0x4FF3114F, 0x67CB3167, 0x4627C246, 0xC06727C0, 0xB4FC90B4,
+			0x28382028, 0x7F04F67F, 0x78486078, 0x2EE5FF2E, 0x074C9607, 0x4B655C4B, 0xC72BB1C7, 0x6F8EAB6F,
+			0x0D429E0D, 0xBBF59CBB, 0xF2DB52F2, 0xF34A1BF3, 0xA63D5FA6, 0x59A49359, 0xBCB90ABC, 0x3AF9EF3A,
+			0xEF1391EF, 0xFE0885FE, 0x01914901, 0x6116EE61, 0x7CDE2D7C, 0xB2214FB2, 0x42B18F42, 0xDB723BDB,
+			0xB82F47B8, 0x48BF8748, 0x2CAE6D2C, 0xE3C046E3, 0x573CD657, 0x859A3E85, 0x29A96929, 0x7D4F647D,
+			0x94812A94, 0x492ECE49, 0x17C6CB17, 0xCA692FCA, 0xC3BDFCC3, 0x5CA3975C, 0x5EE8055E, 0xD0ED7AD0,
+			0x87D1AC87, 0x8E057F8E, 0xBA64D5BA, 0xA8A51AA8, 0xB7264BB7, 0xB9BE0EB9, 0x6087A760, 0xF8D55AF8,
+			0x22362822, 0x111B1411, 0xDE753FDE, 0x79D92979, 0xAAEE88AA, 0x332D3C33, 0x5F794C5F, 0xB6B702B6,
+			0x96CAB896, 0x5835DA58, 0x9CC4B09C, 0xFC4317FC, 0x1A84551A, 0xF64D1FF6, 0x1C598A1C, 0x38B27D38,
+			0xAC3357AC, 0x18CFC718, 0xF4068DF4, 0x69537469, 0x749BB774, 0xF597C4F5, 0x56AD9F56, 0xDAE372DA,
+			0xD5EA7ED5, 0x4AF4154A, 0x9E8F229E, 0xA2AB12A2, 0x4E62584E, 0xE85F07E8, 0xE51D99E5, 0x39233439,
+			0xC1F66EC1, 0x446C5044, 0x5D32DE5D, 0x72466872, 0x26A06526, 0x93CDBC93, 0x03DADB03, 0xC6BAF8C6,
+			0xFA9EC8FA, 0x82D6A882, 0xCF6E2BCF, 0x50704050, 0xEB85DCEB, 0x750AFE75, 0x8A93328A, 0x8DDFA48D,
+			0x4C29CA4C, 0x141C1014, 0x73D72173, 0xCCB4F0CC, 0x09D4D309, 0x108A5D10, 0xE2510FE2, 0x00000000,
+			0x9A196F9A, 0xE01A9DE0, 0x8F94368F, 0xE6C742E6, 0xECC94AEC, 0xFDD25EFD, 0xAB7FC1AB, 0xD8A8E0D8
+		)
+	);
+	
+	protected static $rjt = array(
+		0x6363A5C6, 0x7C7C84F8, 0x777799EE, 0x7B7B8DF6, 0xF2F20DFF, 0x6B6BBDD6, 0x6F6FB1DE, 0xC5C55491,
+		0x30305060, 0x01010302, 0x6767A9CE, 0x2B2B7D56, 0xFEFE19E7, 0xD7D762B5, 0xABABE64D, 0x76769AEC,
+		0xCACA458F, 0x82829D1F, 0xC9C94089, 0x7D7D87FA, 0xFAFA15EF, 0x5959EBB2, 0x4747C98E, 0xF0F00BFB,
+		0xADADEC41, 0xD4D467B3, 0xA2A2FD5F, 0xAFAFEA45, 0x9C9CBF23, 0xA4A4F753, 0x727296E4, 0xC0C05B9B,
+		0xB7B7C275, 0xFDFD1CE1, 0x9393AE3D, 0x26266A4C, 0x36365A6C, 0x3F3F417E, 0xF7F702F5, 0xCCCC4F83,
+		0x34345C68, 0xA5A5F451, 0xE5E534D1, 0xF1F108F9, 0x717193E2, 0xD8D873AB, 0x31315362, 0x15153F2A,
+		0x04040C08, 0xC7C75295, 0x23236546, 0xC3C35E9D, 0x18182830, 0x9696A137, 0x05050F0A, 0x9A9AB52F,
+		0x0707090E, 0x12123624, 0x80809B1B, 0xE2E23DDF, 0xEBEB26CD, 0x2727694E, 0xB2B2CD7F, 0x75759FEA,
+		0x09091B12, 0x83839E1D, 0x2C2C7458, 0x1A1A2E34, 0x1B1B2D36, 0x6E6EB2DC, 0x5A5AEEB4, 0xA0A0FB5B,
+		0x5252F6A4, 0x3B3B4D76, 0xD6D661B7, 0xB3B3CE7D, 0x29297B52, 0xE3E33EDD, 0x2F2F715E, 0x84849713,
+		0x5353F5A6, 0xD1D168B9, 0x00000000, 0xEDED2CC1, 0x20206040, 0xFCFC1FE3, 0xB1B1C879, 0x5B5BEDB6,
+		0x6A6ABED4, 0xCBCB468D, 0xBEBED967, 0x39394B72, 0x4A4ADE94, 0x4C4CD498, 0x5858E8B0, 0xCFCF4A85,
+		0xD0D06BBB, 0xEFEF2AC5, 0xAAAAE54F, 0xFBFB16ED, 0x4343C586, 0x4D4DD79A, 0x33335566, 0x85859411,
+		0x4545CF8A, 0xF9F910E9, 0x02020604, 0x7F7F81FE, 0x5050F0A0, 0x3C3C4478, 0x9F9FBA25, 0xA8A8E34B,
+		0x5151F3A2, 0xA3A3FE5D, 0x4040C080, 0x8F8F8A05, 0x9292AD3F, 0x9D9DBC21, 0x38384870, 0xF5F504F1,
+		0xBCBCDF63, 0xB6B6C177, 0xDADA75AF, 0x21216342, 0x10103020, 0xFFFF1AE5, 0xF3F30EFD, 0xD2D26DBF,
+		0xCDCD4C81, 0x0C0C1418, 0x13133526, 0xECEC2FC3, 0x5F5FE1BE, 0x9797A235, 0x4444CC88, 0x1717392E,
+		0xC4C45793, 0xA7A7F255, 0x7E7E82FC, 0x3D3D477A, 0x6464ACC8, 0x5D5DE7BA, 0x19192B32, 0x737395E6,
+		0x6060A0C0, 0x81819819, 0x4F4FD19E, 0xDCDC7FA3, 0x22226644, 0x2A2A7E54, 0x9090AB3B, 0x8888830B,
+		0x4646CA8C, 0xEEEE29C7, 0xB8B8D36B, 0x14143C28, 0xDEDE79A7, 0x5E5EE2BC, 0x0B0B1D16, 0xDBDB76AD,
+		0xE0E03BDB, 0x32325664, 0x3A3A4E74, 0x0A0A1E14, 0x4949DB92, 0x06060A0C, 0x24246C48, 0x5C5CE4B8,
+		0xC2C25D9F, 0xD3D36EBD, 0xACACEF43, 0x6262A6C4, 0x9191A839, 0x9595A431, 0xE4E437D3, 0x79798BF2,
+		0xE7E732D5, 0xC8C8438B, 0x3737596E, 0x6D6DB7DA, 0x8D8D8C01, 0xD5D564B1, 0x4E4ED29C, 0xA9A9E049,
+		0x6C6CB4D8, 0x5656FAAC, 0xF4F407F3, 0xEAEA25CF, 0x6565AFCA, 0x7A7A8EF4, 0xAEAEE947, 0x08081810,
+		0xBABAD56F, 0x787888F0, 0x25256F4A, 0x2E2E725C, 0x1C1C2438, 0xA6A6F157, 0xB4B4C773, 0xC6C65197,
+		0xE8E823CB, 0xDDDD7CA1, 0x74749CE8, 0x1F1F213E, 0x4B4BDD96, 0xBDBDDC61, 0x8B8B860D, 0x8A8A850F,
+		0x707090E0, 0x3E3E427C, 0xB5B5C471, 0x6666AACC, 0x4848D890, 0x03030506, 0xF6F601F7, 0x0E0E121C,
+		0x6161A3C2, 0x35355F6A, 0x5757F9AE, 0xB9B9D069, 0x86869117, 0xC1C15899, 0x1D1D273A, 0x9E9EB927,
+		0xE1E138D9, 0xF8F813EB, 0x9898B32B, 0x11113322, 0x6969BBD2, 0xD9D970A9, 0x8E8E8907, 0x9494A733,
+		0x9B9BB62D, 0x1E1E223C, 0x87879215, 0xE9E920C9, 0xCECE4987, 0x5555FFAA, 0x28287850, 0xDFDF7AA5,
+		0x8C8C8F03, 0xA1A1F859, 0x89898009, 0x0D0D171A, 0xBFBFDA65, 0xE6E631D7, 0x4242C684, 0x6868B8D0,
+		0x4141C382, 0x9999B029, 0x2D2D775A, 0x0F0F111E, 0xB0B0CB7B, 0x5454FCA8, 0xBBBBD66D, 0x16163A2C
+	);
+	protected static $rjinvt = array(
+		0xF4A75051, 0x4165537E, 0x17A4C31A, 0x275E963A, 0xAB6BCB3B, 0x9D45F11F, 0xFA58ABAC, 0xE303934B,
+		0x30FA5520, 0x766DF6AD, 0xCC769188, 0x024C25F5, 0xE5D7FC4F, 0x2ACBD7C5, 0x35448026, 0x62A38FB5,
+		0xB15A49DE, 0xBA1B6725, 0xEA0E9845, 0xFEC0E15D, 0x2F7502C3, 0x4CF01281, 0x4697A38D, 0xD3F9C66B,
+		0x8F5FE703, 0x929C9515, 0x6D7AEBBF, 0x5259DA95, 0xBE832DD4, 0x7421D358, 0xE0692949, 0xC9C8448E,
+		0xC2896A75, 0x8E7978F4, 0x583E6B99, 0xB971DD27, 0xE14FB6BE, 0x88AD17F0, 0x20AC66C9, 0xCE3AB47D,
+		0xDF4A1863, 0x1A3182E5, 0x51336097, 0x537F4562, 0x6477E0B1, 0x6BAE84BB, 0x81A01CFE, 0x082B94F9,
+		0x48685870, 0x45FD198F, 0xDE6C8794, 0x7BF8B752, 0x73D323AB, 0x4B02E272, 0x1F8F57E3, 0x55AB2A66,
+		0xEB2807B2, 0xB5C2032F, 0xC57B9A86, 0x3708A5D3, 0x2887F230, 0xBFA5B223, 0x036ABA02, 0x16825CED,
+		0xCF1C2B8A, 0x79B492A7, 0x07F2F0F3, 0x69E2A14E, 0xDAF4CD65, 0x05BED506, 0x34621FD1, 0xA6FE8AC4,
+		0x2E539D34, 0xF355A0A2, 0x8AE13205, 0xF6EB75A4, 0x83EC390B, 0x60EFAA40, 0x719F065E, 0x6E1051BD,
+		0x218AF93E, 0xDD063D96, 0x3E05AEDD, 0xE6BD464D, 0x548DB591, 0xC45D0571, 0x06D46F04, 0x5015FF60,
+		0x98FB2419, 0xBDE997D6, 0x4043CC89, 0xD99E7767, 0xE842BDB0, 0x898B8807, 0x195B38E7, 0xC8EEDB79,
+		0x7C0A47A1, 0x420FE97C, 0x841EC9F8, 0x00000000, 0x80868309, 0x2BED4832, 0x1170AC1E, 0x5A724E6C,
+		0x0EFFFBFD, 0x8538560F, 0xAED51E3D, 0x2D392736, 0x0FD9640A, 0x5CA62168, 0x5B54D19B, 0x362E3A24,
+		0x0A67B10C, 0x57E70F93, 0xEE96D2B4, 0x9B919E1B, 0xC0C54F80, 0xDC20A261, 0x774B695A, 0x121A161C,
+		0x93BA0AE2, 0xA02AE5C0, 0x22E0433C, 0x1B171D12, 0x090D0B0E, 0x8BC7ADF2, 0xB6A8B92D, 0x1EA9C814,
+		0xF1198557, 0x75074CAF, 0x99DDBBEE, 0x7F60FDA3, 0x01269FF7, 0x72F5BC5C, 0x663BC544, 0xFB7E345B,
+		0x4329768B, 0x23C6DCCB, 0xEDFC68B6, 0xE4F163B8, 0x31DCCAD7, 0x63851042, 0x97224013, 0xC6112084,
+		0x4A247D85, 0xBB3DF8D2, 0xF93211AE, 0x29A16DC7, 0x9E2F4B1D, 0xB230F3DC, 0x8652EC0D, 0xC1E3D077,
+		0xB3166C2B, 0x70B999A9, 0x9448FA11, 0xE9642247, 0xFC8CC4A8, 0xF03F1AA0, 0x7D2CD856, 0x3390EF22,
+		0x494EC787, 0x38D1C1D9, 0xCAA2FE8C, 0xD40B3698, 0xF581CFA6, 0x7ADE28A5, 0xB78E26DA, 0xADBFA43F,
+		0x3A9DE42C, 0x78920D50, 0x5FCC9B6A, 0x7E466254, 0x8D13C2F6, 0xD8B8E890, 0x39F75E2E, 0xC3AFF582,
+		0x5D80BE9F, 0xD0937C69, 0xD52DA96F, 0x2512B3CF, 0xAC993BC8, 0x187DA710, 0x9C636EE8, 0x3BBB7BDB,
+		0x267809CD, 0x5918F46E, 0x9AB701EC, 0x4F9AA883, 0x956E65E6, 0xFFE67EAA, 0xBCCF0821, 0x15E8E6EF,
+		0xE79BD9BA, 0x6F36CE4A, 0x9F09D4EA, 0xB07CD629, 0xA4B2AF31, 0x3F23312A, 0xA59430C6, 0xA266C035,
+		0x4EBC3774, 0x82CAA6FC, 0x90D0B0E0, 0xA7D81533, 0x04984AF1, 0xECDAF741, 0xCD500E7F, 0x91F62F17,
+		0x4DD68D76, 0xEFB04D43, 0xAA4D54CC, 0x9604DFE4, 0xD1B5E39E, 0x6A881B4C, 0x2C1FB8C1, 0x65517F46,
+		0x5EEA049D, 0x8C355D01, 0x877473FA, 0x0B412EFB, 0x671D5AB3, 0xDBD25292, 0x105633E9, 0xD647136D,
+		0xD7618C9A, 0xA10C7A37, 0xF8148E59, 0x133C89EB, 0xA927EECE, 0x61C935B7, 0x1CE5EDE1, 0x47B13C7A,
+		0xD2DF599C, 0xF2733F55, 0x14CE7918, 0xC737BF73, 0xF7CDEA53, 0xFDAA5B5F, 0x3D6F14DF, 0x44DB8678,
+		0xAFF381CA, 0x68C43EB9, 0x24342C38, 0xA3405FC2, 0x1DC37216, 0xE2250CBC, 0x3C498B28, 0x0D9541FF,
+		0xA8017139, 0x0CB3DE08, 0xB4E49CD8, 0x56C19064, 0xCB84617B, 0x32B670D5, 0x6C5C7448, 0xB85742D0
+	);
+	protected static $rjs = array(
+		0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
+		0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
+		0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15,
+		0x04, 0xC7, 0x23, 0xC3, 0x18, 0x96, 0x05, 0x9A, 0x07, 0x12, 0x80, 0xE2, 0xEB, 0x27, 0xB2, 0x75,
+		0x09, 0x83, 0x2C, 0x1A, 0x1B, 0x6E, 0x5A, 0xA0, 0x52, 0x3B, 0xD6, 0xB3, 0x29, 0xE3, 0x2F, 0x84,
+		0x53, 0xD1, 0x00, 0xED, 0x20, 0xFC, 0xB1, 0x5B, 0x6A, 0xCB, 0xBE, 0x39, 0x4A, 0x4C, 0x58, 0xCF,
+		0xD0, 0xEF, 0xAA, 0xFB, 0x43, 0x4D, 0x33, 0x85, 0x45, 0xF9, 0x02, 0x7F, 0x50, 0x3C, 0x9F, 0xA8,
+		0x51, 0xA3, 0x40, 0x8F, 0x92, 0x9D, 0x38, 0xF5, 0xBC, 0xB6, 0xDA, 0x21, 0x10, 0xFF, 0xF3, 0xD2,
+		0xCD, 0x0C, 0x13, 0xEC, 0x5F, 0x97, 0x44, 0x17, 0xC4, 0xA7, 0x7E, 0x3D, 0x64, 0x5D, 0x19, 0x73,
+		0x60, 0x81, 0x4F, 0xDC, 0x22, 0x2A, 0x90, 0x88, 0x46, 0xEE, 0xB8, 0x14, 0xDE, 0x5E, 0x0B, 0xDB,
+		0xE0, 0x32, 0x3A, 0x0A, 0x49, 0x06, 0x24, 0x5C, 0xC2, 0xD3, 0xAC, 0x62, 0x91, 0x95, 0xE4, 0x79,
+		0xE7, 0xC8, 0x37, 0x6D, 0x8D, 0xD5, 0x4E, 0xA9, 0x6C, 0x56, 0xF4, 0xEA, 0x65, 0x7A, 0xAE, 0x08,
+		0xBA, 0x78, 0x25, 0x2E, 0x1C, 0xA6, 0xB4, 0xC6, 0xE8, 0xDD, 0x74, 0x1F, 0x4B, 0xBD, 0x8B, 0x8A,
+		0x70, 0x3E, 0xB5, 0x66, 0x48, 0x03, 0xF6, 0x0E, 0x61, 0x35, 0x57, 0xB9, 0x86, 0xC1, 0x1D, 0x9E,
+		0xE1, 0xF8, 0x98, 0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF,
+		0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
+	);
+	protected static $rjinvs = array(
+		0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
+		0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
+		0x54, 0x7B, 0x94, 0x32, 0xA6, 0xC2, 0x23, 0x3D, 0xEE, 0x4C, 0x95, 0x0B, 0x42, 0xFA, 0xC3, 0x4E,
+		0x08, 0x2E, 0xA1, 0x66, 0x28, 0xD9, 0x24, 0xB2, 0x76, 0x5B, 0xA2, 0x49, 0x6D, 0x8B, 0xD1, 0x25,
+		0x72, 0xF8, 0xF6, 0x64, 0x86, 0x68, 0x98, 0x16, 0xD4, 0xA4, 0x5C, 0xCC, 0x5D, 0x65, 0xB6, 0x92,
+		0x6C, 0x70, 0x48, 0x50, 0xFD, 0xED, 0xB9, 0xDA, 0x5E, 0x15, 0x46, 0x57, 0xA7, 0x8D, 0x9D, 0x84,
+		0x90, 0xD8, 0xAB, 0x00, 0x8C, 0xBC, 0xD3, 0x0A, 0xF7, 0xE4, 0x58, 0x05, 0xB8, 0xB3, 0x45, 0x06,
+		0xD0, 0x2C, 0x1E, 0x8F, 0xCA, 0x3F, 0x0F, 0x02, 0xC1, 0xAF, 0xBD, 0x03, 0x01, 0x13, 0x8A, 0x6B,
+		0x3A, 0x91, 0x11, 0x41, 0x4F, 0x67, 0xDC, 0xEA, 0x97, 0xF2, 0xCF, 0xCE, 0xF0, 0xB4, 0xE6, 0x73,
+		0x96, 0xAC, 0x74, 0x22, 0xE7, 0xAD, 0x35, 0x85, 0xE2, 0xF9, 0x37, 0xE8, 0x1C, 0x75, 0xDF, 0x6E,
+		0x47, 0xF1, 0x1A, 0x71, 0x1D, 0x29, 0xC5, 0x89, 0x6F, 0xB7, 0x62, 0x0E, 0xAA, 0x18, 0xBE, 0x1B,
+		0xFC, 0x56, 0x3E, 0x4B, 0xC6, 0xD2, 0x79, 0x20, 0x9A, 0xDB, 0xC0, 0xFE, 0x78, 0xCD, 0x5A, 0xF4,
+		0x1F, 0xDD, 0xA8, 0x33, 0x88, 0x07, 0xC7, 0x31, 0xB1, 0x12, 0x10, 0x59, 0x27, 0x80, 0xEC, 0x5F,
+		0x60, 0x51, 0x7F, 0xA9, 0x19, 0xB5, 0x4A, 0x0D, 0x2D, 0xE5, 0x7A, 0x9F, 0x93, 0xC9, 0x9C, 0xEF,
+		0xA0, 0xE0, 0x3B, 0x4D, 0xAE, 0x2A, 0xF5, 0xB0, 0xC8, 0xEB, 0xBB, 0x3C, 0x83, 0x53, 0x99, 0x61,
+		0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D
+	);
+	protected static $rjrcon = array(0,
+		0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000,
+		0x20000000, 0x40000000, 0x80000000, 0x1B000000, 0x36000000,
+		0x6C000000, 0xD8000000, 0xAB000000, 0x4D000000, 0x9A000000,
+		0x2F000000, 0x5E000000, 0xBC000000, 0x63000000, 0xC6000000,
+		0x97000000, 0x35000000, 0x6A000000, 0xD4000000, 0xB3000000,
+		0x7D000000, 0xFA000000, 0xEF000000, 0xC5000000, 0x91000000
+	);
+	
+	protected static $rc2t = array(
+        0xD9, 0x78, 0xF9, 0xC4, 0x19, 0xDD, 0xB5, 0xED,
+        0x28, 0xE9, 0xFD, 0x79, 0x4A, 0xA0, 0xD8, 0x9D,
+        0xC6, 0x7E, 0x37, 0x83, 0x2B, 0x76, 0x53, 0x8E,
+        0x62, 0x4C, 0x64, 0x88, 0x44, 0x8B, 0xFB, 0xA2,
+        0x17, 0x9A, 0x59, 0xF5, 0x87, 0xB3, 0x4F, 0x13,
+        0x61, 0x45, 0x6D, 0x8D, 0x09, 0x81, 0x7D, 0x32,
+        0xBD, 0x8F, 0x40, 0xEB, 0x86, 0xB7, 0x7B, 0x0B,
+        0xF0, 0x95, 0x21, 0x22, 0x5C, 0x6B, 0x4E, 0x82,
+        0x54, 0xD6, 0x65, 0x93, 0xCE, 0x60, 0xB2, 0x1C,
+        0x73, 0x56, 0xC0, 0x14, 0xA7, 0x8C, 0xF1, 0xDC,
+        0x12, 0x75, 0xCA, 0x1F, 0x3B, 0xBE, 0xE4, 0xD1,
+        0x42, 0x3D, 0xD4, 0x30, 0xA3, 0x3C, 0xB6, 0x26,
+        0x6F, 0xBF, 0x0E, 0xDA, 0x46, 0x69, 0x07, 0x57,
+        0x27, 0xF2, 0x1D, 0x9B, 0xBC, 0x94, 0x43, 0x03,
+        0xF8, 0x11, 0xC7, 0xF6, 0x90, 0xEF, 0x3E, 0xE7,
+        0x06, 0xC3, 0xD5, 0x2F, 0xC8, 0x66, 0x1E, 0xD7,
+        0x08, 0xE8, 0xEA, 0xDE, 0x80, 0x52, 0xEE, 0xF7,
+        0x84, 0xAA, 0x72, 0xAC, 0x35, 0x4D, 0x6A, 0x2A,
+        0x96, 0x1A, 0xD2, 0x71, 0x5A, 0x15, 0x49, 0x74,
+        0x4B, 0x9F, 0xD0, 0x5E, 0x04, 0x18, 0xA4, 0xEC,
+        0xC2, 0xE0, 0x41, 0x6E, 0x0F, 0x51, 0xCB, 0xCC,
+        0x24, 0x91, 0xAF, 0x50, 0xA1, 0xF4, 0x70, 0x39,
+        0x99, 0x7C, 0x3A, 0x85, 0x23, 0xB8, 0xB4, 0x7A,
+        0xFC, 0x02, 0x36, 0x5B, 0x25, 0x55, 0x97, 0x31,
+        0x2D, 0x5D, 0xFA, 0x98, 0xE3, 0x8A, 0x92, 0xAE,
+        0x05, 0xDF, 0x29, 0x10, 0x67, 0x6C, 0xBA, 0xC9,
+        0xD3, 0x00, 0xE6, 0xCF, 0xE1, 0x9E, 0xA8, 0x2C,
+        0x63, 0x16, 0x01, 0x3F, 0x58, 0xE2, 0x89, 0xA9,
+        0x0D, 0x38, 0x34, 0x1B, 0xAB, 0x33, 0xFF, 0xB0,
+        0xBB, 0x48, 0x0C, 0x5F, 0xB9, 0xB1, 0xCD, 0x2E,
+        0xC5, 0xF3, 0xDB, 0x47, 0xE5, 0xA5, 0x9C, 0x77,
+        0x0A, 0xA6, 0x20, 0x68, 0xFE, 0x7F, 0xC1, 0xAD,
+        0xD9, 0x78, 0xF9, 0xC4, 0x19, 0xDD, 0xB5, 0xED,
+        0x28, 0xE9, 0xFD, 0x79, 0x4A, 0xA0, 0xD8, 0x9D,
+        0xC6, 0x7E, 0x37, 0x83, 0x2B, 0x76, 0x53, 0x8E,
+        0x62, 0x4C, 0x64, 0x88, 0x44, 0x8B, 0xFB, 0xA2,
+        0x17, 0x9A, 0x59, 0xF5, 0x87, 0xB3, 0x4F, 0x13,
+        0x61, 0x45, 0x6D, 0x8D, 0x09, 0x81, 0x7D, 0x32,
+        0xBD, 0x8F, 0x40, 0xEB, 0x86, 0xB7, 0x7B, 0x0B,
+        0xF0, 0x95, 0x21, 0x22, 0x5C, 0x6B, 0x4E, 0x82,
+        0x54, 0xD6, 0x65, 0x93, 0xCE, 0x60, 0xB2, 0x1C,
+        0x73, 0x56, 0xC0, 0x14, 0xA7, 0x8C, 0xF1, 0xDC,
+        0x12, 0x75, 0xCA, 0x1F, 0x3B, 0xBE, 0xE4, 0xD1,
+        0x42, 0x3D, 0xD4, 0x30, 0xA3, 0x3C, 0xB6, 0x26,
+        0x6F, 0xBF, 0x0E, 0xDA, 0x46, 0x69, 0x07, 0x57,
+        0x27, 0xF2, 0x1D, 0x9B, 0xBC, 0x94, 0x43, 0x03,
+        0xF8, 0x11, 0xC7, 0xF6, 0x90, 0xEF, 0x3E, 0xE7,
+        0x06, 0xC3, 0xD5, 0x2F, 0xC8, 0x66, 0x1E, 0xD7,
+        0x08, 0xE8, 0xEA, 0xDE, 0x80, 0x52, 0xEE, 0xF7,
+        0x84, 0xAA, 0x72, 0xAC, 0x35, 0x4D, 0x6A, 0x2A,
+        0x96, 0x1A, 0xD2, 0x71, 0x5A, 0x15, 0x49, 0x74,
+        0x4B, 0x9F, 0xD0, 0x5E, 0x04, 0x18, 0xA4, 0xEC,
+        0xC2, 0xE0, 0x41, 0x6E, 0x0F, 0x51, 0xCB, 0xCC,
+        0x24, 0x91, 0xAF, 0x50, 0xA1, 0xF4, 0x70, 0x39,
+        0x99, 0x7C, 0x3A, 0x85, 0x23, 0xB8, 0xB4, 0x7A,
+        0xFC, 0x02, 0x36, 0x5B, 0x25, 0x55, 0x97, 0x31,
+        0x2D, 0x5D, 0xFA, 0x98, 0xE3, 0x8A, 0x92, 0xAE,
+        0x05, 0xDF, 0x29, 0x10, 0x67, 0x6C, 0xBA, 0xC9,
+        0xD3, 0x00, 0xE6, 0xCF, 0xE1, 0x9E, 0xA8, 0x2C,
+        0x63, 0x16, 0x01, 0x3F, 0x58, 0xE2, 0x89, 0xA9,
+        0x0D, 0x38, 0x34, 0x1B, 0xAB, 0x33, 0xFF, 0xB0,
+        0xBB, 0x48, 0x0C, 0x5F, 0xB9, 0xB1, 0xCD, 0x2E,
+        0xC5, 0xF3, 0xDB, 0x47, 0xE5, 0xA5, 0x9C, 0x77,
+        0x0A, 0xA6, 0x20, 0x68, 0xFE, 0x7F, 0xC1, 0xAD
+	);
+	protected static $rc2invt = array(
+        0xD1, 0xDA, 0xB9, 0x6F, 0x9C, 0xC8, 0x78, 0x66,
+        0x80, 0x2C, 0xF8, 0x37, 0xEA, 0xE0, 0x62, 0xA4,
+        0xCB, 0x71, 0x50, 0x27, 0x4B, 0x95, 0xD9, 0x20,
+        0x9D, 0x04, 0x91, 0xE3, 0x47, 0x6A, 0x7E, 0x53,
+        0xFA, 0x3A, 0x3B, 0xB4, 0xA8, 0xBC, 0x5F, 0x68,
+        0x08, 0xCA, 0x8F, 0x14, 0xD7, 0xC0, 0xEF, 0x7B,
+        0x5B, 0xBF, 0x2F, 0xE5, 0xE2, 0x8C, 0xBA, 0x12,
+        0xE1, 0xAF, 0xB2, 0x54, 0x5D, 0x59, 0x76, 0xDB,
+        0x32, 0xA2, 0x58, 0x6E, 0x1C, 0x29, 0x64, 0xF3,
+        0xE9, 0x96, 0x0C, 0x98, 0x19, 0x8D, 0x3E, 0x26,
+        0xAB, 0xA5, 0x85, 0x16, 0x40, 0xBD, 0x49, 0x67,
+        0xDC, 0x22, 0x94, 0xBB, 0x3C, 0xC1, 0x9B, 0xEB,
+        0x45, 0x28, 0x18, 0xD8, 0x1A, 0x42, 0x7D, 0xCC,
+        0xFB, 0x65, 0x8E, 0x3D, 0xCD, 0x2A, 0xA3, 0x60,
+        0xAE, 0x93, 0x8A, 0x48, 0x97, 0x51, 0x15, 0xF7,
+        0x01, 0x0B, 0xB7, 0x36, 0xB1, 0x2E, 0x11, 0xFD,
+        0x84, 0x2D, 0x3F, 0x13, 0x88, 0xB3, 0x34, 0x24,
+        0x1B, 0xDE, 0xC5, 0x1D, 0x4D, 0x2B, 0x17, 0x31,
+        0x74, 0xA9, 0xC6, 0x43, 0x6D, 0x39, 0x90, 0xBE,
+        0xC3, 0xB0, 0x21, 0x6B, 0xF6, 0x0F, 0xD5, 0x99,
+        0x0D, 0xAC, 0x1F, 0x5C, 0x9E, 0xF5, 0xF9, 0x4C,
+        0xD6, 0xDF, 0x89, 0xE4, 0x8B, 0xFF, 0xC7, 0xAA,
+        0xE7, 0xED, 0x46, 0x25, 0xB6, 0x06, 0x5E, 0x35,
+        0xB5, 0xEC, 0xCE, 0xE8, 0x6C, 0x30, 0x55, 0x61,
+        0x4A, 0xFE, 0xA0, 0x79, 0x03, 0xF0, 0x10, 0x72,
+        0x7C, 0xCF, 0x52, 0xA6, 0xA7, 0xEE, 0x44, 0xD3,
+        0x9A, 0x57, 0x92, 0xD0, 0x5A, 0x7A, 0x41, 0x7F,
+        0x0E, 0x00, 0x63, 0xF2, 0x4F, 0x05, 0x83, 0xC9,
+        0xA1, 0xD4, 0xDD, 0xC4, 0x56, 0xF4, 0xD2, 0x77,
+        0x81, 0x09, 0x82, 0x33, 0x9F, 0x07, 0x86, 0x75,
+        0x38, 0x4E, 0x69, 0xF1, 0xAD, 0x23, 0x73, 0x87,
+        0x70, 0x02, 0xC2, 0x1E, 0xB8, 0x0A, 0xFC, 0xE6
+	);
+	
+	protected static $desm = array(
+        0x00, 0x10, 0x01, 0x11, 0x20, 0x30, 0x21, 0x31,
+        0x02, 0x12, 0x03, 0x13, 0x22, 0x32, 0x23, 0x33,
+        0x40, 0x50, 0x41, 0x51, 0x60, 0x70, 0x61, 0x71,
+        0x42, 0x52, 0x43, 0x53, 0x62, 0x72, 0x63, 0x73,
+        0x04, 0x14, 0x05, 0x15, 0x24, 0x34, 0x25, 0x35,
+        0x06, 0x16, 0x07, 0x17, 0x26, 0x36, 0x27, 0x37,
+        0x44, 0x54, 0x45, 0x55, 0x64, 0x74, 0x65, 0x75,
+        0x46, 0x56, 0x47, 0x57, 0x66, 0x76, 0x67, 0x77,
+        0x80, 0x90, 0x81, 0x91, 0xA0, 0xB0, 0xA1, 0xB1,
+        0x82, 0x92, 0x83, 0x93, 0xA2, 0xB2, 0xA3, 0xB3,
+        0xC0, 0xD0, 0xC1, 0xD1, 0xE0, 0xF0, 0xE1, 0xF1,
+        0xC2, 0xD2, 0xC3, 0xD3, 0xE2, 0xF2, 0xE3, 0xF3,
+        0x84, 0x94, 0x85, 0x95, 0xA4, 0xB4, 0xA5, 0xB5,
+        0x86, 0x96, 0x87, 0x97, 0xA6, 0xB6, 0xA7, 0xB7,
+        0xC4, 0xD4, 0xC5, 0xD5, 0xE4, 0xF4, 0xE5, 0xF5,
+        0xC6, 0xD6, 0xC7, 0xD7, 0xE6, 0xF6, 0xE7, 0xF7,
+        0x08, 0x18, 0x09, 0x19, 0x28, 0x38, 0x29, 0x39,
+        0x0A, 0x1A, 0x0B, 0x1B, 0x2A, 0x3A, 0x2B, 0x3B,
+        0x48, 0x58, 0x49, 0x59, 0x68, 0x78, 0x69, 0x79,
+        0x4A, 0x5A, 0x4B, 0x5B, 0x6A, 0x7A, 0x6B, 0x7B,
+        0x0C, 0x1C, 0x0D, 0x1D, 0x2C, 0x3C, 0x2D, 0x3D,
+        0x0E, 0x1E, 0x0F, 0x1F, 0x2E, 0x3E, 0x2F, 0x3F,
+        0x4C, 0x5C, 0x4D, 0x5D, 0x6C, 0x7C, 0x6D, 0x7D,
+        0x4E, 0x5E, 0x4F, 0x5F, 0x6E, 0x7E, 0x6F, 0x7F,
+        0x88, 0x98, 0x89, 0x99, 0xA8, 0xB8, 0xA9, 0xB9,
+        0x8A, 0x9A, 0x8B, 0x9B, 0xAA, 0xBA, 0xAB, 0xBB,
+        0xC8, 0xD8, 0xC9, 0xD9, 0xE8, 0xF8, 0xE9, 0xF9,
+        0xCA, 0xDA, 0xCB, 0xDB, 0xEA, 0xFA, 0xEB, 0xFB,
+        0x8C, 0x9C, 0x8D, 0x9D, 0xAC, 0xBC, 0xAD, 0xBD,
+        0x8E, 0x9E, 0x8F, 0x9F, 0xAE, 0xBE, 0xAF, 0xBF,
+        0xCC, 0xDC, 0xCD, 0xDD, 0xEC, 0xFC, 0xED, 0xFD,
+        0xCE, 0xDE, 0xCF, 0xDF, 0xEE, 0xFE, 0xEF, 0xFF
+	);
+	protected static $desinvm = array(
+        0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0,
+        0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
+        0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8,
+        0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8,
+        0x04, 0x84, 0x44, 0xC4, 0x24, 0xA4, 0x64, 0xE4,
+        0x14, 0x94, 0x54, 0xD4, 0x34, 0xB4, 0x74, 0xF4,
+        0x0C, 0x8C, 0x4C, 0xCC, 0x2C, 0xAC, 0x6C, 0xEC,
+        0x1C, 0x9C, 0x5C, 0xDC, 0x3C, 0xBC, 0x7C, 0xFC,
+        0x02, 0x82, 0x42, 0xC2, 0x22, 0xA2, 0x62, 0xE2,
+        0x12, 0x92, 0x52, 0xD2, 0x32, 0xB2, 0x72, 0xF2,
+        0x0A, 0x8A, 0x4A, 0xCA, 0x2A, 0xAA, 0x6A, 0xEA,
+        0x1A, 0x9A, 0x5A, 0xDA, 0x3A, 0xBA, 0x7A, 0xFA,
+        0x06, 0x86, 0x46, 0xC6, 0x26, 0xA6, 0x66, 0xE6,
+        0x16, 0x96, 0x56, 0xD6, 0x36, 0xB6, 0x76, 0xF6,
+        0x0E, 0x8E, 0x4E, 0xCE, 0x2E, 0xAE, 0x6E, 0xEE,
+        0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE,
+        0x01, 0x81, 0x41, 0xC1, 0x21, 0xA1, 0x61, 0xE1,
+        0x11, 0x91, 0x51, 0xD1, 0x31, 0xB1, 0x71, 0xF1,
+        0x09, 0x89, 0x49, 0xC9, 0x29, 0xA9, 0x69, 0xE9,
+        0x19, 0x99, 0x59, 0xD9, 0x39, 0xB9, 0x79, 0xF9,
+        0x05, 0x85, 0x45, 0xC5, 0x25, 0xA5, 0x65, 0xE5,
+        0x15, 0x95, 0x55, 0xD5, 0x35, 0xB5, 0x75, 0xF5,
+        0x0D, 0x8D, 0x4D, 0xCD, 0x2D, 0xAD, 0x6D, 0xED,
+        0x1D, 0x9D, 0x5D, 0xDD, 0x3D, 0xBD, 0x7D, 0xFD,
+        0x03, 0x83, 0x43, 0xC3, 0x23, 0xA3, 0x63, 0xE3,
+        0x13, 0x93, 0x53, 0xD3, 0x33, 0xB3, 0x73, 0xF3,
+        0x0B, 0x8B, 0x4B, 0xCB, 0x2B, 0xAB, 0x6B, 0xEB,
+        0x1B, 0x9B, 0x5B, 0xDB, 0x3B, 0xBB, 0x7B, 0xFB,
+        0x07, 0x87, 0x47, 0xC7, 0x27, 0xA7, 0x67, 0xE7,
+        0x17, 0x97, 0x57, 0xD7, 0x37, 0xB7, 0x77, 0xF7,
+        0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF,
+        0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFF
+	);
+	protected static $dess = array(
+		array(
+			0x00808200, 0x00000000, 0x00008000, 0x00808202,
+			0x00808002, 0x00008202, 0x00000002, 0x00008000,
+			0x00000200, 0x00808200, 0x00808202, 0x00000200,
+			0x00800202, 0x00808002, 0x00800000, 0x00000002,
+			0x00000202, 0x00800200, 0x00800200, 0x00008200,
+			0x00008200, 0x00808000, 0x00808000, 0x00800202,
+			0x00008002, 0x00800002, 0x00800002, 0x00008002,
+			0x00000000, 0x00000202, 0x00008202, 0x00800000,
+			0x00008000, 0x00808202, 0x00000002, 0x00808000,
+			0x00808200, 0x00800000, 0x00800000, 0x00000200,
+			0x00808002, 0x00008000, 0x00008200, 0x00800002,
+			0x00000200, 0x00000002, 0x00800202, 0x00008202,
+			0x00808202, 0x00008002, 0x00808000, 0x00800202,
+			0x00800002, 0x00000202, 0x00008202, 0x00808200,
+			0x00000202, 0x00800200, 0x00800200, 0x00000000,
+			0x00008002, 0x00008200, 0x00000000, 0x00808002
+		), array(
+			0x40084010, 0x40004000, 0x00004000, 0x00084010,
+			0x00080000, 0x00000010, 0x40080010, 0x40004010,
+			0x40000010, 0x40084010, 0x40084000, 0x40000000,
+			0x40004000, 0x00080000, 0x00000010, 0x40080010,
+			0x00084000, 0x00080010, 0x40004010, 0x00000000,
+			0x40000000, 0x00004000, 0x00084010, 0x40080000,
+			0x00080010, 0x40000010, 0x00000000, 0x00084000,
+			0x00004010, 0x40084000, 0x40080000, 0x00004010,
+			0x00000000, 0x00084010, 0x40080010, 0x00080000,
+			0x40004010, 0x40080000, 0x40084000, 0x00004000,
+			0x40080000, 0x40004000, 0x00000010, 0x40084010,
+			0x00084010, 0x00000010, 0x00004000, 0x40000000,
+			0x00004010, 0x40084000, 0x00080000, 0x40000010,
+			0x00080010, 0x40004010, 0x40000010, 0x00080010,
+			0x00084000, 0x00000000, 0x40004000, 0x00004010,
+			0x40000000, 0x40080010, 0x40084010, 0x00084000
+		), array(
+			0x00000104, 0x04010100, 0x00000000, 0x04010004,
+			0x04000100, 0x00000000, 0x00010104, 0x04000100,
+			0x00010004, 0x04000004, 0x04000004, 0x00010000,
+			0x04010104, 0x00010004, 0x04010000, 0x00000104,
+			0x04000000, 0x00000004, 0x04010100, 0x00000100,
+			0x00010100, 0x04010000, 0x04010004, 0x00010104,
+			0x04000104, 0x00010100, 0x00010000, 0x04000104,
+			0x00000004, 0x04010104, 0x00000100, 0x04000000,
+			0x04010100, 0x04000000, 0x00010004, 0x00000104,
+			0x00010000, 0x04010100, 0x04000100, 0x00000000,
+			0x00000100, 0x00010004, 0x04010104, 0x04000100,
+			0x04000004, 0x00000100, 0x00000000, 0x04010004,
+			0x04000104, 0x00010000, 0x04000000, 0x04010104,
+			0x00000004, 0x00010104, 0x00010100, 0x04000004,
+			0x04010000, 0x04000104, 0x00000104, 0x04010000,
+			0x00010104, 0x00000004, 0x04010004, 0x00010100
+		), array(
+			0x80401000, 0x80001040, 0x80001040, 0x00000040,
+			0x00401040, 0x80400040, 0x80400000, 0x80001000,
+			0x00000000, 0x00401000, 0x00401000, 0x80401040,
+			0x80000040, 0x00000000, 0x00400040, 0x80400000,
+			0x80000000, 0x00001000, 0x00400000, 0x80401000,
+			0x00000040, 0x00400000, 0x80001000, 0x00001040,
+			0x80400040, 0x80000000, 0x00001040, 0x00400040,
+			0x00001000, 0x00401040, 0x80401040, 0x80000040,
+			0x00400040, 0x80400000, 0x00401000, 0x80401040,
+			0x80000040, 0x00000000, 0x00000000, 0x00401000,
+			0x00001040, 0x00400040, 0x80400040, 0x80000000,
+			0x80401000, 0x80001040, 0x80001040, 0x00000040,
+			0x80401040, 0x80000040, 0x80000000, 0x00001000,
+			0x80400000, 0x80001000, 0x00401040, 0x80400040,
+			0x80001000, 0x00001040, 0x00400000, 0x80401000,
+			0x00000040, 0x00400000, 0x00001000, 0x00401040
+		), array(
+			0x00000080, 0x01040080, 0x01040000, 0x21000080,
+			0x00040000, 0x00000080, 0x20000000, 0x01040000,
+			0x20040080, 0x00040000, 0x01000080, 0x20040080,
+			0x21000080, 0x21040000, 0x00040080, 0x20000000,
+			0x01000000, 0x20040000, 0x20040000, 0x00000000,
+			0x20000080, 0x21040080, 0x21040080, 0x01000080,
+			0x21040000, 0x20000080, 0x00000000, 0x21000000,
+			0x01040080, 0x01000000, 0x21000000, 0x00040080,
+			0x00040000, 0x21000080, 0x00000080, 0x01000000,
+			0x20000000, 0x01040000, 0x21000080, 0x20040080,
+			0x01000080, 0x20000000, 0x21040000, 0x01040080,
+			0x20040080, 0x00000080, 0x01000000, 0x21040000,
+			0x21040080, 0x00040080, 0x21000000, 0x21040080,
+			0x01040000, 0x00000000, 0x20040000, 0x21000000,
+			0x00040080, 0x01000080, 0x20000080, 0x00040000,
+			0x00000000, 0x20040000, 0x01040080, 0x20000080
+		), array(
+			0x10000008, 0x10200000, 0x00002000, 0x10202008,
+			0x10200000, 0x00000008, 0x10202008, 0x00200000,
+			0x10002000, 0x00202008, 0x00200000, 0x10000008,
+			0x00200008, 0x10002000, 0x10000000, 0x00002008,
+			0x00000000, 0x00200008, 0x10002008, 0x00002000,
+			0x00202000, 0x10002008, 0x00000008, 0x10200008,
+			0x10200008, 0x00000000, 0x00202008, 0x10202000,
+			0x00002008, 0x00202000, 0x10202000, 0x10000000,
+			0x10002000, 0x00000008, 0x10200008, 0x00202000,
+			0x10202008, 0x00200000, 0x00002008, 0x10000008,
+			0x00200000, 0x10002000, 0x10000000, 0x00002008,
+			0x10000008, 0x10202008, 0x00202000, 0x10200000,
+			0x00202008, 0x10202000, 0x00000000, 0x10200008,
+			0x00000008, 0x00002000, 0x10200000, 0x00202008,
+			0x00002000, 0x00200008, 0x10002008, 0x00000000,
+			0x10202000, 0x10000000, 0x00200008, 0x10002008
+		), array(
+			0x00100000, 0x02100001, 0x02000401, 0x00000000,
+			0x00000400, 0x02000401, 0x00100401, 0x02100400,
+			0x02100401, 0x00100000, 0x00000000, 0x02000001,
+			0x00000001, 0x02000000, 0x02100001, 0x00000401,
+			0x02000400, 0x00100401, 0x00100001, 0x02000400,
+			0x02000001, 0x02100000, 0x02100400, 0x00100001,
+			0x02100000, 0x00000400, 0x00000401, 0x02100401,
+			0x00100400, 0x00000001, 0x02000000, 0x00100400,
+			0x02000000, 0x00100400, 0x00100000, 0x02000401,
+			0x02000401, 0x02100001, 0x02100001, 0x00000001,
+			0x00100001, 0x02000000, 0x02000400, 0x00100000,
+			0x02100400, 0x00000401, 0x00100401, 0x02100400,
+			0x00000401, 0x02000001, 0x02100401, 0x02100000,
+			0x00100400, 0x00000000, 0x00000001, 0x02100401,
+			0x00000000, 0x00100401, 0x02100000, 0x00000400,
+			0x02000001, 0x02000400, 0x00000400, 0x00100001
+		), array(
+			0x00100000, 0x02100001, 0x02000401, 0x00000000,
+			0x00000400, 0x02000401, 0x00100401, 0x02100400,
+			0x02100401, 0x00100000, 0x00000000, 0x02000001,
+			0x00000001, 0x02000000, 0x02100001, 0x00000401,
+			0x02000400, 0x00100401, 0x00100001, 0x02000400,
+			0x02000001, 0x02100000, 0x02100400, 0x00100001,
+			0x02100000, 0x00000400, 0x00000401, 0x02100401,
+			0x00100400, 0x00000001, 0x02000000, 0x00100400,
+			0x02000000, 0x00100400, 0x00100000, 0x02000401,
+			0x02000401, 0x02100001, 0x02100001, 0x00000001,
+			0x00100001, 0x02000000, 0x02000400, 0x00100000,
+			0x02100400, 0x00000401, 0x00100401, 0x02100400,
+			0x00000401, 0x02000001, 0x02100401, 0x02100000,
+			0x00100400, 0x00000000, 0x00000001, 0x02100401,
+			0x00000000, 0x00100401, 0x02100000, 0x00000400,
+			0x02000001, 0x02000400, 0x00000400, 0x00100001
+		)
+	);
+
+	public static function blocklength($cipher, $bits = null){
+		$cipher = strtolower($cipher);
+		switch($cipher){
+			case 'blowfish': return $bits === true ? 64 : 8;
+			case 'twofish':  return $bits === true ? 128 : 16;
+		}
+	}
+	private static function keyinstall($cipher, $key){
+		switch($cipher){
+			case 'blowfish':
+			if($key === null)return array(self::$bfp, self::$bfs);
+				$p  = self::$bfp;
+				$sb = self::$bfs;
+				$key = array_values(unpack('C*', $key));
+				$kl = count($key);
+				for($j = $i = 0; $i < 18; ++$i) {
+					for($data = $k = 0; $k < 4; ++$k) {
+						$data = ($data << 8) | $key[$j];
+						if(++$j >= $kl)
+							$j = 0;
+					}
+					$p[$i] ^= $data;
+				}
+				$data = "\0\0\0\0\0\0\0\0";
+				for($i = 0; $i < 18; $i += 2) {
+					list($l, $r) = array_values(unpack('N*', $data = self::blockanencrypt($cipher, $data, array($p, $sb))));
+					$p[$i    ] = $l;
+					$p[$i + 1] = $r;
+				}
+				for($i = 0; $i < 4; ++$i) {
+					for($j = 0; $j < 256; $j += 2) {
+						list($l, $r) = array_values(unpack('N*', $data = self::blockanencrypt($cipher, $data, array($p, $sb))));
+						$sb[$i][$j    ] = $l;
+						$sb[$i][$j + 1] = $r;
+					}
+				}
+			return array($p, $sb);
+			case 'twofish':
+			if($key === null)$key = '';
+				$le = unpack('V*', $key);
+				$key = unpack('C*', $key);
+				list($q0, $q1) = self::$tfq;
+				list($m0, $m1, $m2, $m3) = self::$tfm;
+				$k = $s0 = $s1 = $s2 = $s3 = array();
+				switch(count($key)) {
+					case 0:
+						for($i = 0, $j = 1; $i < 40; $i += 2, $j += 2) {
+							$a =$m0[$i] ^
+								$m1[$i] ^
+								$m2[$i] ^
+								$m3[$i];
+							$b =$m0[$j] ^
+								$m1[$j] ^
+								$m2[$j] ^
+								$m3[$j];
+							$b = ($b << 8) | ($b >> 24 & 0xff);
+							$a += $b;
+							$k[] = $a;
+							$a += $b;
+							$k[] = ($a << 9 | $a >> 23 & 0x1ff);
+						}
+						for($i = 0; $i < 256; ++$i) {
+							$s0[$i] = $m0[$i];
+							$s1[$i] = $m1[$i];
+							$s2[$i] = $m2[$i];
+							$s3[$i] = $m3[$i];
+						}
+					break;
+					case 8:
+						list($r3, $r2, $r1, $r0) = xnmath::mdsrem($le[1], $le[2]);
+						for($i = 0, $j = 1; $i < 40; $i += 2, $j += 2) {
+							$a =$m0[$q0[$i] ^ $key[1]] ^
+								$m1[$q0[$i] ^ $key[2]] ^
+								$m2[$q1[$i] ^ $key[3]] ^
+								$m3[$q1[$i] ^ $key[4]];
+							$b =$m0[$q0[$j] ^ $key[5]] ^
+								$m1[$q0[$j] ^ $key[6]] ^
+								$m2[$q1[$j] ^ $key[7]] ^
+								$m3[$q1[$j] ^ $key[8]];
+							$b = ($b << 8) | ($b >> 24 & 0xff);
+							$a += $b;
+							$k[] = $a;
+							$a += $b;
+							$k[] = ($a << 9 | $a >> 23 & 0x1ff);
+						}
+						for($i = 0; $i < 256; ++$i) {
+							$s0[$i] = $m0[$q0[$i] ^ $r0];
+							$s1[$i] = $m1[$q0[$i] ^ $r1];
+							$s2[$i] = $m2[$q1[$i] ^ $r2];
+							$s3[$i] = $m3[$q1[$i] ^ $r3];
+						}
+					break;
+					case 16:
+						list($r7, $r6, $r5, $r4) = xnmath::mdsrem($le[1], $le[2]);
+						list($r3, $r2, $r1, $r0) = xnmath::mdsrem($le[3], $le[4]);
+						for($i = 0, $j = 1; $i < 40; $i += 2, $j += 2) {
+							$a =$m0[$q0[$q0[$i] ^ $key[9 ]] ^ $key[1]] ^
+								$m1[$q0[$q1[$i] ^ $key[10]] ^ $key[2]] ^
+								$m2[$q1[$q0[$i] ^ $key[11]] ^ $key[3]] ^
+								$m3[$q1[$q1[$i] ^ $key[12]] ^ $key[4]];
+							$b =$m0[$q0[$q0[$j] ^ $key[13]] ^ $key[5]] ^
+								$m1[$q0[$q1[$j] ^ $key[14]] ^ $key[6]] ^
+								$m2[$q1[$q0[$j] ^ $key[15]] ^ $key[7]] ^
+								$m3[$q1[$q1[$j] ^ $key[16]] ^ $key[8]];
+							$b = ($b << 8) | ($b >> 24 & 0xff);
+							$a += $b;
+							$k[] = $a;
+							$a += $b;
+							$k[] = ($a << 9 | $a >> 23 & 0x1ff);
+						}
+						for($i = 0; $i < 256; ++$i) {
+							$s0[$i] = $m0[$q0[$q0[$i] ^ $r4] ^ $r0];
+							$s1[$i] = $m1[$q0[$q1[$i] ^ $r5] ^ $r1];
+							$s2[$i] = $m2[$q1[$q0[$i] ^ $r6] ^ $r2];
+							$s3[$i] = $m3[$q1[$q1[$i] ^ $r7] ^ $r3];
+						}
+					break;
+					case 24:
+						list($rb, $ra, $r9, $r8) = xnmath::mdsrem($le[1], $le[2]);
+						list($r7, $r6, $r5, $r4) = xnmath::mdsrem($le[3], $le[4]);
+						list($r3, $r2, $r1, $r0) = xnmath::mdsrem($le[5], $le[6]);
+						for($i = 0, $j = 1; $i < 40; $i+= 2, $j+= 2) {
+							$a =$m0[$q0[$q0[$q1[$i] ^ $key[17]] ^ $key[9 ]] ^ $key[1]] ^
+								$m1[$q0[$q1[$q1[$i] ^ $key[18]] ^ $key[10]] ^ $key[2]] ^
+								$m2[$q1[$q0[$q0[$i] ^ $key[19]] ^ $key[11]] ^ $key[3]] ^
+								$m3[$q1[$q1[$q0[$i] ^ $key[20]] ^ $key[12]] ^ $key[4]];
+							$b =$m0[$q0[$q0[$q1[$j] ^ $key[21]] ^ $key[13]] ^ $key[5]] ^
+								$m1[$q0[$q1[$q1[$j] ^ $key[22]] ^ $key[14]] ^ $key[6]] ^
+								$m2[$q1[$q0[$q0[$j] ^ $key[23]] ^ $key[15]] ^ $key[7]] ^
+								$m3[$q1[$q1[$q0[$j] ^ $key[24]] ^ $key[16]] ^ $key[8]];
+							$b = ($b << 8) | ($b >> 24 & 0xff);
+							$a += $b;
+							$k[] = $a;
+							$a += $b;
+							$k[] = ($a << 9 | $a >> 23 & 0x1ff);
+						}
+						for($i = 0; $i < 256; ++$i) {
+							$s0[$i] = $m0[$q0[$q0[$q1[$i] ^ $r8] ^ $r4] ^ $r0];
+							$s1[$i] = $m1[$q0[$q1[$q1[$i] ^ $r9] ^ $r5] ^ $r1];
+							$s2[$i] = $m2[$q1[$q0[$q0[$i] ^ $ra] ^ $r6] ^ $r2];
+							$s3[$i] = $m3[$q1[$q1[$q0[$i] ^ $rb] ^ $r7] ^ $r3];
+						}
+					break;
+					case 32:
+						list($rf, $re, $rd, $rc) = xnmath::mdsrem($le[1], $le[2]);
+						list($rb, $ra, $r9, $r8) = xnmath::mdsrem($le[3], $le[4]);
+						list($r7, $r6, $r5, $r4) = xnmath::mdsrem($le[5], $le[6]);
+						list($r3, $r2, $r1, $r0) = xnmath::mdsrem($le[7], $le[8]);
+						for($i = 0, $j = 1; $i < 40; $i+= 2, $j+= 2) {
+							$a =$m0[$q0[$q0[$q1[$q1[$i] ^ $key[25]] ^ $key[17]] ^ $key[9 ]] ^ $key[1]] ^
+								$m1[$q0[$q1[$q1[$q0[$i] ^ $key[26]] ^ $key[18]] ^ $key[10]] ^ $key[2]] ^
+								$m2[$q1[$q0[$q0[$q0[$i] ^ $key[27]] ^ $key[19]] ^ $key[11]] ^ $key[3]] ^
+								$m3[$q1[$q1[$q0[$q1[$i] ^ $key[28]] ^ $key[20]] ^ $key[12]] ^ $key[4]];
+							$b =$m0[$q0[$q0[$q1[$q1[$j] ^ $key[29]] ^ $key[21]] ^ $key[13]] ^ $key[5]] ^
+								$m1[$q0[$q1[$q1[$q0[$j] ^ $key[30]] ^ $key[22]] ^ $key[14]] ^ $key[6]] ^
+								$m2[$q1[$q0[$q0[$q0[$j] ^ $key[31]] ^ $key[23]] ^ $key[15]] ^ $key[7]] ^
+								$m3[$q1[$q1[$q0[$q1[$j] ^ $key[32]] ^ $key[24]] ^ $key[16]] ^ $key[8]];
+							$b = ($b << 8) | ($b >> 24 & 0xff);
+							$a += $b;
+							$k[] = $a;
+							$a += $b;
+							$k[] = ($a << 9 | $a >> 23 & 0x1ff);
+						}
+						for($i = 0; $i < 256; ++$i) {
+							$s0[$i] = $m0[$q0[$q0[$q1[$q1[$i] ^ $rc] ^ $r8] ^ $r4] ^ $r0];
+							$s1[$i] = $m1[$q0[$q1[$q1[$q0[$i] ^ $rd] ^ $r9] ^ $r5] ^ $r1];
+							$s2[$i] = $m2[$q1[$q0[$q0[$q0[$i] ^ $re] ^ $ra] ^ $r6] ^ $r2];
+							$s3[$i] = $m3[$q1[$q1[$q0[$q1[$i] ^ $rf] ^ $rb] ^ $r7] ^ $r3];
+						}
+				}
+				return array($s0, $s1, $s2, $s3, $k);
+			}
+	}
+	private static function blockanencrypt($cipher, $in, $boxs){
+		switch($cipher){
+			case 'blowfish':
+				$xl = array_value(unpack('N', substr($in, 0, 4)), 1);
+				$xr = array_value(unpack('N', substr($in, 4, 4)), 1);
+				for($i = 0; $i < 16; ++$i){
+					$xl ^= $boxs[0][$i];
+					$xr = self::bff($xl, $boxs[1]) ^ $xr;
+					swap($xl, $xr);
+				}
+				swap($xl, $xr);
+				$xr ^= $boxs[0][16];
+				$xl  = $xl ^ $boxs[0][17];
+			return pack('N2', $xl, $xr);
+			case 'twofish':
+				list($s0, $s1, $s2, $s3, $k) = $boxs;
+				$in = unpack("V4", $in);
+				$r0 = $k[0] ^ $in[1];
+				$r1 = $k[1] ^ $in[2];
+				$r2 = $k[2] ^ $in[3];
+				$r3 = $k[3] ^ $in[4];
+				$ki = 7;
+				while($ki < 39) {
+					$t0 =   $s0[ $r0        & 0xff] ^
+							$s1[($r0 >>  8) & 0xff] ^
+							$s2[($r0 >> 16) & 0xff] ^
+							$s3[($r0 >> 24) & 0xff];
+					$t1 =   $s0[($r1 >> 24) & 0xff] ^
+							$s1[ $r1        & 0xff] ^
+							$s2[($r1 >>  8) & 0xff] ^
+							$s3[($r1 >> 16) & 0xff];
+					$r2^= $t0 + $t1 + $k[++$ki];
+					$r2 = ($r2 >> 1 & 0x7fffffff) | ($r2 << 31);
+					$r3 = ((($r3 >> 31) & 1) | ($r3 << 1)) ^ ($t0 + ($t1 << 1) + $k[++$ki]);
+					$t0 =   $s0[ $r2        & 0xff] ^
+							$s1[($r2 >>  8) & 0xff] ^
+							$s2[($r2 >> 16) & 0xff] ^
+							$s3[($r2 >> 24) & 0xff];
+					$t1 =   $s0[($r3 >> 24) & 0xff] ^
+							$s1[ $r3        & 0xff] ^
+							$s2[($r3 >>  8) & 0xff] ^
+							$s3[($r3 >> 16) & 0xff];
+					$r0^= $t0 + $t1 + $k[++$ki];
+					$r0 = ($r0 >> 1 & 0x7fffffff) | ($r0 << 31);
+					$r1 = ((($r1 >> 31) & 1) | ($r1 << 1)) ^ ($t0 + ($t1 << 1) + $k[++$ki]);
+				}
+			return pack("V4", $k[4] ^ $r2, $k[5] ^ $r3, $k[6] ^ $r0, $k[7] ^ $r1);
+		}
+		new XNError('blockencrypt', 'Undefined cipher name', XNError::WARNING);
+		return false;
+	}
+	private static function blockandecrypt($cipher, $in, $boxs){
+		switch($cipher){
+			case 'blowfish':
+				$xl = array_value(unpack('N', substr($in, 0, 4)), 1);
+				$xr = array_value(unpack('N', substr($in, 4, 4)), 1);
+				for($i = 0; $i < 16; ++$i){
+					$xl ^= $boxs[0][17 - $i];
+					$xr = self::bff($xl, $boxs[1]) ^ $xr;
+					swap($xl, $xr);
+				}
+				swap($xl, $xr);
+				$xr ^= $boxs[0][1];
+				$xl  = $xl ^ $boxs[0][0];
+			return pack('N2', $xl, $xr);
+			case 'twofish':
+				list($s0, $s1, $s2, $s3, $k) = $boxs;
+				$in = unpack("V4", $in);
+				$r0 = $k[4] ^ $in[1];
+				$r1 = $k[5] ^ $in[2];
+				$r2 = $k[6] ^ $in[3];
+				$r3 = $k[7] ^ $in[4];
+				$ki = 40;
+				while($ki > 8) {
+					$t0 =   $s0[$r0       & 0xff] ^
+							$s1[$r0 >>  8 & 0xff] ^
+							$s2[$r0 >> 16 & 0xff] ^
+							$s3[$r0 >> 24 & 0xff];
+					$t1 =   $s0[$r1 >> 24 & 0xff] ^
+							$s1[$r1       & 0xff] ^
+							$s2[$r1 >>  8 & 0xff] ^
+							$s3[$r1 >> 16 & 0xff];
+					$r3^= ($t0 + ($t1 << 1) + $k[--$ki]);
+					$r3 = $r3 >> 1 & 0x7fffffff | $r3 << 31;
+					$r2 = ($r2 >> 31 & 0x1 | $r2 << 1) ^ ($t0 + $t1 + $k[--$ki]);
+					$t0 =   $s0[$r2       & 0xff] ^
+							$s1[$r2 >>  8 & 0xff] ^
+							$s2[$r2 >> 16 & 0xff] ^
+							$s3[$r2 >> 24 & 0xff];
+					$t1 =   $s0[$r3 >> 24 & 0xff] ^
+							$s1[$r3       & 0xff] ^
+							$s2[$r3 >>  8 & 0xff] ^
+							$s3[$r3 >> 16 & 0xff];
+					$r1^= ($t0 + ($t1 << 1) + $k[--$ki]);
+					$r1 = $r1 >> 1 & 0x7fffffff | $r1 << 31;
+					$r0 = ($r0 >> 31 & 0x1 | $r0 << 1) ^ ($t0 + $t1 + $k[--$ki]);
+				}
+				return pack("V4", $k[0] ^ $r2, $k[1] ^ $r3, $k[2] ^ $r0, $k[3] ^ $r1);
+		}
+		new XNError('blockdecrypt', 'Undefined cipher name', XNError::WARNING);
+		return false;
+	}
+	public static function blockencrypt($cipher, $block, $key = null){
+		$cipher = strtolower($cipher);
+/*		if(extension_loaded('openssl'))
+		switch($cipher){
+			case 'aes': if($key !== null) switch(strlen($key)){
+				case 16: return openssl_encrypt($block, "$cipher-128-ecb", $key, 1); break;
+				case 24: return openssl_encrypt($block, "$cipher-192-ecb", $key, 1); break;
+				case 32: return openssl_encrypt($block, "$cipher-192-ecb", $key, 1); break;
+			}break;
+			case 'blowfish': if($key !== null) return openssl_encrypt($block, "bf-ecb", $key); break;
+			case 'camellia': if($key !== null) switch(strlen($key)){
+				case 16: return openssl_encrypt($block, "$cipher-128-ecb", $key, 1); break;
+				case 24: return openssl_encrypt($block, "$cipher-192-ecb", $key, 1); break;
+				case 32: return openssl_encrypt($block, "$cipher-192-ecb", $key, 1); break;
+			}break;
+			case 'des': if($key !== null) return openssl_encrypt($block, "$cipher-ecb", $key, 1); break;
+			case 'des-ede3': if($key !== null) return openssl_encrypt($block, "$cipher-ecb", $key, 1); break;
+			case 'idea': if($key !== null) return openssl_encrypt($block, "$cipher-ecb", $key, 1); break;
+			case 'rc2': if($key !== null) return openssl_encrypt($block, "$cipher-ecb", $key, 1); break;
+			case 'des': if($key !== null) return openssl_encrypt($block, "$cipher-ecb", $key, 1); break;
+			case 'seed': if($key !== null) return openssl_encrypt($block, "$cipher-ecb", $key, 1); break;
+		}*/
+		if(extension_loaded('mcrypt'))
+		switch($cipher){}
+		return self::blockanencrypt($cipher, $block, self::keyinstall($cipher, $key));
+	}
+	public static function blockdecrypt($cipher, $block, $key = null){
+		$cipher = strtolower($cipher);
+/*		if(extension_loaded('openssl'))
+		switch($cipher){
+			case 'aes': if($key !== null) switch(strlen($key)){
+				case 16: return openssl_decrypt($block, "$cipher-128-ecb", $key, 1); break;
+				case 24: return openssl_decrypt($block, "$cipher-192-ecb", $key, 1); break;
+				case 32: return openssl_decrypt($block, "$cipher-192-ecb", $key, 1); break;
+			}break;
+			case 'blowfish': if($key !== null) return openssl_decrypt($block, "bf-ecb", $key); break;
+			case 'camellia': if($key !== null) switch(strlen($key)){
+				case 16: return openssl_decrypt($block, "$cipher-128-ecb", $key, 1); break;
+				case 24: return openssl_decrypt($block, "$cipher-192-ecb", $key, 1); break;
+				case 32: return openssl_decrypt($block, "$cipher-192-ecb", $key, 1); break;
+			}break;
+			case 'des': if($key !== null) return openssl_decrypt($block, "$cipher-ecb", $key, 1); break;
+			case 'des-ede3': if($key !== null) return openssl_decrypt($block, "$cipher-ecb", $key, 1); break;
+			case 'idea': if($key !== null) return openssl_decrypt($block, "$cipher-ecb", $key, 1); break;
+			case 'rc2': if($key !== null) return openssl_decrypt($block, "$cipher-ecb", $key, 1); break;
+			case 'des': if($key !== null) return openssl_decrypt($block, "$cipher-ecb", $key, 1); break;
+			case 'seed': if($key !== null) return openssl_decrypt($block, "$cipher-ecb", $key, 1); break;
+		}*/
+		if(extension_loaded('mcrypt'))
+		switch($cipher){}
+		return self::blockandecrypt($cipher, $block, $key);
+	}
+	public static function modeencrypt($cipher, $mode, $block, $key = null){
+		$size = self::blocklength($cipher);
+		$mode = strtolower($mode);
+		switch($mode){}
+		new XNError('modeencrypt', 'Undefined mode name', XNError::WARNING);
+		return false;
+	}
+	public static function modedecrypt($cipher, $mode, $block, $key = null){
+		$size = self::blocklength($cipher);
+		$mode = strtolower($mode);
+		switch($mode){}
+		new XNError('modedecrypt', 'Undefined mode name', XNError::WARNING);
+		return false;
+	}
 }
 
 
@@ -13866,7 +14906,7 @@ class XNData {
 						}elseif(!is_resource($file) || !xnstream::mode($file))
 							return false;
 						if(xnstream::mode($file) != 'r+b')
-							$file = fclone($file,'r+b');
+							$file = xnstream::fclone($file,'r+b');
 						fwrite($file,$this->xnd->get());
 						$this->type = "file";
 						$this->xnd = new XNDataFile($file);
@@ -13895,7 +14935,7 @@ class XNData {
 						}elseif(!is_resource($file) || !xnstream::mode($file))
 							return false;
 						if(xnstream::mode($file) != 'r+b')
-							$file = fclone($file,'r+b');
+							$file = xnstream::fclone($file,'r+b');
 						stream_copy_to_stream($this->xnd->stream(),$file);
 						$this->xnd = new XNDataFile($file);
 					break;
@@ -13922,7 +14962,7 @@ class XNData {
 						}elseif(!is_resource($file) || !xnstream::mode($file))
 							return false;
 						if(xnstream::mode($file) != 'r+b')
-							$file = fclone($file,'r+b');
+							$file = xnstream::fclone($file,'r+b');
 						stream_copy_to_stream($this->xnd->stream(),$file);
 						$this->xnd = new XNDataFile($file);
 					break;
@@ -15904,13 +16944,13 @@ class XNDataFile {
 	}
 	public function set($key,$value){
 		if(!$this->replace($key,$value)){
-			$file = fclone($this->file,'ab');
+			$file = xnstream::fclone($this->file,'ab');
 			fwrite($file,xndata::encodeel($key,$value));
 			fclose($file);
 		}
 	}
 	public function add($key,$value){
-		$file = fclone($this->file,'ab');
+		$file = xnstream::fclone($this->file,'ab');
 		fwrite($file,xndata::encodeel($key,$value));
 		fclose($file);
 	}
@@ -17951,7 +18991,9 @@ class XNStream {
 			$read = fread($stream, $limit);
 			fseek($stream, $locate);
 			return $read;
-		}return fread($stream, $limit);
+		}if($limit < 0)
+			$limit += self::size($stream, true);
+		return fread($stream, $limit);
 	}
 	public static function prevread($stream, $limit = null){
 		if($limit === null)$limit = ftell($stream);
@@ -18015,7 +19057,7 @@ class XNStream {
 		if($format == 'le')
 			return xncrypt::intle($read);
 		if($fromat == 'int')
-			return xncrypt::decdecode($read);
+			return xnmath::base_convert($read, 'ascii', 10);
 		return unpack($format, $read);
 	}
 	public static function match($stream, $regex, $flags = 0, $offset = null, $back = null){
@@ -18262,6 +19304,9 @@ class XNStream {
 		if($res === '' && $c === false)return false;
 		if($back === true)fseek($stream, $locate);
 		return $res;
+	}
+	public static function closed($stream){
+		return gettype($stream) === 'resource (closed)';
 	}
 }
 
