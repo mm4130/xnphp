@@ -8,6 +8,8 @@ if(defined('XNVERSION')){
 class __xnlib_data {
 	static $startTime;
 	static $endTime;
+	static $startMemory;
+	static $endMemory;
 	static $dirname;
 	static $dirnamedir;
 	static $source = false;
@@ -45,6 +47,7 @@ class xnlib {
 
 	static $requestTime = 0;
 	static $loadTime = 0;
+	static $memoryUsage = 0;
 	static $random = 0;
 
 	static $query = '';
@@ -60,7 +63,8 @@ class xnlib {
 }
 
 __xnlib_data::$startTime =  microtime(true);
-__xnlib_data::$dirname = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
+__xnlib_data::$startMemory = memory_get_peak_usage();
+__xnlib_data::$dirname = __DIR__;
 
 xnlib::$includeAt = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1);
 if(!isset(xnlib::$includeAt[0])){
@@ -967,7 +971,7 @@ function array_repeat($array, $count){
 function evals($str){
 	return eval("return \"$str\";");
 }
-__xnlib_data::$xndataFile = __xnlib_data::$dirname . DIRECTORY_SEPARATOR . 'xndata.xnd';
+__xnlib_data::$xndataFile = __xnlib_data::$dirname .DIRECTORY_SEPARATOR. 'xndata.xnd';
 if(!file_exists(__xnlib_data::$xndataFile))
 	__xnlib_data::$xndataFile = null;
 function xndata_setfile($file){
@@ -2537,15 +2541,7 @@ function get_resource_id($resource){
 	return array_search($resource, get_resources());
 }
 function dirdel($dir){
-	$s = scandir($dir);
-	if(isset($s[0])){
-		if($s[0] == '.')unset($s[0]);
-		if($s[0] == '..')unset($s[0]);
-		if(isset($s[1])){
-			if($s[1] == '.')unset($s[1]);
-			if($s[1] == '..')unset($s[1]);
-		}
-	}
+	$s = dirscan($dir);
 	foreach($s as $f) {
 		if(is_dir($dir .DIRECTORY_SEPARATOR. $f))dirdel($dir .DIRECTORY_SEPARATOR. $f);
 		else unlink($dir .DIRECTORY_SEPARATOR. $f);
@@ -2555,12 +2551,9 @@ function dirdel($dir){
 function dirscan($dir){
 	$s = scandir($dir);
 	if(isset($s[0])){
-		if($s[0] == '.')unset($s[0]);
-		if($s[0] == '..')unset($s[0]);
-		if(isset($s[1])){
-			if($s[1] == '.')unset($s[1]);
-			if($s[1] == '..')unset($s[1]);
-		}
+		if($s[0] == '.' || $s[0] == '..')unset($s[0]);
+		if(isset($s[1]))
+			if($s[1] == '.' || $s[1] == '..')unset($s[1]);
 	}
 	return $s;
 }
@@ -4040,6 +4033,11 @@ class XNString {
 		if($l == $length)
 			return str_split($str, $length);
 		return array_merge(array(substr($str, 0, $l)), str_split(substr($str, $l), $length));
+	}
+	public static function rea($string){
+		for($i = 1; isset($string[$i]); ++$i)
+			$string = self::splitrev($string, $i);
+		return $string;
 	}
 	public static function equlen($string1, $string2){
 		$l1 = strlen($string1);
@@ -8815,7 +8813,8 @@ class XNMath {
 		return bindec(xnbinary::neg(decbin($x)));
 	}
 	public static function isneg($x){
-		return ((string)$x)[0] === '-';
+		$x = (string)$x;
+		return $x[0] === '-';
 	}
 	public static function bmax($x){
 		return (1 << strlen(decbin($x < 0 ? -$x : $x))) - 1;
@@ -13204,19 +13203,6 @@ class XNCrypt {
         return $r;
 	}
 
-	const MODE_CBC  = 0;
-	const MODE_CFB  = 1;
-	const MODE_CFB8 = 2;
-	const MODE_CTR  = 3;
-	const MODE_ECB  = 4;
-	const MODE_NCFB = 5;
-	const MODE_NOFB = 6;
-	const MODE_OFB  = 7;
-	const MODE_PCBC = 8;
-	const MODE_RAW  = 9;
-	const MODE_STREAM = 10;
-	const MODE_GCM  = 11;
-
 	protected static $bfs = array(
 		array(
 			0xd1310ba6, 0x98dfb5ac, 0x2ffd72db, 0xd01adfb7, 0xb8e1afed, 0x6a267e96, 0xba7c9045, 0xf12c7f99,
@@ -13997,12 +13983,15 @@ class XNCrypt {
 	public static function blocklength($cipher, $bits = null){
 		$cipher = strtolower($cipher);
 		switch($cipher){
+			case 'xor': 	 return $bits === true ? 8 : 1;
 			case 'blowfish': return $bits === true ? 64 : 8;
 			case 'twofish':  return $bits === true ? 128 : 16;
 		}
 	}
 	private static function keyinstall($cipher, $key){
 		switch($cipher){
+			case 'xor':
+				return $key;
 			case 'blowfish':
 			if($key === null)return array(self::$bfp, self::$bfs);
 				$p  = self::$bfp;
@@ -14169,6 +14158,8 @@ class XNCrypt {
 	}
 	private static function blockanencrypt($cipher, $in, $boxs){
 		switch($cipher){
+			case 'xor':
+				return self::xorcrypt($in, $boxs);
 			case 'blowfish':
 				$xl = array_value(unpack('N', substr($in, 0, 4)), 1);
 				$xr = array_value(unpack('N', substr($in, 4, 4)), 1);
@@ -14220,6 +14211,8 @@ class XNCrypt {
 	}
 	private static function blockandecrypt($cipher, $in, $boxs){
 		switch($cipher){
+			case 'xor':
+				return self::xorcrypt($in, $boxs);
 			case 'blowfish':
 				$xl = array_value(unpack('N', substr($in, 0, 4)), 1);
 				$xr = array_value(unpack('N', substr($in, 4, 4)), 1);
@@ -14269,71 +14262,225 @@ class XNCrypt {
 		new XNError('blockdecrypt', 'Undefined cipher name', XNError::WARNING);
 		return false;
 	}
-	public static function blockencrypt($cipher, $block, $key = null){
+	private static function blockencrypt($cipher, $block, $key = null){
 		$cipher = strtolower($cipher);
-/*		if(extension_loaded('openssl'))
-		switch($cipher){
-			case 'aes': if($key !== null) switch(strlen($key)){
-				case 16: return openssl_encrypt($block, "$cipher-128-ecb", $key, 1); break;
-				case 24: return openssl_encrypt($block, "$cipher-192-ecb", $key, 1); break;
-				case 32: return openssl_encrypt($block, "$cipher-192-ecb", $key, 1); break;
-			}break;
-			case 'blowfish': if($key !== null) return openssl_encrypt($block, "bf-ecb", $key); break;
-			case 'camellia': if($key !== null) switch(strlen($key)){
-				case 16: return openssl_encrypt($block, "$cipher-128-ecb", $key, 1); break;
-				case 24: return openssl_encrypt($block, "$cipher-192-ecb", $key, 1); break;
-				case 32: return openssl_encrypt($block, "$cipher-192-ecb", $key, 1); break;
-			}break;
-			case 'des': if($key !== null) return openssl_encrypt($block, "$cipher-ecb", $key, 1); break;
-			case 'des-ede3': if($key !== null) return openssl_encrypt($block, "$cipher-ecb", $key, 1); break;
-			case 'idea': if($key !== null) return openssl_encrypt($block, "$cipher-ecb", $key, 1); break;
-			case 'rc2': if($key !== null) return openssl_encrypt($block, "$cipher-ecb", $key, 1); break;
-			case 'des': if($key !== null) return openssl_encrypt($block, "$cipher-ecb", $key, 1); break;
-			case 'seed': if($key !== null) return openssl_encrypt($block, "$cipher-ecb", $key, 1); break;
-		}*/
-		if(extension_loaded('mcrypt'))
-		switch($cipher){}
 		return self::blockanencrypt($cipher, $block, self::keyinstall($cipher, $key));
 	}
-	public static function blockdecrypt($cipher, $block, $key = null){
+	private static function blockdecrypt($cipher, $block, $key = null){
 		$cipher = strtolower($cipher);
-/*		if(extension_loaded('openssl'))
-		switch($cipher){
-			case 'aes': if($key !== null) switch(strlen($key)){
-				case 16: return openssl_decrypt($block, "$cipher-128-ecb", $key, 1); break;
-				case 24: return openssl_decrypt($block, "$cipher-192-ecb", $key, 1); break;
-				case 32: return openssl_decrypt($block, "$cipher-192-ecb", $key, 1); break;
-			}break;
-			case 'blowfish': if($key !== null) return openssl_decrypt($block, "bf-ecb", $key); break;
-			case 'camellia': if($key !== null) switch(strlen($key)){
-				case 16: return openssl_decrypt($block, "$cipher-128-ecb", $key, 1); break;
-				case 24: return openssl_decrypt($block, "$cipher-192-ecb", $key, 1); break;
-				case 32: return openssl_decrypt($block, "$cipher-192-ecb", $key, 1); break;
-			}break;
-			case 'des': if($key !== null) return openssl_decrypt($block, "$cipher-ecb", $key, 1); break;
-			case 'des-ede3': if($key !== null) return openssl_decrypt($block, "$cipher-ecb", $key, 1); break;
-			case 'idea': if($key !== null) return openssl_decrypt($block, "$cipher-ecb", $key, 1); break;
-			case 'rc2': if($key !== null) return openssl_decrypt($block, "$cipher-ecb", $key, 1); break;
-			case 'des': if($key !== null) return openssl_decrypt($block, "$cipher-ecb", $key, 1); break;
-			case 'seed': if($key !== null) return openssl_decrypt($block, "$cipher-ecb", $key, 1); break;
-		}*/
-		if(extension_loaded('mcrypt'))
-		switch($cipher){}
-		return self::blockandecrypt($cipher, $block, $key);
+		return self::blockandecrypt($cipher, $block, self::keyinstall($cipher, $key));
 	}
-	public static function modeencrypt($cipher, $mode, $block, $key = null){
+
+	const OPT_KEY_PAD = 1;
+	const OPT_BASE64 = 2;
+	const OPT_HEX = 3;
+	// CBC | CCM | CFB | CFB1 | CFB8 | CTR | COFB | ECB | GCM | NCFB | NOFB | OFB | PCBC | RAW | STREAM | XTS
+	private static function modeencrypt($cipher, $mode, $data, $key = null, $iv = null, $options = 0, $more = array()){
 		$size = self::blocklength($cipher);
 		$mode = strtolower($mode);
-		switch($mode){}
-		new XNError('modeencrypt', 'Undefined mode name', XNError::WARNING);
-		return false;
-	}
-	public static function modedecrypt($cipher, $mode, $block, $key = null){
-		$size = self::blocklength($cipher);
-		$mode = strtolower($mode);
-		switch($mode){}
+		if($iv === null)$iv = str_repeat("\0", $size);
+		$iv = substr(self::cryptopad($iv, $size), 0, $size);
+		if($key !== null && ($options & self::OPT_KEY_PAD))
+			$key = self::zeropad($key, isset($more['length']) ? $more['length'] : $size);
+		$res = '';
+		switch($mode){
+			case 'raw':
+				return self::blockencrypt($cipher, substr($data, $i, $size), $key);
+			case 'ecb':
+				$data = self::cryptopad($data, $size);
+				for($i = 0; isset($data[$i]); $i += $size)
+					$res .= self::blockencrypt($cipher, substr($data, $i, $size), $key);
+			return $res;
+			case 'cbc':
+				$data = self::cryptopad($data, $size);
+				for($i = 0; isset($data[$i]); $i += $size)
+					$res .= $iv = self::blockencrypt($cipher, substr($data, $i, $size) ^ $iv, $key);
+			return $res;
+			case 'pcbc':
+				$data = self::cryptopad($data, $size);
+				for($i = 0; isset($data[$i]); $i += $size){
+					$tmp = substr($data, $i, $size);
+					$res .= $iv = self::blockencrypt($cipher, $tmp ^ $iv, $key);
+					$iv = $iv ^ $tmp;
+				}
+			return $res;
+			case 'cfb':
+				for($i = 0; isset($data[$i]); $i += $size)
+					$res .= $iv = self::blockencrypt($cipher, $iv, $key) ^ substr($data, $i, $size);
+			return $res;
+			case 'ofb':
+				for($i = 0; isset($data[$i]); $i += $size)
+					$res .= ($iv = self::blockencrypt($cipher, $iv, $key)) ^ substr($data, $i, $size);
+			return $res;
+			case 'ctr':
+				for($i = 0; isset($data[$i]); $i += $size){
+					$res .= self::blockencrypt($cipher, $iv, $key) ^ substr($data, $i, $size);
+					for($c = 0; isset($iv[$c]); ++$c)
+						$iv[$c] = chr(ord($iv[$c]) + 1);
+				}
+			return $res;
+			case 'ncfb':
+				$l = strlen($data);
+				for($i = 0; isset($data[$i]); $i += $n){
+					$n = $size;
+					if($i + $n > $l)
+						$n -= $i + $n - $l;
+					$res .= ($tmp = self::blockencrypt($cipher, $iv, $key)) ^ substr($data, $i, $n);
+					$iv = substr($iv, $size) . $tmp;
+				}
+			return $res;
+			case 'nofb':
+				$l = strlen($data);
+				for($i = 0; isset($data[$i]); $i += $n){
+					$n = $size;
+					if($i + $n > $l)
+						$n -= $i + $n - $l;
+					$res .= ($tmp = self::blockencrypt($cipher, $iv, $key)) ^ substr($data, $i, $n);
+					$iv = substr($iv, $n) . substr($tmp, 0, $n);
+				}
+			return $res;
+		}
 		new XNError('modedecrypt', 'Undefined mode name', XNError::WARNING);
 		return false;
+	}
+	private static function modedecrypt($cipher, $mode, $data, $key = null, $iv = null, $options = 0, $more = array()){
+		$size = self::blocklength($cipher);
+		$mode = strtolower($mode);
+		if($iv === null)$iv = str_repeat("\0", $size);
+		$iv = substr(self::cryptopad($iv, $size), 0, $size);
+		if($key !== null && ($options & self::OPT_KEY_PAD))
+			$key = self::zeropad($key, isset($more['length']) ? $more['length'] : $size);
+		$res = '';
+		switch($mode){
+			case 'raw':
+				return self::blockdecrypt($cipher, substr($data, $i, $size), $key);
+			case 'ecb':
+				for($i = 0; isset($data[$i]); $i += $size)
+					$res .= self::blockdecrypt($cipher, substr($data, $i, $size), $key);
+			return self::cryptounpad($res);
+			case 'cbc':
+				for($i = 0; isset($data[$i]); $i += $size){
+					$tmp = substr($data, $i, $size);
+					$res .= self::blockdecrypt($cipher, $tmp, $key) ^ $iv;
+					$iv = $tmp;
+				}
+			return self::cryptounpad($res);
+			case 'pcbc':
+				for($i = 0; isset($data[$i]); $i += $size){
+					$tmp = substr($data, $i, $size);
+					$res .= $iv = self::blockdecrypt($cipher, $tmp, $key) ^ $iv;
+					$iv = $iv ^ $tmp;
+				}
+			return self::cryptounpad($res);
+			case 'cfb':
+				for($i = 0; isset($data[$i]); $i += $size)
+					$res .= self::blockencrypt($cipher, $iv, $key) ^ ($iv = substr($data, $i, $size));
+			return $res;
+			case 'ofb':
+				for($i = 0; isset($data[$i]); $i += $size)
+					$res .= ($iv = self::blockencrypt($cipher, $iv, $key)) ^ substr($data, $i, $size);
+			return $res;
+			case 'ctr':
+				for($i = 0; isset($data[$i]); $i += $size){
+					$res .= self::blockencrypt($cipher, $iv, $key) ^ substr($data, $i, $size);
+					for($c = 0; isset($iv[$c]); ++$c)
+						$iv[$c] = chr(ord($iv[$c]) + 1);
+				}
+			return $res;
+			case 'ncfb':
+				$l = strlen($data);
+				for($i = 0; isset($data[$i]); $i += $n){
+					$n = $size;
+					if($i + $n > $l)
+						$n -= $i + $n - $l;
+					$res .= self::blockencrypt($cipher, $iv, $key) ^ ($iv = substr($data, $i, $n));
+				}
+			return $res;
+			case 'nofb':
+				$l = strlen($data);
+				for($i = 0; isset($data[$i]); $i += $n){
+					$n = $size;
+					if($i + $n > $l)
+						$n -= $i + $n - $l;
+					$res .= ($tmp = self::blockencrypt($cipher, $iv, $key)) ^ substr($data, $i, $n);
+					$iv = substr($iv, $n) . substr($tmp, 0, $n);
+				}
+			return $res;
+		}
+		new XNError('modedecrypt', 'Undefined mode name', XNError::WARNING);
+		return false;
+	}
+	private static function cryptopad($string, $size){
+		$length = strlen($string);
+		$pad = $size - ($length % $size);
+        return str_pad($string, $length + $pad, chr($pad));
+	}
+	private static function cryptounpad($string){
+		if($string === '')return '';
+		return substr($string, 0, -ord($string[-1]));
+	}
+	private static function zeropad($string, $size){
+		$length = strlen($string);
+		$pad = $size - ($length % $size);
+        return str_pad($string, $length + $pad, "\0");
+	}
+	public static function encrypt($method, $plaintext, $key = null){
+		$args = array_slice(func_get_args(), 3);
+		$more = array();
+		$method = explode('-', $method, 4);
+		$cipher = $method[0];
+		if(isset($method[2]) && (int)$method[2] !== 0)$more['length'] = (int)$method[2];
+		$mode = isset($method[1]) ? $method[1] : (isset($args[1]) || (isset($args[0]) && is_string($args[0])) ? 'cbc' : 'ecb');
+		if(isset($method[3]))
+			if(isset($args[1]))
+				$plaintext = self::encrypt($method[3], $plaintext, $key, $args[0], $args[1]);
+			elseif(isset($args[0]))
+				$plaintext = self::encrypt($method[3], $plaintext, $key, $args[0]);
+			else
+				$plaintext = self::encrypt($method[3], $plaintext, $key);
+		switch(strtolower($mode)){
+			case 'raw':
+			case 'ecb':
+				$iv = null;
+				if(isset($args[0]))$options = (int)$args[0];
+				else $options = 0;
+			break;
+			default:
+				if(isset($args[0]))$iv = (string)$args[0];
+				else $iv = null;
+				if(isset($args[1]))$options = (int)$args[1];
+				else $options = 0;
+		}
+		return self::modeencrypt($cipher, $mode, $plaintext, $key, $iv, $options, $more);
+	}
+	public static function decrypt($method, $plaintext, $key = null){
+		$args = array_slice(func_get_args(), 3);
+		$more = array();
+		$method = explode('-', $method);
+		$cipher = $method[0];
+		if(isset($method[2]) && $method[2] !== 'auto')$more['length'] = (int)$method[2];
+		$mode = isset($method[1]) ? $method[1] : (isset($args[1]) || (isset($args[0]) && is_string($args[0])) ? 'cbc' : 'ecb');
+		switch($mode){
+			case 'raw':
+			case 'ecb':
+				$iv = null;
+				if(isset($args[0]))$options = (int)$args[0];
+				else $options = 0;
+			break;
+			default:
+				if(isset($args[0]))$iv = (string)$args[0];
+				else $iv = null;
+				if(isset($args[1]))$options = (int)$args[1];
+				else $options = 0;
+		}
+		if(isset($method[3]))
+			if(isset($args[1]))
+				$plaintext = self::encrypt($method[3], $plaintext, $key, $args[0], $args[1]);
+			elseif(isset($args[0]))
+				$plaintext = self::encrypt($method[3], $plaintext, $key, $args[0]);
+			else
+				$plaintext = self::encrypt($method[3], $plaintext, $key);
+		return self::modedecrypt($cipher, $mode, $plaintext, $key, $iv, $options, $more);
 	}
 }
 
@@ -14341,7 +14488,7 @@ class XNCrypt {
 
 /* ---------- XNData ---------- */
 class XNData {
-	const VERSION = '4.2.4';
+	const VERSION = '4.2.7';
 	public $zlib = false;
 
 	public static function encodesz($l){
@@ -16041,6 +16188,30 @@ class XNData {
 			new XNError("XNDataURL", "Can not change URL address contents", XNError::WARNING, XNError::TTHROW);
 		$password = self::encodeon($password);
 		return $this->xnd->password_decode($password);
+	}
+
+	// compact/extract
+	public function compact($directory, $onlyfiles = null){
+		$files = @dirscan($directory);
+		if($files === false)return false;
+		if($onlyfiles === true){
+			foreach($files as $file)
+				if(is_file($directory .DIRECTORY_SEPARATOR. $file))
+					$this->set($file, file_get_contents($directory .DIRECTORY_SEPARATOR. $file));
+		}else foreach($files as $file)
+			if(is_dir($directory .DIRECTORY_SEPARATOR. $file))
+				$this->mdir($file)->compact($directory .DIRECTORY_SEPARATOR. $file);
+			else
+				$this->set($file, file_get_contents($directory .DIRECTORY_SEPARATOR. $file));
+	}
+	public function extract($directory){
+		if(!file_exists($directory))mkdir($directory);
+		$this->read(function($file, $content)use($directory){
+			if(is_xndata($content)){
+				mkdir($directory .DIRECTORY_SEPARATOR. $file);
+				$content->extract($directory .DIRECTORY_SEPARATOR. $file);
+			}else file_put_contents($directory .DIRECTORY_SEPARATOR. $file, $content);
+		});
 	}
 }
 
@@ -19310,6 +19481,8 @@ class XNStream {
 	}
 }
 
+__xnlib_data::$endMemory = memory_get_peak_usage();
+xnlib::$memoryUsage = __xnlib_data::$endMemory - __xnlib_data::$startMemory;
 __xnlib_data::$endTime = microtime(true);
 xnlib::$loadTime = __xnlib_data::$endTime - __xnlib_data::$startTime;
 ?>
