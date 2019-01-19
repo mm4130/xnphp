@@ -3798,7 +3798,7 @@ class XNString {
 	public static function usedchars($str){
 		return array_unique(str_split($str));
 	}
-	public static function max(){
+	public static function maxchar(){
 		$chars = func_get_args();
 		if(isset($chars[0][1]))$chars = str_split($chars[0]);
 		elseif(is_array(@$chars[0]))$chars = $chars[0];
@@ -3808,7 +3808,7 @@ class XNString {
 		if(($h = ord($chars[$c]))> $l)$l = $h;
 		return $l;
 	}
-	public static function min(){
+	public static function minchar(){
 		$chars = func_get_args();
 		if(isset($chars[0][1]))$chars = str_split($chars[0]);
 		elseif(is_array(@$chars[0]))$chars = $chars[0];
@@ -3820,7 +3820,7 @@ class XNString {
 	}
 	public static function range(){
 		$chars = func_get_args();
-		return range(call_user_func_array(array('XNString', 'min'), $chars),call_user_func_array(array('XNString', 'max'), $chars));
+		return range(call_user_func_array(array('XNString', 'minchar'), $chars),call_user_func_array(array('XNString', 'maxchar'), $chars));
 	}
 	public static function end($str, $im){
 		return substr($str, strrpos($str, $im) + 1);
@@ -3866,9 +3866,6 @@ class XNString {
 	}
 	public static function endiby($str, $by){
 		return strripos($str, $by) === strlen($str) - strlen($by);
-	}
-	public static function match($str, $by){
-		return $str == $by;
 	}
 	public static function matchi($str, $by){
 		return strtolower($str) == strtolower($by);
@@ -3929,26 +3926,17 @@ class XNString {
 	const EMAIL_REGEX = "/(?:[^ \n\r\t\/\\#?@]+)@(?:(?:[^ \n\r\t\.\/\\#?]+\.)*[^ \n\r\t\.\/\\#@?]{1,61}\.[^ \n\r\t\.\/\\#@?]{2,})/";
 	const FILE_REGEX = "/[^ \n\r\t\/\\#@?]+/";
 	const DIRACTORY_REGEX = "/(?:(?:(?:\/+)[^ \n\r\t\/\\#@?]+)*(?:\/*))/";
-	public static function number_of_alphba($char){
-		return strpos(self::ALPHBA_RANGE, substr($char, 0, 1)) % 26 + 1;
-	}
-	public static function lalphba_char_at($index){
-		return array_value(self::ALPHBA_LOWER_RANGE, abs($index) % 26);
-	}
-	public static function ualphba_char_at($index){
-		return array_value(self::ALPHBA_UPPER_RANGE, abs($index) % 26);
-	}
-	public static function char_in_range($char, $range){
+	public static function charinrange($char, $range){
 		if($char === '')return false;
 		return strpos($range, $char[0]) !== false;
 	}
-	public static function str_in_range($str, $range){
+	public static function strinrange($str, $range){
 		for($c = 0;isset($str[$c]);++$c)
 			if(strpos($range, $str[$c]) === false)
 				return false;
 		return true;
 	}
-	public static function get_in_range($str, $range){
+	public static function getinrange($str, $range){
 		$string = '';
 		for($c = 0;isset($str[$c]);++$c)
 			if(strpos($range, $str[$c]) !== false)
@@ -3968,14 +3956,7 @@ class XNString {
 			$str .= $range[array_rand($range)];
 		return $str;
 	}
-	public static function append($string, $child, $index = 0){
-		return substr_replace($string, $child, $index, 0);
-	}
-	public static function remove($string, $index = 0, $length = null){
-		if($length === null)
-			return substr_replace($string, '', $index);
-		return substr_replace($string, '', $index, $length);
-	}
+
 	// calc functions
 	public static function xorn($a, $b){
 		$al = strlen($a);
@@ -3995,27 +3976,8 @@ class XNString {
 				$str .= $chars[$i];
 		return $str;
 	}
-	public static function xorx($a, $b){
-		return xncrypt::bindecode(set_bytes(self::xorn($a, $b), 8, '0'));
-	}
-	public static function bxorx($a, $b){
-		return xnbinary::toString(xnbinary::xorx(xncrypt::binencode($a), xncrypt::binencode($b)));
-	}
-	public static function badd($a, $b){
-		return xnbinary::toString(xnbinary::add(xncrypt::binencode($a), xncrypt::binencode($b)));
-	}
-	public static function bsub($a, $b){
-		return xnbinary::toString(xnbinary::sub(xncrypt::binencode($a), xncrypt::binencode($b)));
-	}
-	public static function bmul($a, $b){
-		return xnbinary::toString(xnbinary::mul(xncrypt::binencode($a), xncrypt::binencode($b)));
-	}
-	public static function bdiv($a, $b){
-		return xnbinary::toString(xnbinary::div(xncrypt::binencode($a), xncrypt::binencode($b)));
-	}
-	public static function brev($x){
-		return xncrypt::bindecode(strrev(xncrypt::binencode($x)));
-	}
+
+	// split functions
 	public static function splitrev($string, $length = null){
 		if($length === null)return strrev($string);
 		return implode('', array_map('strrev', str_split($string, $length)));
@@ -4043,6 +4005,10 @@ class XNString {
 		$l1 = strlen($string1);
 		$l2 = strlen($string2);
 		return substr(str_repeat($string2, ceil($l1 / $l2)), 0, $l1);
+	}
+	public static function subrep($string, $length){
+		$l = strlen($string);
+		return substr(str_repeat($string, ceil($length / $l)), 0, $length);
 	}
 	public static function translit($string){
 		return xncrypt::dictencode($string, xncrypt::dictget(xndata("encoding-translit")));
@@ -9039,7 +9005,9 @@ class XNMath {
             0xff & $b >>  8,
 			0xff & $b
 		);
-    }
+	}
+	
+	// base functions
 	public static function baseconvert($text, $from = false, $to = false){
 		if(is_string($from) && strtolower($from) == "ascii")return self::baseconvert(bin2hex($text), xnstring::HEX_RANGE, $to);
 		if(is_string($to) && strtolower($to) == "ascii"){
@@ -9094,6 +9062,259 @@ class XNMath {
 		$to = $to == "0123456789" ? false : $to;
 		$from = $from == "0123456789" ? false : $from;
 		return self::baseconvert($str, $from, $to);
+	}
+	public static function strdec($str){
+		return hexdec(xncrypt::hexencode($str));
+	}
+	public static function decstr($dec){
+		return xncrypt::hexdecode(dechex($dec));
+	}
+
+	// calc function
+	private static function calcarg($calc, $offset = null){
+		preg_match('/(?:(?:(?<x>\((?:\g<x>|\\\\\(|\\\\\)|[^\)])*\))|\\\\\"|[^\"])*\"|[^,])+/', $calc, $match, 0, $offset === null ? 0 : $offset);
+		return isset($match[0]) ? self::calc($match[0]) : 0;
+	}
+	public static function calc($calc){
+		$calc = preg_replace_callback('/\"(?:\\\\\\\\|\\\\\"|[^\"])*\"|\'[+-<>\[\]]*\'|(?:0|0o|o)[0-7]+|(?:0x|x)[0-9a-f]+|(?:0b|b)[01]+|\.[0-9]+|[0-9]+\./i', function($x){
+			if($x[0][-1] == '.')return substr($x[0], 0, -1);
+			switch($x[0][0]){
+				case '.':
+					return '0' . $x[0];
+				case '"':
+					return self::strdec(substr($x[0], 1, -1));
+				case "'":
+					return self::strdec(brainfuck::run(substr($x[0], 1, -1) . '.'));
+				case 'o':
+					return octdec(substr($x[0], 1));
+				case 'x':
+					return hexdec(substr($x[0], 1));
+				case 'b':
+					return bindec(substr($x[0], 1));
+				case '0':
+					switch($x[0][1]){
+						case 'o':
+							return octdec(substr($x[0], 2));
+						case 'x':
+							return hexdec(substr($x[0], 2));
+						case 'b':
+							return bindec(substr($x[0], 2));
+						default:
+							return octdec(substr($x[0], 1));
+					}
+			}
+		}, $calc);
+		$calc = str_replace(array('<=>', ' ', "\n", "\r", "\t"), array('^', '', '', '', ''), $calc);
+		do{
+			$calc = str_replace(array('--', '-+', '+-', '++'), array('+', '-', '-', '+'), $prev = $calc);
+		}while($prev != $calc);
+		$calc = preg_replace('/(?!<[a-zA-Z])([0-9])(\(|\[|[a-zA-Z])/', '$1*$2', $calc);
+		do{
+			$end = isset($calc[-1]) ? $calc[-1] : '';
+			if($end === '+' || $end === '-')
+				$calc .= '1';
+			$calc = preg_replace_callback('/(?<![a-zA-Z])\((?:\\\\\(|\\\\\)|\"(?:\\\\|\\\"|[^\"])*\"|[^\(\)])*\)/', function($x){
+				return self::calc(substr($x[0], 1, -1));
+			}, $prev = $calc);
+			$calc = preg_replace_callback('/(?<![a-zA-Z])\[(?:\\\\\[|\\\\\]|\"(?:\\\\|\\\"|[^\"])*\"|[^\[\]])*\]/', function($x){
+				return floor(self::calc(substr($x[0], 1, -1), 0));
+			}, $calc);
+			$calc = preg_replace_callback('/(abs|acos|acosh|asin|asinh|atan|atan2|atanh|base|ceil|cos|cot|csc|deg|exp|expm1|floor|fmod|fumod|hypot|lcg|log|log10|log1p|max|min|pi|phi|rad|rand|round|sec|sin|sinh|sqrt|tan|tanh)(?:(?<x>\((?:\g<x>|\\\\\(|\\\\\)|[^\)])*\))|(?:\g<x>|\\\\\(|\\\\\)|[^\)])*)/', function($x)use($precision){
+				$args = substr($x[2], 1, -1);
+				switch($x[1]){
+					case 'abs':
+						return abs(self::calcarg($args));
+					case 'acos':
+						return acos(self::calcarg($args));
+					case 'acosh':
+						return acosh(self::calcarg($args));
+					case 'asin':
+						return asin(self::calcarg($args));
+					case 'asinh':
+						return asinh(self::calcarg($args));
+					case 'atan':
+						return atan(self::calcarg($args));
+					case 'atan2':
+						$arg = self::calcarg($args);
+						return atan2($arg, self::calcarg($args, strlen($arg) + 1));
+					case 'atanh':
+						return atanh(self::calcarg($args));
+					case 'base':
+						$arg1 = self::calcarg($args);
+						$len  = strlen($arg1) + 1;
+						$arg2 = self::calcarg($args, $len);
+						$arg3 = self::calcarg($args, strlen($arg2) + $len + 1);
+						if($arg2 === '')$arg2 = '10';
+						if($arg3 === '')$arg3 = '10';
+						return base_convert($arg1, $arg2, $arg3);
+					case 'ceil':
+						return ceil(self::calcarg($args));
+					case 'cos':
+						return cos(self::calcarg($args));
+					case 'cot':
+						return 1 / tan(self::calcarg($args));
+					case 'csc':
+						return 1 / cos(self::calcarg($args));
+					case 'deg':
+						return rad2deg(self::calcarg($args));
+					case 'exp':
+						return exp(self::calcarg($args));
+					case 'expm1':
+						return expm1(self::calcarg($args));
+					case 'floor':
+						return floor(self::calcarg($args));
+					case 'fmod':
+						return self::fmod(self::calcarg($args));
+					case 'fumod':
+						return self::fumod(self::calcarg($args));
+					case 'hypot':
+						$arg = self::calcarg($args);
+						return hypot($arg, self::calcarg($args, strlen($arg) + 1), $precision);
+					case 'lcg':
+						return lcg_value();
+					case 'log':
+						$arg = self::calcarg($args);
+						return log($arg, self::calcarg($args, strlen($arg) + 1));
+					case 'ln':
+						return log(self::calcarg($args));
+					case 'max':
+					case 'min':
+						$arg = array();
+						$now = self::calcarg($args);
+						$len = strlen($now) + 1;
+						while($len !== 1){
+							$arg[] = $now;
+							$now = self::calcarg($args, $len);
+							$len += strlen($now) + 1;
+						}
+						return call_user_func_array($x[1], $arg);
+					case 'nmod':
+						return self::nmod(self::calcarg($args));
+					case 'pi':
+						return M_PI;
+					case 'phi':
+						return self::PHI;
+					case 'rad':
+						return deg2rad(self::calcarg($args));
+					case 'rand':
+						$arg = self::calcarg($args);
+						return rand($arg, self::calcarg($args, strlen($arg) + 1));
+					case 'round':
+						return round(self::calcarg($args));
+					case 'sec':
+						return 1 / sin(self::calcarg($args));
+					case 'sin':
+						return sin(self::calcarg($args));
+					case 'sinh':
+						return sinh(self::calcarg($args));
+					case 'sqrt':
+						return sqrt(self::calcarg($args));
+					case 'tan':
+						return tan(self::calcarg($args));
+					case 'tanh':
+						return tanh(self::calcarg($args));
+					case 'umod':
+						return self::umod(self::calcarg($args));
+				}
+			}, $calc);
+			foreach(array(
+				array(1, '~'),
+				array(1, '\*\*', '\*\/', '\*%'),
+				array(1, '\*', '\/', '%'),
+				array(1, '\+', '-'),
+				array(1, '_'),
+				array(1, '>>', '<<', '<>>', '<<>', '<>'),
+				array(1, '&', '\|', '^', '=>', '=<'),
+				array(2, '!', '~'),
+				array(3, '!', '~'),
+				array(1, '&&', '\|\|', '==', '!=', '<=', '>=', '<', '>'),
+			) as $signs){
+				$regex = implode('|', array_slice($signs, 1));
+				switch($signs[0]){
+					case 1:
+						$calc = preg_replace_callback("/(-{0,1}[0-9]+\.[0-9]+|-{0,1}[0-9]+)($regex)(-{0,1}[0-9]+\.[0-9]+|-{0,1}[0-9]+)/", function($x)use($precision){
+							switch($x[2]){
+								case '~':
+									return rand((int)$x[1], (int)$x[3]);
+								case '**':
+									return pow((float)$x[1], (float)$x[3]);
+								case '*/':
+									return pow((float)$x[1], 1 / (float)$x[3]);
+								case '*%':
+									return pow((float)$x[1], (int)$x[3]);
+								case '*':
+									return ((float)$x[1]) * ((float)$x[3]);
+								case '/':
+									return ((float)$x[1]) / ((float)$x[3]);
+								case '%':
+									return ((float)$x[1]) % ((float)$x[3]);
+								case '+':
+									return ((float)$x[1]) + ((float)$x[3]);
+								case '-':
+									return ((float)$x[1]) - ((float)$x[3]);
+								case '_':
+									return strpos($x[3], '.') === false ? $x[1] . $x[3] : floor($x[1]) . $x[3];
+								case '>>':
+									return ((int)$x[1]) >> ((int)$x[3]);
+								case '<<':
+									return ((int)$x[1]) << ((int)$x[3]);
+								case '<>>':
+									return self::rtr((int)$x[1], (int)$x[3]);
+								case '<<>':
+									return self::rtl((int)$x[1], (int)$x[3]);
+								case '&':
+									return ((int)$x[1]) & ((int)$x[3]);
+								case '|':
+									return ((int)$x[1]) | ((int)$x[3]);
+								case '^':
+									return ((int)$x[1]) ^ ((int)$x[3]);
+								case '=>':
+									return self::res((int)$x[1], (int)$x[3]);
+								case '=<':
+									return self::res((int)$x[3], (int)$x[1]);
+								case '&&':
+									return $x[1] == 0 || $x[3] == 0 ? 0 : 1;
+								case '||':
+									return $x[1] == 0 && $x[3] == 0 ? 0 : 1;
+								case '==':
+									return $x[1] == $x[3] ? 1 : 0;
+								case '!=':
+									return $x[1] != $x[3] ? 1 : 0;
+								case '<=':
+									return $x[1] <= $x[3] ? 1 : 0;
+								case '>=':
+									return $x[1] >= $x[3] ? 1 : 0;
+								case '>':
+									return $x[1] > $x[3] ? 1 : 0;
+								case '<':
+									return $x[1] < $x[3] ? 1 : 0;
+							}
+						}, $calc);
+					break;
+					case 2:
+						$calc = preg_replace_callback("/(-{0,1}[0-9]+\.[0-9]+|-{0,1}[0-9]+)($regex)/", function($x){
+							switch($x[2]){
+								case '!':
+									return self::fact($x[1]);
+								case '~':
+									return self::revb($x[1]);
+							}
+						}, $calc);
+					break;
+					case 3:
+						$calc = preg_replace_callback("/($regex)(-{0,1}[0-9]+\.[0-9]+|-{0,1}[0-9]+)/", function($x){
+							switch($x[2]){
+								case '!':
+									return $x[2] == 0 ? 1 : 0;
+								case '~':
+									return ~$x[1];
+							}
+						}, $calc);
+				}
+			}
+		}while($prev != $calc);
+		if($calc === '')return 0;
+		return (float)$calc;
 	}
 }
 class XNNumber {
@@ -13352,7 +13573,6 @@ class XNCrypt {
 		$f  = ($f ^ $sbox[2][$x1]) & 0xffffffff;
 		return ($f + $sbox[3][$x0]) & 0xffffffff;
 	}
-
 	protected static $tfq = array(
 		array(
 			0xA9, 0x67, 0xB3, 0xE8, 0x04, 0xFD, 0xA3, 0x76,
@@ -13557,7 +13777,6 @@ class XNCrypt {
 			0x9A196F9A, 0xE01A9DE0, 0x8F94368F, 0xE6C742E6, 0xECC94AEC, 0xFDD25EFD, 0xAB7FC1AB, 0xD8A8E0D8
 		)
 	);
-	
 	protected static $rjt = array(
 		0x6363A5C6, 0x7C7C84F8, 0x777799EE, 0x7B7B8DF6, 0xF2F20DFF, 0x6B6BBDD6, 0x6F6FB1DE, 0xC5C55491,
 		0x30305060, 0x01010302, 0x6767A9CE, 0x2B2B7D56, 0xFEFE19E7, 0xD7D762B5, 0xABABE64D, 0x76769AEC,
@@ -13979,6 +14198,104 @@ class XNCrypt {
 			0x02000001, 0x02000400, 0x00000400, 0x00100001
 		)
 	);
+	protected static $sjf = array(
+		0xa3, 0xd7, 0x09, 0x83, 0xf8, 0x48, 0xf6, 0xf4, 0xb3, 0x21, 0x15, 0x78, 0x99, 0xb1, 0xaf, 0xf9,
+		0xe7, 0x2d, 0x4d, 0x8a, 0xce, 0x4c, 0xca, 0x2e, 0x52, 0x95, 0xd9, 0x1e, 0x4e, 0x38, 0x44, 0x28,
+		0x0a, 0xdf, 0x02, 0xa0, 0x17, 0xf1, 0x60, 0x68, 0x12, 0xb7, 0x7a, 0xc3, 0xe9, 0xfa, 0x3d, 0x53,
+		0x96, 0x84, 0x6b, 0xba, 0xf2, 0x63, 0x9a, 0x19, 0x7c, 0xae, 0xe5, 0xf5, 0xf7, 0x16, 0x6a, 0xa2,
+		0x39, 0xb6, 0x7b, 0x0f, 0xc1, 0x93, 0x81, 0x1b, 0xee, 0xb4, 0x1a, 0xea, 0xd0, 0x91, 0x2f, 0xb8,
+		0x55, 0xb9, 0xda, 0x85, 0x3f, 0x41, 0xbf, 0xe0, 0x5a, 0x58, 0x80, 0x5f, 0x66, 0x0b, 0xd8, 0x90,
+		0x35, 0xd5, 0xc0, 0xa7, 0x33, 0x06, 0x65, 0x69, 0x45, 0x00, 0x94, 0x56, 0x6d, 0x98, 0x9b, 0x76,
+		0x97, 0xfc, 0xb2, 0xc2, 0xb0, 0xfe, 0xdb, 0x20, 0xe1, 0xeb, 0xd6, 0xe4, 0xdd, 0x47, 0x4a, 0x1d,
+		0x42, 0xed, 0x9e, 0x6e, 0x49, 0x3c, 0xcd, 0x43, 0x27, 0xd2, 0x07, 0xd4, 0xde, 0xc7, 0x67, 0x18,
+		0x89, 0xcb, 0x30, 0x1f, 0x8d, 0xc6, 0x8f, 0xaa, 0xc8, 0x74, 0xdc, 0xc9, 0x5d, 0x5c, 0x31, 0xa4,
+		0x70, 0x88, 0x61, 0x2c, 0x9f, 0x0d, 0x2b, 0x87, 0x50, 0x82, 0x54, 0x64, 0x26, 0x7d, 0x03, 0x40,
+		0x34, 0x4b, 0x1c, 0x73, 0xd1, 0xc4, 0xfd, 0x3b, 0xcc, 0xfb, 0x7f, 0xab, 0xe6, 0x3e, 0x5b, 0xa5,
+		0xad, 0x04, 0x23, 0x9c, 0x14, 0x51, 0x22, 0xf0, 0x29, 0x79, 0x71, 0x7e, 0xff, 0x8c, 0x0e, 0xe2,
+		0x0c, 0xef, 0xbc, 0x72, 0x75, 0x6f, 0x37, 0xa1, 0xec, 0xd3, 0x8e, 0x62, 0x8b, 0x86, 0x10, 0xe8,
+		0x08, 0x77, 0x11, 0xbe, 0x92, 0x4f, 0x24, 0xc5, 0x32, 0x36, 0x9d, 0xcf, 0xf3, 0xa6, 0xbb, 0xac,
+		0x5e, 0x6c, 0xa9, 0x13, 0x57, 0x25, 0xb5, 0xe3, 0xbd, 0xa8, 0x3a, 0x01, 0x05, 0x59, 0x2a, 0x46
+	);
+	protected static function sjgptenc($bytes, $key){
+		$l = ord($bytes[0]);
+		$r = ord($bytes[1]);
+		for($i = 3; $i >= 0; --$i){
+			if($i == 0 || $i == 2)
+				$l = $l ^ self::$sjf[$r ^ ord($key[$i])];
+			else
+				$r = $r ^ self::$sjf[$l ^ ord($key[$i])];
+		}
+		return pack('C2', $l, $r);
+	}
+	protected static function sjgptdec($bytes, $key){
+		$l = ord($bytes[0]);
+		$r = ord($bytes[1]);
+		for($i = 0; $i < 4; ++$i){
+			if($i == 0 || $i == 2)
+				$l = $l ^ self::$sjf[$r ^ ord($key[$i])];
+			else
+				$r = $r ^ self::$sjf[$l ^ ord($key[$i])];
+		}
+		return pack('C2', $l, $r);
+	}
+	protected static function sjruleaenc($bytes, $key, $i){
+		$w = str_split($bytes, 2);
+		$w[4] = $w[3];
+		$w[3] = $w[2];
+		$w[2] = $w[1];
+		$w[1] = self::sjgptenc($w[0], $key);
+		$w[0] = $w[1] ^ $w[4] ^ "\0" . xnmath::decstr($i);
+		return $w[0] . $w[1] . $w[2] . $w[3];
+	}
+	protected static function sjruleadec($bytes, $key, $i){
+		$w = str_split($bytes, 2);
+		$w[4] = $w[0] ^ $w[1] ^ "\0" . xnmath::decstr($i);
+		$w[0] = self::sjgptdec($w[1], $key);
+		return $w[0] . $w[2] . $w[3] . $w[4];
+	}
+	protected static function sjrulebenc($bytes, $key, $i){
+		$w = str_split($bytes, 2);
+		$w[4] = $w[3];
+		$w[3] = $w[2];
+		$w[2] = $w[0] ^ $w[1] ^ "\0" . xnmath::decstr($i);
+		$w[1] = self::sjgptenc($w[0], $key);
+		return $w[4] . $w[1] . $w[2] . $w[3];
+	}
+	protected static function sjrulebdec($bytes, $key, $i){
+		$w = str_split($bytes, 2);
+		$w[4] = $w[0];
+		$w[0] = self::sjgptdec($w[1], $key);
+		$w[1] = $w[0] ^ $w[2] ^ "\0" . xnmath::decstr($i);
+		return $w[0] . $w[1] . $w[3] . $w[4];
+	}
+	protected static $vgt = array(
+		'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+		'B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A',
+		'C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B',
+		'D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C',
+		'E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D',
+		'F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D','E',
+		'G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D','E','F',
+		'H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D','E','F','G',
+		'I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D','E','F','G','H',
+		'J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D','E','F','G','H','I',
+		'K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D','E','F','G','H','I','J',
+		'L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D','E','F','G','H','I','J','K',
+		'M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D','E','F','G','H','I','J','K','L',
+		'N','O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M',
+		'O','P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N',
+		'P','Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O',
+		'Q','R','S','T','U','V','W','X','Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
+		'R','S','T','U','V','W','X','Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q',
+		'S','T','U','V','W','X','Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R',
+		'T','U','V','W','X','Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S',
+		'U','V','W','X','Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T',
+		'V','W','X','Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U',
+		'W','X','Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V',
+		'X','Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W',
+		'Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X',
+		'Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y'
+	);
 
 	public static function blocklength($cipher, $bits = null){
 		$cipher = strtolower($cipher);
@@ -13986,6 +14303,52 @@ class XNCrypt {
 			case 'xor': 	 return $bits === true ? 8 : 1;
 			case 'blowfish': return $bits === true ? 64 : 8;
 			case 'twofish':  return $bits === true ? 128 : 16;
+			case 'skipjack': return $bits === true ? 64 : 8;
+			case 'vigenere': return $bits === true ? 8 : 1;
+			case 'enigma':   return $bits === true ? 8 : 1;
+		}
+	}
+	public static function keylength($cipher, $bits = null){
+		$cipher = strtolower($cipher);
+		switch($cipher){
+			case 'xor': 	 return $bits === true ? 8 : 1;
+			case 'blowfish': return $bits === true ? 64 : 8;
+			case 'twofish':  return $bits === true ? 64 : 8;
+			case 'skipjack': return $bits === true ? 80 : 10;
+			case 'vigenere': return $bits === true ? 8 : 1;
+			case 'enigma':   return $bits === true ? 8 : 1;
+		}
+	}
+	private static function keyinitsize($cipher, $key = null, $options = 0){
+		$cipher = strtolower($cipher);
+		if($key === null)return null;
+		if($options & self::OPT_KEY_PAD)
+			switch($cipher){
+				case 'blowfish': $key = self::zeropad($key, 8);break;
+				case 'twofish':  $key = self::zeropad($key, 8);break;
+				case 'skipjack': $key = self::zeropad($key, 10);break;
+			}
+		elseif($options & self::OPT_KEY_MIX)
+			switch($cipher){
+				case 'blowfish': $key = self::mixpad($key, 8);break;
+				case 'twofish':  $key = self::mixpad($key, 8);break;
+				case 'skipjack': $key = self::mixpad($key, 10);break;
+			}
+		$lk = strlen($key);
+		switch($cipher){
+			case 'xor':
+			case 'blowfish':
+			case 'vigenere':
+				return $key;
+			case 'twofish':
+				if($lk < 8)return '';
+				if($lk < 16)return substr($key, 0, 8);
+				if($lk < 24)return substr($key, 0, 16);
+				return substr($key, 0, 32);
+			case 'skipjack':
+				return substr($key, 0, 10);
+			case 'enigma':
+				return $lk < 16 ? $key . str_repeat("\0", 16 - $lk) : $key;
 		}
 	}
 	private static function keyinstall($cipher, $key){
@@ -14154,26 +14517,68 @@ class XNCrypt {
 						}
 				}
 				return array($s0, $s1, $s2, $s3, $k);
-			}
+				case 'skipjack':
+					return str_repeat($key, 16);
+				case 'vigenere':
+					return xnstring::getinrange(strtoupper($key), xnstring::UPPER_RANGE);
+				case 'enigma':
+					$deck = $t1 = array();
+					$t3 = $t2 = array_fill(0, 256, 0);
+					$lk = strlen($key);
+					$seed = 123;
+					for($i = 0; $i < 13; ++$i)
+						$seed = ($seed & 0xffffffff) * ord($key[$i]) + $i;
+					for($i = 0; $i < 256; ++$i){
+						$t1[] = $i;
+						$deck[] = $i;
+					}
+					for($i = 0; $i < 256; ++$i){
+						$seed = (5 * ($seed & 0xffffffff) + ord($key[$i % 13])) & 0xffffffff;
+						$rand = $seed % 65521;
+						$k = 0xff - $i;
+						$ic = ($rand & 0377) % ($k + 1);
+						$rand = $rand >> 8;
+						$tmp = $t1[$k];
+						$t1[$k] = $t1[$ic];
+						$t1[$ic] = $tmp;
+						if($t3[$k] != 0)
+							continue;
+						$ic = ($rand & 0377) % $k;
+						while($t3[$ic] != 0)
+							$ic = ($ic + 1) % $k;
+						$t3[$k] = $ic;
+						$t3[$ic] = $k;
+					}
+					for($i = 0; $i < 256; ++$i)
+						$t2[$t1[$i] & 0377] = $i;
+					return array(
+						array_map(function($x){return $x % 256;}, $t1),
+						array_map(function($x){return $x % 256;}, $t2),
+						array_map(function($x){return $x % 256;}, $t3),
+						array_map(function($x){return $x % 256;}, $deck)
+					);
+				}
 	}
-	private static function blockanencrypt($cipher, $in, $boxs){
+	private static function blockencrypt($cipher, $in, $key = null){
+		$cipher = strtolower($cipher);
+		$key = self::keyinstall($cipher, $key);
 		switch($cipher){
 			case 'xor':
-				return self::xorcrypt($in, $boxs);
+				return self::xorcrypt($in, $key);
 			case 'blowfish':
 				$xl = array_value(unpack('N', substr($in, 0, 4)), 1);
 				$xr = array_value(unpack('N', substr($in, 4, 4)), 1);
 				for($i = 0; $i < 16; ++$i){
-					$xl ^= $boxs[0][$i];
-					$xr = self::bff($xl, $boxs[1]) ^ $xr;
+					$xl ^= $key[0][$i];
+					$xr = self::bff($xl, $key[1]) ^ $xr;
 					swap($xl, $xr);
 				}
 				swap($xl, $xr);
-				$xr ^= $boxs[0][16];
-				$xl  = $xl ^ $boxs[0][17];
+				$xr ^= $key[0][16];
+				$xl  = $xl ^ $key[0][17];
 			return pack('N2', $xl, $xr);
 			case 'twofish':
-				list($s0, $s1, $s2, $s3, $k) = $boxs;
+				list($s0, $s1, $s2, $s3, $k) = $key;
 				$in = unpack("V4", $in);
 				$r0 = $k[0] ^ $in[1];
 				$r1 = $k[1] ^ $in[2];
@@ -14205,28 +14610,69 @@ class XNCrypt {
 					$r1 = ((($r1 >> 31) & 1) | ($r1 << 1)) ^ ($t0 + ($t1 << 1) + $k[++$ki]);
 				}
 			return pack("V4", $k[4] ^ $r2, $k[5] ^ $r3, $k[6] ^ $r0, $k[7] ^ $r1);
+			case 'skipjack':
+				for($i = 1; $i <= 32; ++$i){
+					$subkey = substr($key, (4 * $i) - 4, 4);
+					if($i >= 1 && $i <= 8)
+						$in = self::sjruleaenc($in, $subkey, $i);
+					if($i >= 9 && $i <= 16)
+						$in = self::sjrulebenc($in, $subkey, $i);
+					if($i >= 17 && $i <= 24)
+						$in = self::sjruleaenc($in, $subkey, $i);
+					if($i >= 25 && $i <= 32)
+						$in = self::sjrulebenc($in, $subkey, $i);
+				}
+			return $in;
+			case 'vigenere':
+				$in = xnstring::getinrange(strtoupper($in), xnstring::UPPER_RANGE);
+				$l = strlen($in);
+				$key = xnstring::subrep($key, $l);
+				for($i = 0; $i < $l; ++$i)
+					$in[$i] = self::$vgt[ord($key[$i]) * 26 + ord($in[$i]) - 1755];
+				return $in;
+			case 'enigma':
+				$n1 = $n2 = 0;
+				for($j = 0; isset($in[$j]); ++$j){
+					$i = ord($in[$j]);
+					$p1 = ($i + $n1) & 0377;
+					$p3 = ($key[0][$p1] + $n2) & 0377;
+					$p2 = ($key[2][$p3] - $n2) & 0377;
+					$i = $key[1][$p2] - $n1;
+					$in[$j] = chr($i);
+					++$n1;
+					if($n1 == 256){
+						$n1 = 0;
+						++$n2;
+						if($n2 == 256)
+							$n2 = 0;
+					}
+				}
+				return $in;
+			break;
 		}
 		new XNError('blockencrypt', 'Undefined cipher name', XNError::WARNING);
 		return false;
 	}
-	private static function blockandecrypt($cipher, $in, $boxs){
+	private static function blockdecrypt($cipher, $in, $key = null){
+		$cipher = strtolower($cipher);
+		$key = self::keyinstall($cipher, $key);
 		switch($cipher){
 			case 'xor':
-				return self::xorcrypt($in, $boxs);
+				return self::xorcrypt($in, $key);
 			case 'blowfish':
 				$xl = array_value(unpack('N', substr($in, 0, 4)), 1);
 				$xr = array_value(unpack('N', substr($in, 4, 4)), 1);
 				for($i = 0; $i < 16; ++$i){
-					$xl ^= $boxs[0][17 - $i];
-					$xr = self::bff($xl, $boxs[1]) ^ $xr;
+					$xl ^= $key[0][17 - $i];
+					$xr = self::bff($xl, $key[1]) ^ $xr;
 					swap($xl, $xr);
 				}
 				swap($xl, $xr);
-				$xr ^= $boxs[0][1];
-				$xl  = $xl ^ $boxs[0][0];
+				$xr ^= $key[0][1];
+				$xl  = $xl ^ $key[0][0];
 			return pack('N2', $xl, $xr);
 			case 'twofish':
-				list($s0, $s1, $s2, $s3, $k) = $boxs;
+				list($s0, $s1, $s2, $s3, $k) = $key;
 				$in = unpack("V4", $in);
 				$r0 = $k[4] ^ $in[1];
 				$r1 = $k[5] ^ $in[2];
@@ -14257,35 +14703,70 @@ class XNCrypt {
 					$r1 = $r1 >> 1 & 0x7fffffff | $r1 << 31;
 					$r0 = ($r0 >> 31 & 0x1 | $r0 << 1) ^ ($t0 + $t1 + $k[--$ki]);
 				}
-				return pack("V4", $k[0] ^ $r2, $k[1] ^ $r3, $k[2] ^ $r0, $k[3] ^ $r1);
+			return pack("V4", $k[0] ^ $r2, $k[1] ^ $r3, $k[2] ^ $r0, $k[3] ^ $r1);
+			case 'skipjack':
+				for($i = 32; $i >= 1; --$i){
+					$subkey = substr($key, ($i - 1) * 4, 4);
+					if($i <= 32 && $i >= 25)
+						$in = self::sjrulebdec($in, $subkey, $i);
+					if($i <= 24 && $i >= 17)
+						$in = self::sjruleadec($in, $subkey, $i);
+					if($i <= 16 && $i >= 9)
+						$in = self::sjrulebdec($in, $subkey, $i);
+					if($i <= 8 && $i >= 1)
+						$in = self::sjruleadec($in, $subkey, $i);
+				}
+			return $in;
+			case 'vigenere':
+				$in = xnstring::getinrange(strtoupper($in), xnstring::UPPER_RANGE);
+				$l = strlen($in);
+				$key = xnstring::subrep($key, $l);
+				for($i = 0; $i < $l; ++$i){
+					$row = (ord($key[$i]) - 65) * 26;
+					for($j = 0; $j < 26; ++$j)
+						if(self::$vgt[$row + $j] == $in[$i]){
+							$in[$i] = chr($j + 65);
+							break;
+						}
+				}
+			return $in;
+			case 'enigma':
+				$n1 = $n2 = 0;
+				for($j = 0; isset($in[$j]); ++$j){
+					$i = ord($in[$j]);
+					$p1 = ($i + $n1) & 0377;
+					$p3 = ($key[0][$p1] + $n2) & 0377;
+					$p2 = ($key[2][$p3] - $n2) & 0377;
+					$i = $key[1][$p2] - $n1;
+					$in[$j] = chr($i);
+					++$n1;
+					if($n1 == 256){
+						$n1 = 0;
+						++$n2;
+						if($n2 == 256)
+							$n2 = 0;
+					}
+				}
+				return $in;
+			break;
 		}
 		new XNError('blockdecrypt', 'Undefined cipher name', XNError::WARNING);
 		return false;
 	}
-	private static function blockencrypt($cipher, $block, $key = null){
-		$cipher = strtolower($cipher);
-		return self::blockanencrypt($cipher, $block, self::keyinstall($cipher, $key));
-	}
-	private static function blockdecrypt($cipher, $block, $key = null){
-		$cipher = strtolower($cipher);
-		return self::blockandecrypt($cipher, $block, self::keyinstall($cipher, $key));
-	}
 
 	const OPT_KEY_PAD = 1;
-	const OPT_BASE64 = 2;
-	const OPT_HEX = 3;
-	// CBC | CCM | CFB | CFB1 | CFB8 | CTR | COFB | ECB | GCM | NCFB | NOFB | OFB | PCBC | RAW | STREAM | XTS
+	const OPT_KEY_MIX = 2;
+	// CBC | CCM | CFB | CFB1 | CFB8 | CTR | COFB | ECB | GCM | NCFB | NOFB | OFB | PCBC | RAW | XTS
 	private static function modeencrypt($cipher, $mode, $data, $key = null, $iv = null, $options = 0, $more = array()){
 		$size = self::blocklength($cipher);
 		$mode = strtolower($mode);
+		$key = self::keyinitsize($cipher, $key, $options);
 		if($iv === null)$iv = str_repeat("\0", $size);
-		$iv = substr(self::cryptopad($iv, $size), 0, $size);
-		if($key !== null && ($options & self::OPT_KEY_PAD))
-			$key = self::zeropad($key, isset($more['length']) ? $more['length'] : $size);
+		$iv = substr(self::zeropad($iv, $size), 0, $size);
 		$res = '';
 		switch($mode){
 			case 'raw':
-				return self::blockencrypt($cipher, substr($data, $i, $size), $key);
+				return self::blockencrypt($cipher, $data, $key);
 			case 'ecb':
 				$data = self::cryptopad($data, $size);
 				for($i = 0; isset($data[$i]); $i += $size)
@@ -14339,6 +14820,12 @@ class XNCrypt {
 					$iv = substr($iv, $n) . substr($tmp, 0, $n);
 				}
 			return $res;
+			case 'cfb8':
+				for($i = 0; isset($data[$i]); $i += $size){
+					$res .= $tmp = self::blockencrypt($cipher, $iv, $key) ^ substr($data, $i, $size);
+					$iv = substr($iv, $size) . $tmp;
+				}
+			return $res;
 		}
 		new XNError('modedecrypt', 'Undefined mode name', XNError::WARNING);
 		return false;
@@ -14346,14 +14833,13 @@ class XNCrypt {
 	private static function modedecrypt($cipher, $mode, $data, $key = null, $iv = null, $options = 0, $more = array()){
 		$size = self::blocklength($cipher);
 		$mode = strtolower($mode);
+		$key = self::keyinitsize($cipher, $key, $options);
 		if($iv === null)$iv = str_repeat("\0", $size);
-		$iv = substr(self::cryptopad($iv, $size), 0, $size);
-		if($key !== null && ($options & self::OPT_KEY_PAD))
-			$key = self::zeropad($key, isset($more['length']) ? $more['length'] : $size);
+		$iv = substr(self::zeropad($iv, $size), 0, $size);
 		$res = '';
 		switch($mode){
 			case 'raw':
-				return self::blockdecrypt($cipher, substr($data, $i, $size), $key);
+				return self::blockdecrypt($cipher, $data, $key);
 			case 'ecb':
 				for($i = 0; isset($data[$i]); $i += $size)
 					$res .= self::blockdecrypt($cipher, substr($data, $i, $size), $key);
@@ -14406,6 +14892,41 @@ class XNCrypt {
 					$iv = substr($iv, $n) . substr($tmp, 0, $n);
 				}
 			return $res;
+			case 'cfb8':
+				for($i = 0; isset($data[$i]); $i += $size){
+					$res .= self::blockencrypt($cipher, $iv, $key) ^ ($iv = substr($data, $i, $size));
+					$iv = substr($iv, $size) . $tmp;
+				}
+			return $res;
+		}
+		new XNError('modedecrypt', 'Undefined mode name', XNError::WARNING);
+		return false;
+	}
+	private static function modeextractiv($cipher, $mode, $plaintext, $encrypted, $key = null, $options = 0, $more = array()){
+		$size = self::blocklength($cipher);
+		$mode = strtolower($mode);
+		if($key !== null && ($options & self::OPT_KEY_PAD))
+			$key = self::zeropad($key, isset($more['length']) ? $more['length'] : $size);
+		switch($mode){
+			case 'raw':
+			case 'ecb':
+				return false;
+			case 'cbc':
+				return self::ivunpad(self::blockdecrypt($cipher, substr($encrypted, 0, $size), $key) ^ substr($plaintext, 0, $size));
+			case 'pcbc':
+				return self::ivunpad(self::blockdecrypt($cipher, substr($encrypted, 0, $size), $key) ^ substr($plaintext, 0, $size));
+			case 'cfb':
+			case 'ofb':
+			case 'ctr':
+			case 'cfb8':
+				return self::ivunpad(self::blockdecrypt($cipher, substr($encrypted, 0, $size) ^ substr($plaintext, 0, $size), $key));
+			case 'ncfb':
+			case 'nofb':
+				$l = strlen($data);
+				$n = $size;
+				if($n > $l)
+					$n -= $n - $l;
+				return self::ivunpad(self::blockdecrypt($cipher, substr($encrypted, 0, $n) ^ substr($plaintext, 0, $n), $key));
 		}
 		new XNError('modedecrypt', 'Undefined mode name', XNError::WARNING);
 		return false;
@@ -14423,6 +14944,17 @@ class XNCrypt {
 		$length = strlen($string);
 		$pad = $size - ($length % $size);
         return str_pad($string, $length + $pad, "\0");
+	}
+	private static function mixpad($string, $size){
+		$length = strlen($string);
+		if($length % $size === 0)return $string;
+		$pad = $size - ($length % $size);
+        return str_pad($string, $length + $pad, "\0");
+	}
+	private static function ivunpad($iv){
+		if($iv === "\0\0\0\0\0\0\0\0")return null;
+		if($iv === '')return '';
+		return substr($iv, 0, -ord($iv[-1]));
 	}
 	public static function encrypt($method, $plaintext, $key = null){
 		$args = array_slice(func_get_args(), 3);
@@ -14475,12 +15007,30 @@ class XNCrypt {
 		}
 		if(isset($method[3]))
 			if(isset($args[1]))
-				$plaintext = self::encrypt($method[3], $plaintext, $key, $args[0], $args[1]);
+				$plaintext = self::decrypt($method[3], $plaintext, $key, $args[0], $args[1]);
 			elseif(isset($args[0]))
-				$plaintext = self::encrypt($method[3], $plaintext, $key, $args[0]);
+				$plaintext = self::decrypt($method[3], $plaintext, $key, $args[0]);
 			else
-				$plaintext = self::encrypt($method[3], $plaintext, $key);
+				$plaintext = self::decrypt($method[3], $plaintext, $key);
 		return self::modedecrypt($cipher, $mode, $plaintext, $key, $iv, $options, $more);
+	}
+	public static function extractiv($method, $plaintext, $ciphertext, $key = null, $options = 0){
+		$more = array();
+		$method = explode('-', $method);
+		$cipher = $method[0];
+		if(isset($method[2]) && $method[2] !== 'auto')$more['length'] = (int)$method[2];
+		$mode = isset($method[1]) ? $method[1] : 'cbc';
+		return self::modeextractiv($cipher, $mode, $plaintext, $ciphertext, $key, $options);
+	}
+	public static function cryption_modes(){
+		return array(
+			'raw', 'ecb', 'cbc', 'pcbc', 'cfb', 'ofb', 'ctr', 'ofb8', 'ncfb', 'nofb'
+		);
+	}
+	public static function cryption_ciphers(){
+		return array(
+			'xor', 'blowfish', 'twofish', 'skipjack', 'vigenere', 'enigma'
+		);
 	}
 }
 
