@@ -8632,7 +8632,7 @@ class XNMath {
 		return pow($b, 2) - (4 * $a * $c);
 	}
 	public static function native($x){
-		$x = $x < 0 ? -$x : $x;
+		if($x < 0)$x = -$x;
 		if($x == 0)return 0;
 		$y = (int)sqrt($x);
 		for($c = 2; $c <= $y; ++$c)
@@ -8640,7 +8640,7 @@ class XNMath {
 		return $x;
 	}
 	public static function natives($x){
-		$x = $x < 0 ? -$x : $x;
+		if($x < 0)$x = -$x;
 		if($x == 0)return array(0);
 		$r = array();
 		for($c = 1; $c <= $x; ++$c)
@@ -8654,7 +8654,7 @@ class XNMath {
 		return $r;
 	}
 	public static function nominal($x, $y){
-		return (pow(($x + 1), (1 / $y)) - 1)* $y;
+		return (pow(($x + 1), (1 / $y)) - 1) * $y;
 	}
 	public static function pnan($x){
 		if($x == 0)return array();
@@ -8673,6 +8673,20 @@ class XNMath {
 			if(self::native($c) == $c)
 				$a[] = $c;
 		return $a;
+	}
+	public static function prand($x = null, $y = null){
+		if($x === null)$x = PHP_INT_MIN;
+		if($y === null)$y = PHP_INT_MAX;
+		if($y < $x)swap($x, $y);
+		$r = rand($x, $y);
+		for($i = 0; true; ++$i)
+			if($r - $i >= $x){
+				if(self::native($r - $i) == $r - $i)
+					return $r - $i;
+			}elseif($r + $i <= $y){
+				if(self::native($r + $i) == $r + $i)
+					return $r + $i;
+			}else return false;
 	}
 	public static function onpnt($x){
 		$x = abs($x);
@@ -8719,10 +8733,10 @@ class XNMath {
 		$a -= floor($a / $b);
 		return $a < 0 ? $a + ($b < 0 ? -$b : $b) : $a;
 	}
-	public static function distancepositions($x1, $y1, $x2, $y2){
+	public static function distpositions($x1, $y1, $x2, $y2){
 		return rad2deg(acos((sin(deg2rad($x1)) * sin(deg2rad($x2))) + (cos(deg2rad($x1)) * cos(deg2rad($x2)) * cos(deg2rad($y1 - $y2))))) * 111189.57696;
 	}
-	public static function distancepoints($x1, $y1, $x2, $y2){
+	public static function distpoints($x1, $y1, $x2, $y2){
 		return hypot($x2 - $x1, $y2 - $y1);
 	}
 	public static function onebits($x){
@@ -13889,7 +13903,6 @@ class XNCrypt {
 		0x97000000, 0x35000000, 0x6A000000, 0xD4000000, 0xB3000000,
 		0x7D000000, 0xFA000000, 0xEF000000, 0xC5000000, 0x91000000
 	);
-	
 	protected static $rc2t = array(
         0xD9, 0x78, 0xF9, 0xC4, 0x19, 0xDD, 0xB5, 0xED,
         0x28, 0xE9, 0xFD, 0x79, 0x4A, 0xA0, 0xD8, 0x9D,
@@ -13990,7 +14003,6 @@ class XNCrypt {
         0x38, 0x4E, 0x69, 0xF1, 0xAD, 0x23, 0x73, 0x87,
         0x70, 0x02, 0xC2, 0x1E, 0xB8, 0x0A, 0xFC, 0xE6
 	);
-	
 	protected static $desm = array(
         0x00, 0x10, 0x01, 0x11, 0x20, 0x30, 0x21, 0x31,
         0x02, 0x12, 0x03, 0x13, 0x22, 0x32, 0x23, 0x33,
@@ -14306,33 +14318,45 @@ class XNCrypt {
 			case 'skipjack': return $bits === true ? 64 : 8;
 			case 'vigenere': return $bits === true ? 8 : 1;
 			case 'enigma':   return $bits === true ? 8 : 1;
+			case 'rc2':      return $bits === true ? 64 : 8;
+			case 'rc4':      return $bits === true ? 8 : 1;
+			case 'rc4-64':   return $bits === true ? 8 : 1;
+			case 'rc4-40':   return $bits === true ? 8 : 1;
 		}
 	}
 	public static function keylength($cipher, $bits = null){
 		$cipher = strtolower($cipher);
 		switch($cipher){
 			case 'xor': 	 return $bits === true ? 8 : 1;
-			case 'blowfish': return $bits === true ? 64 : 8;
+			case 'blowfish': return $bits === true ? 128 : 16;
 			case 'twofish':  return $bits === true ? 64 : 8;
 			case 'skipjack': return $bits === true ? 80 : 10;
 			case 'vigenere': return $bits === true ? 8 : 1;
 			case 'enigma':   return $bits === true ? 8 : 1;
+			case 'rc2':      return $bits === true ? 128 : 16;
+			case 'rc4':      return $bits === true ? 128 : 16;
 		}
 	}
-	private static function keyinitsize($cipher, $key = null, $options = 0){
+	private static function keyinitsize($cipher, $key = null, $options = 0, $size = null){
 		$cipher = strtolower($cipher);
 		if($key === null)return null;
-		if($options & self::OPT_KEY_PAD)
+		if($size === null)
+			$size = self::keylength($cipher);
+		if($options & self::KEYPAD)
 			switch($cipher){
-				case 'blowfish': $key = self::zeropad($key, 8);break;
-				case 'twofish':  $key = self::zeropad($key, 8);break;
-				case 'skipjack': $key = self::zeropad($key, 10);break;
+				case 'blowfish': $key = self::zeropad($key, $size);break;
+				case 'twofish':  return self::zeropad($key, $size);
+				case 'skipjack': return self::zeropad($key, $size);
+				case 'rc2':      return self::zeropad($key, $size);
+				case 'rc4':      return self::zeropad($key, $size);
 			}
-		elseif($options & self::OPT_KEY_MIX)
+		elseif($options & self::KEYMIX)
 			switch($cipher){
-				case 'blowfish': $key = self::mixpad($key, 8);break;
-				case 'twofish':  $key = self::mixpad($key, 8);break;
-				case 'skipjack': $key = self::mixpad($key, 10);break;
+				case 'blowfish': $key = self::mixpad($key, $size);break;
+				case 'twofish':  return self::mixpad($key, $size);
+				case 'skipjack': return self::mixpad($key, $size);
+				case 'rc2':      return self::mixpad($key, $size);
+				case 'rc4':      return self::mixpad($key, $size);
 			}
 		$lk = strlen($key);
 		switch($cipher){
@@ -14345,10 +14369,12 @@ class XNCrypt {
 				if($lk < 16)return substr($key, 0, 8);
 				if($lk < 24)return substr($key, 0, 16);
 				return substr($key, 0, 32);
-			case 'skipjack':
-				return substr($key, 0, 10);
 			case 'enigma':
 				return $lk < 16 ? $key . str_repeat("\0", 16 - $lk) : $key;
+			case 'skipjack':
+			case 'rc2':
+			case 'rc4':
+				return $lk < $size ? self::mixpad($key, $size) : $key;
 		}
 	}
 	private static function keyinstall($cipher, $key){
@@ -14371,13 +14397,13 @@ class XNCrypt {
 				}
 				$data = "\0\0\0\0\0\0\0\0";
 				for($i = 0; $i < 18; $i += 2) {
-					list($l, $r) = array_values(unpack('N*', $data = self::blockanencrypt($cipher, $data, array($p, $sb))));
+					list($l, $r) = array_values(unpack('N*', $data = self::blockencrypt($cipher, $data, array($p, $sb))));
 					$p[$i    ] = $l;
 					$p[$i + 1] = $r;
 				}
 				for($i = 0; $i < 4; ++$i) {
 					for($j = 0; $j < 256; $j += 2) {
-						list($l, $r) = array_values(unpack('N*', $data = self::blockanencrypt($cipher, $data, array($p, $sb))));
+						list($l, $r) = array_values(unpack('N*', $data = self::blockencrypt($cipher, $data, array($p, $sb))));
 						$sb[$i][$j    ] = $l;
 						$sb[$i][$j + 1] = $r;
 					}
@@ -14393,14 +14419,10 @@ class XNCrypt {
 				switch(count($key)) {
 					case 0:
 						for($i = 0, $j = 1; $i < 40; $i += 2, $j += 2) {
-							$a =$m0[$i] ^
-								$m1[$i] ^
-								$m2[$i] ^
-								$m3[$i];
-							$b =$m0[$j] ^
-								$m1[$j] ^
-								$m2[$j] ^
-								$m3[$j];
+							$a =$m0[$i] ^ $m1[$i] ^
+								$m2[$i] ^ $m3[$i];
+							$b =$m0[$j] ^ $m1[$j] ^
+								$m2[$j] ^ $m3[$j];
 							$b = ($b << 8) | ($b >> 24 & 0xff);
 							$a += $b;
 							$k[] = $a;
@@ -14488,80 +14510,110 @@ class XNCrypt {
 							$s2[$i] = $m2[$q1[$q0[$q0[$i] ^ $ra] ^ $r6] ^ $r2];
 							$s3[$i] = $m3[$q1[$q1[$q0[$i] ^ $rb] ^ $r7] ^ $r3];
 						}
-					break;
-					case 32:
-						list($rf, $re, $rd, $rc) = xnmath::mdsrem($le[1], $le[2]);
-						list($rb, $ra, $r9, $r8) = xnmath::mdsrem($le[3], $le[4]);
-						list($r7, $r6, $r5, $r4) = xnmath::mdsrem($le[5], $le[6]);
-						list($r3, $r2, $r1, $r0) = xnmath::mdsrem($le[7], $le[8]);
-						for($i = 0, $j = 1; $i < 40; $i+= 2, $j+= 2) {
-							$a =$m0[$q0[$q0[$q1[$q1[$i] ^ $key[25]] ^ $key[17]] ^ $key[9 ]] ^ $key[1]] ^
-								$m1[$q0[$q1[$q1[$q0[$i] ^ $key[26]] ^ $key[18]] ^ $key[10]] ^ $key[2]] ^
-								$m2[$q1[$q0[$q0[$q0[$i] ^ $key[27]] ^ $key[19]] ^ $key[11]] ^ $key[3]] ^
-								$m3[$q1[$q1[$q0[$q1[$i] ^ $key[28]] ^ $key[20]] ^ $key[12]] ^ $key[4]];
-							$b =$m0[$q0[$q0[$q1[$q1[$j] ^ $key[29]] ^ $key[21]] ^ $key[13]] ^ $key[5]] ^
-								$m1[$q0[$q1[$q1[$q0[$j] ^ $key[30]] ^ $key[22]] ^ $key[14]] ^ $key[6]] ^
-								$m2[$q1[$q0[$q0[$q0[$j] ^ $key[31]] ^ $key[23]] ^ $key[15]] ^ $key[7]] ^
-								$m3[$q1[$q1[$q0[$q1[$j] ^ $key[32]] ^ $key[24]] ^ $key[16]] ^ $key[8]];
-							$b = ($b << 8) | ($b >> 24 & 0xff);
-							$a += $b;
-							$k[] = $a;
-							$a += $b;
-							$k[] = ($a << 9 | $a >> 23 & 0x1ff);
-						}
-						for($i = 0; $i < 256; ++$i) {
-							$s0[$i] = $m0[$q0[$q0[$q1[$q1[$i] ^ $rc] ^ $r8] ^ $r4] ^ $r0];
-							$s1[$i] = $m1[$q0[$q1[$q1[$q0[$i] ^ $rd] ^ $r9] ^ $r5] ^ $r1];
-							$s2[$i] = $m2[$q1[$q0[$q0[$q0[$i] ^ $re] ^ $ra] ^ $r6] ^ $r2];
-							$s3[$i] = $m3[$q1[$q1[$q0[$q1[$i] ^ $rf] ^ $rb] ^ $r7] ^ $r3];
-						}
-				}
-				return array($s0, $s1, $s2, $s3, $k);
-				case 'skipjack':
-					return str_repeat($key, 16);
-				case 'vigenere':
-					return xnstring::getinrange(strtoupper($key), xnstring::UPPER_RANGE);
-				case 'enigma':
-					$deck = $t1 = array();
-					$t3 = $t2 = array_fill(0, 256, 0);
-					$lk = strlen($key);
-					$seed = 123;
-					for($i = 0; $i < 13; ++$i)
-						$seed = ($seed & 0xffffffff) * ord($key[$i]) + $i;
-					for($i = 0; $i < 256; ++$i){
-						$t1[] = $i;
-						$deck[] = $i;
+				break;
+				case 32:
+					list($rf, $re, $rd, $rc) = xnmath::mdsrem($le[1], $le[2]);
+					list($rb, $ra, $r9, $r8) = xnmath::mdsrem($le[3], $le[4]);
+					list($r7, $r6, $r5, $r4) = xnmath::mdsrem($le[5], $le[6]);
+					list($r3, $r2, $r1, $r0) = xnmath::mdsrem($le[7], $le[8]);
+					for($i = 0, $j = 1; $i < 40; $i+= 2, $j+= 2) {
+						$a =$m0[$q0[$q0[$q1[$q1[$i] ^ $key[25]] ^ $key[17]] ^ $key[9 ]] ^ $key[1]] ^
+							$m1[$q0[$q1[$q1[$q0[$i] ^ $key[26]] ^ $key[18]] ^ $key[10]] ^ $key[2]] ^
+							$m2[$q1[$q0[$q0[$q0[$i] ^ $key[27]] ^ $key[19]] ^ $key[11]] ^ $key[3]] ^
+							$m3[$q1[$q1[$q0[$q1[$i] ^ $key[28]] ^ $key[20]] ^ $key[12]] ^ $key[4]];
+						$b =$m0[$q0[$q0[$q1[$q1[$j] ^ $key[29]] ^ $key[21]] ^ $key[13]] ^ $key[5]] ^
+							$m1[$q0[$q1[$q1[$q0[$j] ^ $key[30]] ^ $key[22]] ^ $key[14]] ^ $key[6]] ^
+							$m2[$q1[$q0[$q0[$q0[$j] ^ $key[31]] ^ $key[23]] ^ $key[15]] ^ $key[7]] ^
+							$m3[$q1[$q1[$q0[$q1[$j] ^ $key[32]] ^ $key[24]] ^ $key[16]] ^ $key[8]];
+						$b = ($b << 8) | ($b >> 24 & 0xff);
+						$a += $b;
+						$k[] = $a;
+						$a += $b;
+						$k[] = ($a << 9 | $a >> 23 & 0x1ff);
 					}
-					for($i = 0; $i < 256; ++$i){
-						$seed = (5 * ($seed & 0xffffffff) + ord($key[$i % 13])) & 0xffffffff;
-						$rand = $seed % 65521;
-						$k = 0xff - $i;
-						$ic = ($rand & 0377) % ($k + 1);
-						$rand = $rand >> 8;
-						$tmp = $t1[$k];
-						$t1[$k] = $t1[$ic];
-						$t1[$ic] = $tmp;
-						if($t3[$k] != 0)
-							continue;
-						$ic = ($rand & 0377) % $k;
-						while($t3[$ic] != 0)
-							$ic = ($ic + 1) % $k;
-						$t3[$k] = $ic;
-						$t3[$ic] = $k;
+					for($i = 0; $i < 256; ++$i) {
+						$s0[$i] = $m0[$q0[$q0[$q1[$q1[$i] ^ $rc] ^ $r8] ^ $r4] ^ $r0];
+						$s1[$i] = $m1[$q0[$q1[$q1[$q0[$i] ^ $rd] ^ $r9] ^ $r5] ^ $r1];
+						$s2[$i] = $m2[$q1[$q0[$q0[$q0[$i] ^ $re] ^ $ra] ^ $r6] ^ $r2];
+						$s3[$i] = $m3[$q1[$q1[$q0[$q1[$i] ^ $rf] ^ $rb] ^ $r7] ^ $r3];
 					}
-					for($i = 0; $i < 256; ++$i)
-						$t2[$t1[$i] & 0377] = $i;
-					return array(
-						array_map(function($x){return $x % 256;}, $t1),
-						array_map(function($x){return $x % 256;}, $t2),
-						array_map(function($x){return $x % 256;}, $t3),
-						array_map(function($x){return $x % 256;}, $deck)
-					);
+			}
+			return array($s0, $s1, $s2, $s3, $k);
+			case 'skipjack':
+			if($key === null)$key = "\0\0\0\0\0\0\0\0";
+				return str_repeat($key, 16);
+			case 'vigenere':
+			if($key === null)$key = 'A';
+				return xnstring::getinrange(strtoupper($key), xnstring::UPPER_RANGE);
+			case 'enigma':
+			if($key === null)$key = "\0\0\0\0\0\0\0\0";
+				$deck = $t1 = array();
+				$t3 = $t2 = array_fill(0, 256, 0);
+				$lk = strlen($key);
+				$seed = 123;
+				for($i = 0; $i < 13; ++$i)
+					$seed = ($seed & 0xffffffff) * ord($key[$i]) + $i;
+				for($i = 0; $i < 256; ++$i){
+					$t1[] = $i;
+					$deck[] = $i;
 				}
+				for($i = 0; $i < 256; ++$i){
+					$seed = (5 * ($seed & 0xffffffff) + ord($key[$i % 13])) & 0xffffffff;
+					$rand = $seed % 65521;
+					$k = 0xff - $i;
+					$ic = ($rand & 0377) % ($k + 1);
+					$rand = $rand >> 8;
+					$tmp = $t1[$k];
+					$t1[$k] = $t1[$ic];
+					$t1[$ic] = $tmp;
+					if($t3[$k] != 0)
+						continue;
+					$ic = ($rand & 0377) % $k;
+					while($t3[$ic] != 0)
+						$ic = ($ic + 1) % $k;
+					$t3[$k] = $ic;
+					$t3[$ic] = $k;
+				}
+				for($i = 0; $i < 256; ++$i)
+					$t2[$t1[$i] & 0377] = $i;
+				return array(
+					array_map(function($x){return $x % 256;}, $t1),
+					array_map(function($x){return $x % 256;}, $t2),
+					array_map(function($x){return $x % 256;}, $t3),
+					array_map(function($x){return $x % 256;}, $deck)
+				);
+			case 'rc2':
+			if($key === null)$key = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+				$t = strlen($key);
+				$l = array_values(unpack('C*', $key));
+				for($i = $t; $i < 128; ++$i)
+					$l[$i] = self::$rc2t[$l[$i - 1] + $l[$i - $t]];
+				$i = 112;
+				$l[$i] = self::$rc2t[$l[$i] & 0xff];
+				while(--$i >= 0)
+					$l[$i] = self::$rc2t[$l[$i + 1] ^ $l[$i + 16]];
+				$l[0] = self::$rc2invt[$l[0]];
+				array_unshift($l, 'C*');
+				$key = unpack('Ca/Cb/v*', call_user_func_array('pack', $l));
+				array_unshift($key, self::$rc2t[$key['a']] | ($key['b'] << 8));
+				unset($key['a']);
+				unset($key['b']);
+				return $key;
+			case 'rc4':
+			if($key === null)$key = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+				$lk = strlen($key);
+				$res = range(0, 255);
+				for($i = $j = 0; $i < 256; ++$i) {
+					$j = ($j + $res[$i] + ord($key[$i % $lk])) & 0xff;
+					swap($res[$i], $res[$j]);
+				}
+				return $res;
+		}
 	}
 	private static function blockencrypt($cipher, $in, $key = null){
 		$cipher = strtolower($cipher);
-		$key = self::keyinstall($cipher, $key);
+		if(!is_array($key))
+			$key = self::keyinstall($cipher, $key);
 		switch($cipher){
 			case 'xor':
 				return self::xorcrypt($in, $key);
@@ -14649,13 +14701,49 @@ class XNCrypt {
 				}
 				return $in;
 			break;
+			case 'rc2':
+				list($r0, $r1, $r2, $r3) = array_values(unpack('v*', $in));
+				$limit = 20;
+				$actions = array($limit => 44, 44 => 64);
+				$j = 0;
+				while(true) {
+					$r0 = (($r0 + $key[$j++] + ((($r1 ^ $r2) & $r3) ^ $r1)) & 0xFFFF) << 1;
+					$r0|= $r0 >> 16;
+					$r1 = (($r1 + $key[$j++] + ((($r2 ^ $r3) & $r0) ^ $r2)) & 0xFFFF) << 2;
+					$r1|= $r1 >> 16;
+					$r2 = (($r2 + $key[$j++] + ((($r3 ^ $r0) & $r1) ^ $r3)) & 0xFFFF) << 3;
+					$r2|= $r2 >> 16;
+					$r3 = (($r3 + $key[$j++] + ((($r0 ^ $r1) & $r2) ^ $r0)) & 0xFFFF) << 5;
+					$r3|= $r3 >> 16;
+					if($j === $limit) {
+						if($limit === 64)break;
+						$r0 += $key[$r3 & 0x3F];
+						$r1 += $key[$r0 & 0x3F];
+						$r2 += $key[$r1 & 0x3F];
+						$r3 += $key[$r2 & 0x3F];
+						$limit = $actions[$limit];
+					}
+				}
+				return pack('v4', $r0, $r1, $r2, $r3);
+			case 'rc4':
+				for($i = $j = $k = 0; isset($in[$k]); ++$k) {
+					$i = ($i + 1) & 0xff;
+					$ksi = $key[$i];
+					$j = ($j + $ksi) & 0xff;
+					$ksj = $key[$j];
+					$key[$i] = $ksj;
+					$key[$j] = $ksi;
+					$in[$k] = $in[$k] ^ chr($key[($ksj + $ksi) & 0xff]);
+				}
+				return $in;
 		}
 		new XNError('blockencrypt', 'Undefined cipher name', XNError::WARNING);
 		return false;
 	}
 	private static function blockdecrypt($cipher, $in, $key = null){
 		$cipher = strtolower($cipher);
-		$key = self::keyinstall($cipher, $key);
+		if(!is_array($key))
+			$key = self::keyinstall($cipher, $key);
 		switch($cipher){
 			case 'xor':
 				return self::xorcrypt($in, $key);
@@ -14749,18 +14837,53 @@ class XNCrypt {
 				}
 				return $in;
 			break;
+			case 'rc2':
+				list($r0, $r1, $r2, $r3) = array_values(unpack('v*', $in));
+				$limit = 44;
+				$actions = array($limit => 20, 20 => 0);
+				$j = 64;
+				while(true) {
+					$r3 = ($r3 | ($r3 << 16)) >> 5;
+					$r3 = ($r3 - $key[--$j] - ((($r0 ^ $r1) & $r2) ^ $r0)) & 0xFFFF;
+					$r2 = ($r2 | ($r2 << 16)) >> 3;
+					$r2 = ($r2 - $key[--$j] - ((($r3 ^ $r0) & $r1) ^ $r3)) & 0xFFFF;
+					$r1 = ($r1 | ($r1 << 16)) >> 2;
+					$r1 = ($r1 - $key[--$j] - ((($r2 ^ $r3) & $r0) ^ $r2)) & 0xFFFF;
+					$r0 = ($r0 | ($r0 << 16)) >> 1;
+					$r0 = ($r0 - $key[--$j] - ((($r1 ^ $r2) & $r3) ^ $r1)) & 0xFFFF;
+					if($j === $limit) {
+						if($limit === 0)break;
+						$r3 = ($r3 - $key[$r2 & 0x3F]) & 0xFFFF;
+						$r2 = ($r2 - $key[$r1 & 0x3F]) & 0xFFFF;
+						$r1 = ($r1 - $key[$r0 & 0x3F]) & 0xFFFF;
+						$r0 = ($r0 - $key[$r3 & 0x3F]) & 0xFFFF;
+						$limit = $actions[$limit];
+					}
+				}
+				return pack('v4', $r0, $r1, $r2, $r3);
+			case 'rc4':
+				for($i = $j = $k = 0; isset($in[$k]); ++$k) {
+					$i = ($i + 1) & 0xff;
+					$ksi = $key[$i];
+					$j = ($j + $ksi) & 0xff;
+					$ksj = $key[$j];
+					$key[$i] = $ksj;
+					$key[$j] = $ksi;
+					$in[$k] = $in[$k] ^ chr($key[($ksj + $ksi) & 0xff]);
+				}
+				return $in;
 		}
 		new XNError('blockdecrypt', 'Undefined cipher name', XNError::WARNING);
 		return false;
 	}
 
-	const OPT_KEY_PAD = 1;
-	const OPT_KEY_MIX = 2;
+	const KEYPAD = 1;
+	const KEYMIX = 2;
 	// CBC | CCM | CFB | CFB1 | CFB8 | CTR | COFB | ECB | GCM | NCFB | NOFB | OFB | PCBC | RAW | XTS
-	private static function modeencrypt($cipher, $mode, $data, $key = null, $iv = null, $options = 0, $more = array()){
+	private static function modeencrypt($cipher, $mode, $data, $key = null, $dsize = null, $iv = null, $options = 0, $more = array()){
 		$size = self::blocklength($cipher);
 		$mode = strtolower($mode);
-		$key = self::keyinitsize($cipher, $key, $options);
+		$key = self::keyinitsize($cipher, $key, $options, $dsize);
 		if($iv === null)$iv = str_repeat("\0", $size);
 		$iv = substr(self::zeropad($iv, $size), 0, $size);
 		$res = '';
@@ -14830,10 +14953,10 @@ class XNCrypt {
 		new XNError('modedecrypt', 'Undefined mode name', XNError::WARNING);
 		return false;
 	}
-	private static function modedecrypt($cipher, $mode, $data, $key = null, $iv = null, $options = 0, $more = array()){
+	private static function modedecrypt($cipher, $mode, $data, $key = null, $dsize = null, $iv = null, $options = 0){
 		$size = self::blocklength($cipher);
 		$mode = strtolower($mode);
-		$key = self::keyinitsize($cipher, $key, $options);
+		$key = self::keyinitsize($cipher, $key, $options, $dsize);
 		if($iv === null)$iv = str_repeat("\0", $size);
 		$iv = substr(self::zeropad($iv, $size), 0, $size);
 		$res = '';
@@ -14902,11 +15025,10 @@ class XNCrypt {
 		new XNError('modedecrypt', 'Undefined mode name', XNError::WARNING);
 		return false;
 	}
-	private static function modeextractiv($cipher, $mode, $plaintext, $encrypted, $key = null, $options = 0, $more = array()){
+	private static function modeextractiv($cipher, $mode, $plaintext, $encrypted, $key = null, $dsize = null, $options = 0){
 		$size = self::blocklength($cipher);
 		$mode = strtolower($mode);
-		if($key !== null && ($options & self::OPT_KEY_PAD))
-			$key = self::zeropad($key, isset($more['length']) ? $more['length'] : $size);
+		$key = self::keyinitsize($cipher, $key, $options, $dsize);
 		switch($mode){
 			case 'raw':
 			case 'ecb':
@@ -14958,10 +15080,10 @@ class XNCrypt {
 	}
 	public static function encrypt($method, $plaintext, $key = null){
 		$args = array_slice(func_get_args(), 3);
-		$more = array();
 		$method = explode('-', $method, 4);
 		$cipher = $method[0];
-		if(isset($method[2]) && (int)$method[2] !== 0)$more['length'] = (int)$method[2];
+		if(isset($method[2]) && (int)$method[2] !== 0)$dsize = (int)$method[2] >> 3;
+		else $dsize = null;
 		$mode = isset($method[1]) ? $method[1] : (isset($args[1]) || (isset($args[0]) && is_string($args[0])) ? 'cbc' : 'ecb');
 		if(isset($method[3]))
 			if(isset($args[1]))
@@ -14983,14 +15105,14 @@ class XNCrypt {
 				if(isset($args[1]))$options = (int)$args[1];
 				else $options = 0;
 		}
-		return self::modeencrypt($cipher, $mode, $plaintext, $key, $iv, $options, $more);
+		return self::modeencrypt($cipher, $mode, $plaintext, $key, $dsize, $iv, $options);
 	}
 	public static function decrypt($method, $plaintext, $key = null){
 		$args = array_slice(func_get_args(), 3);
-		$more = array();
 		$method = explode('-', $method);
 		$cipher = $method[0];
-		if(isset($method[2]) && $method[2] !== 'auto')$more['length'] = (int)$method[2];
+		if(isset($method[2]) && (int)$method[2] !== 0)$dsize = (int)$method[2] >> 3;
+		else $dsize = null;
 		$mode = isset($method[1]) ? $method[1] : (isset($args[1]) || (isset($args[0]) && is_string($args[0])) ? 'cbc' : 'ecb');
 		switch($mode){
 			case 'raw':
@@ -15012,15 +15134,16 @@ class XNCrypt {
 				$plaintext = self::decrypt($method[3], $plaintext, $key, $args[0]);
 			else
 				$plaintext = self::decrypt($method[3], $plaintext, $key);
-		return self::modedecrypt($cipher, $mode, $plaintext, $key, $iv, $options, $more);
+		return self::modedecrypt($cipher, $mode, $plaintext, $key, $dsize, $iv, $options);
 	}
 	public static function extractiv($method, $plaintext, $ciphertext, $key = null, $options = 0){
 		$more = array();
 		$method = explode('-', $method);
 		$cipher = $method[0];
-		if(isset($method[2]) && $method[2] !== 'auto')$more['length'] = (int)$method[2];
+		if(isset($method[2]) && (int)$method[2] !== 0)$dsize = (int)$method[2] >> 3;
+		else $dsize = null;
 		$mode = isset($method[1]) ? $method[1] : 'cbc';
-		return self::modeextractiv($cipher, $mode, $plaintext, $ciphertext, $key, $options);
+		return self::modeextractiv($cipher, $mode, $plaintext, $ciphertext, $key, $dsize, $options);
 	}
 	public static function cryption_modes(){
 		return array(
@@ -19634,15 +19757,15 @@ class XNStream {
 	public static function pos($stream, $search, $offset = null, $back = null){
 		if($search == '')
 			return 0;
-		if($back === true)$locate = ftell($stream);
+		if($offset !== null)self::seek($stream, $offset, $back === true);
+		$locate = ftell($stream);
+		$pos = false;
 		$l = strlen($search);
-		for($i = $offset === null ? ftell($stream) : $offset; true;){
-			$read = fread($stream, $l);
-			if($read == $search){
+		$read = fread($stream, $l);
+		for($i = $locate + $l; !feof($stream); ++$i){
+			if($read === $search){
 				$pos = $i;break;
-			}if(strlen($read) <= $l){
-				$pos = false;break;
-			}fseek($stream, ++$i);
+			}$read = substr($read, 1) . fgetc($i);
 		}
 		if($back === true)fseek($stream, $locate);
 		return $pos;
@@ -19650,16 +19773,16 @@ class XNStream {
 	public static function ipos($stream, $search, $offset = null, $back = null){
 		if($search == '')
 			return 0;
-		if($back === true)$locate = ftell($stream);
+		if($offset !== null)self::seek($stream, $offset, $back === true);
 		$search = strtolower($search);
+		$locate = ftell($stream);
+		$pos = false;
 		$l = strlen($search);
-		for($i = $offset === null ? ftell($stream) : $offset; true;){
-			$read = strtolower(fread($stream, $l));
-			if($read == $search){
+		$read = strtolower(fread($stream, $l));
+		for($i = $locate + $l; !feof($stream); ++$i){
+			if($read === $search){
 				$pos = $i;break;
-			}if(strlen($read) <= $l){
-				$pos = false;break;
-			}fseek($stream, ++$i);
+			}$read = substr($read, 1) . strtolower(fgetc($i));
 		}
 		if($back === true)fseek($stream, $locate);
 		return $pos;
@@ -19667,16 +19790,19 @@ class XNStream {
 	public static function rpos($stream, $search, $offset = null, $back = null){
 		if($search == '')
 			return 0;
-		if($back === true)$locate = ftell($stream);
+		if($offset !== null)self::seek($stream, $offset, $back === true);
+		$locate = ftell($stream);
+		$pos = false;
 		$l = strlen($search);
-		for($i = $offset === null ? ftell($stream) : $offset; true;){
-			$read = fread($stream, $l);
-			if($read == $search){
+		if($l > $locate)return false;
+		fseek($stream, -$l, SEEK_CUR);
+		$read = fread($stream, $l);
+		fseek($stream, -$l - 1, SEEK_CUR);
+		for($i = $locate - $l - 1; $i >= 0; ++$i){
+			if($read === $search){
 				$pos = $i;break;
-			}if($i <= 0){
-				$pos = false;break;
-			}
-			fseek($stream, --$i);
+			}$read = substr($read, 1) . fgetc($i);
+			fseek($stream, -2, SEEK_CUR);
 		}
 		if($back === true)fseek($stream, $locate);
 		return $pos;
@@ -19684,17 +19810,20 @@ class XNStream {
 	public static function ripos($stream, $search, $offset = null, $back = null){
 		if($search == '')
 			return 0;
-		if($back === true)$locate = ftell($stream);
+		if($offset !== null)self::seek($stream, $offset, $back === true);
 		$search = strtolower($search);
+		$locate = ftell($stream);
+		$pos = false;
 		$l = strlen($search);
-		for($i = $offset === null ? ftell($stream) : $offset; true;){
-			$read = strtolower(fread($stream, $l));
-			if($read == $search){
+		if($l > $locate)return false;
+		fseek($stream, -$l, SEEK_CUR);
+		$read = strtolower(fread($stream, $l));
+		fseek($stream, -$l - 1, SEEK_CUR);
+		for($i = $locate - $l - 1; $i >= 0; ++$i){
+			if($read === $search){
 				$pos = $i;break;
-			}if($i <= 0){
-				$pos = false;break;
-			}
-			fseek($stream, --$i);
+			}$read = substr($read, 1) . strtolower(fgetc($i));
+			fseek($stream, -2, SEEK_CUR);
 		}
 		if($back === true)fseek($stream, $locate);
 		return $pos;
@@ -19783,17 +19912,17 @@ class XNStream {
 	}
 	public static function match($stream, $regex, $flags = 0, $offset = null, $back = null){
 		if($back === true)$locate = ftell($stream);
-		if($offset !== null)fseek($stream, $offset);
+		if($offset !== null)self::seek($stream, $offset);
 		do{
 			$line = fgets($stream);
 			if(preg_match($regex, $line, $match, $flags))break;
 		}while(!feof($stream));
 		if($back === true)fseek($stream, $locate);
-		return $match === array() ? false : $match;
+		return !isset($match) || $match === array() ? false : $match;
 	}
 	public static function match_all($stream, $regex, $flags = 0, $offset = null, $back = null){
 		if($back === true)$locate = ftell($stream);
-		if($offset !== null)fseek($stream, $offset);
+		if($offset !== null)self::seek($stream, $offset);
 		$matches = array();
 		do{
 			$line = fgets($stream);
@@ -19801,8 +19930,21 @@ class XNStream {
 				$matches[] = $match;
 		}while(!feof($stream));
 		if($back === true)fseek($stream, $locate);
-		if($matches === array())return false;
+		if(!isset($match) || $matches === array())return false;
 		return call_user_func_array('array_array_merge', $matches);
+	}
+	public static function pregpos($stream, $regex, $offset = null, $back = null){
+		if($back === true)$locate = ftell($stream);
+		if($offset !== null)self::seek($stream, $offset);
+		do{
+			$line = fgets($stream);
+			if(($pos = pregpos($regex, $line)) !== false){
+				$pos += ftell($stream) - strlen($line);
+				break;
+			}
+		}while(!feof($stream));
+		if($back === true)fseek($stream, $locate);
+		return !isset($pos) || $pos === false ? false : $pos;
 	}
 	public static function delete($stream, $context = null){
 		$name = self::name($stream);
@@ -20028,6 +20170,30 @@ class XNStream {
 	}
 	public static function closed($stream){
 		return gettype($stream) === 'resource (closed)';
+	}
+	public static function lseek($stream, $offset, $whence = 0){
+		switch($whence){
+			case SEEK_SET:
+				fseek($stream, 0);
+				while($offset --> 0 && !feof($stream))
+					fgets($stream);
+			break;
+			case SEEK_CUR:
+				while($offset --> 0 && !feof($stream))
+					fgets($stream);
+			break;
+			case SEEK_END:
+				fseek($stream, -1, SEEK_END);
+				while($offset --> 0)
+					while(true){
+						$ch = fgetc($stream);
+						fseek($stream, -2, SEEK_CUR);
+						if($ch === false)break 2;
+						if($ch == "\n")break;
+					}
+				fseek($stream, 2, SEEK_CUR);
+			break;
+		}
 	}
 }
 
