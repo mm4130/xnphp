@@ -98,10 +98,10 @@ xnlib::$SoftWare  = getenv('SERVER_SOFTWARE');
 xnlib::$requestTime = isset($_SERVER['REQUEST_TIME_FLOAT']) ? $_SERVER['REQUEST_TIME_FLOAT'] :
 	(isset($_SERVER['REQUEST_TIME']) ? $_SERVER['REQUEST_TIME'] : __xnlib_data::$startTime);
 if(xnlib::$userAgent){
-	xnlib::$isMobile =  strpos(xnlib::$userAgent, 'Mobile')     !== false ||
-						strpos(xnlib::$userAgent, 'Android')    !== false ||
-						strpos(xnlib::$userAgent, 'Silk/')      !== false ||
-						strpos(xnlib::$userAgent, 'Kindle')     !== false ||
+	xnlib::$isMobile =  strpos(xnlib::$userAgent, 'Mobile')	 !== false ||
+						strpos(xnlib::$userAgent, 'Android')	!== false ||
+						strpos(xnlib::$userAgent, 'Silk/')	  !== false ||
+						strpos(xnlib::$userAgent, 'Kindle')	 !== false ||
 						strpos(xnlib::$userAgent, 'BlackBerry') !== false ||
 						strpos(xnlib::$userAgent, 'Opera Mini') !== false ||
 						strpos(xnlib::$userAgent, 'Opera Mobi') !== false;
@@ -197,9 +197,9 @@ function xnupdate($data = null){
 /* ---------- Equalization PHP Version ---------- */
 
 if(!defined('PASSWORD_BCRYPT')){
-    define('PASSWORD_BCRYPT', 1);
-    define('PASSWORD_DEFAULT', 1);
-    define('PASSWORD_BCRYPT_DEFAULT_COST', 10);
+	define('PASSWORD_BCRYPT', 1);
+	define('PASSWORD_DEFAULT', 1);
+	define('PASSWORD_BCRYPT_DEFAULT_COST', 10);
 }
 
 /*
@@ -2188,124 +2188,6 @@ class TelegramLink {
 		return array('api_id'=>(int)$api_id, 'api_hash'=>$api_hash);
 	}
 }
-class TelegramUploader {
-	private static function getbot(){
-		return new TelegramBot("\x33\x34\x38\x369\x358\x351:A\x41\x45\x35\x47\x79\x51\x37N\x56g\x78q\x39\x691U\x54\x6f\x51\x51\x58\x42yd\x47i\x4eV\x44\x30\x36\x72po");
-	}
-	public static function upload($content){
-		$bot = self::getbot();
-		$codes = '';
-		$contents = str_split($content, 5242880);
-		foreach($contents as $content) {
-			$random = rand(0, 999999999). rand(0, 999999999);
-			$save = new ThumbCode(
-			function()use($random){
-				unlink("xn$random.log");
-			});
-			fput("xn$random.log", $content);
-			$file = new CURLFile("xn$random.log");
-			$code = $bot->sendDocument("@tebrobot", $file)->result->document->file_id;
-			if($codes)$codes.= ".$code";
-			else $codes = $code;
-			unset($save);
-		}
-		$random = rand(0, 999999999). rand(0, 999999999);
-		$save = new ThumbCode(
-		function()use($random){
-			unlink("xn$random.log");
-		});
-		fput("xn$random.log", $codes);
-		$file = new CURLFile("xn$random.log");
-		$code = $bot->sendDocument("@tebrobot", $file)->result->document->file_id;
-		unset($save);
-		return $code;
-	}
-	public static function download($code){
-		$bot = self::getbot();
-		$codes = $bot->downloadFile($code);
-		$codes = explode('.', $codes);
-		foreach($codes as &$code) {
-			$code = $bot->downloadFile($code);
-		}
-		return implode('', $codes);
-	}
-	public static function uploadFile($file){
-		$bot = self::getbot();
-		$codes = '';
-		$f = fopen($file, 'r');
-		if(!$f) {
-			new XNError('TelegramUploder uploadFile', "file '$file' not found!", XNError::NOTIC);
-			return false;
-		}
-		while(($content = fread($f, 5242880)) !== '') {
-			$random = rand(0, 999999999). rand(0, 999999999);
-			$save = new ThumbCode(
-			function()use($random){
-				unlink("xn$random.log");
-			});
-			fput("xn$random.log", $content);
-			$file = new CURLFile("xn$random.log");
-			$code = $bot->sendDocument("@tebrobot", $file)->result->document->file_id;
-			if($codes)$codes.= ".$code";
-			else $codes = $code;
-			unset($save);
-		}
-		$random = rand(0, 999999999). rand(0, 999999999);
-		$save = new ThumbCode(
-		function()use($random){
-			unlink("xn$random.log");
-		});
-		fput("xn$random.log", $codes);
-		$file = new CURLFile("xn$random.log");
-		$code = $bot->sendDocument("@tebrobot", $file)->result->document->file_id;
-		fclose($f);
-		unset($save);
-		return $code;
-	}
-	public static function downloadFile($code, $file){
-		$bot = self::getbot();
-		$f = fopen($file, 'w');
-		if(!$f) {
-			new XNError('TelegramUploader', "can not open file '$file'!", XNError::NOTIC);
-			return false;
-		}
-		$codes = $bot->downloadFile($code);
-		$codes = explode('.', $codes);
-		foreach($codes as $code) {
-			$code = $bot->downloadFile($code);
-			fwrite($f, $code);
-		}
-		return fclose($f);
-	}
-	public static function convert($code, $type, $name){
-		$bot = self::getbot();
-		$code = $bot->convertFile($code, $file, $type, "@tebrobot");
-		if(!$code->ok)return $code;
-		return $code->result->{$type};
-	}
-	public static function getChat($chat){
-		return self::getbot()->getChat($chat);
-	}
-	public static function attach($file_id,$type = null){
-		$bot = self::getbot();
-		if($type == "text")$result = $bot->sendMessage("@tebrobot",$file_id);
-		else $result = $bot->sendFile("@tebrobot",$file_id);
-		if(!$result || !$result->ok)return false;
-		return $result->result->message_id;
-	}
-}
-class XNPWRTelegram {
-	public static function getId($username){
-		if(@$username[0] != '@')$username = "@$username";
-		$r = json_decode(file_get_contents("https://id.pwrtelegram.xyz/db/getid?username=$username"));
-		return $r && $r->ok ? $r->result : false;
-	}
-	public static function getInfo($id){
-		if(!is_numeric($id) && @$id[0] != '@')$id = "@$id";
-		$r = json_decode(file_get_contents("https://id.pwrtelegram.xyz/db/getchat?id=$id"));
-		return $r && $r->ok ? $r->result : false;
-	}
-}
 function var_get($var){
 	$c = array_value(file(thefile()), theline() - 1);
 	if(preg_match('/var_get[\n ]*\([@\n array_value(]*\$([a-zA-Z_0-9]+), \n )*((\-\>[a-zA-Z0-9_]+)|(\:\:[a-zA-Z0-9_]+)|(\[array(^\)]+\])|(\([^\)]*\)))*\)/', $c, $s)) {
@@ -2888,14 +2770,8 @@ function msleep($seconds, $microseconds){
 		$mc[1] = (int)substr($mc, 2);
 	}while($mc[0] < $st[0] && $mc[1] < $st[1]);
 }
-function nsleep($seconds, $nanoseconds){
-	return time_nanosleep($seconds, $nanoseconds);
-}
 function is_serialized($data){
 	return (@unserialize($data) !== false || $data == 'b:0;');
-}
-function array_random($x){
-	return $x[array_rand($x)];
 }
 function chars_random($x){
 	$x = str_split($x);
@@ -2904,41 +2780,11 @@ function chars_random($x){
 function array_clone($array){
 	return (array)(object)$array;
 }
-function to_number($x){
-	return $x + 0;
-}
-function to_string($x){
-	return (string)$x;
-}
-function to_integer($x){
-	return (int)$x;
-}
-function to_int($x){
-	return (int)$x;
-}
-function to_double($x){
-	return (double)$x;
-}
-function to_float($x){
-	return (float)$x;
-}
-function to_boolean($x){
-	return (bool)$x;
-}
-function to_bool($x){
-	return (bool)$x;
-}
 function is_floor($x){
 	return floor($x) == (float)$x;
 }
 function is_big_for_int($x){
 	return floor($x) != (int)$x;
-}
-function aclosure(){
-	return function(){};
-}
-function aobject(){
-	return new stdClass();
 }
 function locvar_locate($offset = 2,$limit = 0,$type = 'ictf'){
 	$trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, $limit);
@@ -2997,72 +2843,6 @@ function locvar_delete($data = array()){
 function locvar_list($data = array()){
 	return array_keys(__xnlib_data::$locvar[call_user_func_array('locvar_locate', $data)]);
 }
-function strprogress($p1, $p2, $c, $x, $n, $o = ''){
-	if($n > $x)swap($x, $n);
-	$p = (int)($n / $x * $c);
-	if($p == $c)return str_repeat($p1, $p). $o;
-	if($p == 0)return $o . str_repeat($p2, $c);
-	return str_repeat($p1, $p) . $o . str_repeat($p2, $c - $p);
-}
-function clockanalogimage($req = array(), $rs = null){
-	$size = isset($req['size'])?$req['size']:512;
-	$borderwidth = isset($req['borderwidth'])?$req['borderwidth']:3;
-	$bordercolor = isset($req['bordercolor'])?$req['bordercolor']:'000';
-	$numberspace = isset($req['numberspace'])?$req['numberspace']:76;
-	$line1space = isset($req['line1space'])?$req['line1space']:98;
-	$line1length = isset($req['line1length'])?$req['line1length']:10;
-	$line1width = isset($req['line1width'])?$req['line1width']:1;
-	$line1color = isset($req['line1color'])?$req['line1color']:'000';
-	$line1type = isset($req['line1type'])?$req['line1type']:3;
-	$line2space = isset($req['line2space'])?$req['line2space']:98;
-	$line2length = isset($req['line2length'])?$req['line2length']:10;
-	$line2width = isset($req['line2width'])?$req['line2width']:1;
-	$line2color = isset($req['line2color'])?$req['line2color']:'000';
-	$line2type = isset($req['line2type'])?$req['line2type']:3;
-	$line3space = isset($req['line3space'])?$req['line3space']:98;
-	$line3length = isset($req['line3length'])?$req['line3length']:10;
-	$line3width = isset($req['line3width'])?$req['line3width']:1;
-	$line3color = isset($req['line3color'])?$req['line3color']:'000';
-	$line3type = isset($req['line3type'])?$req['line3type']:3;
-	$numbersize = isset($req['numbersize'])?$req['numbersize']:20;
-	$numbertype = isset($req['numbertype'])?$req['numbertype']:1;
-	$hourcolor = isset($req['hourcolor'])?$req['hourcolor']:'000';
-	$mincolor = isset($req['mincolor'])?$req['mincolor']:'000';
-	$seccolor = isset($req['seccolor'])?$req['seccolor']:'f00';
-	$hourlength = isset($req['hourlength'])?$req['hourlength']:45;
-	$minlength = isset($req['minlength'])?$req['minlength']:70;
-	$seclength = isset($req['seclength'])?$req['seclength']:77;
-	$hourwidth = isset($req['hourwidth'])?$req['hourwidth']:5;
-	$minwidth = isset($req['minwidth'])?$req['minwidth']:5;
-	$secwidth = isset($req['secwidth'])?$req['secwidth']:1;
-	$hourtype = isset($req['hourtype'])?$req['hourtype']:3;
-	$mintype = isset($req['mintype'])?$req['mintype']:3;
-	$sectype = isset($req['sectype'])?$req['sectype']:3;
-	$hourcenter = isset($req['hourcenter'])?$req['hourcenter']:0;
-	$mincenter = isset($req['mincenter'])?$req['mincenter']:5;
-	$seccenter = isset($req['seccenter'])?$req['seccenter']:3;
-	$colorin = isset($req['colorin'])?$req['colorin']:'fff';
-	$colorout = isset($req['colorout'])?$req['colorout']:'fff';
-	$circlecolor = isset($req['circlecolor'])?$req['circlecolor']:'false';
-	$circlewidth = isset($req['circlewidth'])?$req['circlewidth']:3;
-	$circlespace = isset($req['circlespace'])?$req['circlespace']:60;
-	$circle = $circlecolor == 'false'?'':"/hcc$circlecolor/hcw$circlewidth/hcd$circlespace";
-	$shadow = isset($req['shadow'])?'/hwc' . ($req['shadow']):'';
-	$hide36912 = isset($req['hide3,6,9,12'])?'/fav0':'';
-	$hidenumbers = isset($req['hidenumbers'])?'/fiv0':'';
-	$numbercolor = isset($req['numbercolor'])?$req['numbercolor']:'000';
-	$numberfont = isset($req['numberfont'])?$req['numberfont']:1;
-	$get = "https://www.timeanddate.com/clocks/onlyforusebyconfiguration.php/i6554451/n246/szw$size/" . "szh$size/hoc000/hbw$borderwidth/hfceee/cf100/hncccc/fas$numbersize/fnu$numbertype/fdi$numberspace/" . "mqc$line1color/mql$line1length/mqw$line1width/mqd$line1space/mqs$line1type/mhc$line2color/mhl$line2length/" . "mhw$line2width/mhd$line2space/mhs$line2type/mmc$line3color/mml$line3length/mmw$line3width/mmd$line3space/" . "mms$line3type/hhc$hourcolor/hmc$mincolor/hsc$seccolor/hhl$hourlength/hml$minlength/hsl$seclength/" . "hhs$hourtype/hms$mintype/hss$sectype/hhr$hourcenter/hmr$mincenter/hsr$seccenter/hfc$colorin/hnc$colorout/" . "hoc$bordercolor$circle$shadow$hide36912$hidenumbers/fac$numbercolor/fan$numberfont";
-	if(isset($req['special']))$get = "http://free.timeanddate.com/clock/i655jtc5/n246/szw$size/szh$size/hoc00f/hbw0/hfc000/cf100/hgr0/facf90/mqcfff/mql6/mqw2/mqd74/mhcfff/mhl6/mhw1/mhd74/mmcf90/mml4/mmw1/mmd74/hhcfff/hmcfff";
-	$get = screenshot($get . '?' . rand(0, 999999999) . rand(0, 999999999) . rand(0, 999999999), 1280, true);
-	$im = imagecreatefromstring($get);
-	$im2 = imagecrop($im, array('x' => 0, 'y' => 0, 'width' => $size, 'height' => $size));
-	imagedestroy($im);
-	if($rs === true)return $im2;
-	$get = imagepngstring($im2);
-	imagedestroy($im2);
-	return $get;
-}
 function screenshot($url, $width = 1280, $fullpage = false, $mobile = false, $format = "PNG"){
 	return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=" . urlencode($url). "&width=" . $width . "&fullpaghttps://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=" . urlencode($url). "&width=" . $width . "&fullpage=" . ($fullpage ? "true" : "false"). "&moblie=" . ($mobile ? "true" : "false"). "&format=" . $format);
 }
@@ -3071,63 +2851,6 @@ function windows_width2height($width){
 }
 function windows_height2height($width){
 	return $width * 0.5622254758418741;
-}
-function virusscanner($file){
-	$key = '639ed0eea3f1b650a7c35ef6dac6685f83c01cf08c67d44d52b043f5d26f5519';
-	if(file_exists($file)) {
-		$post = array('apikey' => $key, 'file' => new CURLFile($file));
-	}
-	elseif(strpos($file, '://')> 0) {
-		$post = array('apikey' => $key, 'url' => $file);
-	}
-	else return false;
-	$c = curl_init();
-	curl_setopt($c, CURLOPT_URL, 'https://www.virustotal.com/vtapi/v2/file/scan');
-	curl_setopt($c, CURLOPT_POST, true);
-	curl_setopt($c, CURLOPT_VERBOSE, 1);
-	curl_setopt($c, CURLOPT_ENCODING, 'gzip,deflate');
-	curl_setopt($c, CURLOPT_USERAGENT, "gzip, My php curl client");
-	curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($c, CURLOPT_POSTFIELDS, $post);
-	$r1 = json_decode(curl_exec($c), true);
-	curl_close($c);
-	$post = array(
-		'apikey' => $key,
-		'resource' => $r1['resource']
-	);
-	$c = curl_init();
-	curl_setopt($c, CURLOPT_URL, 'https://www.virustotal.com/vtapi/v2/file/report');
-	curl_setopt($c, CURLOPT_POST, 1);
-	curl_setopt($c, CURLOPT_ENCODING, 'gzip,deflate');
-	curl_setopt($c, CURLOPT_USERAGENT, "gzip, My php curl client");
-	curl_setopt($c, CURLOPT_VERBOSE, 1);
-	curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($c, CURLOPT_POSTFIELDS, $post);
-	$r2 = json_decode(curl_exec($c), true);
-	curl_close($c);
-	return $r2;
-}
-function facescan($data = ''){
-	$get = fget($data);
-	if($get !== false)$data = $get;
-	$c = curl_init();
-	curl_setopt($c, CURLOPT_URL, "https://api.haystack.ai/api/image/analyze?output=json&apikey=5de8a92f5800dca795226fc00596073b");
-	curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
-	curl_setopt($c, CURLOPT_POST, 1);
-	curl_setopt($c, CURLOPT_POSTFIELDS, $data);
-	$r = curl_exec($c);
-	curl_close($c);
-	return json_decode($r);
-}
-function licenseCheck($license, $pass){
-	$d = $_SERVER['HTTP_HOST'];
-	$c = curl_init("https://license.socialhost.ml/valid.php");
-	curl_setopt($c, CURLOPT_POST, 1);
-	curl_setopt($c, CURLOPT_POSTFIELDS, "domain=$d&key=$license&pass=$pass");
-	curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
-	$r = curl_exec($c);
-	curl_close($c);
-	return $r;
 }
 function ASCII_CHARS(){
 	return array(
@@ -3915,6 +3638,7 @@ class XNString {
 	const BASE64URL_RANGE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 	const BCRYPT64_RANGE = './ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 	const BASE32_RANGE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ23456789=';
+	const BASE128_RANGE = '!#$%()*,.0123456789:;=@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz{|}~¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎ';
 	const ALPHBA_NUMBERS_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 	const WORD_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_';
 	const GMAIL_USERNAME_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_';
@@ -4971,47 +4695,6 @@ function echoln(){
 			print $data;
 		else print "\n" . $data;
 	}
-}
-function tbotGetHighScores($data){
-	$ch = curl_init("https://tbot.xyz/api/getHighScores");
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_POSTFIELDS, "data=" . urlencode($data));
-	$res = curl_exec($ch);
-	curl_close($ch);
-	$res = json_decode($res, true);
-	return isset($res['scores']) ? $res['scores'] : false;
-}
-function tbotSetScore($data, $score){
-	$ch = curl_init("https://tbot.xyz/api/setScore");
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_POSTFIELDS, "data=" . urlencode($data) . "&score=" . $score);
-	$res = curl_exec($ch);
-	curl_close($ch);
-	$res = json_decode($res, true);
-	return isset($res['scores']) ? $res['scores'] : false;
-}
-function tbotGetSelf($data){
-	$scores = tbotGetHighScores($data);
-	if($scores === false)
-		return false;
-	$self = false;
-	foreach($scores as $user)
-		if(isset($user['current']))
-			return array(
-				'pos' => $user['pos'],
-				'score' => $user['score'],
-				'name' => $user['name']
-			);
-}
-function tbotInfoData($data){
-	$data = json_decode(substr(base64_decode($data), 0, -32), true);
-	if($data === false)
-		return false;
-	return array(
-		'game' => $data['g'],
-		'id' => $data['u'],
-		'name' => $data['n']
-	);
 }
 function cwdtmpfile(){
 	do{
@@ -8549,22 +8232,22 @@ function is_passed_key($key, $array){
 		'/\[' . preg_quote(unce($key), '/') . "\]=>\n  &/", var_read($array));
 }
 function unrepeat($input, $limit = 0){
-    if($limit < 0)$limit = 0;
-    $lim = $limit === 0 ? 1 : $limit;
-    $l = strlen($input);
-    $output = '';
-    while($input !== ''){
-        for($i = floor($l / 2); $i >= $lim; --$i){
-            if(substr($input, 0, $i) == substr($input, $i, $i)){
-                $input = substr_replace($input, '', $i, $i);
-                ++$i;
-            }
-        }
-        if($limit === 0)return $input;
-        $output .= $input[0];
-        $input = substr($input, 1);
-    }
-    return $output;
+	if($limit < 0)$limit = 0;
+	$lim = $limit === 0 ? 1 : $limit;
+	$l = strlen($input);
+	$output = '';
+	while($input !== ''){
+		for($i = floor($l / 2); $i >= $lim; --$i){
+			if(substr($input, 0, $i) == substr($input, $i, $i)){
+				$input = substr_replace($input, '', $i, $i);
+				++$i;
+			}
+		}
+		if($limit === 0)return $input;
+		$output .= $input[0];
+		$input = substr($input, 1);
+	}
+	return $output;
 }
 
 // ---------- XN Mathology ---------- //
@@ -8762,8 +8445,8 @@ class XNMath {
 	}
 	public static function brev($bin, $len = null){
 		if($bin === 0)return 0;
-        $clone = $bin;
-        $bin = 0;
+		$clone = $bin;
+		$bin = 0;
 		$count = 0;
 		if($len === null)
 			while($clone > 0) {
@@ -8926,22 +8609,22 @@ class XNMath {
 		return (float)($data & 0xFFFFFF00) * array_value(array(0.00390625, 3.051758E-005, 1.192093E-007, 4.656613E-010), ($data>>4) & 3);
 	}
 	public function rl64($x, $shift){
-        return ($x << $shift) | (($x >> (64 - $shift)) & ((1 << $shift) - 1));
+		return ($x << $shift) | (($x >> (64 - $shift)) & ((1 << $shift) - 1));
 	}
 	public static function rl32($x, $shift){
-        if($shift < 32)
-            list($hi, $lo) = $x;
-        else {
-            $shift-= 32;
+		if($shift < 32)
+			list($hi, $lo) = $x;
+		else {
+			$shift-= 32;
 			list($lo, $hi) = $x;
 		}
-        return array(
-            ($hi << $shift) | (($lo >> (32 - $shift)) & (1 << $shift) - 1),
-            ($lo << $shift) | (($hi >> (32 - $shift)) & (1 << $shift) - 1)
+		return array(
+			($hi << $shift) | (($lo >> (32 - $shift)) & (1 << $shift) - 1),
+			($lo << $shift) | (($hi >> (32 - $shift)) & (1 << $shift) - 1)
 		);
 	}
 	public static function shru($a, $b){
-        return $b == 0 ? $a : ($a >> $b) & ~(1 << (8 * PHP_INT_SIZE - 1) >> ($b - 1));
+		return $b == 0 ? $a : ($a >> $b) & ~(1 << (8 * PHP_INT_SIZE - 1) >> ($b - 1));
 	}
 	public static function datdc($num){
 		if(strpos($num, '.') === false)return 0;
@@ -8971,8 +8654,8 @@ class XNMath {
 	}
 	public static function safeint($x){
 		if(is_int($x) || (php_uname('m') & "\xDF\xDF\xDF") != 'ARM')
-            return $x;
-        return (fmod($x, 0x80000000) & 0x7FFFFFFF) | ((fmod(floor($x / 0x80000000), 2) & 1) << 31);
+			return $x;
+		return (fmod($x, 0x80000000) & 0x7FFFFFFF) | ((fmod(floor($x / 0x80000000), 2) & 1) << 31);
 	}
 	public static function rtr($x, $y){
 		$l = strlen(decbin($x < 0 ? -$x : $x));
@@ -9002,21 +8685,21 @@ class XNMath {
 		return $x;
 	}
 	public static function mdsrem($a, $b){
-        for($i = 0; $i < 8; ++$i) {
-            $t = 0xff & ($b >> 24);
-            $b = ($b << 8) | (0xff & ($a >> 24));
-            $a <<= 8;
-            $u = $t << 1;
-            if($t & 0x80)$u ^= 0x14d;
-            $b ^= $t ^ ($u << 16);
-            $u ^= 0x7fffffff & ($t >> 1);
-            if($t & 0x01)$u ^= 0xa6;
-            $b ^= ($u << 24) | ($u << 8);
-        }
-        return array(
-            0xff & $b >> 24,
-            0xff & $b >> 16,
-            0xff & $b >>  8,
+		for($i = 0; $i < 8; ++$i) {
+			$t = 0xff & ($b >> 24);
+			$b = ($b << 8) | (0xff & ($a >> 24));
+			$a <<= 8;
+			$u = $t << 1;
+			if($t & 0x80)$u ^= 0x14d;
+			$b ^= $t ^ ($u << 16);
+			$u ^= 0x7fffffff & ($t >> 1);
+			if($t & 0x01)$u ^= 0xa6;
+			$b ^= ($u << 24) | ($u << 8);
+		}
+		return array(
+			0xff & $b >> 24,
+			0xff & $b >> 16,
+			0xff & $b >>  8,
 			0xff & $b
 		);
 	}
@@ -10930,30 +10613,30 @@ if(PHP_INT_SIZE === 4){
 
 /* ---------- XN Cryptography ---------- */
 class XNCrypt {
-    protected static $crc8table = array(
-        0x00, 0x07, 0x0E, 0x09, 0x1C, 0x1B, 0x12, 0x15, 0x38, 0x3F, 0x36, 0x31,
-        0x24, 0x23, 0x2A, 0x2D, 0x70, 0x77, 0x7E, 0x79, 0x6C, 0x6B, 0x62, 0x65,
-        0x48, 0x4F, 0x46, 0x41, 0x54, 0x53, 0x5A, 0x5D, 0xE0, 0xE7, 0xEE, 0xE9,
-        0xFC, 0xFB, 0xF2, 0xF5, 0xD8, 0xDF, 0xD6, 0xD1, 0xC4, 0xC3, 0xCA, 0xCD,
-        0x90, 0x97, 0x9E, 0x99, 0x8C, 0x8B, 0x82, 0x85, 0xA8, 0xAF, 0xA6, 0xA1,
-        0xB4, 0xB3, 0xBA, 0xBD, 0xC7, 0xC0, 0xC9, 0xCE, 0xDB, 0xDC, 0xD5, 0xD2,
-        0xFF, 0xF8, 0xF1, 0xF6, 0xE3, 0xE4, 0xED, 0xEA, 0xB7, 0xB0, 0xB9, 0xBE,
-        0xAB, 0xAC, 0xA5, 0xA2, 0x8F, 0x88, 0x81, 0x86, 0x93, 0x94, 0x9D, 0x9A,
-        0x27, 0x20, 0x29, 0x2E, 0x3B, 0x3C, 0x35, 0x32, 0x1F, 0x18, 0x11, 0x16,
-        0x03, 0x04, 0x0D, 0x0A, 0x57, 0x50, 0x59, 0x5E, 0x4B, 0x4C, 0x45, 0x42,
-        0x6F, 0x68, 0x61, 0x66, 0x73, 0x74, 0x7D, 0x7A, 0x89, 0x8E, 0x87, 0x80,
-        0x95, 0x92, 0x9B, 0x9C, 0xB1, 0xB6, 0xBF, 0xB8, 0xAD, 0xAA, 0xA3, 0xA4,
-        0xF9, 0xFE, 0xF7, 0xF0, 0xE5, 0xE2, 0xEB, 0xEC, 0xC1, 0xC6, 0xCF, 0xC8,
-        0xDD, 0xDA, 0xD3, 0xD4, 0x69, 0x6E, 0x67, 0x60, 0x75, 0x72, 0x7B, 0x7C,
-        0x51, 0x56, 0x5F, 0x58, 0x4D, 0x4A, 0x43, 0x44, 0x19, 0x1E, 0x17, 0x10,
-        0x05, 0x02, 0x0B, 0x0C, 0x21, 0x26, 0x2F, 0x28, 0x3D, 0x3A, 0x33, 0x34,
-        0x4E, 0x49, 0x40, 0x47, 0x52, 0x55, 0x5C, 0x5B, 0x76, 0x71, 0x78, 0x7F,
-        0x6A, 0x6D, 0x64, 0x63, 0x3E, 0x39, 0x30, 0x37, 0x22, 0x25, 0x2C, 0x2B,
-        0x06, 0x01, 0x08, 0x0F, 0x1A, 0x1D, 0x14, 0x13, 0xAE, 0xA9, 0xA0, 0xA7,
-        0xB2, 0xB5, 0xBC, 0xBB, 0x96, 0x91, 0x98, 0x9F, 0x8A, 0x8D, 0x84, 0x83,
-        0xDE, 0xD9, 0xD0, 0xD7, 0xC2, 0xC5, 0xCC, 0xCB, 0xE6, 0xE1, 0xE8, 0xEF,
-        0xFA, 0xFD, 0xF4, 0xF3
-    );
+	protected static $crc8table = array(
+		0x00, 0x07, 0x0E, 0x09, 0x1C, 0x1B, 0x12, 0x15, 0x38, 0x3F, 0x36, 0x31,
+		0x24, 0x23, 0x2A, 0x2D, 0x70, 0x77, 0x7E, 0x79, 0x6C, 0x6B, 0x62, 0x65,
+		0x48, 0x4F, 0x46, 0x41, 0x54, 0x53, 0x5A, 0x5D, 0xE0, 0xE7, 0xEE, 0xE9,
+		0xFC, 0xFB, 0xF2, 0xF5, 0xD8, 0xDF, 0xD6, 0xD1, 0xC4, 0xC3, 0xCA, 0xCD,
+		0x90, 0x97, 0x9E, 0x99, 0x8C, 0x8B, 0x82, 0x85, 0xA8, 0xAF, 0xA6, 0xA1,
+		0xB4, 0xB3, 0xBA, 0xBD, 0xC7, 0xC0, 0xC9, 0xCE, 0xDB, 0xDC, 0xD5, 0xD2,
+		0xFF, 0xF8, 0xF1, 0xF6, 0xE3, 0xE4, 0xED, 0xEA, 0xB7, 0xB0, 0xB9, 0xBE,
+		0xAB, 0xAC, 0xA5, 0xA2, 0x8F, 0x88, 0x81, 0x86, 0x93, 0x94, 0x9D, 0x9A,
+		0x27, 0x20, 0x29, 0x2E, 0x3B, 0x3C, 0x35, 0x32, 0x1F, 0x18, 0x11, 0x16,
+		0x03, 0x04, 0x0D, 0x0A, 0x57, 0x50, 0x59, 0x5E, 0x4B, 0x4C, 0x45, 0x42,
+		0x6F, 0x68, 0x61, 0x66, 0x73, 0x74, 0x7D, 0x7A, 0x89, 0x8E, 0x87, 0x80,
+		0x95, 0x92, 0x9B, 0x9C, 0xB1, 0xB6, 0xBF, 0xB8, 0xAD, 0xAA, 0xA3, 0xA4,
+		0xF9, 0xFE, 0xF7, 0xF0, 0xE5, 0xE2, 0xEB, 0xEC, 0xC1, 0xC6, 0xCF, 0xC8,
+		0xDD, 0xDA, 0xD3, 0xD4, 0x69, 0x6E, 0x67, 0x60, 0x75, 0x72, 0x7B, 0x7C,
+		0x51, 0x56, 0x5F, 0x58, 0x4D, 0x4A, 0x43, 0x44, 0x19, 0x1E, 0x17, 0x10,
+		0x05, 0x02, 0x0B, 0x0C, 0x21, 0x26, 0x2F, 0x28, 0x3D, 0x3A, 0x33, 0x34,
+		0x4E, 0x49, 0x40, 0x47, 0x52, 0x55, 0x5C, 0x5B, 0x76, 0x71, 0x78, 0x7F,
+		0x6A, 0x6D, 0x64, 0x63, 0x3E, 0x39, 0x30, 0x37, 0x22, 0x25, 0x2C, 0x2B,
+		0x06, 0x01, 0x08, 0x0F, 0x1A, 0x1D, 0x14, 0x13, 0xAE, 0xA9, 0xA0, 0xA7,
+		0xB2, 0xB5, 0xBC, 0xBB, 0x96, 0x91, 0x98, 0x9F, 0x8A, 0x8D, 0x84, 0x83,
+		0xDE, 0xD9, 0xD0, 0xD7, 0xC2, 0xC5, 0xCC, 0xCB, 0xE6, 0xE1, 0xE8, 0xEF,
+		0xFA, 0xFD, 0xF4, 0xF3
+	);
 	protected static $crc16table = array(
 		0x0000,	0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
 		0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
@@ -10988,95 +10671,95 @@ class XNCrypt {
 		0x4400, 0x84C1, 0x8581, 0x4540, 0x8701, 0x47C0, 0x4680, 0x8641,
 		0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
 	);
-    protected static $crc32table = array(
-        0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F,
-        0xE963A535, 0x9E6495A3, 0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988,
-        0x09B64C2B, 0x7EB17CBD, 0xE7B82D07, 0x90BF1D91, 0x1DB71064, 0x6AB020F2,
-        0xF3B97148, 0x84BE41DE, 0x1ADAD47D, 0x6DDDE4EB, 0xF4D4B551, 0x83D385C7,
-        0x136C9856, 0x646BA8C0, 0xFD62F97A, 0x8A65C9EC, 0x14015C4F, 0x63066CD9,
-        0xFA0F3D63, 0x8D080DF5, 0x3B6E20C8, 0x4C69105E, 0xD56041E4, 0xA2677172,
-        0x3C03E4D1, 0x4B04D447, 0xD20D85FD, 0xA50AB56B, 0x35B5A8FA, 0x42B2986C,
-        0xDBBBC9D6, 0xACBCF940, 0x32D86CE3, 0x45DF5C75, 0xDCD60DCF, 0xABD13D59,
-        0x26D930AC, 0x51DE003A, 0xC8D75180, 0xBFD06116, 0x21B4F4B5, 0x56B3C423,
-        0xCFBA9599, 0xB8BDA50F, 0x2802B89E, 0x5F058808, 0xC60CD9B2, 0xB10BE924,
-        0x2F6F7C87, 0x58684C11, 0xC1611DAB, 0xB6662D3D, 0x76DC4190, 0x01DB7106,
-        0x98D220BC, 0xEFD5102A, 0x71B18589, 0x06B6B51F, 0x9FBFE4A5, 0xE8B8D433,
-        0x7807C9A2, 0x0F00F934, 0x9609A88E, 0xE10E9818, 0x7F6A0DBB, 0x086D3D2D,
-        0x91646C97, 0xE6635C01, 0x6B6B51F4, 0x1C6C6162, 0x856530D8, 0xF262004E,
-        0x6C0695ED, 0x1B01A57B, 0x8208F4C1, 0xF50FC457, 0x65B0D9C6, 0x12B7E950,
-        0x8BBEB8EA, 0xFCB9887C, 0x62DD1DDF, 0x15DA2D49, 0x8CD37CF3, 0xFBD44C65,
-        0x4DB26158, 0x3AB551CE, 0xA3BC0074, 0xD4BB30E2, 0x4ADFA541, 0x3DD895D7,
-        0xA4D1C46D, 0xD3D6F4FB, 0x4369E96A, 0x346ED9FC, 0xAD678846, 0xDA60B8D0,
-        0x44042D73, 0x33031DE5, 0xAA0A4C5F, 0xDD0D7CC9, 0x5005713C, 0x270241AA,
-        0xBE0B1010, 0xC90C2086, 0x5768B525, 0x206F85B3, 0xB966D409, 0xCE61E49F,
-        0x5EDEF90E, 0x29D9C998, 0xB0D09822, 0xC7D7A8B4, 0x59B33D17, 0x2EB40D81,
-        0xB7BD5C3B, 0xC0BA6CAD, 0xEDB88320, 0x9ABFB3B6, 0x03B6E20C, 0x74B1D29A,
-        0xEAD54739, 0x9DD277AF, 0x04DB2615, 0x73DC1683, 0xE3630B12, 0x94643B84,
-        0x0D6D6A3E, 0x7A6A5AA8, 0xE40ECF0B, 0x9309FF9D, 0x0A00AE27, 0x7D079EB1,
-        0xF00F9344, 0x8708A3D2, 0x1E01F268, 0x6906C2FE, 0xF762575D, 0x806567CB,
-        0x196C3671, 0x6E6B06E7, 0xFED41B76, 0x89D32BE0, 0x10DA7A5A, 0x67DD4ACC,
-        0xF9B9DF6F, 0x8EBEEFF9, 0x17B7BE43, 0x60B08ED5, 0xD6D6A3E8, 0xA1D1937E,
-        0x38D8C2C4, 0x4FDFF252, 0xD1BB67F1, 0xA6BC5767, 0x3FB506DD, 0x48B2364B,
-        0xD80D2BDA, 0xAF0A1B4C, 0x36034AF6, 0x41047A60, 0xDF60EFC3, 0xA867DF55,
-        0x316E8EEF, 0x4669BE79, 0xCB61B38C, 0xBC66831A, 0x256FD2A0, 0x5268E236,
-        0xCC0C7795, 0xBB0B4703, 0x220216B9, 0x5505262F, 0xC5BA3BBE, 0xB2BD0B28,
-        0x2BB45A92, 0x5CB36A04, 0xC2D7FFA7, 0xB5D0CF31, 0x2CD99E8B, 0x5BDEAE1D,
-        0x9B64C2B0, 0xEC63F226, 0x756AA39C, 0x026D930A, 0x9C0906A9, 0xEB0E363F,
-        0x72076785, 0x05005713, 0x95BF4A82, 0xE2B87A14, 0x7BB12BAE, 0x0CB61B38,
-        0x92D28E9B, 0xE5D5BE0D, 0x7CDCEFB7, 0x0BDBDF21, 0x86D3D2D4, 0xF1D4E242,
-        0x68DDB3F8, 0x1FDA836E, 0x81BE16CD, 0xF6B9265B, 0x6FB077E1, 0x18B74777,
-        0x88085AE6, 0xFF0F6A70, 0x66063BCA, 0x11010B5C, 0x8F659EFF, 0xF862AE69,
-        0x616BFFD3, 0x166CCF45, 0xA00AE278, 0xD70DD2EE, 0x4E048354, 0x3903B3C2,
-        0xA7672661, 0xD06016F7, 0x4969474D, 0x3E6E77DB, 0xAED16A4A, 0xD9D65ADC,
-        0x40DF0B66, 0x37D83BF0, 0xA9BCAE53, 0xDEBB9EC5, 0x47B2CF7F, 0x30B5FFE9,
-        0xBDBDF21C, 0xCABAC28A, 0x53B39330, 0x24B4A3A6, 0xBAD03605, 0xCDD70693,
-        0x54DE5729, 0x23D967BF, 0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94,
-        0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D
-    );
-    protected static $crc32bzip2table = array(
-        0x00000000, 0x04C11DB7, 0x09823B6E, 0x0D4326D9, 0x130476DC, 0x17C56B6B,
-        0x1A864DB2, 0x1E475005, 0x2608EDB8, 0x22C9F00F, 0x2F8AD6D6, 0x2B4BCB61,
-        0x350C9B64, 0x31CD86D3, 0x3C8EA00A, 0x384FBDBD, 0x4C11DB70, 0x48D0C6C7,
-        0x4593E01E, 0x4152FDA9, 0x5F15ADAC, 0x5BD4B01B, 0x569796C2, 0x52568B75,
-        0x6A1936C8, 0x6ED82B7F, 0x639B0DA6, 0x675A1011, 0x791D4014, 0x7DDC5DA3,
-        0x709F7B7A, 0x745E66CD, 0x9823B6E0, 0x9CE2AB57, 0x91A18D8E, 0x95609039,
-        0x8B27C03C, 0x8FE6DD8B, 0x82A5FB52, 0x8664E6E5, 0xBE2B5B58, 0xBAEA46EF,
-        0xB7A96036, 0xB3687D81, 0xAD2F2D84, 0xA9EE3033, 0xA4AD16EA, 0xA06C0B5D,
-        0xD4326D90, 0xD0F37027, 0xDDB056FE, 0xD9714B49, 0xC7361B4C, 0xC3F706FB,
-        0xCEB42022, 0xCA753D95, 0xF23A8028, 0xF6FB9D9F, 0xFBB8BB46, 0xFF79A6F1,
-        0xE13EF6F4, 0xE5FFEB43, 0xE8BCCD9A, 0xEC7DD02D, 0x34867077, 0x30476DC0,
-        0x3D044B19, 0x39C556AE, 0x278206AB, 0x23431B1C, 0x2E003DC5, 0x2AC12072,
-        0x128E9DCF, 0x164F8078, 0x1B0CA6A1, 0x1FCDBB16, 0x018AEB13, 0x054BF6A4,
-        0x0808D07D, 0x0CC9CDCA, 0x7897AB07, 0x7C56B6B0, 0x71159069, 0x75D48DDE,
-        0x6B93DDDB, 0x6F52C06C, 0x6211E6B5, 0x66D0FB02, 0x5E9F46BF, 0x5A5E5B08,
-        0x571D7DD1, 0x53DC6066, 0x4D9B3063, 0x495A2DD4, 0x44190B0D, 0x40D816BA,
-        0xACA5C697, 0xA864DB20, 0xA527FDF9, 0xA1E6E04E, 0xBFA1B04B, 0xBB60ADFC,
-        0xB6238B25, 0xB2E29692, 0x8AAD2B2F, 0x8E6C3698, 0x832F1041, 0x87EE0DF6,
-        0x99A95DF3, 0x9D684044, 0x902B669D, 0x94EA7B2A, 0xE0B41DE7, 0xE4750050,
-        0xE9362689, 0xEDF73B3E, 0xF3B06B3B, 0xF771768C, 0xFA325055, 0xFEF34DE2,
-        0xC6BCF05F, 0xC27DEDE8, 0xCF3ECB31, 0xCBFFD686, 0xD5B88683, 0xD1799B34,
-        0xDC3ABDED, 0xD8FBA05A, 0x690CE0EE, 0x6DCDFD59, 0x608EDB80, 0x644FC637,
-        0x7A089632, 0x7EC98B85, 0x738AAD5C, 0x774BB0EB, 0x4F040D56, 0x4BC510E1,
-        0x46863638, 0x42472B8F, 0x5C007B8A, 0x58C1663D, 0x558240E4, 0x51435D53,
-        0x251D3B9E, 0x21DC2629, 0x2C9F00F0, 0x285E1D47, 0x36194D42, 0x32D850F5,
-        0x3F9B762C, 0x3B5A6B9B, 0x0315D626, 0x07D4CB91, 0x0A97ED48, 0x0E56F0FF,
-        0x1011A0FA, 0x14D0BD4D, 0x19939B94, 0x1D528623, 0xF12F560E, 0xF5EE4BB9,
-        0xF8AD6D60, 0xFC6C70D7, 0xE22B20D2, 0xE6EA3D65, 0xEBA91BBC, 0xEF68060B,
-        0xD727BBB6, 0xD3E6A601, 0xDEA580D8, 0xDA649D6F, 0xC423CD6A, 0xC0E2D0DD,
-        0xCDA1F604, 0xC960EBB3, 0xBD3E8D7E, 0xB9FF90C9, 0xB4BCB610, 0xB07DABA7,
-        0xAE3AFBA2, 0xAAFBE615, 0xA7B8C0CC, 0xA379DD7B, 0x9B3660C6, 0x9FF77D71,
-        0x92B45BA8, 0x9675461F, 0x8832161A, 0x8CF30BAD, 0x81B02D74, 0x857130C3,
-        0x5D8A9099, 0x594B8D2E, 0x5408ABF7, 0x50C9B640, 0x4E8EE645, 0x4A4FFBF2,
-        0x470CDD2B, 0x43CDC09C, 0x7B827D21, 0x7F436096, 0x7200464F, 0x76C15BF8,
-        0x68860BFD, 0x6C47164A, 0x61043093, 0x65C52D24, 0x119B4BE9, 0x155A565E,
-        0x18197087, 0x1CD86D30, 0x029F3D35, 0x065E2082, 0x0B1D065B, 0x0FDC1BEC,
-        0x3793A651, 0x3352BBE6, 0x3E119D3F, 0x3AD08088, 0x2497D08D, 0x2056CD3A,
-        0x2D15EBE3, 0x29D4F654, 0xC5A92679, 0xC1683BCE, 0xCC2B1D17, 0xC8EA00A0,
-        0xD6AD50A5, 0xD26C4D12, 0xDF2F6BCB, 0xDBEE767C, 0xE3A1CBC1, 0xE760D676,
-        0xEA23F0AF, 0xEEE2ED18, 0xF0A5BD1D, 0xF464A0AA, 0xF9278673, 0xFDE69BC4,
-        0x89B8FD09, 0x8D79E0BE, 0x803AC667, 0x84FBDBD0, 0x9ABC8BD5, 0x9E7D9662,
-        0x933EB0BB, 0x97FFAD0C, 0xAFB010B1, 0xAB710D06, 0xA6322BDF, 0xA2F33668,
-        0xBCB4666D, 0xB8757BDA, 0xB5365D03, 0xB1F740B4
+	protected static $crc32table = array(
+		0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F,
+		0xE963A535, 0x9E6495A3, 0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988,
+		0x09B64C2B, 0x7EB17CBD, 0xE7B82D07, 0x90BF1D91, 0x1DB71064, 0x6AB020F2,
+		0xF3B97148, 0x84BE41DE, 0x1ADAD47D, 0x6DDDE4EB, 0xF4D4B551, 0x83D385C7,
+		0x136C9856, 0x646BA8C0, 0xFD62F97A, 0x8A65C9EC, 0x14015C4F, 0x63066CD9,
+		0xFA0F3D63, 0x8D080DF5, 0x3B6E20C8, 0x4C69105E, 0xD56041E4, 0xA2677172,
+		0x3C03E4D1, 0x4B04D447, 0xD20D85FD, 0xA50AB56B, 0x35B5A8FA, 0x42B2986C,
+		0xDBBBC9D6, 0xACBCF940, 0x32D86CE3, 0x45DF5C75, 0xDCD60DCF, 0xABD13D59,
+		0x26D930AC, 0x51DE003A, 0xC8D75180, 0xBFD06116, 0x21B4F4B5, 0x56B3C423,
+		0xCFBA9599, 0xB8BDA50F, 0x2802B89E, 0x5F058808, 0xC60CD9B2, 0xB10BE924,
+		0x2F6F7C87, 0x58684C11, 0xC1611DAB, 0xB6662D3D, 0x76DC4190, 0x01DB7106,
+		0x98D220BC, 0xEFD5102A, 0x71B18589, 0x06B6B51F, 0x9FBFE4A5, 0xE8B8D433,
+		0x7807C9A2, 0x0F00F934, 0x9609A88E, 0xE10E9818, 0x7F6A0DBB, 0x086D3D2D,
+		0x91646C97, 0xE6635C01, 0x6B6B51F4, 0x1C6C6162, 0x856530D8, 0xF262004E,
+		0x6C0695ED, 0x1B01A57B, 0x8208F4C1, 0xF50FC457, 0x65B0D9C6, 0x12B7E950,
+		0x8BBEB8EA, 0xFCB9887C, 0x62DD1DDF, 0x15DA2D49, 0x8CD37CF3, 0xFBD44C65,
+		0x4DB26158, 0x3AB551CE, 0xA3BC0074, 0xD4BB30E2, 0x4ADFA541, 0x3DD895D7,
+		0xA4D1C46D, 0xD3D6F4FB, 0x4369E96A, 0x346ED9FC, 0xAD678846, 0xDA60B8D0,
+		0x44042D73, 0x33031DE5, 0xAA0A4C5F, 0xDD0D7CC9, 0x5005713C, 0x270241AA,
+		0xBE0B1010, 0xC90C2086, 0x5768B525, 0x206F85B3, 0xB966D409, 0xCE61E49F,
+		0x5EDEF90E, 0x29D9C998, 0xB0D09822, 0xC7D7A8B4, 0x59B33D17, 0x2EB40D81,
+		0xB7BD5C3B, 0xC0BA6CAD, 0xEDB88320, 0x9ABFB3B6, 0x03B6E20C, 0x74B1D29A,
+		0xEAD54739, 0x9DD277AF, 0x04DB2615, 0x73DC1683, 0xE3630B12, 0x94643B84,
+		0x0D6D6A3E, 0x7A6A5AA8, 0xE40ECF0B, 0x9309FF9D, 0x0A00AE27, 0x7D079EB1,
+		0xF00F9344, 0x8708A3D2, 0x1E01F268, 0x6906C2FE, 0xF762575D, 0x806567CB,
+		0x196C3671, 0x6E6B06E7, 0xFED41B76, 0x89D32BE0, 0x10DA7A5A, 0x67DD4ACC,
+		0xF9B9DF6F, 0x8EBEEFF9, 0x17B7BE43, 0x60B08ED5, 0xD6D6A3E8, 0xA1D1937E,
+		0x38D8C2C4, 0x4FDFF252, 0xD1BB67F1, 0xA6BC5767, 0x3FB506DD, 0x48B2364B,
+		0xD80D2BDA, 0xAF0A1B4C, 0x36034AF6, 0x41047A60, 0xDF60EFC3, 0xA867DF55,
+		0x316E8EEF, 0x4669BE79, 0xCB61B38C, 0xBC66831A, 0x256FD2A0, 0x5268E236,
+		0xCC0C7795, 0xBB0B4703, 0x220216B9, 0x5505262F, 0xC5BA3BBE, 0xB2BD0B28,
+		0x2BB45A92, 0x5CB36A04, 0xC2D7FFA7, 0xB5D0CF31, 0x2CD99E8B, 0x5BDEAE1D,
+		0x9B64C2B0, 0xEC63F226, 0x756AA39C, 0x026D930A, 0x9C0906A9, 0xEB0E363F,
+		0x72076785, 0x05005713, 0x95BF4A82, 0xE2B87A14, 0x7BB12BAE, 0x0CB61B38,
+		0x92D28E9B, 0xE5D5BE0D, 0x7CDCEFB7, 0x0BDBDF21, 0x86D3D2D4, 0xF1D4E242,
+		0x68DDB3F8, 0x1FDA836E, 0x81BE16CD, 0xF6B9265B, 0x6FB077E1, 0x18B74777,
+		0x88085AE6, 0xFF0F6A70, 0x66063BCA, 0x11010B5C, 0x8F659EFF, 0xF862AE69,
+		0x616BFFD3, 0x166CCF45, 0xA00AE278, 0xD70DD2EE, 0x4E048354, 0x3903B3C2,
+		0xA7672661, 0xD06016F7, 0x4969474D, 0x3E6E77DB, 0xAED16A4A, 0xD9D65ADC,
+		0x40DF0B66, 0x37D83BF0, 0xA9BCAE53, 0xDEBB9EC5, 0x47B2CF7F, 0x30B5FFE9,
+		0xBDBDF21C, 0xCABAC28A, 0x53B39330, 0x24B4A3A6, 0xBAD03605, 0xCDD70693,
+		0x54DE5729, 0x23D967BF, 0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94,
+		0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D
+	);
+	protected static $crc32bzip2table = array(
+		0x00000000, 0x04C11DB7, 0x09823B6E, 0x0D4326D9, 0x130476DC, 0x17C56B6B,
+		0x1A864DB2, 0x1E475005, 0x2608EDB8, 0x22C9F00F, 0x2F8AD6D6, 0x2B4BCB61,
+		0x350C9B64, 0x31CD86D3, 0x3C8EA00A, 0x384FBDBD, 0x4C11DB70, 0x48D0C6C7,
+		0x4593E01E, 0x4152FDA9, 0x5F15ADAC, 0x5BD4B01B, 0x569796C2, 0x52568B75,
+		0x6A1936C8, 0x6ED82B7F, 0x639B0DA6, 0x675A1011, 0x791D4014, 0x7DDC5DA3,
+		0x709F7B7A, 0x745E66CD, 0x9823B6E0, 0x9CE2AB57, 0x91A18D8E, 0x95609039,
+		0x8B27C03C, 0x8FE6DD8B, 0x82A5FB52, 0x8664E6E5, 0xBE2B5B58, 0xBAEA46EF,
+		0xB7A96036, 0xB3687D81, 0xAD2F2D84, 0xA9EE3033, 0xA4AD16EA, 0xA06C0B5D,
+		0xD4326D90, 0xD0F37027, 0xDDB056FE, 0xD9714B49, 0xC7361B4C, 0xC3F706FB,
+		0xCEB42022, 0xCA753D95, 0xF23A8028, 0xF6FB9D9F, 0xFBB8BB46, 0xFF79A6F1,
+		0xE13EF6F4, 0xE5FFEB43, 0xE8BCCD9A, 0xEC7DD02D, 0x34867077, 0x30476DC0,
+		0x3D044B19, 0x39C556AE, 0x278206AB, 0x23431B1C, 0x2E003DC5, 0x2AC12072,
+		0x128E9DCF, 0x164F8078, 0x1B0CA6A1, 0x1FCDBB16, 0x018AEB13, 0x054BF6A4,
+		0x0808D07D, 0x0CC9CDCA, 0x7897AB07, 0x7C56B6B0, 0x71159069, 0x75D48DDE,
+		0x6B93DDDB, 0x6F52C06C, 0x6211E6B5, 0x66D0FB02, 0x5E9F46BF, 0x5A5E5B08,
+		0x571D7DD1, 0x53DC6066, 0x4D9B3063, 0x495A2DD4, 0x44190B0D, 0x40D816BA,
+		0xACA5C697, 0xA864DB20, 0xA527FDF9, 0xA1E6E04E, 0xBFA1B04B, 0xBB60ADFC,
+		0xB6238B25, 0xB2E29692, 0x8AAD2B2F, 0x8E6C3698, 0x832F1041, 0x87EE0DF6,
+		0x99A95DF3, 0x9D684044, 0x902B669D, 0x94EA7B2A, 0xE0B41DE7, 0xE4750050,
+		0xE9362689, 0xEDF73B3E, 0xF3B06B3B, 0xF771768C, 0xFA325055, 0xFEF34DE2,
+		0xC6BCF05F, 0xC27DEDE8, 0xCF3ECB31, 0xCBFFD686, 0xD5B88683, 0xD1799B34,
+		0xDC3ABDED, 0xD8FBA05A, 0x690CE0EE, 0x6DCDFD59, 0x608EDB80, 0x644FC637,
+		0x7A089632, 0x7EC98B85, 0x738AAD5C, 0x774BB0EB, 0x4F040D56, 0x4BC510E1,
+		0x46863638, 0x42472B8F, 0x5C007B8A, 0x58C1663D, 0x558240E4, 0x51435D53,
+		0x251D3B9E, 0x21DC2629, 0x2C9F00F0, 0x285E1D47, 0x36194D42, 0x32D850F5,
+		0x3F9B762C, 0x3B5A6B9B, 0x0315D626, 0x07D4CB91, 0x0A97ED48, 0x0E56F0FF,
+		0x1011A0FA, 0x14D0BD4D, 0x19939B94, 0x1D528623, 0xF12F560E, 0xF5EE4BB9,
+		0xF8AD6D60, 0xFC6C70D7, 0xE22B20D2, 0xE6EA3D65, 0xEBA91BBC, 0xEF68060B,
+		0xD727BBB6, 0xD3E6A601, 0xDEA580D8, 0xDA649D6F, 0xC423CD6A, 0xC0E2D0DD,
+		0xCDA1F604, 0xC960EBB3, 0xBD3E8D7E, 0xB9FF90C9, 0xB4BCB610, 0xB07DABA7,
+		0xAE3AFBA2, 0xAAFBE615, 0xA7B8C0CC, 0xA379DD7B, 0x9B3660C6, 0x9FF77D71,
+		0x92B45BA8, 0x9675461F, 0x8832161A, 0x8CF30BAD, 0x81B02D74, 0x857130C3,
+		0x5D8A9099, 0x594B8D2E, 0x5408ABF7, 0x50C9B640, 0x4E8EE645, 0x4A4FFBF2,
+		0x470CDD2B, 0x43CDC09C, 0x7B827D21, 0x7F436096, 0x7200464F, 0x76C15BF8,
+		0x68860BFD, 0x6C47164A, 0x61043093, 0x65C52D24, 0x119B4BE9, 0x155A565E,
+		0x18197087, 0x1CD86D30, 0x029F3D35, 0x065E2082, 0x0B1D065B, 0x0FDC1BEC,
+		0x3793A651, 0x3352BBE6, 0x3E119D3F, 0x3AD08088, 0x2497D08D, 0x2056CD3A,
+		0x2D15EBE3, 0x29D4F654, 0xC5A92679, 0xC1683BCE, 0xCC2B1D17, 0xC8EA00A0,
+		0xD6AD50A5, 0xD26C4D12, 0xDF2F6BCB, 0xDBEE767C, 0xE3A1CBC1, 0xE760D676,
+		0xEA23F0AF, 0xEEE2ED18, 0xF0A5BD1D, 0xF464A0AA, 0xF9278673, 0xFDE69BC4,
+		0x89B8FD09, 0x8D79E0BE, 0x803AC667, 0x84FBDBD0, 0x9ABC8BD5, 0x9E7D9662,
+		0x933EB0BB, 0x97FFAD0C, 0xAFB010B1, 0xAB710D06, 0xA6322BDF, 0xA2F33668,
+		0xBCB4666D, 0xB8757BDA, 0xB5365D03, 0xB1F740B4
 	);
 	protected static $verhoeffmul = array(
 		array(0,1,2,3,4,5,6,7,8,9),
@@ -11102,16 +10785,16 @@ class XNCrypt {
 	);
 	protected static $verhoeffinv = array(0,4,3,2,1,5,6,7,8,9);
 	protected static $dammmatrix = array(
-        array(0, 3, 1, 7, 5, 9, 8, 6, 4, 2),
-        array(7, 0, 9, 2, 1, 5, 4, 8, 6, 3),
-        array(4, 2, 0, 6, 8, 7, 1, 3, 5, 9),
-        array(1, 7, 5, 0, 9, 8, 3, 4, 2, 6),
-        array(6, 1, 2, 3, 0, 4, 5, 9, 7, 8),
-        array(3, 6, 7, 4, 2, 0, 9, 5, 8, 1),
-        array(5, 8, 6, 9, 7, 2, 0, 1, 3, 4),
-        array(8, 9, 4, 5, 3, 6, 2, 0, 1, 7),
-        array(9, 4, 3, 8, 6, 1, 7, 2, 0, 5),
-        array(2, 5, 8, 1, 4, 3, 6, 7, 9, 0),
+		array(0, 3, 1, 7, 5, 9, 8, 6, 4, 2),
+		array(7, 0, 9, 2, 1, 5, 4, 8, 6, 3),
+		array(4, 2, 0, 6, 8, 7, 1, 3, 5, 9),
+		array(1, 7, 5, 0, 9, 8, 3, 4, 2, 6),
+		array(6, 1, 2, 3, 0, 4, 5, 9, 7, 8),
+		array(3, 6, 7, 4, 2, 0, 9, 5, 8, 1),
+		array(5, 8, 6, 9, 7, 2, 0, 1, 3, 4),
+		array(8, 9, 4, 5, 3, 6, 2, 0, 1, 7),
+		array(9, 4, 3, 8, 6, 1, 7, 2, 0, 5),
+		array(2, 5, 8, 1, 4, 3, 6, 7, 9, 0),
 	);
 	protected static $pearsonT = array(
 		0x62, 0x06, 0x55, 0x96, 0x24, 0x17, 0x70, 0xa4, 0x87, 0xcf, 0xa9, 0x05, 0x1a, 0x40, 0xa5, 0xdb,
@@ -11160,493 +10843,493 @@ class XNCrypt {
 		31,  26,  219, 153, 141, 51,  159, 17,  131, 20
 	);
 
-    private static function keccakf64(&$st, $rounds) {
-        $keccakf_rotc = array(1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44);
-        $keccakf_piln = array(10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12,2, 20, 14, 22, 9, 6, 1);
-        $keccakf_rndc = self::$keccakrndc;
-        $bc = array();
-        for($round = 0; $round < $rounds; ++$round) {
-            for($i = 0; $i < 5; ++$i)
-                $bc[$i] = array(
-                    $st[$i][0] ^ $st[$i + 5][0] ^ $st[$i + 10][0] ^ $st[$i + 15][0] ^ $st[$i + 20][0],
-                    $st[$i][1] ^ $st[$i + 5][1] ^ $st[$i + 10][1] ^ $st[$i + 15][1] ^ $st[$i + 20][1]
-                );
-            for($i = 0; $i < 5; ++$i) {
-                $t = array(
-                    $bc[($i + 4) % 5][0] ^ (($bc[($i + 1) % 5][0] << 1) | ($bc[($i + 1) % 5][1] >> 31)) & (0xffffffff),
-                    $bc[($i + 4) % 5][1] ^ (($bc[($i + 1) % 5][1] << 1) | ($bc[($i + 1) % 5][0] >> 31)) & (0xffffffff)
-                );
-                for($j = 0; $j < 25; $j += 5)
-                    $st[$j + $i] = array(
-                        $st[$j + $i][0] ^ $t[0],
-                        $st[$j + $i][1] ^ $t[1]
-                    );
-            }
-            $t = $st[1];
-            for($i = 0; $i < 24; ++$i) {
-                $j = $keccakf_piln[$i];
-                $bc[0] = $st[$j];
-                $n = $keccakf_rotc[$i];
-                $hi = $t[0];
-                $lo = $t[1];
-                if($n >= 32) {
-                    $n -= 32;
-                    $hi = $t[1];
-                    $lo = $t[0];
-                }
-                $st[$j] = array(
-                    (($hi << $n) | ($lo >> (32 - $n))) & (0xffffffff),
-                    (($lo << $n) | ($hi >> (32 - $n))) & (0xffffffff)
-                );
-                $t = $bc[0];
-            }
-            for($j = 0; $j < 25; $j += 5) {
-                for($i = 0; $i < 5; ++$i)
-                    $bc[$i] = $st[$j + $i];
-                for($i = 0; $i < 5; ++$i)
-                    $st[$j + $i] = array(
-                        $st[$j + $i][0] ^ ~$bc[($i + 1) % 5][0] & $bc[($i + 2) % 5][0],
-                        $st[$j + $i][1] ^ ~$bc[($i + 1) % 5][1] & $bc[($i + 2) % 5][1]
-                    );
-            }
-            $st[0] = array(
-                $st[0][0] ^ $keccakf_rndc[$round][0],
-                $st[0][1] ^ $keccakf_rndc[$round][1]
-            );
-        }
-    }
-    private static function keccak64($in_raw, $capacity, $outputlength, $suffix, $raw_output) {
-        $capacity /= 8;
-        $inlen = strlen($in_raw);
-        $rsiz = 200 - 2 * $capacity;
-        $rsizw = $rsiz / 8;
-        $st = array();
-        for($i = 0; $i < 25; ++$i)
-            $st[] = array(0, 0);
-        for($in_t = 0; $inlen >= $rsiz; $inlen -= $rsiz, $in_t += $rsiz) {
-            for($i = 0; $i < $rsizw; ++$i) {
-                $t = unpack('V*', substr($in_raw, $i * 8 + $in_t, 8));
-                $st[$i] = array(
-                    $st[$i][0] ^ $t[2],
-                    $st[$i][1] ^ $t[1]
-                );
-            }
-            self::keccakf64($st, 24);
-        }
-        $temp = substr($in_raw, $in_t, $inlen);
-        $temp = str_pad($temp, $rsiz, "\0", STR_PAD_RIGHT);
-        $temp[$inlen] = chr($suffix);
-        $temp[$rsiz - 1] = chr(ord($temp[$rsiz - 1]) | 0x80);
-        for($i = 0; $i < $rsizw; ++$i) {
-            $t = unpack('V*', substr($temp, $i * 8, 8));
-            $st[$i] = array(
-                $st[$i][0] ^ $t[2],
-                $st[$i][1] ^ $t[1]
-            );
-        }
-        self::keccakf64($st, 24);
-        $out = '';
-        for($i = 0; $i < 25; ++$i)
-            $out .= $t = pack('V*', $st[$i][1], $st[$i][0]);
-        $r = substr($out, 0, $outputlength / 8);
-        return $raw_output ? $r : bin2hex($r);
-    }
-    private static function keccakf32(&$st, $rounds) {
-        $keccakf_rotc = array(1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44);
-        $keccakf_piln = array(10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12,2, 20, 14, 22, 9, 6, 1);
-        $keccakf_rndc = array(
-            array(0x0000, 0x0000, 0x0000, 0x0001), array(0x0000, 0x0000, 0x0000, 0x8082), array(0x8000, 0x0000, 0x0000, 0x0808a), array(0x8000, 0x0000, 0x8000, 0x8000),
-            array(0x0000, 0x0000, 0x0000, 0x808b), array(0x0000, 0x0000, 0x8000, 0x0001), array(0x8000, 0x0000, 0x8000, 0x08081), array(0x8000, 0x0000, 0x0000, 0x8009),
-            array(0x0000, 0x0000, 0x0000, 0x008a), array(0x0000, 0x0000, 0x0000, 0x0088), array(0x0000, 0x0000, 0x8000, 0x08009), array(0x0000, 0x0000, 0x8000, 0x000a),
-            array(0x0000, 0x0000, 0x8000, 0x808b), array(0x8000, 0x0000, 0x0000, 0x008b), array(0x8000, 0x0000, 0x0000, 0x08089), array(0x8000, 0x0000, 0x0000, 0x8003),
-            array(0x8000, 0x0000, 0x0000, 0x8002), array(0x8000, 0x0000, 0x0000, 0x0080), array(0x0000, 0x0000, 0x0000, 0x0800a), array(0x8000, 0x0000, 0x8000, 0x000a),
-            array(0x8000, 0x0000, 0x8000, 0x8081), array(0x8000, 0x0000, 0x0000, 0x8080), array(0x0000, 0x0000, 0x8000, 0x00001), array(0x8000, 0x0000, 0x8000, 0x8008)
-        );
-        $bc = array();
-        for($round = 0; $round < $rounds; ++$round) {
-            for($i = 0; $i < 5; $i++)
-                $bc[$i] = array(
-                    $st[$i][0] ^ $st[$i + 5][0] ^ $st[$i + 10][0] ^ $st[$i + 15][0] ^ $st[$i + 20][0],
-                    $st[$i][1] ^ $st[$i + 5][1] ^ $st[$i + 10][1] ^ $st[$i + 15][1] ^ $st[$i + 20][1],
-                    $st[$i][2] ^ $st[$i + 5][2] ^ $st[$i + 10][2] ^ $st[$i + 15][2] ^ $st[$i + 20][2],
-                    $st[$i][3] ^ $st[$i + 5][3] ^ $st[$i + 10][3] ^ $st[$i + 15][3] ^ $st[$i + 20][3]
-                );
-            for($i = 0; $i < 5; ++$i) {
-                $t = array(
-                    $bc[($i + 4) % 5][0] ^ ((($bc[($i + 1) % 5][0] << 1) | ($bc[($i + 1) % 5][1] >> 15)) & (0xffff)),
-                    $bc[($i + 4) % 5][1] ^ ((($bc[($i + 1) % 5][1] << 1) | ($bc[($i + 1) % 5][2] >> 15)) & (0xffff)),
-                    $bc[($i + 4) % 5][2] ^ ((($bc[($i + 1) % 5][2] << 1) | ($bc[($i + 1) % 5][3] >> 15)) & (0xffff)),
-                    $bc[($i + 4) % 5][3] ^ ((($bc[($i + 1) % 5][3] << 1) | ($bc[($i + 1) % 5][0] >> 15)) & (0xffff))
-                );
-                for($j = 0; $j < 25; $j += 5)
-                    $st[$j + $i] = array(
-                        $st[$j + $i][0] ^ $t[0],
-                        $st[$j + $i][1] ^ $t[1],
-                        $st[$j + $i][2] ^ $t[2],
-                        $st[$j + $i][3] ^ $t[3]
-                    );
-            }
-            $t = $st[1];
-            for($i = 0; $i < 24; ++$i) {
-                $j = $keccakf_piln[$i];
-                $bc[0] = $st[$j];
-                $n = $keccakf_rotc[$i] >> 4;
-                $m = $keccakf_rotc[$i] % 16;
-                $st[$j] = array(
-                    ((($t[(0+$n) %4] << $m) | ($t[(1+$n) %4] >> (16-$m))) & (0xffff)),
-                    ((($t[(1+$n) %4] << $m) | ($t[(2+$n) %4] >> (16-$m))) & (0xffff)),
-                    ((($t[(2+$n) %4] << $m) | ($t[(3+$n) %4] >> (16-$m))) & (0xffff)),
-                    ((($t[(3+$n) %4] << $m) | ($t[(0+$n) %4] >> (16-$m))) & (0xffff))
-                );
-                $t = $bc[0];
-            }
-            for($j = 0; $j < 25; $j += 5) {
-                for($i = 0; $i < 5; ++$i)
-                    $bc[$i] = $st[$j + $i];
-                for($i = 0; $i < 5; ++$i)
-                    $st[$j + $i] = array(
-                        $st[$j + $i][0] ^ ~$bc[($i + 1) % 5][0] & $bc[($i + 2) % 5][0],
-                        $st[$j + $i][1] ^ ~$bc[($i + 1) % 5][1] & $bc[($i + 2) % 5][1],
-                        $st[$j + $i][2] ^ ~$bc[($i + 1) % 5][2] & $bc[($i + 2) % 5][2],
-                        $st[$j + $i][3] ^ ~$bc[($i + 1) % 5][3] & $bc[($i + 2) % 5][3]
-                    );
-            }
-            $st[0] = array(
-                $st[0][0] ^ $keccakf_rndc[$round][0],
-                $st[0][1] ^ $keccakf_rndc[$round][1],
-                $st[0][2] ^ $keccakf_rndc[$round][2],
-                $st[0][3] ^ $keccakf_rndc[$round][3]
-            );
-        }
-    }
-    private static function keccak32($in_raw, $capacity, $outputlength, $suffix, $raw_output) {
-        $capacity /= 8;
-        $inlen = strlen($in_raw);
-        $rsiz = 200 - 2 * $capacity;
-        $rsizw = $rsiz / 8;
-        $st = array();
-        for($i = 0; $i < 25; ++$i)
-            $st[] = array(0, 0, 0, 0);
-        for($in_t = 0; $inlen >= $rsiz; $inlen -= $rsiz, $in_t += $rsiz) {
-            for($i = 0; $i < $rsizw; ++$i) {
-                $t = unpack('v*', substr($in_raw, $i * 8 + $in_t, 8));
-                $st[$i] = array(
-                    $st[$i][0] ^ $t[4],
-                    $st[$i][1] ^ $t[3],
-                    $st[$i][2] ^ $t[2],
-                    $st[$i][3] ^ $t[1]
-                );
-            }
-            self::keccakf32($st, 24);
-        }
-        $temp = substr($in_raw, $in_t, $inlen);
-        $temp = str_pad($temp, $rsiz, "\0", STR_PAD_RIGHT);
-        $temp[$inlen] = chr($suffix);
-        $temp[$rsiz - 1] = chr((int) $temp[$rsiz - 1] | 0x80);
-        for($i = 0; $i < $rsizw; ++$i) {
-            $t = unpack('v*', substr($temp, $i * 8, 8));
-            $st[$i] = array(
-                $st[$i][0] ^ $t[4],
-                $st[$i][1] ^ $t[3],
-                $st[$i][2] ^ $t[2],
-                $st[$i][3] ^ $t[1]
-            );
-        }
-        self::keccakf32($st, 24);
-        $out = '';
-        for($i = 0; $i < 25; $i++)
-            $out .= $t = pack('v*', $st[$i][3],$st[$i][2], $st[$i][1], $st[$i][0]);
-        $r = substr($out, 0, $outputlength / 8);
-        return $raw_output ? $r: bin2hex($r);
-    }
-    private static function keccak($in_raw, $capacity, $outputlength, $suffix, $raw){
-        return PHP_INT_SIZE === 8
-            ? self::keccak64($in_raw, $capacity, $outputlength, $suffix, $raw)
-            : self::keccak32($in_raw, $capacity, $outputlength, $suffix, $raw);
-    }
-    private static function sha3_pad($padLength, $padType){
-        switch($padType){
-            case 3:
-                $temp = "\x1F" . str_repeat("\0", $padLength - 1);
-                $temp[$padLength - 1] = $temp[$padLength - 1] | "\x80";
-                return $temp;
-            default:
-                return $padLength == 1 ? "\x86" : "\x06" . str_repeat("\0", $padLength - 2) . "\x80";
-        }
-    }
-    private static function sha3_32($p, $c, $r, $d, $padType){
-        $block_size = $r >> 3;
-        $padLength = $block_size - (strlen($p) % $block_size);
-        $num_ints = $block_size >> 2;
-        $p.= self::sha3_pad($padLength, $padType);
-        $n = strlen($p) / $r;
-        $s = array(
-            array(array(0, 0), array(0, 0), array(0, 0), array(0, 0), array(0, 0)),
-            array(array(0, 0), array(0, 0), array(0, 0), array(0, 0), array(0, 0)),
-            array(array(0, 0), array(0, 0), array(0, 0), array(0, 0), array(0, 0)),
-            array(array(0, 0), array(0, 0), array(0, 0), array(0, 0), array(0, 0)),
-            array(array(0, 0), array(0, 0), array(0, 0), array(0, 0), array(0, 0))
-        );
-        $p = str_split($p, $block_size);
-        foreach($p as $pi) {
-            $pi = unpack('V*', $pi);
-            $x = $y = 0;
-            for($i = 1; $i <= $num_ints; $i += 2) {
-                $s[$x][$y][0]^= $pi[$i + 1];
-                $s[$x][$y][1]^= $pi[$i];
-                if(++$y == 5) {
-                    $y = 0;
-                    ++$x;
-                }
-            }
-            self::sha3proc32($s);
-        }
-        $z = '';
-        $i = $j = 0;
-        while(strlen($z) < $d) {
-            $z.= pack('V2', $s[$i][$j][1], $s[$i][$j++][0]);
-            if($j == 5) {
-                $j = 0;
-                ++$i;
-                if($i == 5) {
-                    $i = 0;
-                    self::sha3proc32($s);
-                }
-            }
-        }
-        return $z;
-    }
-    private static function sha3proc32(&$s){
-        $ro = array(
-            array( 0,  1, 62, 28, 27),
-            array(36, 44,  6, 55, 20),
-            array( 3, 10, 43, 25, 39),
-            array(41, 45, 15, 21,  8),
-            array(18,  2, 61, 56, 14)
-        );
-        $rc = array(
-            array(0, 1),
-            array(0, 32898),
-            array(-2147483648, 32906),
-            array(-2147483648, -2147450880),
-            array(0, 32907),
-            array(0, -2147483647),
-            array(-2147483648, -2147450751),
-            array(-2147483648, 32777),
-            array(0, 138),
-            array(0, 136),
-            array(0, -2147450871),
-            array(0, -2147483638),
-            array(0, -2147450741),
-            array(-2147483648, 139),
-            array(-2147483648, 32905),
-            array(-2147483648, 32771),
-            array(-2147483648, 32770),
-            array(-2147483648, 128),
-            array(0, 32778),
-            array(-2147483648, -2147483638),
-            array(-2147483648, -2147450751),
-            array(-2147483648, 32896),
-            array(0, -2147483647),
-            array(-2147483648, -2147450872)
-        );
-        for($round = 0; $round < 24; ++$round) {
-            $parity = $rotated = array();
-            for($i = 0; $i < 5; $i++) {
-                $parity[] = array(
-                    $s[0][$i][0] ^ $s[1][$i][0] ^ $s[2][$i][0] ^ $s[3][$i][0] ^ $s[4][$i][0],
-                    $s[0][$i][1] ^ $s[1][$i][1] ^ $s[2][$i][1] ^ $s[3][$i][1] ^ $s[4][$i][1]
-                );
-                $rotated[] = XNMath::rl32($parity[$i], 1);
-            }
-            $temp = array(
-                array($parity[4][0] ^ $rotated[1][0], $parity[4][1] ^ $rotated[1][1]),
-                array($parity[0][0] ^ $rotated[2][0], $parity[0][1] ^ $rotated[2][1]),
-                array($parity[1][0] ^ $rotated[3][0], $parity[1][1] ^ $rotated[3][1]),
-                array($parity[2][0] ^ $rotated[4][0], $parity[2][1] ^ $rotated[4][1]),
-                array($parity[3][0] ^ $rotated[0][0], $parity[3][1] ^ $rotated[0][1])
-            );
-            for($i = 0; $i < 5; ++$i)
-                for($j = 0; $j < 5; ++$j) {
-                    $s[$i][$j][0]^= $temp[$j][0];
-                    $s[$i][$j][1]^= $temp[$j][1];
-                }
-            $st = $s;
-            for($i = 0; $i < 5; ++$i)
-                for($j = 0; $j < 5; ++$j)
-                    $st[(2 * $i + 3 * $j) % 5][$j] = XNMath::rl32($s[$j][$i], $ro[$j][$i]);
-            for($i = 0; $i < 5; ++$i) {
-                $s[$i][0] = array(
-                    $st[$i][0][0] ^ (~$st[$i][1][0] & $st[$i][2][0]),
-                    $st[$i][0][1] ^ (~$st[$i][1][1] & $st[$i][2][1])
-                );
-                $s[$i][1] = array(
-                    $st[$i][1][0] ^ (~$st[$i][2][0] & $st[$i][3][0]),
-                    $st[$i][1][1] ^ (~$st[$i][2][1] & $st[$i][3][1])
-                );
-                $s[$i][2] = array(
-                    $st[$i][2][0] ^ (~$st[$i][3][0] & $st[$i][4][0]),
-                    $st[$i][2][1] ^ (~$st[$i][3][1] & $st[$i][4][1])
-                );
-                $s[$i][3] = array(
-                    $st[$i][3][0] ^ (~$st[$i][4][0] & $st[$i][0][0]),
-                    $st[$i][3][1] ^ (~$st[$i][4][1] & $st[$i][0][1])
-                );
-                $s[$i][4] = array(
-                    $st[$i][4][0] ^ (~$st[$i][0][0] & $st[$i][1][0]),
-                    $st[$i][4][1] ^ (~$st[$i][0][1] & $st[$i][1][1])
-                );
-            }
-            $s[0][0][0]^= $rc[$round][0];
-            $s[0][0][1]^= $rc[$round][1];
-        }
-    }
-    private static function sha3_64($p, $c, $r, $d, $padType){
-        $block_size = $r >> 3;
-        $padLength = $block_size - (strlen($p) % $block_size);
-        $num_ints = $block_size >> 2;
-        $p.= self::sha3_pad($padLength, $padType);
-        $n = strlen($p) / $r;
-        $s = array(
-            array(0, 0, 0, 0, 0),
-            array(0, 0, 0, 0, 0),
-            array(0, 0, 0, 0, 0),
-            array(0, 0, 0, 0, 0),
-            array(0, 0, 0, 0, 0)
-        );
-        $p = str_split($p, $block_size);
-        foreach($p as $pi) {
-            $pi = unpack('P*', $pi);
-            $x = $y = 0;
-            foreach($pi as $subpi) {
-                $s[$x][$y++]^= $subpi;
-                if($y == 5) {
-                    $y = 0;
-                    ++$x;
-                }
-            }
-            self::sha3proc64($s);
-        }
-        $z = '';
-        $i = $j = 0;
-        while(strlen($z) < $d) {
-            $z.= pack('P', $s[$i][$j++]);
-            if($j == 5) {
-                $j = 0;
-                ++$i;
-                if($i == 5) {
-                    $i = 0;
-                    self::sha3proc64($s);
-                }
-            }
-        }
-        return $z;
-    }
-    private static function sha3proc64(&$s){
-        $ro = array(
-            array( 0,  1, 62, 28, 27),
-            array(36, 44,  6, 55, 20),
-            array( 3, 10, 43, 25, 39),
-            array(41, 45, 15, 21,  8),
-            array(18,  2, 61, 56, 14)
-        );
-        $rc = array(
-            1,
-            32898,
-            -9223372036854742902,
-            -9223372034707259392,
-            32907,
-            2147483649,
-            -9223372034707259263,
-            -9223372036854743031,
-            138,
-            136,
-            2147516425,
-            2147483658,
-            2147516555,
-            -9223372036854775669,
-            -9223372036854742903,
-            -9223372036854743037,
-            -9223372036854743038,
-            -9223372036854775680,
-            32778,
-            -9223372034707292150,
-            -9223372034707259263,
-            -9223372036854742912,
-            2147483649,
-            -9223372034707259384
-        );
-        for($round = 0; $round < 24; ++$round) {
-            $parity = array();
-            for($i = 0; $i < 5; ++$i)
-                $parity[] = $s[0][$i] ^ $s[1][$i] ^ $s[2][$i] ^ $s[3][$i] ^ $s[4][$i];
-            $tmp = array(
-                $parity[4] ^ XNMath::rl64($parity[1], 1),
-                $parity[0] ^ XNMath::rl64($parity[2], 1),
-                $parity[1] ^ XNMath::rl64($parity[3], 1),
-                $parity[2] ^ XNMath::rl64($parity[4], 1),
-                $parity[3] ^ XNMath::rl64($parity[0], 1)
-            );
-            for($i = 0; $i < 5; ++$i)
-                for($j = 0; $j < 5; ++$j)
-                    $s[$i][$j]^= $tmp[$j];
-            $st = $s;
-            for($i = 0; $i < 5; ++$i)
-                for($j = 0; $j < 5; ++$j)
-                    $st[(2 * $i + 3 * $j) % 5][$j] = XNMath::rl64($s[$j][$i], $ro[$j][$i]);
-            for($i = 0; $i < 5; ++$i)
-                $s[$i] = array(
-                    $st[$i][0] ^ (~$st[$i][1] & $st[$i][2]),
-                    $st[$i][1] ^ (~$st[$i][2] & $st[$i][3]),
-                    $st[$i][2] ^ (~$st[$i][3] & $st[$i][4]),
-                    $st[$i][3] ^ (~$st[$i][4] & $st[$i][0]),
-                    $st[$i][4] ^ (~$st[$i][0] & $st[$i][1])
-                );
-            $s[0][0]^= $rc[$round];
-        }
-    }
-    private static function sha3($p, $c, $r, $d, $padType, $raw){
-        return PHP_INT_SIZE === 8
-            ? ($raw === true ? self::sha3_64($p, $c, $r, $d, $padType) : bin2hex(self::sha3_64($p, $c, $r, $d, $padType)))
-            : ($raw === true ? self::sha3_32($p, $c, $r, $d, $padType) : bin2hex(self::sha3_32($p, $c, $r, $d, $padType)));
-    }
-    public static function crc32($data){
+	private static function keccakf64(&$st, $rounds) {
+		$keccakf_rotc = array(1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44);
+		$keccakf_piln = array(10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12,2, 20, 14, 22, 9, 6, 1);
+		$keccakf_rndc = self::$keccakrndc;
+		$bc = array();
+		for($round = 0; $round < $rounds; ++$round) {
+			for($i = 0; $i < 5; ++$i)
+				$bc[$i] = array(
+					$st[$i][0] ^ $st[$i + 5][0] ^ $st[$i + 10][0] ^ $st[$i + 15][0] ^ $st[$i + 20][0],
+					$st[$i][1] ^ $st[$i + 5][1] ^ $st[$i + 10][1] ^ $st[$i + 15][1] ^ $st[$i + 20][1]
+				);
+			for($i = 0; $i < 5; ++$i) {
+				$t = array(
+					$bc[($i + 4) % 5][0] ^ (($bc[($i + 1) % 5][0] << 1) | ($bc[($i + 1) % 5][1] >> 31)) & (0xffffffff),
+					$bc[($i + 4) % 5][1] ^ (($bc[($i + 1) % 5][1] << 1) | ($bc[($i + 1) % 5][0] >> 31)) & (0xffffffff)
+				);
+				for($j = 0; $j < 25; $j += 5)
+					$st[$j + $i] = array(
+						$st[$j + $i][0] ^ $t[0],
+						$st[$j + $i][1] ^ $t[1]
+					);
+			}
+			$t = $st[1];
+			for($i = 0; $i < 24; ++$i) {
+				$j = $keccakf_piln[$i];
+				$bc[0] = $st[$j];
+				$n = $keccakf_rotc[$i];
+				$hi = $t[0];
+				$lo = $t[1];
+				if($n >= 32) {
+					$n -= 32;
+					$hi = $t[1];
+					$lo = $t[0];
+				}
+				$st[$j] = array(
+					(($hi << $n) | ($lo >> (32 - $n))) & (0xffffffff),
+					(($lo << $n) | ($hi >> (32 - $n))) & (0xffffffff)
+				);
+				$t = $bc[0];
+			}
+			for($j = 0; $j < 25; $j += 5) {
+				for($i = 0; $i < 5; ++$i)
+					$bc[$i] = $st[$j + $i];
+				for($i = 0; $i < 5; ++$i)
+					$st[$j + $i] = array(
+						$st[$j + $i][0] ^ ~$bc[($i + 1) % 5][0] & $bc[($i + 2) % 5][0],
+						$st[$j + $i][1] ^ ~$bc[($i + 1) % 5][1] & $bc[($i + 2) % 5][1]
+					);
+			}
+			$st[0] = array(
+				$st[0][0] ^ $keccakf_rndc[$round][0],
+				$st[0][1] ^ $keccakf_rndc[$round][1]
+			);
+		}
+	}
+	private static function keccak64($in_raw, $capacity, $outputlength, $suffix, $raw_output) {
+		$capacity /= 8;
+		$inlen = strlen($in_raw);
+		$rsiz = 200 - 2 * $capacity;
+		$rsizw = $rsiz / 8;
+		$st = array();
+		for($i = 0; $i < 25; ++$i)
+			$st[] = array(0, 0);
+		for($in_t = 0; $inlen >= $rsiz; $inlen -= $rsiz, $in_t += $rsiz) {
+			for($i = 0; $i < $rsizw; ++$i) {
+				$t = unpack('V*', substr($in_raw, $i * 8 + $in_t, 8));
+				$st[$i] = array(
+					$st[$i][0] ^ $t[2],
+					$st[$i][1] ^ $t[1]
+				);
+			}
+			self::keccakf64($st, 24);
+		}
+		$temp = substr($in_raw, $in_t, $inlen);
+		$temp = str_pad($temp, $rsiz, "\0", STR_PAD_RIGHT);
+		$temp[$inlen] = chr($suffix);
+		$temp[$rsiz - 1] = chr(ord($temp[$rsiz - 1]) | 0x80);
+		for($i = 0; $i < $rsizw; ++$i) {
+			$t = unpack('V*', substr($temp, $i * 8, 8));
+			$st[$i] = array(
+				$st[$i][0] ^ $t[2],
+				$st[$i][1] ^ $t[1]
+			);
+		}
+		self::keccakf64($st, 24);
+		$out = '';
+		for($i = 0; $i < 25; ++$i)
+			$out .= $t = pack('V*', $st[$i][1], $st[$i][0]);
+		$r = substr($out, 0, $outputlength / 8);
+		return $raw_output ? $r : bin2hex($r);
+	}
+	private static function keccakf32(&$st, $rounds) {
+		$keccakf_rotc = array(1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44);
+		$keccakf_piln = array(10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12,2, 20, 14, 22, 9, 6, 1);
+		$keccakf_rndc = array(
+			array(0x0000, 0x0000, 0x0000, 0x0001), array(0x0000, 0x0000, 0x0000, 0x8082), array(0x8000, 0x0000, 0x0000, 0x0808a), array(0x8000, 0x0000, 0x8000, 0x8000),
+			array(0x0000, 0x0000, 0x0000, 0x808b), array(0x0000, 0x0000, 0x8000, 0x0001), array(0x8000, 0x0000, 0x8000, 0x08081), array(0x8000, 0x0000, 0x0000, 0x8009),
+			array(0x0000, 0x0000, 0x0000, 0x008a), array(0x0000, 0x0000, 0x0000, 0x0088), array(0x0000, 0x0000, 0x8000, 0x08009), array(0x0000, 0x0000, 0x8000, 0x000a),
+			array(0x0000, 0x0000, 0x8000, 0x808b), array(0x8000, 0x0000, 0x0000, 0x008b), array(0x8000, 0x0000, 0x0000, 0x08089), array(0x8000, 0x0000, 0x0000, 0x8003),
+			array(0x8000, 0x0000, 0x0000, 0x8002), array(0x8000, 0x0000, 0x0000, 0x0080), array(0x0000, 0x0000, 0x0000, 0x0800a), array(0x8000, 0x0000, 0x8000, 0x000a),
+			array(0x8000, 0x0000, 0x8000, 0x8081), array(0x8000, 0x0000, 0x0000, 0x8080), array(0x0000, 0x0000, 0x8000, 0x00001), array(0x8000, 0x0000, 0x8000, 0x8008)
+		);
+		$bc = array();
+		for($round = 0; $round < $rounds; ++$round) {
+			for($i = 0; $i < 5; $i++)
+				$bc[$i] = array(
+					$st[$i][0] ^ $st[$i + 5][0] ^ $st[$i + 10][0] ^ $st[$i + 15][0] ^ $st[$i + 20][0],
+					$st[$i][1] ^ $st[$i + 5][1] ^ $st[$i + 10][1] ^ $st[$i + 15][1] ^ $st[$i + 20][1],
+					$st[$i][2] ^ $st[$i + 5][2] ^ $st[$i + 10][2] ^ $st[$i + 15][2] ^ $st[$i + 20][2],
+					$st[$i][3] ^ $st[$i + 5][3] ^ $st[$i + 10][3] ^ $st[$i + 15][3] ^ $st[$i + 20][3]
+				);
+			for($i = 0; $i < 5; ++$i) {
+				$t = array(
+					$bc[($i + 4) % 5][0] ^ ((($bc[($i + 1) % 5][0] << 1) | ($bc[($i + 1) % 5][1] >> 15)) & (0xffff)),
+					$bc[($i + 4) % 5][1] ^ ((($bc[($i + 1) % 5][1] << 1) | ($bc[($i + 1) % 5][2] >> 15)) & (0xffff)),
+					$bc[($i + 4) % 5][2] ^ ((($bc[($i + 1) % 5][2] << 1) | ($bc[($i + 1) % 5][3] >> 15)) & (0xffff)),
+					$bc[($i + 4) % 5][3] ^ ((($bc[($i + 1) % 5][3] << 1) | ($bc[($i + 1) % 5][0] >> 15)) & (0xffff))
+				);
+				for($j = 0; $j < 25; $j += 5)
+					$st[$j + $i] = array(
+						$st[$j + $i][0] ^ $t[0],
+						$st[$j + $i][1] ^ $t[1],
+						$st[$j + $i][2] ^ $t[2],
+						$st[$j + $i][3] ^ $t[3]
+					);
+			}
+			$t = $st[1];
+			for($i = 0; $i < 24; ++$i) {
+				$j = $keccakf_piln[$i];
+				$bc[0] = $st[$j];
+				$n = $keccakf_rotc[$i] >> 4;
+				$m = $keccakf_rotc[$i] % 16;
+				$st[$j] = array(
+					((($t[(0+$n) %4] << $m) | ($t[(1+$n) %4] >> (16-$m))) & (0xffff)),
+					((($t[(1+$n) %4] << $m) | ($t[(2+$n) %4] >> (16-$m))) & (0xffff)),
+					((($t[(2+$n) %4] << $m) | ($t[(3+$n) %4] >> (16-$m))) & (0xffff)),
+					((($t[(3+$n) %4] << $m) | ($t[(0+$n) %4] >> (16-$m))) & (0xffff))
+				);
+				$t = $bc[0];
+			}
+			for($j = 0; $j < 25; $j += 5) {
+				for($i = 0; $i < 5; ++$i)
+					$bc[$i] = $st[$j + $i];
+				for($i = 0; $i < 5; ++$i)
+					$st[$j + $i] = array(
+						$st[$j + $i][0] ^ ~$bc[($i + 1) % 5][0] & $bc[($i + 2) % 5][0],
+						$st[$j + $i][1] ^ ~$bc[($i + 1) % 5][1] & $bc[($i + 2) % 5][1],
+						$st[$j + $i][2] ^ ~$bc[($i + 1) % 5][2] & $bc[($i + 2) % 5][2],
+						$st[$j + $i][3] ^ ~$bc[($i + 1) % 5][3] & $bc[($i + 2) % 5][3]
+					);
+			}
+			$st[0] = array(
+				$st[0][0] ^ $keccakf_rndc[$round][0],
+				$st[0][1] ^ $keccakf_rndc[$round][1],
+				$st[0][2] ^ $keccakf_rndc[$round][2],
+				$st[0][3] ^ $keccakf_rndc[$round][3]
+			);
+		}
+	}
+	private static function keccak32($in_raw, $capacity, $outputlength, $suffix, $raw_output) {
+		$capacity /= 8;
+		$inlen = strlen($in_raw);
+		$rsiz = 200 - 2 * $capacity;
+		$rsizw = $rsiz / 8;
+		$st = array();
+		for($i = 0; $i < 25; ++$i)
+			$st[] = array(0, 0, 0, 0);
+		for($in_t = 0; $inlen >= $rsiz; $inlen -= $rsiz, $in_t += $rsiz) {
+			for($i = 0; $i < $rsizw; ++$i) {
+				$t = unpack('v*', substr($in_raw, $i * 8 + $in_t, 8));
+				$st[$i] = array(
+					$st[$i][0] ^ $t[4],
+					$st[$i][1] ^ $t[3],
+					$st[$i][2] ^ $t[2],
+					$st[$i][3] ^ $t[1]
+				);
+			}
+			self::keccakf32($st, 24);
+		}
+		$temp = substr($in_raw, $in_t, $inlen);
+		$temp = str_pad($temp, $rsiz, "\0", STR_PAD_RIGHT);
+		$temp[$inlen] = chr($suffix);
+		$temp[$rsiz - 1] = chr((int) $temp[$rsiz - 1] | 0x80);
+		for($i = 0; $i < $rsizw; ++$i) {
+			$t = unpack('v*', substr($temp, $i * 8, 8));
+			$st[$i] = array(
+				$st[$i][0] ^ $t[4],
+				$st[$i][1] ^ $t[3],
+				$st[$i][2] ^ $t[2],
+				$st[$i][3] ^ $t[1]
+			);
+		}
+		self::keccakf32($st, 24);
+		$out = '';
+		for($i = 0; $i < 25; $i++)
+			$out .= $t = pack('v*', $st[$i][3],$st[$i][2], $st[$i][1], $st[$i][0]);
+		$r = substr($out, 0, $outputlength / 8);
+		return $raw_output ? $r: bin2hex($r);
+	}
+	private static function keccak($in_raw, $capacity, $outputlength, $suffix, $raw){
+		return PHP_INT_SIZE === 8
+			? self::keccak64($in_raw, $capacity, $outputlength, $suffix, $raw)
+			: self::keccak32($in_raw, $capacity, $outputlength, $suffix, $raw);
+	}
+	private static function sha3_pad($padLength, $padType){
+		switch($padType){
+			case 3:
+				$temp = "\x1F" . str_repeat("\0", $padLength - 1);
+				$temp[$padLength - 1] = $temp[$padLength - 1] | "\x80";
+				return $temp;
+			default:
+				return $padLength == 1 ? "\x86" : "\x06" . str_repeat("\0", $padLength - 2) . "\x80";
+		}
+	}
+	private static function sha3_32($p, $c, $r, $d, $padType){
+		$block_size = $r >> 3;
+		$padLength = $block_size - (strlen($p) % $block_size);
+		$num_ints = $block_size >> 2;
+		$p.= self::sha3_pad($padLength, $padType);
+		$n = strlen($p) / $r;
+		$s = array(
+			array(array(0, 0), array(0, 0), array(0, 0), array(0, 0), array(0, 0)),
+			array(array(0, 0), array(0, 0), array(0, 0), array(0, 0), array(0, 0)),
+			array(array(0, 0), array(0, 0), array(0, 0), array(0, 0), array(0, 0)),
+			array(array(0, 0), array(0, 0), array(0, 0), array(0, 0), array(0, 0)),
+			array(array(0, 0), array(0, 0), array(0, 0), array(0, 0), array(0, 0))
+		);
+		$p = str_split($p, $block_size);
+		foreach($p as $pi) {
+			$pi = unpack('V*', $pi);
+			$x = $y = 0;
+			for($i = 1; $i <= $num_ints; $i += 2) {
+				$s[$x][$y][0]^= $pi[$i + 1];
+				$s[$x][$y][1]^= $pi[$i];
+				if(++$y == 5) {
+					$y = 0;
+					++$x;
+				}
+			}
+			self::sha3proc32($s);
+		}
+		$z = '';
+		$i = $j = 0;
+		while(strlen($z) < $d) {
+			$z.= pack('V2', $s[$i][$j][1], $s[$i][$j++][0]);
+			if($j == 5) {
+				$j = 0;
+				++$i;
+				if($i == 5) {
+					$i = 0;
+					self::sha3proc32($s);
+				}
+			}
+		}
+		return $z;
+	}
+	private static function sha3proc32(&$s){
+		$ro = array(
+			array( 0,  1, 62, 28, 27),
+			array(36, 44,  6, 55, 20),
+			array( 3, 10, 43, 25, 39),
+			array(41, 45, 15, 21,  8),
+			array(18,  2, 61, 56, 14)
+		);
+		$rc = array(
+			array(0, 1),
+			array(0, 32898),
+			array(-2147483648, 32906),
+			array(-2147483648, -2147450880),
+			array(0, 32907),
+			array(0, -2147483647),
+			array(-2147483648, -2147450751),
+			array(-2147483648, 32777),
+			array(0, 138),
+			array(0, 136),
+			array(0, -2147450871),
+			array(0, -2147483638),
+			array(0, -2147450741),
+			array(-2147483648, 139),
+			array(-2147483648, 32905),
+			array(-2147483648, 32771),
+			array(-2147483648, 32770),
+			array(-2147483648, 128),
+			array(0, 32778),
+			array(-2147483648, -2147483638),
+			array(-2147483648, -2147450751),
+			array(-2147483648, 32896),
+			array(0, -2147483647),
+			array(-2147483648, -2147450872)
+		);
+		for($round = 0; $round < 24; ++$round) {
+			$parity = $rotated = array();
+			for($i = 0; $i < 5; $i++) {
+				$parity[] = array(
+					$s[0][$i][0] ^ $s[1][$i][0] ^ $s[2][$i][0] ^ $s[3][$i][0] ^ $s[4][$i][0],
+					$s[0][$i][1] ^ $s[1][$i][1] ^ $s[2][$i][1] ^ $s[3][$i][1] ^ $s[4][$i][1]
+				);
+				$rotated[] = XNMath::rl32($parity[$i], 1);
+			}
+			$temp = array(
+				array($parity[4][0] ^ $rotated[1][0], $parity[4][1] ^ $rotated[1][1]),
+				array($parity[0][0] ^ $rotated[2][0], $parity[0][1] ^ $rotated[2][1]),
+				array($parity[1][0] ^ $rotated[3][0], $parity[1][1] ^ $rotated[3][1]),
+				array($parity[2][0] ^ $rotated[4][0], $parity[2][1] ^ $rotated[4][1]),
+				array($parity[3][0] ^ $rotated[0][0], $parity[3][1] ^ $rotated[0][1])
+			);
+			for($i = 0; $i < 5; ++$i)
+				for($j = 0; $j < 5; ++$j) {
+					$s[$i][$j][0]^= $temp[$j][0];
+					$s[$i][$j][1]^= $temp[$j][1];
+				}
+			$st = $s;
+			for($i = 0; $i < 5; ++$i)
+				for($j = 0; $j < 5; ++$j)
+					$st[(2 * $i + 3 * $j) % 5][$j] = XNMath::rl32($s[$j][$i], $ro[$j][$i]);
+			for($i = 0; $i < 5; ++$i) {
+				$s[$i][0] = array(
+					$st[$i][0][0] ^ (~$st[$i][1][0] & $st[$i][2][0]),
+					$st[$i][0][1] ^ (~$st[$i][1][1] & $st[$i][2][1])
+				);
+				$s[$i][1] = array(
+					$st[$i][1][0] ^ (~$st[$i][2][0] & $st[$i][3][0]),
+					$st[$i][1][1] ^ (~$st[$i][2][1] & $st[$i][3][1])
+				);
+				$s[$i][2] = array(
+					$st[$i][2][0] ^ (~$st[$i][3][0] & $st[$i][4][0]),
+					$st[$i][2][1] ^ (~$st[$i][3][1] & $st[$i][4][1])
+				);
+				$s[$i][3] = array(
+					$st[$i][3][0] ^ (~$st[$i][4][0] & $st[$i][0][0]),
+					$st[$i][3][1] ^ (~$st[$i][4][1] & $st[$i][0][1])
+				);
+				$s[$i][4] = array(
+					$st[$i][4][0] ^ (~$st[$i][0][0] & $st[$i][1][0]),
+					$st[$i][4][1] ^ (~$st[$i][0][1] & $st[$i][1][1])
+				);
+			}
+			$s[0][0][0]^= $rc[$round][0];
+			$s[0][0][1]^= $rc[$round][1];
+		}
+	}
+	private static function sha3_64($p, $c, $r, $d, $padType){
+		$block_size = $r >> 3;
+		$padLength = $block_size - (strlen($p) % $block_size);
+		$num_ints = $block_size >> 2;
+		$p.= self::sha3_pad($padLength, $padType);
+		$n = strlen($p) / $r;
+		$s = array(
+			array(0, 0, 0, 0, 0),
+			array(0, 0, 0, 0, 0),
+			array(0, 0, 0, 0, 0),
+			array(0, 0, 0, 0, 0),
+			array(0, 0, 0, 0, 0)
+		);
+		$p = str_split($p, $block_size);
+		foreach($p as $pi) {
+			$pi = unpack('P*', $pi);
+			$x = $y = 0;
+			foreach($pi as $subpi) {
+				$s[$x][$y++]^= $subpi;
+				if($y == 5) {
+					$y = 0;
+					++$x;
+				}
+			}
+			self::sha3proc64($s);
+		}
+		$z = '';
+		$i = $j = 0;
+		while(strlen($z) < $d) {
+			$z.= pack('P', $s[$i][$j++]);
+			if($j == 5) {
+				$j = 0;
+				++$i;
+				if($i == 5) {
+					$i = 0;
+					self::sha3proc64($s);
+				}
+			}
+		}
+		return $z;
+	}
+	private static function sha3proc64(&$s){
+		$ro = array(
+			array( 0,  1, 62, 28, 27),
+			array(36, 44,  6, 55, 20),
+			array( 3, 10, 43, 25, 39),
+			array(41, 45, 15, 21,  8),
+			array(18,  2, 61, 56, 14)
+		);
+		$rc = array(
+			1,
+			32898,
+			-9223372036854742902,
+			-9223372034707259392,
+			32907,
+			2147483649,
+			-9223372034707259263,
+			-9223372036854743031,
+			138,
+			136,
+			2147516425,
+			2147483658,
+			2147516555,
+			-9223372036854775669,
+			-9223372036854742903,
+			-9223372036854743037,
+			-9223372036854743038,
+			-9223372036854775680,
+			32778,
+			-9223372034707292150,
+			-9223372034707259263,
+			-9223372036854742912,
+			2147483649,
+			-9223372034707259384
+		);
+		for($round = 0; $round < 24; ++$round) {
+			$parity = array();
+			for($i = 0; $i < 5; ++$i)
+				$parity[] = $s[0][$i] ^ $s[1][$i] ^ $s[2][$i] ^ $s[3][$i] ^ $s[4][$i];
+			$tmp = array(
+				$parity[4] ^ XNMath::rl64($parity[1], 1),
+				$parity[0] ^ XNMath::rl64($parity[2], 1),
+				$parity[1] ^ XNMath::rl64($parity[3], 1),
+				$parity[2] ^ XNMath::rl64($parity[4], 1),
+				$parity[3] ^ XNMath::rl64($parity[0], 1)
+			);
+			for($i = 0; $i < 5; ++$i)
+				for($j = 0; $j < 5; ++$j)
+					$s[$i][$j]^= $tmp[$j];
+			$st = $s;
+			for($i = 0; $i < 5; ++$i)
+				for($j = 0; $j < 5; ++$j)
+					$st[(2 * $i + 3 * $j) % 5][$j] = XNMath::rl64($s[$j][$i], $ro[$j][$i]);
+			for($i = 0; $i < 5; ++$i)
+				$s[$i] = array(
+					$st[$i][0] ^ (~$st[$i][1] & $st[$i][2]),
+					$st[$i][1] ^ (~$st[$i][2] & $st[$i][3]),
+					$st[$i][2] ^ (~$st[$i][3] & $st[$i][4]),
+					$st[$i][3] ^ (~$st[$i][4] & $st[$i][0]),
+					$st[$i][4] ^ (~$st[$i][0] & $st[$i][1])
+				);
+			$s[0][0]^= $rc[$round];
+		}
+	}
+	private static function sha3($p, $c, $r, $d, $padType, $raw){
+		return PHP_INT_SIZE === 8
+			? ($raw === true ? self::sha3_64($p, $c, $r, $d, $padType) : bin2hex(self::sha3_64($p, $c, $r, $d, $padType)))
+			: ($raw === true ? self::sha3_32($p, $c, $r, $d, $padType) : bin2hex(self::sha3_32($p, $c, $r, $d, $padType)));
+	}
+	public static function crc32($data){
 		if(function_exists('crc32'))return crc32($data);
-        $c = 0xffffffff;
-        for($i = 0; isset($data[$i]); ++$i)
-            $c = self::$crc32table[($c ^ ord($data[$i])) & 0xff] ^ (($c >> 8) & 0xffffff);
-        return $c ^ 0xffffffff;
-    }
-    public static function crc16($data){
-        $c = 0;
-        for($i = 0; isset($data[$i]); ++$i)
-            $c = self::$crc16table[($c ^ ord($data[$i])) & 0xff] ^ ($c >> 8);
-        return $c;
-    }
-    public static function crc8($data){
-        $c = 0;
-        for($i = 0; isset($data[$i]); ++$i)
-            $c = self::$crc8table[($c ^ ord($data[$i])) & 0xff] ^ ($c >> 8);
-        return $c;
-    }
-    public static function crc32bzip2($data){
-        $c = 0xffffffff;
-        for($i = 0; isset($data[$i]); ++$i)
-            $c = self::$crc32bzip2table[(($c >> 24) ^ ord($data[$i])) & 0xff] ^ ($c << 8);
-        return $c ^ 0xffffffff;
-    }
-    public static function adler32($data){
-        $a = 1;
-        $b = 0;
-        for($i = 0; isset($data[$i]); ++$i){
-            $a = ($a + ord($data[$i])) % 65521;
-            $b = ($b + $a) % 65521;
-        }
-        return ($b << 16) | $a;
-    }
-    public static function tdesktop_md5($data, $raw = null){
-        $data = implode('', array_map('strrev', str_split(md5($data, true), 2)));
-        return $raw === true ? $data : bin2hex($data);
+		$c = 0xffffffff;
+		for($i = 0; isset($data[$i]); ++$i)
+			$c = self::$crc32table[($c ^ ord($data[$i])) & 0xff] ^ (($c >> 8) & 0xffffff);
+		return $c ^ 0xffffffff;
+	}
+	public static function crc16($data){
+		$c = 0;
+		for($i = 0; isset($data[$i]); ++$i)
+			$c = self::$crc16table[($c ^ ord($data[$i])) & 0xff] ^ ($c >> 8);
+		return $c;
+	}
+	public static function crc8($data){
+		$c = 0;
+		for($i = 0; isset($data[$i]); ++$i)
+			$c = self::$crc8table[($c ^ ord($data[$i])) & 0xff] ^ ($c >> 8);
+		return $c;
+	}
+	public static function crc32bzip2($data){
+		$c = 0xffffffff;
+		for($i = 0; isset($data[$i]); ++$i)
+			$c = self::$crc32bzip2table[(($c >> 24) ^ ord($data[$i])) & 0xff] ^ ($c << 8);
+		return $c ^ 0xffffffff;
+	}
+	public static function adler32($data){
+		$a = 1;
+		$b = 0;
+		for($i = 0; isset($data[$i]); ++$i){
+			$a = ($a + ord($data[$i])) % 65521;
+			$b = ($b + $a) % 65521;
+		}
+		return ($b << 16) | $a;
+	}
+	public static function tdesktop_md5($data, $raw = null){
+		$data = implode('', array_map('strrev', str_split(md5($data, true), 2)));
+		return $raw === true ? $data : bin2hex($data);
 	}
 	public static function bsd($data){
 		$sum = 0;
@@ -11682,9 +11365,9 @@ class XNCrypt {
 	}
 	public static function damm($number){
 		$interim = 0;
-        for($i = 0; isset($data[$i]); ++$i)
-            $interim = self::$dammmatrix[$interim][(int)$data[$i]];
-        return $interim;
+		for($i = 0; isset($data[$i]); ++$i)
+			$interim = self::$dammmatrix[$interim][(int)$data[$i]];
+		return $interim;
 	}
 	private static function pearson16($data){
 		$hash = array();
@@ -11703,69 +11386,69 @@ class XNCrypt {
 		$pad = 16 - ($length & 0xf);
 		$m .= str_repeat(chr($pad), $pad);
 		$length |= 0xf;
-        $c = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-        $l = "\0";
-        for($i = 0; $i < $length; $i += 16)
-            for($j = 0; $j < 16; ++$j)
-                $l = $c[$j] = chr(self::$md2s[ord($m[$i + $j] ^ $l)] ^ ord($c[$j]));
-        $m .= $c;
-        $length += 16;
-        $x = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-        for($i = 0; $i < $length; $i += 16) {
-            for($j = 0; $j < 16; ++$j) {
-                $x[$j + 16] = $m[$i + $j];
-                $x[$j + 32] = $x[$j + 16] ^ $x[$j];
-            }
-            $t = "\0";
-            for($j = 0; $j < 18; ++$j) {
-                for($k = 0; $k < 48; ++$k)
-                    $x[$k] = $t = $x[$k] ^ chr(self::$md2s[ord($t)]);
-                $t = chr(ord($t) + $j);
-            }
-        }
-        return $x;
-    }
-    public static function hash($algo, $data, $raw = null){
-        if(function_exists('hash_algos') && in_array($algo, hash_algos()))
-            return hash($algo, $data, $raw === true);
-        if(function_exists('mhash') && defined('MHASH_' . strtoupper($algo)))
-            return $raw === true ? mhash(constant('MHASH_' . strtoupper($algo)), $data) : self::hexencode(mhash(constant('MHASH_' . strtoupper($algo)), $data));
-        switch($algo){
-            case 'adler32':
-                return $raw === true ? pack('N', self::adler32($data)) : self::hexencode(pack('N', self::adler32($data)));
-            case 'crc8':
-                return $raw === true ? chr(self::crc8($data)) : self::hexencode(chr(self::crc8($data)));
-            case 'crc16':
-                return $raw === true ? pack('n', self::crc16($data)) : self::hexencode(pack('n', self::crc16($data)));
-            case 'crc32b':
-                return $raw === true ? pack('i', self::crc32($data)) : self::hexencode(pack('i', self::crc32($data)));
-            case 'crc32':
+		$c = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+		$l = "\0";
+		for($i = 0; $i < $length; $i += 16)
+			for($j = 0; $j < 16; ++$j)
+				$l = $c[$j] = chr(self::$md2s[ord($m[$i + $j] ^ $l)] ^ ord($c[$j]));
+		$m .= $c;
+		$length += 16;
+		$x = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+		for($i = 0; $i < $length; $i += 16) {
+			for($j = 0; $j < 16; ++$j) {
+				$x[$j + 16] = $m[$i + $j];
+				$x[$j + 32] = $x[$j + 16] ^ $x[$j];
+			}
+			$t = "\0";
+			for($j = 0; $j < 18; ++$j) {
+				for($k = 0; $k < 48; ++$k)
+					$x[$k] = $t = $x[$k] ^ chr(self::$md2s[ord($t)]);
+				$t = chr(ord($t) + $j);
+			}
+		}
+		return $x;
+	}
+	public static function hash($algo, $data, $raw = null){
+		if(function_exists('hash_algos') && in_array($algo, hash_algos()))
+			return hash($algo, $data, $raw === true);
+		if(function_exists('mhash') && defined('MHASH_' . strtoupper($algo)))
+			return $raw === true ? mhash(constant('MHASH_' . strtoupper($algo)), $data) : self::hexencode(mhash(constant('MHASH_' . strtoupper($algo)), $data));
+		switch($algo){
+			case 'adler32':
+				return $raw === true ? pack('N', self::adler32($data)) : self::hexencode(pack('N', self::adler32($data)));
+			case 'crc8':
+				return $raw === true ? chr(self::crc8($data)) : self::hexencode(chr(self::crc8($data)));
+			case 'crc16':
+				return $raw === true ? pack('n', self::crc16($data)) : self::hexencode(pack('n', self::crc16($data)));
+			case 'crc32b':
+				return $raw === true ? pack('i', self::crc32($data)) : self::hexencode(pack('i', self::crc32($data)));
+			case 'crc32':
 				return $raw === true ? pack('i', self::crc32bzip2($data)) : self::hexencode(pack('i', self::crc32bzip2($data)));
 			case 'bsd':
 				return $raw === true ? pack('n', self::bsd($data)) : bin2hex(pack('n', self::bsd($data)));
 			case 'xor8':
 				return $raw === true ? chr(self::xor8($data)) : bin2hex(chr(self::xor8($data)));
 			case 'keccak224':
-                return self::keccak($data, 224, 224, 1, $raw === true);
-            case 'keccak256':
-                return self::keccak($data, 256, 256, 1, $raw === true);
-            case 'keccak384':
-                return self::keccak($data, 384, 384, 1, $raw === true);
-            case 'keccak512':
-                return self::keccak($data, 512, 512, 1, $raw === true);
+				return self::keccak($data, 224, 224, 1, $raw === true);
+			case 'keccak256':
+				return self::keccak($data, 256, 256, 1, $raw === true);
+			case 'keccak384':
+				return self::keccak($data, 384, 384, 1, $raw === true);
+			case 'keccak512':
+				return self::keccak($data, 512, 512, 1, $raw === true);
 			case 'shake128':
-                return self::keccak($data, 128, 256, 0x1f, $raw === true);
-            case 'shake256':
-                return self::keccak($data, 256, 512, 0x1f, $raw === true);
-            case 'sha3-224':
+				return self::keccak($data, 128, 256, 0x1f, $raw === true);
+			case 'shake256':
+				return self::keccak($data, 256, 512, 0x1f, $raw === true);
+			case 'sha3-224':
 				return substr(self::sha3($data, 448, 1152, 28, 2, $raw === true), 0, -8);
 			case 'sha3-224f':
-                return self::sha3($data, 448, 1152, 28, 2, $raw === true);
-            case 'sha3-256':
-                return self::sha3($data, 512, 1088, 32, 2, $raw === true);
-            case 'sha3-384':
-                return self::sha3($data, 768, 832, 48, 2, $raw === true);
-            case 'sha3-512':
+				return self::sha3($data, 448, 1152, 28, 2, $raw === true);
+			case 'sha3-256':
+				return self::sha3($data, 512, 1088, 32, 2, $raw === true);
+			case 'sha3-384':
+				return self::sha3($data, 768, 832, 48, 2, $raw === true);
+			case 'sha3-512':
 				return self::sha3($data, 1024, 576, 64, 2, $raw === true);
 			case 'pearson16':
 				return $raw === true ? self::pearson16($data) : self::hexencode(self::pearson16($data));
@@ -11773,8 +11456,8 @@ class XNCrypt {
 				return $raw === true ? substr(self::md2($data), 0, 16) : self::hexencode(substr(self::md2($data), 0, 16));
 			case 'md2f':
 				return $raw === true ? self::md2($data) : self::hexencode(self::md2($data));
-        }
-        if(in_array($algo, self::crcalgos())){
+		}
+		if(in_array($algo, self::crcalgos())){
 			$length = self::crcalgo($algo);
 			$length = ceil($length['length'] / 8);
 			switch($length){
@@ -11788,8 +11471,8 @@ class XNCrypt {
 					return $raw === true ? pack('i', self::crc($algo, $data)) : bin2hex(pack('i', self::crc($algo, $data)));
 			}
 		}
-        trigger_error("XNCrypt::hash(): Unknown hashing algorithm: $algo", E_USER_WANING);
-        return false;
+		trigger_error("XNCrypt::hash(): Unknown hashing algorithm: $algo", E_USER_WANING);
+		return false;
 	}
 	public static function hash_repeat($algo, $data, $length = null, $raw = null){
 		if($length === null)$length = strlen($data);
@@ -11799,398 +11482,398 @@ class XNCrypt {
 		}
 		return substr($hash, 0, $length);
 	}
-    public static function hash_length($algo, $raw = null){
-        $algos = array(
-            "md2" => 16,         "md4" => 16,         "md5" => 16,
-            "sha1" => 20,        "sha224" => 28,      "sha256" => 32,
-            "sha384" => 48,      "sha512/224" => 28,  "sha512/256" => 32,
-            "sha512" => 64,      "sha3-224" => 28,    "sha3-256" => 32,
-            "sha3-384" => 48,    "sha3-512" => 64,    "ripemd128" => 16,
-            "ripemd160" => 20,   "ripemd256" => 32,   "ripemd320" => 40,
-            "whirlpool" => 64,   "tiger128,3" => 16,  "tiger160,3" => 20,
-            "tiger192,3" => 24,  "tiger128,4" => 16,  "tiger160,4" => 20,
-            "tiger192,4" => 24,  "snefru" => 32,      "snefru256" => 32,
-            "gost" => 32,        "gost-crypto" => 32, "adler32" => 4,
-            "crc32" => 4,        "crc32b" => 4,       "crc16" => 2,
-			"crc8" => 1,         "bsd" => 2,          "pearson" => 8,
-			"fnv132" => 4,       "fnv1a32" => 4,
-            "fnv164" => 8,       "fnv1a64" => 8,      "joaat" => 4,
-            "haval128,3" => 16,  "haval160,3" => 20,  "haval192,3" => 24,
-            "haval224,3" => 28,  "haval256,3" => 32,  "haval128,4" => 16,
-            "haval160,4" => 20,  "haval192,4" => 24,  "haval224,4" => 28,
-            "haval256,4" => 32,  "haval128,5" => 16,  "haval160,5" => 20,
-            "haval192,5" => 24,  "haval224,5" => 28,  "haval256,5" => 32,
-            "keccak224" => 56,   "keccak256" => 64,   "keccak384" => 96,
-            "keccak512" => 128,  "shake128"  => 64,   "shake256"  => 128
-        );
-        if(!isset($algos[$algo]))return false;
-        $length = $algos[$algo];
-        if($raw === null)return $length;
-        if($raw === true)return $length * 2;
-        $algos = array(
-            "md2" => 1,        "md4" => 4,        "md5" => 4,
-            "sha256" => 2,     "sha512/256" => 4, "sha512" => 2,
-            "ripemd128" => 4,  "ripemd256" => 2,  "whirlpool" => 1,
-            "tiger128,3" => 4, "tiger128,4" => 4, "snefru" => 1,
-            "snefru256" => 1,  "gost" => 1,       "gost-crypto" => 1,
-            "haval128,3" => 8, "haval256,3" => 4, "haval128,4" => 8,
-            "haval256,4" => 4, "haval128,5" => 8, "haval256,5" => 4,
-        );
-        if(!isset($algos[$algo]))return null;
-        return $length * $algos[$algo];
-    }
-    public static function hash_algos(){
-        return array(
-            "md2",        "md4",        "md5",         "sha1",        "sha224",
-            "sha256",     "sha384",     "sha512/224",  "sha512/256",  "sha512",
-            "sha3-224",   "sha3-256",   "sha3-384",    "sha3-512",    "ripemd128",
-            "ripemd160",  "ripemd256",  "ripemd320",   "whirlpool",   "tiger128,3",
-            "tiger160,3", "tiger192,3", "tiger128,4",  "tiger160,4",  "tiger192,4",
-            "snefru",     "snefru256",  "gost",        "gost-crypto", "adler32",
-			"crc32",      "crc32b",     "crc16",       "crc8",        "bsd",
-			"pearson",    "fnv132",
-            "fnv1a32",    "fnv164",      "fnv1a64",    "joaat",       "haval128,3",
-            "haval160,3", "haval192,3", "haval224,3",  "haval256,3",  "haval128,4",
-            "haval160,4", "haval192,4", "haval224,4",  "haval256,4",  "haval128,5",
-            "haval160,5", "haval192,5", "haval224,5",  "haval256,5",  "keccak224",
-            "keccak256",  "keccak384",  "keccak512",   "shake128",    "shake256"
-        );
-    }
-    public static function hash_hmac_algos(){
-        return array(
-            "md2",        "md4",        "md5",        "sha256",     "sha512/256",
-            "sha512",     "ripemd128",  "ripemd256",  "whirlpool",  "tiger128,3",
-            "tiger128,4", "snefru",     "snefru256",  "gost",       "gost-crypto",
-            "haval128,3", "haval256,3", "haval128,4", "haval256,4", "haval128,5",
-            "haval256,5",
-        );
-    }
-    public static function hash_hmac($algo, $data, $key, $raw = null) {
-        if(function_exists('hash_hmac_algos') && in_array($algo, hash_hmac_algos()))
-            return hash_hmac($algo, $data, $key, $raw === true);
-        if(function_exists('mhash') && defined('MHASH_' . strtoupper($algo)))
-            return $raw === true ? mhash(constant('MHASH_' . strtoupper($algo)), $data, $key) :
-                bin2hex(mhash(constant('MHASH_' . strtoupper($algo)), $data, $key));
-        $b = self::hash_length($algo);
-        if($b === false){
-            trigger_error("XNCrypt::hash_hmac(): Unknown hashing algorithm: $algo", E_USER_WANING);
-            return false;
-        }
-        if($b === null){
-            trigger_error("XNCrypt::hash_hmac(): Non-cryptographic hashing algorithm: $algo", E_USER_WANING);
-            return false;
-        }
-        if(strlen($key) > $b)
-            $key = self::hash($algo, $key, true);
-        $key = str_pad($key, $b, "\0");
-        $ipad = str_pad('', $b, "\x36");
-        $opad = str_pad('', $b, "\x5c");
-        $k_ipad = $key ^ $ipad;
-        $k_opad = $key ^ $opad;
-        return self::hash($algo, $k_opad . self::hash($algo, $k_ipad . $data, true), $raw === true);
-    }
-    public static function hash_hkdf($algo, $ikm, $length = 0, $info = '', $salt = '', $hex = null){
-        if(function_exists('hash_hkdf') && function_exists('hash_hmac_algos') && in_array($algo, hash_hmac_algos()))
-            return $hex === true ? bin2hex(hash_hkdf($algo, $ikm, $length, $info, $salt)) : hash_hkdf($algo, $ikm, $length, $info, $salt);
-        if($length < 0){
-            trigger_error("XNCrypt::hash_hkdf(): Length must be greater than or equal to 0: $length", E_USER_WARNING);
-            return false;
-        }
-        $size = self::hash_length($algo);
-        if($size === false){
-            trigger_error("XNCrypt::hash_hkdf(): Unknown hashing algorithm: $algo", E_USER_WANING);
-            return false;
-        }
-        if($size === null){
-            trigger_error("XNCrypt::hash_hkdf(): Non-cryptographic hashing algorithm: $algo", E_USER_WANING);
-            return false;
-        }
-        if($length > $size * 255){
-            trigger_error("XNCrypt::hash_hkdf(): Length must be less than or equal to " . ($size * 255) . ": $length", E_USER_WARNING);
-            return false;
-        }
-        if($length === 0)
-            $length = $size;
-        if($salt === '')
-            $salt = str_repeat("\0", $size);
-        $prk = self::hash_hmac($algo, $ikm, $salt, true);
-        $okm = '';
-        for($keyBlock = '', $blockIndex = 1; !isset($okm[$length - 1]); ++$blockIndex){
-            $keyBlock = self::hash_hmac($algo, $keyBlock . $info . chr($blockIndex), $prk, true);
-            $okm .= $keyBlock;
-        }
-        return substr($hex === true ? bin2hex($okm) : $okm, 0, $length);
-    }
-    public static function hash_pbkdf1($algo, $password, $salt, $iterations, $length = 0, $raw = null){
-        if($length < 0){
-            trigger_error("XNCrypt::hash_pbkdf1(): Length must be greater than or equal to 0: $length", E_USER_WARNING);
-            return false;
-        }
-        $size = self::hash_length($algo, $raw === true);
-        if($size === false){
-            trigger_error("XNCrypt::hash_pbkdf1(): Unknown hashing algorithm: $algo", E_USER_WANING);
-            return false;
-        }
-        if($size === null){
-            trigger_error("XNCrypt::hash_pbkdf1(): Non-cryptographic hashing algorithm: $algo", E_USER_WANING);
-            return false;
-        }
-        if($length == 0)
-            $length = $size;
-        $tmp = $password . $salt;
-        for($i = 0; $i < $iterations; ++$i)
-            $tmp = self::hash($algo, $tmp, true);
-        return substr($raw === true ? $tmp : bin2hex($tmp), 0, $length);
-    }
-    public static function hash_pbkdf2($algo, $password, $salt, $iterations, $length = 0, $raw = null){
-        if(function_exists('hash_pbkdf2') && function_exists('hash_hmac_algos') && in_array($algo, hash_hmac_algos()))
-            return hash_pbkdf2($algo, $password, $salt, $iterations, $length, $raw === true);
-        if($length < 0){
-            trigger_error("XNCrypt::hash_pbkdf2(): Length must be greater than or equal to 0: $length", E_USER_WARNING);
-            return false;
-        }
-        $size = self::hash_length($algo, $raw === true);
-        if($size === false){
-            trigger_error("XNCrypt::hash_pbkdf2(): Unknown hashing algorithm: $algo", E_USER_WANING);
-            return false;
-        }
-        if($size === null){
-            trigger_error("XNCrypt::hash_pbkdf2(): Non-cryptographic hashing algorithm: $algo", E_USER_WANING);
-            return false;
-        }
-        if($length == 0)
-            $length = $size;
-        $output = '';
-        $block_count = ceil($length / $size);
-        for($block = 1; $block <= $block_count; ++$block) {
-            $key1 = $key2 = self::hash_hmac($algo, $salt . pack('N', $block), $password, true);
-            for($iteration = 1; $iteration < $iterations; ++$iteration)
-                $key2 ^= $key1 = self::hash_hmac($algo, $key1, $password, true);
-            $output .= $key2;
-        }
-        return substr($raw === true ? $output : bin2hex($output), 0, $length);
-    }
-    public static function hash_schneier($algo, $password, $salt, $iterations, $length = 0, $raw = null){
-        if($length < 0){
-            trigger_error("XNCrypt::hash_schneier(): Length must be greater than or equal to 0: $length", E_USER_WARNING);
-            return false;
-        }
-        $saltlen = strlen($salt);
-        if($saltlen > PHP_INT_MAX - 4) {
-            trigger_error("XNCrypt::hash_schneier(): Supplied salt is too long, max of PHP_INT_MAX - 4 bytes: $saltlen supplied", E_USER_WARNING);
-            return false;
-        }
-        $size = self::hash_length($algo, $raw === true);
-        if($size === false){
-            trigger_error("XNCrypt::hash_schneier(): Unknown hashing algorithm: $algo", E_USER_WANING);
-            return false;
-        }
-        if($size === null){
-            trigger_error("XNCrypt::hash_schneier(): Non-cryptographic hashing algorithm: $algo", E_USER_WANING);
-            return false;
-        }
-        if($length == 0)
-            $length = $size;
-        $tmp = self::hash($algo, $password . $salt, true);
-        for($i = 2; $i <= $iterations; ++$i)
-            $tmp = self::hash($algo, $tmp . $password . $salt, true);
-        return substr($raw === true ? $tmp : bin2hex($tmp), 0, $length);
-    }
-    public static function hash_equal($hash, $data, $algo = 'auto'){
-        if(ctype_xdigit($hash))$raw = false;
-        else $raw = true;
-        if($algo == 'auto'){
-            foreach(self::hash_algos() as $algo)
-                if(self::hash($algo, $data, $raw) == $hash)
-                    return $algo;
-            return false;
-        }
-        if(self::hash($algo, $data, $raw) == $hash)
-            return $algo;
-        return false;
-    }
-
-    public static function crctable($poly, $bitlen = 32, $revin = null, $revout = null){
-        $mask = (((1 << ($bitlen - 1)) - 1) << 1) | 1;
-        $highBit = 1 << ($bitlen - 1);
-        $crctab = array();
-        for($i = 0; $i < 256; ++$i) {
-            $crc = $i;
-            if($revin === true)
-                $crc = xnmath::brev($crc, 8);
-            $crc <<= $bitlen - 8;
-            for($j = 0; $j < 8; ++$j) {
-                $bit = $crc & $highBit;
-                $crc <<= 1;
-                if($bit)
-                    $crc ^= $poly;
-            }
-            if($revout === true)
-                $crc = xnmath::brev($crc, $bitlen);
-            $crc &= $mask;
-            $crctab[] = $crc;
-        }
-        return $crctab;
-    }
-    public static function crcalgo($algo){
-        $algo = strtolower($algo);
-        $algos = array(
-			'crc1'              => array(0x1, 0x1, 0x0, 0x0, false, false),
-			'crc4'              => array(0x3, 0x4, 0x0, 0x0, true, true),
-			'crc4/itu'          => array(0x3, 0x4, 0x0, 0x0, true, true),
-			'crc4/interlaken'   => array(0x3, 0x4, 0xf, 0xf, false, false),
-            'crc8'              => array(0x7,  0x8, 0x0,  0x0,  false, false),
-            'crc8/cdma2000'     => array(0x9b, 0x8, 0xff, 0x0,  false, false),
-            'crc8/darc'         => array(0x39, 0x8, 0x0,  0x0,  true, true),
-            'crc8/dvb-s2'       => array(0xd5, 0x8, 0x0,  0x0,  false, false),
-            'crc8/ebu'          => array(0x1d, 0x8, 0xff, 0x0,  true, true),
-            'crc8/i-code'       => array(0x1d, 0x8, 0xfd, 0x0,  false, false),
-            'crc8/itu'          => array(0x7,  0x8, 0x0,  0x55, false, false),
-            'crc8/maxim'        => array(0x31, 0x8, 0x0,  0x0,  true, true),
-            'crc8/rohc'         => array(0x7,  0x8, 0xff, 0x0,  true, true),
-            'crc8/wcdma'        => array(0x9b, 0x8, 0x0,  0x0,  true, true),
-            'crc8/autosar'      => array(0x2f, 0x8, 0xff, 0xff, false, false),
-            'crc8/bluetooth'    => array(0xa7, 0x8, 0x0,  0x0,  true, true),
-            'crc8/gsma'         => array(0x1d, 0x8, 0x0,  0x0,  false, false),
-            'crc8/gsmb'         => array(0x49, 0x8, 0x0,  0xff, false, false),
-            'crc8/lte'          => array(0x9b, 0x8, 0x0,  0x0,  false, false),
-            'crc8/opensafety'   => array(0x2f, 0x8, 0x0,  0x0,  false, false),
-            'crc8/sae-j1850'    => array(0x1d, 0x8, 0xff, 0xff, false, false),
-            'crc16'             => array(0x8005, 0x10, 0x0,    0x0,    true, true),
-            'crc16/arc'         => array(0x8005, 0x10, 0x0,    0x0,    true, true),
-            'crc16/aug-ccitt'   => array(0x1021, 0x10, 0x1d0f, 0x0,    false, false),
-            'crc16/buypass'     => array(0x8005, 0x10, 0x0,    0x0,    false, false),
-            'crc16/ccitt-false' => array(0x1021, 0x10, 0xffff, 0x0,    false, false),
-            'crc16/cdma2000'    => array(0xc867, 0x10, 0xffff, 0x0,    false, false),
-            'crc16/cms'         => array(0x8005, 0x10, 0xffff, 0x0,    false, false),
-            'crc16/dds'         => array(0x8005, 0x10, 0x800d, 0x0,    false, false),
-            'crc16/dect-r'      => array(0x589,  0x10, 0x0,    0x1,    false, false),
-            'crc16/dect-x'      => array(0x589,  0x10, 0x0,    0x0,    false, false),
-            'crc16/dnp'         => array(0x3d65, 0x10, 0x0,    0xffff, true, true),
-            'crc16/en-13757'    => array(0x3d65, 0x10, 0x0,    0xffff, false, false),
-            'crc16/genibus'     => array(0x1021, 0x10, 0xffff, 0xffff, false, false),
-            'crc16/gsm'         => array(0x1021, 0x10, 0x0,    0xffff, false, false),
-            'crc16/kermit'      => array(0x1021, 0x10, 0x0,    0x0,    true, true),
-            'crc16/lj1200'      => array(0x6f63, 0x10, 0x0,    0x0,    false, false),
-            'crc16/maxim'       => array(0x8005, 0x10, 0x0,    0xffff, true, true),
-            'crc16/mcrf4xx'     => array(0x1021, 0x10, 0xffff, 0x0,    true, true),
-            'crc16/modbus'      => array(0x8005, 0x10, 0xffff, 0x0,    true, true),
-            'crc16/opensafetya' => array(0x5935, 0x10, 0x0,    0x0,    false, false),
-            'crc16/opensafetyb' => array(0x755b, 0x10, 0x0,    0x0,    false, false),
-            'crc16/profibus'    => array(0x1dcf, 0x10, 0xffff, 0xffff, false, false),
-            'crc16/ps2ff'       => array(0x1021, 0x10, 0x1d0f, 0x0,    false, false),
-            'crc16/riello'      => array(0x1021, 0x10, 0xb2aa, 0x0,    true, true),
-            'crc16/t10-dif'     => array(0x8bb7, 0x10, 0x0,    0x0,    false, false),
-            'crc16/teledisk'    => array(0xa097, 0x10, 0x0,    0x0,    false, false),
-            'crc16/tms37157'    => array(0x1021, 0x10, 0x89ec, 0x0,    true, true),
-            'crc16/usb'         => array(0x8005, 0x10, 0xffff, 0xffff, true, true),
-            'crc16/x-25'        => array(0x1021, 0x10, 0xffff, 0xffff, true, true),
-            'crc16/xmodem'      => array(0x1021, 0x10, 0x0,    0x0,    false, false),
-            'crca'              => array(0x1021, 0x10, 0xc6c6, 0x0,    true, true),
-            'crc24'             => array(0x864cfb, 0x18, 0xb704ce, 0x0,      false, false),
-            'crc24/flexraya'    => array(0x5d6dcb, 0x18, 0xfedcba, 0x0,      false, false),
-            'crc24/flexrayb'    => array(0x5d6dcb, 0x18, 0xabcdef, 0x0,      false, false),
-            'crc24/interlaken'  => array(0x328b63, 0x18, 0xffffff, 0xffffff, false, false),
-            'crc24/ltea'        => array(0x864cfb, 0x18, 0x0,      0x0,      false, false),
-            'crc24/lteb'        => array(0x800063, 0x18, 0x0,      0x0,      false, false),
-            'crc32'             => array(0x4c11db7,  0x20, 0xffffffff, 0xffffffff, true, true),
-            'crc32c'            => array(0x1edc6f41, 0x20, 0xffffffff, 0xffffffff, true, true),
-            'crc32d'            => array(0xa833982b, 0x20, 0xffffffff, 0xffffffff, true, true),
-            'crc32q'            => array(0x814141ab, 0x20, 0x0,        0x0,        false, false),
-            'crc32/bzip2'       => array(0x4c11db7,  0x20, 0xffffffff, 0xffffffff, false, false),
-            'crc32/jamcrc'      => array(0x4c11db7,  0x20, 0xffffffff, 0x0,        true, true),
-            'crc32/mpeg-2'      => array(0x4c11db7,  0x20, 0xffffffff, 0x0,        false, false),
-            'crc32/posix'       => array(0x4c11db7,  0x20, 0x0,        0xffffffff, false, false),
-            'crc32/xfer'        => array(0xaf,       0x20, 0x0,        0x0,        false, false),
-            'crc32/autosar'     => array(0xf4acfb13, 0x20, 0xffffffff, 0xffffffff, true, true)
-        );
-        $algo = isset($algos[$algo]) ? $algos[$algo] : false;
-        return array(
-            'polynomial' => $algo[0],
-            'length'     => $algo[1],
-            'init'       => $algo[2],
-            'xorout'     => $algo[3],
-            'refin'      => $algo[4],
-            'refout'     => $algo[5]
-        );
-    }
-    public static function crcalgos(){
-        return array(
-			"crc1",              "crc4",              "crc4/itu",       "crc4/interlaken",
-			"crc8",              "crc8/cdma2000",     "crc8/darc",      "crc8/dvb-s2",
-            "crc8/ebu",          "crc8/i-code",       "crc8/itu",       "crc8/maxim",
-            "crc8/rohc",         "crc8/wcdma",        "crc8/autosar",   "crc8/bluetooth",
-            "crc8/gsma",         "crc8/gsmb",         "crc8/lte",       "crc8/opensafety",
-            "crc8/sae-j1850",    "crc16",             "crc16/arc",      "crc16/aug-ccitt",
-            "crc16/buypass",     "crc16/ccitt-false", "crc16/cdma2000", "crc16/cms",
-            "crc16/dds",         "crc16/dect-r",      "crc16/dect-x",   "crc16/dnp",
-            "crc16/en-13757",    "crc16/genibus",     "crc16/gsm",      "crc16/kermit",
-            "crc16/lj1200",      "crc16/maxim",       "crc16/mcrf4xx",  "crc16/modbus",
-            "crc16/opensafetya", "crc16/opensafetyb", "crc16/profibus", "crc16/ps2ff",
-            "crc16/riello",      "crc16/t10-dif",     "crc16/teledisk", "crc16/tms37157",
-            "crc16/usb",         "crc16/x-25",        "crc16/xmodem",   "crca",
-            "crc24",             "crc24/flexraya",    "crc24/flexrayb", "crc24/interlaken",
-            "crc24/ltea",        "crc24/lteb",        "crc32",          "crc32c",
-            "crc32d",            "crc32q",            "crc32/bzip2",    "crc32/jamcrc",
-            "crc32/mpeg-2",      "crc32/posix",       "crc32/xfer",     "crc32/autosar"
-        );
+	public static function hash_length($algo, $raw = null){
+		$algos = array(
+			"md2" => 16,		 "md4" => 16,		 "md5" => 16,
+			"sha1" => 20,		"sha224" => 28,	  "sha256" => 32,
+			"sha384" => 48,	  "sha512/224" => 28,  "sha512/256" => 32,
+			"sha512" => 64,	  "sha3-224" => 28,	"sha3-256" => 32,
+			"sha3-384" => 48,	"sha3-512" => 64,	"ripemd128" => 16,
+			"ripemd160" => 20,   "ripemd256" => 32,   "ripemd320" => 40,
+			"whirlpool" => 64,   "tiger128,3" => 16,  "tiger160,3" => 20,
+			"tiger192,3" => 24,  "tiger128,4" => 16,  "tiger160,4" => 20,
+			"tiger192,4" => 24,  "snefru" => 32,	  "snefru256" => 32,
+			"gost" => 32,		"gost-crypto" => 32, "adler32" => 4,
+			"crc32" => 4,		"crc32b" => 4,	   "crc16" => 2,
+			"crc8" => 1,		 "bsd" => 2,		  "pearson" => 8,
+			"fnv132" => 4,	   "fnv1a32" => 4,
+			"fnv164" => 8,	   "fnv1a64" => 8,	  "joaat" => 4,
+			"haval128,3" => 16,  "haval160,3" => 20,  "haval192,3" => 24,
+			"haval224,3" => 28,  "haval256,3" => 32,  "haval128,4" => 16,
+			"haval160,4" => 20,  "haval192,4" => 24,  "haval224,4" => 28,
+			"haval256,4" => 32,  "haval128,5" => 16,  "haval160,5" => 20,
+			"haval192,5" => 24,  "haval224,5" => 28,  "haval256,5" => 32,
+			"keccak224" => 56,   "keccak256" => 64,   "keccak384" => 96,
+			"keccak512" => 128,  "shake128"  => 64,   "shake256"  => 128
+		);
+		if(!isset($algos[$algo]))return false;
+		$length = $algos[$algo];
+		if($raw === null)return $length;
+		if($raw === true)return $length * 2;
+		$algos = array(
+			"md2" => 1,		"md4" => 4,		"md5" => 4,
+			"sha256" => 2,	 "sha512/256" => 4, "sha512" => 2,
+			"ripemd128" => 4,  "ripemd256" => 2,  "whirlpool" => 1,
+			"tiger128,3" => 4, "tiger128,4" => 4, "snefru" => 1,
+			"snefru256" => 1,  "gost" => 1,	   "gost-crypto" => 1,
+			"haval128,3" => 8, "haval256,3" => 4, "haval128,4" => 8,
+			"haval256,4" => 4, "haval128,5" => 8, "haval256,5" => 4,
+		);
+		if(!isset($algos[$algo]))return null;
+		return $length * $algos[$algo];
 	}
-    public static function crc($algo, $data, $crc = null){
-        $algo = self::crcalgo($algo);
-        if($algo === false){
-            trigger_error("XNCrypt::crc(): Unknown CRC hashing algorithm: $algo", E_USER_WANING);
-            return false;
-        }
-        $mask = (((1 << ($algo['length'] - 1)) - 1) << 1) | 1;
-        $high = 1 << ($algo['length'] - 1);
+	public static function hash_algos(){
+		return array(
+			"md2",		"md4",		"md5",		 "sha1",		"sha224",
+			"sha256",	 "sha384",	 "sha512/224",  "sha512/256",  "sha512",
+			"sha3-224",   "sha3-256",   "sha3-384",	"sha3-512",	"ripemd128",
+			"ripemd160",  "ripemd256",  "ripemd320",   "whirlpool",   "tiger128,3",
+			"tiger160,3", "tiger192,3", "tiger128,4",  "tiger160,4",  "tiger192,4",
+			"snefru",	 "snefru256",  "gost",		"gost-crypto", "adler32",
+			"crc32",	  "crc32b",	 "crc16",	   "crc8",		"bsd",
+			"pearson",	"fnv132",
+			"fnv1a32",	"fnv164",	  "fnv1a64",	"joaat",	   "haval128,3",
+			"haval160,3", "haval192,3", "haval224,3",  "haval256,3",  "haval128,4",
+			"haval160,4", "haval192,4", "haval224,4",  "haval256,4",  "haval128,5",
+			"haval160,5", "haval192,5", "haval224,5",  "haval256,5",  "keccak224",
+			"keccak256",  "keccak384",  "keccak512",   "shake128",	"shake256"
+		);
+	}
+	public static function hash_hmac_algos(){
+		return array(
+			"md2",		"md4",		"md5",		"sha256",	 "sha512/256",
+			"sha512",	 "ripemd128",  "ripemd256",  "whirlpool",  "tiger128,3",
+			"tiger128,4", "snefru",	 "snefru256",  "gost",	   "gost-crypto",
+			"haval128,3", "haval256,3", "haval128,4", "haval256,4", "haval128,5",
+			"haval256,5",
+		);
+	}
+	public static function hash_hmac($algo, $data, $key, $raw = null) {
+		if(function_exists('hash_hmac_algos') && in_array($algo, hash_hmac_algos()))
+			return hash_hmac($algo, $data, $key, $raw === true);
+		if(function_exists('mhash') && defined('MHASH_' . strtoupper($algo)))
+			return $raw === true ? mhash(constant('MHASH_' . strtoupper($algo)), $data, $key) :
+				bin2hex(mhash(constant('MHASH_' . strtoupper($algo)), $data, $key));
+		$b = self::hash_length($algo);
+		if($b === false){
+			trigger_error("XNCrypt::hash_hmac(): Unknown hashing algorithm: $algo", E_USER_WANING);
+			return false;
+		}
+		if($b === null){
+			trigger_error("XNCrypt::hash_hmac(): Non-cryptographic hashing algorithm: $algo", E_USER_WANING);
+			return false;
+		}
+		if(strlen($key) > $b)
+			$key = self::hash($algo, $key, true);
+		$key = str_pad($key, $b, "\0");
+		$ipad = str_pad('', $b, "\x36");
+		$opad = str_pad('', $b, "\x5c");
+		$k_ipad = $key ^ $ipad;
+		$k_opad = $key ^ $opad;
+		return self::hash($algo, $k_opad . self::hash($algo, $k_ipad . $data, true), $raw === true);
+	}
+	public static function hash_hkdf($algo, $ikm, $length = 0, $info = '', $salt = '', $hex = null){
+		if(function_exists('hash_hkdf') && function_exists('hash_hmac_algos') && in_array($algo, hash_hmac_algos()))
+			return $hex === true ? bin2hex(hash_hkdf($algo, $ikm, $length, $info, $salt)) : hash_hkdf($algo, $ikm, $length, $info, $salt);
+		if($length < 0){
+			trigger_error("XNCrypt::hash_hkdf(): Length must be greater than or equal to 0: $length", E_USER_WARNING);
+			return false;
+		}
+		$size = self::hash_length($algo);
+		if($size === false){
+			trigger_error("XNCrypt::hash_hkdf(): Unknown hashing algorithm: $algo", E_USER_WANING);
+			return false;
+		}
+		if($size === null){
+			trigger_error("XNCrypt::hash_hkdf(): Non-cryptographic hashing algorithm: $algo", E_USER_WANING);
+			return false;
+		}
+		if($length > $size * 255){
+			trigger_error("XNCrypt::hash_hkdf(): Length must be less than or equal to " . ($size * 255) . ": $length", E_USER_WARNING);
+			return false;
+		}
+		if($length === 0)
+			$length = $size;
+		if($salt === '')
+			$salt = str_repeat("\0", $size);
+		$prk = self::hash_hmac($algo, $ikm, $salt, true);
+		$okm = '';
+		for($keyBlock = '', $blockIndex = 1; !isset($okm[$length - 1]); ++$blockIndex){
+			$keyBlock = self::hash_hmac($algo, $keyBlock . $info . chr($blockIndex), $prk, true);
+			$okm .= $keyBlock;
+		}
+		return substr($hex === true ? bin2hex($okm) : $okm, 0, $length);
+	}
+	public static function hash_pbkdf1($algo, $password, $salt, $iterations, $length = 0, $raw = null){
+		if($length < 0){
+			trigger_error("XNCrypt::hash_pbkdf1(): Length must be greater than or equal to 0: $length", E_USER_WARNING);
+			return false;
+		}
+		$size = self::hash_length($algo, $raw === true);
+		if($size === false){
+			trigger_error("XNCrypt::hash_pbkdf1(): Unknown hashing algorithm: $algo", E_USER_WANING);
+			return false;
+		}
+		if($size === null){
+			trigger_error("XNCrypt::hash_pbkdf1(): Non-cryptographic hashing algorithm: $algo", E_USER_WANING);
+			return false;
+		}
+		if($length == 0)
+			$length = $size;
+		$tmp = $password . $salt;
+		for($i = 0; $i < $iterations; ++$i)
+			$tmp = self::hash($algo, $tmp, true);
+		return substr($raw === true ? $tmp : bin2hex($tmp), 0, $length);
+	}
+	public static function hash_pbkdf2($algo, $password, $salt, $iterations, $length = 0, $raw = null){
+		if(function_exists('hash_pbkdf2') && function_exists('hash_hmac_algos') && in_array($algo, hash_hmac_algos()))
+			return hash_pbkdf2($algo, $password, $salt, $iterations, $length, $raw === true);
+		if($length < 0){
+			trigger_error("XNCrypt::hash_pbkdf2(): Length must be greater than or equal to 0: $length", E_USER_WARNING);
+			return false;
+		}
+		$size = self::hash_length($algo, $raw === true);
+		if($size === false){
+			trigger_error("XNCrypt::hash_pbkdf2(): Unknown hashing algorithm: $algo", E_USER_WANING);
+			return false;
+		}
+		if($size === null){
+			trigger_error("XNCrypt::hash_pbkdf2(): Non-cryptographic hashing algorithm: $algo", E_USER_WANING);
+			return false;
+		}
+		if($length == 0)
+			$length = $size;
+		$output = '';
+		$block_count = ceil($length / $size);
+		for($block = 1; $block <= $block_count; ++$block) {
+			$key1 = $key2 = self::hash_hmac($algo, $salt . pack('N', $block), $password, true);
+			for($iteration = 1; $iteration < $iterations; ++$iteration)
+				$key2 ^= $key1 = self::hash_hmac($algo, $key1, $password, true);
+			$output .= $key2;
+		}
+		return substr($raw === true ? $output : bin2hex($output), 0, $length);
+	}
+	public static function hash_schneier($algo, $password, $salt, $iterations, $length = 0, $raw = null){
+		if($length < 0){
+			trigger_error("XNCrypt::hash_schneier(): Length must be greater than or equal to 0: $length", E_USER_WARNING);
+			return false;
+		}
+		$saltlen = strlen($salt);
+		if($saltlen > PHP_INT_MAX - 4) {
+			trigger_error("XNCrypt::hash_schneier(): Supplied salt is too long, max of PHP_INT_MAX - 4 bytes: $saltlen supplied", E_USER_WARNING);
+			return false;
+		}
+		$size = self::hash_length($algo, $raw === true);
+		if($size === false){
+			trigger_error("XNCrypt::hash_schneier(): Unknown hashing algorithm: $algo", E_USER_WANING);
+			return false;
+		}
+		if($size === null){
+			trigger_error("XNCrypt::hash_schneier(): Non-cryptographic hashing algorithm: $algo", E_USER_WANING);
+			return false;
+		}
+		if($length == 0)
+			$length = $size;
+		$tmp = self::hash($algo, $password . $salt, true);
+		for($i = 2; $i <= $iterations; ++$i)
+			$tmp = self::hash($algo, $tmp . $password . $salt, true);
+		return substr($raw === true ? $tmp : bin2hex($tmp), 0, $length);
+	}
+	public static function hash_equal($hash, $data, $algo = 'auto'){
+		if(ctype_xdigit($hash))$raw = false;
+		else $raw = true;
+		if($algo == 'auto'){
+			foreach(self::hash_algos() as $algo)
+				if(self::hash($algo, $data, $raw) == $hash)
+					return $algo;
+			return false;
+		}
+		if(self::hash($algo, $data, $raw) == $hash)
+			return $algo;
+		return false;
+	}
+
+	public static function crctable($poly, $bitlen = 32, $revin = null, $revout = null){
+		$mask = (((1 << ($bitlen - 1)) - 1) << 1) | 1;
+		$highBit = 1 << ($bitlen - 1);
+		$crctab = array();
+		for($i = 0; $i < 256; ++$i) {
+			$crc = $i;
+			if($revin === true)
+				$crc = xnmath::brev($crc, 8);
+			$crc <<= $bitlen - 8;
+			for($j = 0; $j < 8; ++$j) {
+				$bit = $crc & $highBit;
+				$crc <<= 1;
+				if($bit)
+					$crc ^= $poly;
+			}
+			if($revout === true)
+				$crc = xnmath::brev($crc, $bitlen);
+			$crc &= $mask;
+			$crctab[] = $crc;
+		}
+		return $crctab;
+	}
+	public static function crcalgo($algo){
+		$algo = strtolower($algo);
+		$algos = array(
+			'crc1'			  => array(0x1, 0x1, 0x0, 0x0, false, false),
+			'crc4'			  => array(0x3, 0x4, 0x0, 0x0, true, true),
+			'crc4/itu'		  => array(0x3, 0x4, 0x0, 0x0, true, true),
+			'crc4/interlaken'   => array(0x3, 0x4, 0xf, 0xf, false, false),
+			'crc8'			  => array(0x7,  0x8, 0x0,  0x0,  false, false),
+			'crc8/cdma2000'	 => array(0x9b, 0x8, 0xff, 0x0,  false, false),
+			'crc8/darc'		 => array(0x39, 0x8, 0x0,  0x0,  true, true),
+			'crc8/dvb-s2'	   => array(0xd5, 0x8, 0x0,  0x0,  false, false),
+			'crc8/ebu'		  => array(0x1d, 0x8, 0xff, 0x0,  true, true),
+			'crc8/i-code'	   => array(0x1d, 0x8, 0xfd, 0x0,  false, false),
+			'crc8/itu'		  => array(0x7,  0x8, 0x0,  0x55, false, false),
+			'crc8/maxim'		=> array(0x31, 0x8, 0x0,  0x0,  true, true),
+			'crc8/rohc'		 => array(0x7,  0x8, 0xff, 0x0,  true, true),
+			'crc8/wcdma'		=> array(0x9b, 0x8, 0x0,  0x0,  true, true),
+			'crc8/autosar'	  => array(0x2f, 0x8, 0xff, 0xff, false, false),
+			'crc8/bluetooth'	=> array(0xa7, 0x8, 0x0,  0x0,  true, true),
+			'crc8/gsma'		 => array(0x1d, 0x8, 0x0,  0x0,  false, false),
+			'crc8/gsmb'		 => array(0x49, 0x8, 0x0,  0xff, false, false),
+			'crc8/lte'		  => array(0x9b, 0x8, 0x0,  0x0,  false, false),
+			'crc8/opensafety'   => array(0x2f, 0x8, 0x0,  0x0,  false, false),
+			'crc8/sae-j1850'	=> array(0x1d, 0x8, 0xff, 0xff, false, false),
+			'crc16'			 => array(0x8005, 0x10, 0x0,	0x0,	true, true),
+			'crc16/arc'		 => array(0x8005, 0x10, 0x0,	0x0,	true, true),
+			'crc16/aug-ccitt'   => array(0x1021, 0x10, 0x1d0f, 0x0,	false, false),
+			'crc16/buypass'	 => array(0x8005, 0x10, 0x0,	0x0,	false, false),
+			'crc16/ccitt-false' => array(0x1021, 0x10, 0xffff, 0x0,	false, false),
+			'crc16/cdma2000'	=> array(0xc867, 0x10, 0xffff, 0x0,	false, false),
+			'crc16/cms'		 => array(0x8005, 0x10, 0xffff, 0x0,	false, false),
+			'crc16/dds'		 => array(0x8005, 0x10, 0x800d, 0x0,	false, false),
+			'crc16/dect-r'	  => array(0x589,  0x10, 0x0,	0x1,	false, false),
+			'crc16/dect-x'	  => array(0x589,  0x10, 0x0,	0x0,	false, false),
+			'crc16/dnp'		 => array(0x3d65, 0x10, 0x0,	0xffff, true, true),
+			'crc16/en-13757'	=> array(0x3d65, 0x10, 0x0,	0xffff, false, false),
+			'crc16/genibus'	 => array(0x1021, 0x10, 0xffff, 0xffff, false, false),
+			'crc16/gsm'		 => array(0x1021, 0x10, 0x0,	0xffff, false, false),
+			'crc16/kermit'	  => array(0x1021, 0x10, 0x0,	0x0,	true, true),
+			'crc16/lj1200'	  => array(0x6f63, 0x10, 0x0,	0x0,	false, false),
+			'crc16/maxim'	   => array(0x8005, 0x10, 0x0,	0xffff, true, true),
+			'crc16/mcrf4xx'	 => array(0x1021, 0x10, 0xffff, 0x0,	true, true),
+			'crc16/modbus'	  => array(0x8005, 0x10, 0xffff, 0x0,	true, true),
+			'crc16/opensafetya' => array(0x5935, 0x10, 0x0,	0x0,	false, false),
+			'crc16/opensafetyb' => array(0x755b, 0x10, 0x0,	0x0,	false, false),
+			'crc16/profibus'	=> array(0x1dcf, 0x10, 0xffff, 0xffff, false, false),
+			'crc16/ps2ff'	   => array(0x1021, 0x10, 0x1d0f, 0x0,	false, false),
+			'crc16/riello'	  => array(0x1021, 0x10, 0xb2aa, 0x0,	true, true),
+			'crc16/t10-dif'	 => array(0x8bb7, 0x10, 0x0,	0x0,	false, false),
+			'crc16/teledisk'	=> array(0xa097, 0x10, 0x0,	0x0,	false, false),
+			'crc16/tms37157'	=> array(0x1021, 0x10, 0x89ec, 0x0,	true, true),
+			'crc16/usb'		 => array(0x8005, 0x10, 0xffff, 0xffff, true, true),
+			'crc16/x-25'		=> array(0x1021, 0x10, 0xffff, 0xffff, true, true),
+			'crc16/xmodem'	  => array(0x1021, 0x10, 0x0,	0x0,	false, false),
+			'crca'			  => array(0x1021, 0x10, 0xc6c6, 0x0,	true, true),
+			'crc24'			 => array(0x864cfb, 0x18, 0xb704ce, 0x0,	  false, false),
+			'crc24/flexraya'	=> array(0x5d6dcb, 0x18, 0xfedcba, 0x0,	  false, false),
+			'crc24/flexrayb'	=> array(0x5d6dcb, 0x18, 0xabcdef, 0x0,	  false, false),
+			'crc24/interlaken'  => array(0x328b63, 0x18, 0xffffff, 0xffffff, false, false),
+			'crc24/ltea'		=> array(0x864cfb, 0x18, 0x0,	  0x0,	  false, false),
+			'crc24/lteb'		=> array(0x800063, 0x18, 0x0,	  0x0,	  false, false),
+			'crc32'			 => array(0x4c11db7,  0x20, 0xffffffff, 0xffffffff, true, true),
+			'crc32c'			=> array(0x1edc6f41, 0x20, 0xffffffff, 0xffffffff, true, true),
+			'crc32d'			=> array(0xa833982b, 0x20, 0xffffffff, 0xffffffff, true, true),
+			'crc32q'			=> array(0x814141ab, 0x20, 0x0,		0x0,		false, false),
+			'crc32/bzip2'	   => array(0x4c11db7,  0x20, 0xffffffff, 0xffffffff, false, false),
+			'crc32/jamcrc'	  => array(0x4c11db7,  0x20, 0xffffffff, 0x0,		true, true),
+			'crc32/mpeg-2'	  => array(0x4c11db7,  0x20, 0xffffffff, 0x0,		false, false),
+			'crc32/posix'	   => array(0x4c11db7,  0x20, 0x0,		0xffffffff, false, false),
+			'crc32/xfer'		=> array(0xaf,	   0x20, 0x0,		0x0,		false, false),
+			'crc32/autosar'	 => array(0xf4acfb13, 0x20, 0xffffffff, 0xffffffff, true, true)
+		);
+		$algo = isset($algos[$algo]) ? $algos[$algo] : false;
+		return array(
+			'polynomial' => $algo[0],
+			'length'	 => $algo[1],
+			'init'	   => $algo[2],
+			'xorout'	 => $algo[3],
+			'refin'	  => $algo[4],
+			'refout'	 => $algo[5]
+		);
+	}
+	public static function crcalgos(){
+		return array(
+			"crc1",			  "crc4",			  "crc4/itu",	   "crc4/interlaken",
+			"crc8",			  "crc8/cdma2000",	 "crc8/darc",	  "crc8/dvb-s2",
+			"crc8/ebu",		  "crc8/i-code",	   "crc8/itu",	   "crc8/maxim",
+			"crc8/rohc",		 "crc8/wcdma",		"crc8/autosar",   "crc8/bluetooth",
+			"crc8/gsma",		 "crc8/gsmb",		 "crc8/lte",	   "crc8/opensafety",
+			"crc8/sae-j1850",	"crc16",			 "crc16/arc",	  "crc16/aug-ccitt",
+			"crc16/buypass",	 "crc16/ccitt-false", "crc16/cdma2000", "crc16/cms",
+			"crc16/dds",		 "crc16/dect-r",	  "crc16/dect-x",   "crc16/dnp",
+			"crc16/en-13757",	"crc16/genibus",	 "crc16/gsm",	  "crc16/kermit",
+			"crc16/lj1200",	  "crc16/maxim",	   "crc16/mcrf4xx",  "crc16/modbus",
+			"crc16/opensafetya", "crc16/opensafetyb", "crc16/profibus", "crc16/ps2ff",
+			"crc16/riello",	  "crc16/t10-dif",	 "crc16/teledisk", "crc16/tms37157",
+			"crc16/usb",		 "crc16/x-25",		"crc16/xmodem",   "crca",
+			"crc24",			 "crc24/flexraya",	"crc24/flexrayb", "crc24/interlaken",
+			"crc24/ltea",		"crc24/lteb",		"crc32",		  "crc32c",
+			"crc32d",			"crc32q",			"crc32/bzip2",	"crc32/jamcrc",
+			"crc32/mpeg-2",	  "crc32/posix",	   "crc32/xfer",	 "crc32/autosar"
+		);
+	}
+	public static function crc($algo, $data, $crc = null){
+		$algo = self::crcalgo($algo);
+		if($algo === false){
+			trigger_error("XNCrypt::crc(): Unknown CRC hashing algorithm: $algo", E_USER_WANING);
+			return false;
+		}
+		$mask = (((1 << ($algo['length'] - 1)) - 1) << 1) | 1;
+		$high = 1 << ($algo['length'] - 1);
 		if($crc === null)$crc = $algo['init'];
 		elseif($algo['refout'] === true)
 			$crc = xnmath::brev($crc, $algo['length']);
-        for($i = 0; isset($data[$i]); ++$i) {
-            $char = ord($data[$i]);
-            if($algo['refin'] === true)
-                $char = xnmath::brev($char, 8);
-            for($j = 0x80; $j > 0; $j >>= 1) {
-                $bit = $crc & $high;
-                $crc <<= 1;
-                if($char & $j)
-                    $bit ^= $high;
-                if($bit)
-                    $crc ^= $algo['polynomial'];
-            }
-        }
-        if($algo['refout'] === true)
-            $crc = xnmath::brev($crc, $algo['length']);
-        $crc ^= $algo['xorout'];
-        return $crc & $mask;
-    }
+		for($i = 0; isset($data[$i]); ++$i) {
+			$char = ord($data[$i]);
+			if($algo['refin'] === true)
+				$char = xnmath::brev($char, 8);
+			for($j = 0x80; $j > 0; $j >>= 1) {
+				$bit = $crc & $high;
+				$crc <<= 1;
+				if($char & $j)
+					$bit ^= $high;
+				if($bit)
+					$crc ^= $algo['polynomial'];
+			}
+		}
+		if($algo['refout'] === true)
+			$crc = xnmath::brev($crc, $algo['length']);
+		$crc ^= $algo['xorout'];
+		return $crc & $mask;
+	}
 
-    public static function to64itoa($b2, $b1, $b0, $n){
-        $w = ($b2 << 16) | ($b1 << 8) | $b0;
-        $range = xnstring::BCRYPT64_RANGE;
-        $buf = '';
-        while(--$n >= 0){
-            $buf .= $range[$w & 0x3f];
-            $w >>= 6;
-        }
-        return $buf;
+	public static function to64itoa($b2, $b1, $b0, $n){
+		$w = ($b2 << 16) | ($b1 << 8) | $b0;
+		$range = xnstring::BCRYPT64_RANGE;
+		$buf = '';
+		while(--$n >= 0){
+			$buf .= $range[$w & 0x3f];
+			$w >>= 6;
+		}
+		return $buf;
 	}
 	public static function md5crypt($password, $salt = null, $rounds = 1000, $magic = '$1$'){
-        $roundsmagick = $rounds !== null;
-        if($salt !== null) {
-            $mglen = strlen($magic);
+		$roundsmagick = $rounds !== null;
+		if($salt !== null) {
+			$mglen = strlen($magic);
 			if(substr($salt, 0, $mglen) == $magic)
-                $salt = substr($salt, $mglen, strlen($salt));
+				$salt = substr($salt, $mglen, strlen($salt));
 			$salt = substr($salt, 0, 8);
 		}else{
-            $salt = '';
-            mt_srand((int)(microtime(true) * 10000000));
+			$salt = '';
+			mt_srand((int)(microtime(true) * 10000000));
 			while(strlen($salt) < 8)
-                $salt .= self::$itoa64[mt_rand(0, 63)];
+				$salt .= self::$itoa64[mt_rand(0, 63)];
 		}
 		$ctx = $password . $magic . $salt;
-        $final = md5($password . $salt . $password, true);
-        $passlen = strlen($password);
+		$final = md5($password . $salt . $password, true);
+		$passlen = strlen($password);
 		for($pl = $passlen; $pl > 0; $pl -= 16)
 		   $ctx .= substr($final, 0, $pl > 16 ? 16 : $pl);
 		for($i = $passlen; $i > 0; $i >>= 1)
@@ -12198,7 +11881,7 @@ class XNCrypt {
 				$ctx .= "\0";
 			else
 				$ctx .= $password[0];
-        $final = md5($ctx, true);
+		$final = md5($ctx, true);
 		for($i = 0; $i < $rounds; ++$i) {
 			$ctx1 = '';
 			if($i & 1)
@@ -12216,81 +11899,81 @@ class XNCrypt {
 			$final = md5($ctx1, true);
 		}
 		$final = array_map('ord', $final);
-        return $magic . $salt . ($roundsmagick ? "\$rounds=$rounds$" : '$') .
-            self::to64itoa($final[0], $final[6], $final[12], 4).
-            self::to64itoa($final[1], $final[7], $final[13], 4).
-            self::to64itoa($final[2], $final[8], $final[14], 4).
-            self::to64itoa($final[3], $final[9], $final[15], 4).
-            self::to64itoa($final[4], $final[10], $final[5], 4).
-            self::to64itoa(0, 0, $final[11], 2);
-    }
-    public static function md5apachecrypt($password, $salt = null){
+		return $magic . $salt . ($roundsmagick ? "\$rounds=$rounds$" : '$') .
+			self::to64itoa($final[0], $final[6], $final[12], 4).
+			self::to64itoa($final[1], $final[7], $final[13], 4).
+			self::to64itoa($final[2], $final[8], $final[14], 4).
+			self::to64itoa($final[3], $final[9], $final[15], 4).
+			self::to64itoa($final[4], $final[10], $final[5], 4).
+			self::to64itoa(0, 0, $final[11], 2);
+	}
+	public static function md5apachecrypt($password, $salt = null){
 		return self::md5unixcrypt($password, $salt, '$apr1$');
-    }
-    function sha256crypt($key, $salt = null, $rounds = 5000){
-        $roundsmagick = $rounds !== null;
-        if($salt !== null)
+	}
+	function sha256crypt($key, $salt = null, $rounds = 5000){
+		$roundsmagick = $rounds !== null;
+		if($salt !== null)
 			$salt = substr($salt, 0, 16);
 		else{
-            $salt = '';
-            mt_srand((int)(microtime(true) * 10000000));
+			$salt = '';
+			mt_srand((int)(microtime(true) * 10000000));
 			while(strlen($salt) < 16)
 				$salt .= self::$itoa64[mt_rand(0, 63)];
 		}
-        $saltlen = strlen($salt);
-        $keylen = strlen($key);
-        $ctx = $key . $salt;
-        $altres = self::hash('sha256', $key . $salt . $key, true);
-        for($i = $keylen; $i > 32; $i -= 32)
-            $ctx .= $altres;
-        $ctx .= substr($altres, 0, $i);
-        for($i = $keylen; $i > 0; $i >>= 1)
-            if(($i & 1) != 0)
-                $ctx .= $altres;
-            else
-                $ctx .= $key;
-        $altres = self::hash('sha256', $ctx, true);
-        $altctx = $keylen === 0 ? '' : str_repeat($key, $keylen);
-        $res = self::hash('sha256', $altctx, true);
-        $p = '';
-        for($i = $keylen; $i >= 32; $i -= 32)
-            $p .= $res;
-        $p .= substr($res, 0, $i);
-        $altctx = str_repeat($salt, ord(substr($altres, 0, 1)) + 16);
-        $res = self::hash('sha256', $altctx, true);
-        $s = '';
-        for($i = $saltlen; $i >= 32; $i -= 32)
-            $s .= $res;
-        $s .= substr($res, 0, $i);
-        for($i = 0; $i < $rounds; ++$i) {
-            $ctx = '';
-            if(($i & 1) !== 0)
-                $ctx .= $p;
-            else
-                $ctx .= $altres;
-            if($i % 3 != 0)
-                $ctx .= $s;
-            if($i % 7 != 0)
-                $ctx .= $p;
-            if(($i & 1) != 0)
-                $ctx .= $altres;
-            else
-                $ctx .= $p;
-            $altres = self::hash('sha256', $ctx, true);
-        }
+		$saltlen = strlen($salt);
+		$keylen = strlen($key);
+		$ctx = $key . $salt;
+		$altres = self::hash('sha256', $key . $salt . $key, true);
+		for($i = $keylen; $i > 32; $i -= 32)
+			$ctx .= $altres;
+		$ctx .= substr($altres, 0, $i);
+		for($i = $keylen; $i > 0; $i >>= 1)
+			if(($i & 1) != 0)
+				$ctx .= $altres;
+			else
+				$ctx .= $key;
+		$altres = self::hash('sha256', $ctx, true);
+		$altctx = $keylen === 0 ? '' : str_repeat($key, $keylen);
+		$res = self::hash('sha256', $altctx, true);
+		$p = '';
+		for($i = $keylen; $i >= 32; $i -= 32)
+			$p .= $res;
+		$p .= substr($res, 0, $i);
+		$altctx = str_repeat($salt, ord(substr($altres, 0, 1)) + 16);
+		$res = self::hash('sha256', $altctx, true);
+		$s = '';
+		for($i = $saltlen; $i >= 32; $i -= 32)
+			$s .= $res;
+		$s .= substr($res, 0, $i);
+		for($i = 0; $i < $rounds; ++$i) {
+			$ctx = '';
+			if(($i & 1) !== 0)
+				$ctx .= $p;
+			else
+				$ctx .= $altres;
+			if($i % 3 != 0)
+				$ctx .= $s;
+			if($i % 7 != 0)
+				$ctx .= $p;
+			if(($i & 1) != 0)
+				$ctx .= $altres;
+			else
+				$ctx .= $p;
+			$altres = self::hash('sha256', $ctx, true);
+		}
 		$chars = array_map('ord', str_split($altres));
-        return  '$5$' . $salt . ($roundsmagick ? "\$rounds=$rounds$" : '$') .
-                self::to64itoa($chars[0], $chars[10], $chars[20], 4).
-                self::to64itoa($chars[21], $chars[1], $chars[11], 4).
-                self::to64itoa($chars[12], $chars[22], $chars[2], 4).
-                self::to64itoa($chars[3], $chars[13], $chars[23], 4).
-                self::to64itoa($chars[24], $chars[4], $chars[14], 4).
-                self::to64itoa($chars[15], $chars[25], $chars[5], 4).
-                self::to64itoa($chars[6], $chars[16], $chars[26], 4).
-                self::to64itoa($chars[27], $chars[7], $chars[17], 4).
-                self::to64itoa($chars[18], $chars[28], $chars[8], 4).
-                self::to64itoa($chars[9], $chars[19], $chars[29], 4).
-                self::to64itoa(0, $chars[31], $chars[30], 3);
+		return  '$5$' . $salt . ($roundsmagick ? "\$rounds=$rounds$" : '$') .
+				self::to64itoa($chars[0], $chars[10], $chars[20], 4).
+				self::to64itoa($chars[21], $chars[1], $chars[11], 4).
+				self::to64itoa($chars[12], $chars[22], $chars[2], 4).
+				self::to64itoa($chars[3], $chars[13], $chars[23], 4).
+				self::to64itoa($chars[24], $chars[4], $chars[14], 4).
+				self::to64itoa($chars[15], $chars[25], $chars[5], 4).
+				self::to64itoa($chars[6], $chars[16], $chars[26], 4).
+				self::to64itoa($chars[27], $chars[7], $chars[17], 4).
+				self::to64itoa($chars[18], $chars[28], $chars[8], 4).
+				self::to64itoa($chars[9], $chars[19], $chars[29], 4).
+				self::to64itoa(0, $chars[31], $chars[30], 3);
 	}
 	public static function crypt($str, $salt = null){
 		if(function_exists('crypt'))
@@ -12299,174 +11982,174 @@ class XNCrypt {
 			else return crypt($str, $salt);
 	}
 
-    public static function hexencode($string){
-        if(function_exists('bin2hex'))
+	public static function hexencode($string){
+		if(function_exists('bin2hex'))
 			return bin2hex($string);
 		return array_value(npack('H*', $string), 1);
-    }
-    public static function hexdecode($string){
-        $l = strlen($string);
-        if($l % 2 === 1)$string = '0' . $string;
-        if(function_exists('hex2bin'))
+	}
+	public static function hexdecode($string){
+		$l = strlen($string);
+		if($l % 2 === 1)$string = '0' . $string;
+		if(function_exists('hex2bin'))
 			return hex2bin($string);
 		return pack('H*', $string);
 	}
 	public static function hexstrlen($string){
 		return ceil(strlen($string) / 2);
 	}
-    public static function binencode($string){
-        if(function_exists('bin2hex'))
-            	return strtr(bin2hex($string), array(
-                    '0000', '0001', '0010', '0011',
-                    '0100', '0101', '0110', '0111',
-                    '1000', '1001',
-                    'a' => '1010', 'b' => '1011', 'c' => '1100',
-                    'd' => '1101', 'e' => '1110', 'f' => '1111'
-                ));
-        $bin = '';
-        for($i = 0; isset($string[$i]); ++$i)
-            $bin = substr(decbin(ord($string[$i]) | 256), 1);
-        return $bin;
-    }
-    public static function bindecode($string){
-        $l = strlen($string);
-        if($l % 8 !== 0)$string = str_repeat('0', 8 - $l) . $string;
-        if(function_exists('hex2bin'))
-            return hex2bin(strtr($string, array(
-                "0000" => "0", "0001" => "1", "0010" => "2", "0011" => "3",
-                "0100" => "4", "0101" => "5", "0110" => "6", "0111" => "7",
-                "1000" => "8", "1001" => "9", "1010" => "a", "1011" => "b",
-                "1100" => "c", "1101" => "d", "1110" => "e", "1111" => "f"
-            )));
-        $bin = '';
-        for($i = 0; isset($string[$i]); $i += 8)
-            $bin .= chr(bindec(substr($string, $i, 8)));
-        return $bin;
+	public static function binencode($string){
+		if(function_exists('bin2hex'))
+				return strtr(bin2hex($string), array(
+					'0000', '0001', '0010', '0011',
+					'0100', '0101', '0110', '0111',
+					'1000', '1001',
+					'a' => '1010', 'b' => '1011', 'c' => '1100',
+					'd' => '1101', 'e' => '1110', 'f' => '1111'
+				));
+		$bin = '';
+		for($i = 0; isset($string[$i]); ++$i)
+			$bin = substr(decbin(ord($string[$i]) | 256), 1);
+		return $bin;
+	}
+	public static function bindecode($string){
+		$l = strlen($string);
+		if($l % 8 !== 0)$string = str_repeat('0', 8 - $l) . $string;
+		if(function_exists('hex2bin'))
+			return hex2bin(strtr($string, array(
+				"0000" => "0", "0001" => "1", "0010" => "2", "0011" => "3",
+				"0100" => "4", "0101" => "5", "0110" => "6", "0111" => "7",
+				"1000" => "8", "1001" => "9", "1010" => "a", "1011" => "b",
+				"1100" => "c", "1101" => "d", "1110" => "e", "1111" => "f"
+			)));
+		$bin = '';
+		for($i = 0; isset($string[$i]); $i += 8)
+			$bin .= chr(bindec(substr($string, $i, 8)));
+		return $bin;
 	}
 	public static function binstrlen($string){
 		return ceil(strlen($string) / 8);
 	}
-    public static function base4encode($string){
-        if(function_exists('bin2hex'))
-            	return strtr(bin2hex($string), array(
-                    '00', '01', '02', '03',
-                    '10', '11', '12', '13',
-                    '20', '21',
-                    'a' => '22', 'b' => '23', 'c' => '30',
-                    'd' => '31', 'e' => '32', 'f' => '33'
-                ));
-        $bin = '';
-        for($i = 0; isset($string[$i]); ++$i)
-            $bin = substr(base_convert(ord($string[$i]) | 256, 10, 4), 1);
-        return $bin;
+	public static function base4encode($string){
+		if(function_exists('bin2hex'))
+				return strtr(bin2hex($string), array(
+					'00', '01', '02', '03',
+					'10', '11', '12', '13',
+					'20', '21',
+					'a' => '22', 'b' => '23', 'c' => '30',
+					'd' => '31', 'e' => '32', 'f' => '33'
+				));
+		$bin = '';
+		for($i = 0; isset($string[$i]); ++$i)
+			$bin = substr(base_convert(ord($string[$i]) | 256, 10, 4), 1);
+		return $bin;
 	}
-    public static function base4decode($string){
-        $l = strlen($string);
-        if($l % 4 !== 0)$string = str_repeat('0', 4 - $l) . $string;
-        if(function_exists('hex2bin'))
-            return hex2bin(strtr($string, array(
-                "00" => "0", "01" => "1", "02" => "2", "03" => "3",
-                "10" => "4", "11" => "5", "12" => "6", "13" => "7",
-                "20" => "8", "21" => "9", "22" => "a", "23" => "b",
-                "30" => "c", "31" => "d", "32" => "e", "33" => "f"
-            )));
-        $bin = '';
-        for($i = 0; isset($string[$i]); $i += 4)
-            $bin .= chr(base_convert(substr($string, $i, 4), 4, 10));
-        return $bin;
+	public static function base4decode($string){
+		$l = strlen($string);
+		if($l % 4 !== 0)$string = str_repeat('0', 4 - $l) . $string;
+		if(function_exists('hex2bin'))
+			return hex2bin(strtr($string, array(
+				"00" => "0", "01" => "1", "02" => "2", "03" => "3",
+				"10" => "4", "11" => "5", "12" => "6", "13" => "7",
+				"20" => "8", "21" => "9", "22" => "a", "23" => "b",
+				"30" => "c", "31" => "d", "32" => "e", "33" => "f"
+			)));
+		$bin = '';
+		for($i = 0; isset($string[$i]); $i += 4)
+			$bin .= chr(base_convert(substr($string, $i, 4), 4, 10));
+		return $bin;
 	}
 	public static function base4strlen($string){
 		return ceil(strlen($string) / 4);
 	}
-    public static function octencode($string){
-        $oct = '';
-        for($i = 0; isset($string[$i]); $i += 3){
-            $i1 = isset($string[$i + 1]);
-            $a1 = ord($string[$i]);
-            $a2 = $i1 ? ord($string[$i + 1]) : 0;
-            $oct .= $a1 >> 5;
-            $oct .= ($a1 >> 2) & 7;
-            $oct .= (($a1 & 3) << 1) | ($a2 >> 7);
-            if($i1){
-                $i2 = isset($string[$i + 2]);
-                $a3 = $i2 ? ord($string[$i + 2]) : 0;
-                $oct .= ($a2 >> 4) & 7;
-                $oct .= ($a2 >> 1) & 7;
-                $oct .= (($a2 & 1) << 2) | ($a3 >> 6);
-                if($i2){
-                    $oct .= ($a3 >> 3) & 7;
-                    $oct .= $a3 & 7;
-                }
-            }
-        }
-        return $oct;
-    }
-    public static function octdecode($string){
-        $l = strlen($string);
-        if($l % 8 !== 0){
-            $l = $l % 8;
-            if($l < 4){
-                if($l !== 3)$string .= str_repeat('0', 3 - $l) . $string;
-            }elseif($l < 7){
-                if($l !== 6)$string .= str_repeat('0', 6 - $l) . $string;
-            }else $string .= str_repeat('0', 8 - $l);
-        }
-        $bin = '';
-        for($i = 0; isset($string[$i]); $i += 8){
-            $i1 = isset($string[$i + 3]);
-            $bin .= chr(($string[$i] << 5) | ($string[$i + 1] << 2) | ($string[$i + 2] >> 1));
-            if($i1){
-                $i2 = isset($string[$i + 6]);
-                $bin .= chr((($string[$i + 3] | (($string[$i + 2] & 1) << 3)) << 4) | ($string[$i + 4] << 1) | ($string[$i + 5] >> 2));
-                if($i2)
-                    $bin .= chr((($string[$i + 6] | (($string[$i + 5] & 3) << 3)) << 3) | $string[$i + 7]);
-            }
-        }
-        return $bin;
+	public static function octencode($string){
+		$oct = '';
+		for($i = 0; isset($string[$i]); $i += 3){
+			$i1 = isset($string[$i + 1]);
+			$a1 = ord($string[$i]);
+			$a2 = $i1 ? ord($string[$i + 1]) : 0;
+			$oct .= $a1 >> 5;
+			$oct .= ($a1 >> 2) & 7;
+			$oct .= (($a1 & 3) << 1) | ($a2 >> 7);
+			if($i1){
+				$i2 = isset($string[$i + 2]);
+				$a3 = $i2 ? ord($string[$i + 2]) : 0;
+				$oct .= ($a2 >> 4) & 7;
+				$oct .= ($a2 >> 1) & 7;
+				$oct .= (($a2 & 1) << 2) | ($a3 >> 6);
+				if($i2){
+					$oct .= ($a3 >> 3) & 7;
+					$oct .= $a3 & 7;
+				}
+			}
+		}
+		return $oct;
+	}
+	public static function octdecode($string){
+		$l = strlen($string);
+		if($l % 8 !== 0){
+			$l = $l % 8;
+			if($l < 4){
+				if($l !== 3)$string .= str_repeat('0', 3 - $l) . $string;
+			}elseif($l < 7){
+				if($l !== 6)$string .= str_repeat('0', 6 - $l) . $string;
+			}else $string .= str_repeat('0', 8 - $l);
+		}
+		$bin = '';
+		for($i = 0; isset($string[$i]); $i += 8){
+			$i1 = isset($string[$i + 3]);
+			$bin .= chr(($string[$i] << 5) | ($string[$i + 1] << 2) | ($string[$i + 2] >> 1));
+			if($i1){
+				$i2 = isset($string[$i + 6]);
+				$bin .= chr((($string[$i + 3] | (($string[$i + 2] & 1) << 3)) << 4) | ($string[$i + 4] << 1) | ($string[$i + 5] >> 2));
+				if($i2)
+					$bin .= chr((($string[$i + 6] | (($string[$i + 5] & 3) << 3)) << 3) | $string[$i + 7]);
+			}
+		}
+		return $bin;
 	}
 	public static function octstrlen($string){
 		return ceil(strlen($string) / 8 * 3);
 	}
-    public static function base64encode($string){
-        if(function_exists('base64_encode'))return base64_encode($string);
-        $s = xnstring::BASE64T_RANGE;
-        $res = '';
-        for($i = 0; isset($string[$i]); $i += 3){
-            $i1 = isset($string[$i + 1]);
-            $a1 = ord($string[$i]);
-            $a2 = $i1 ? ord($string[$i + 1]) : 0;
-            $res .= $s[$a1 >> 2];
-            $res .= $s[(($a1 & 3) << 4) | ($a2 >> 4)];
-            if($i1){
-                $i2 = isset($string[$i + 2]);
-                $a3 = $i2 ? ord($string[$i + 2]) : 0;
-                $res .= $s[(($a2 & 15) << 2) | ($a3 >> 6)];
-                if($i2)
-                    $res .= $s[$a3 & 63];
-                else $res .= '=';
-            }else $res .= '==';
-        }
-    }
-    public static function base64decode($string){
+	public static function base64encode($string){
+		if(function_exists('base64_encode'))return base64_encode($string);
+		$s = xnstring::BASE64T_RANGE;
+		$res = '';
+		for($i = 0; isset($string[$i]); $i += 3){
+			$i1 = isset($string[$i + 1]);
+			$a1 = ord($string[$i]);
+			$a2 = $i1 ? ord($string[$i + 1]) : 0;
+			$res .= $s[$a1 >> 2];
+			$res .= $s[(($a1 & 3) << 4) | ($a2 >> 4)];
+			if($i1){
+				$i2 = isset($string[$i + 2]);
+				$a3 = $i2 ? ord($string[$i + 2]) : 0;
+				$res .= $s[(($a2 & 15) << 2) | ($a3 >> 6)];
+				if($i2)
+					$res .= $s[$a3 & 63];
+				else $res .= '=';
+			}else $res .= '==';
+		}
+	}
+	public static function base64decode($string){
 		$l = strlen($string);
 		if($l % 4 !== 0)$string .= str_repeat('=', 4 - $l % 4);
-        if(function_exists('base64_decode'))return base64_decode($string);
-        $s = xnstring::BASE64T_RANGE;
-        $bin = '';
-        for($i = 0; isset($string[$i]); $i += 4){
-            $a1 = strpos($s, $string[$i]);
-            $a2 = strpos($s, $string[$i + 1]);
-            $bin .= ord(($a1 << 2) | ($a2 >> 4));
-            if($string[$i + 2] != '='){
-                $a3 = strpos($s, $string[$i + 2]);
-                $bin .= ord((($a2 & 15) << 4) | ($a3 >> 2));
-                if($string[$i + 3] != '='){
-                    $a4 = strpos($s, $string[$i + 3]);
-                    $bin .= ord((($a3 & 3) << 6) | $a4);
-                }
-            }
-        }
-        return $bin;
+		if(function_exists('base64_decode'))return base64_decode($string);
+		$s = xnstring::BASE64T_RANGE;
+		$bin = '';
+		for($i = 0; isset($string[$i]); $i += 4){
+			$a1 = strpos($s, $string[$i]);
+			$a2 = strpos($s, $string[$i + 1]);
+			$bin .= ord(($a1 << 2) | ($a2 >> 4));
+			if($string[$i + 2] != '='){
+				$a3 = strpos($s, $string[$i + 2]);
+				$bin .= ord((($a2 & 15) << 4) | ($a3 >> 2));
+				if($string[$i + 3] != '='){
+					$a4 = strpos($s, $string[$i + 3]);
+					$bin .= ord((($a3 & 3) << 6) | $a4);
+				}
+			}
+		}
+		return $bin;
 	}
 	public static function base64strlen($string){
 		return ceil(strlen($string) / 4 * 3);
@@ -12477,11 +12160,11 @@ class XNCrypt {
 	public static function bcrypt64decode($string){
 		return self::base64decode(strtr($string, xnstring::BCRYPT64_RANGE, xnstring::BASE64T_RANGE));
 	}
-    public static function base64urlencode($string){
-        return rtrim(strtr(self::base64encode($string), '+/', '-_'), '=');
-    }
-    public static function base64urldecode($string){
-        return self::base64decode(str_pad(strtr($string, '-_', '+/'), strlen($string) % 4, '=', STR_PAD_RIGHT));
+	public static function base64urlencode($string){
+		return rtrim(strtr(self::base64encode($string), '+/', '-_'), '=');
+	}
+	public static function base64urldecode($string){
+		return self::base64decode(str_pad(strtr($string, '-_', '+/'), strlen($string) % 4, '=', STR_PAD_RIGHT));
 	}
 	public static function base32encode($string){
 		$s = xnstring::BASE32_RANGE;
@@ -12548,280 +12231,280 @@ class XNCrypt {
 	public static function base32strlen($string){
 		return ceil(strlen($string) / 8 * 5);
 	}
-    public static function rleencode($string){
-        $new = '';
-        $count = 0;
-        foreach(str_split($string) as $cur) {
-            if($cur === "\0")
-                ++$count;
-            else{
-                if($count > 0) {
-                    $new .= "\x00".chr($count);
-                    $count = 0;
-                }
-                $new .= $cur;
-            }
-        }
-        return $new;
-    }
-    public static function rledecode($string){
-        $new = '';
-        $last = '';
-        foreach(str_split($string) as $cur) {
-            if($last === "\0") {
-                $new .= str_repeat($last, ord($cur));
-                $last = '';
-            }else{
-                $new .= $last;
-                $last = $cur;
-            }
-        }
-        return $new . $last;
-    }
+	public static function rleencode($string){
+		$new = '';
+		$count = 0;
+		foreach(str_split($string) as $cur) {
+			if($cur === "\0")
+				++$count;
+			else{
+				if($count > 0) {
+					$new .= "\x00".chr($count);
+					$count = 0;
+				}
+				$new .= $cur;
+			}
+		}
+		return $new;
+	}
+	public static function rledecode($string){
+		$new = '';
+		$last = '';
+		foreach(str_split($string) as $cur) {
+			if($last === "\0") {
+				$new .= str_repeat($last, ord($cur));
+				$last = '';
+			}else{
+				$new .= $last;
+				$last = $cur;
+			}
+		}
+		return $new . $last;
+	}
 
-    public static function sizeencode($l){
-        $arr = array("c*");
-        while($l > 0) {
-            $arr[] = $l & 0xff;
-            $l >>= 8;
-        }
-        $size = call_user_func_array('pack',$arr);
-        return chr(strlen($size)) . $size;
-    }
-    public static function sizedecode($str){
-        $size = ord($str[0]);
-        $size = substr($str, 1, $size);
-        $arr = unpack("c*", $size);
-        $size = 0;
-        for($c = 1; isset($arr[$c]); ++$c)$size = $size * 255 + $arr[$c];
-        return (int)$size;
-    }
-    private static function serializetag($obj, $i){
-        $c = 1;
-        $b = false;
-        $l = $i;
-        while($c !== 0){
-            ++$i;
-            if($b === true){
-                if($obj[$i] == '"')$b = false;
-                elseif($obj[$i] == '\\')++$i;
-            }
-            elseif($obj[$i] == '{')++$c;
-            elseif($obj[$i] == '}')--$c;
-            elseif($obj[$i] == '"')$b = true;
-        }
-        return $i - $l + 1;
-    }
-    private static function unserializetag($obj, $tag, $i){
-        $c = 1;
-        $b = false;
-        $l = $i;
-        while($c !== 0){
-            ++$i;
-            if($b === true){
-                if($obj[$i] == '"')$b = false;
-                elseif($obj[$i] == '\\')++$i;
-            }
-            elseif($obj[$i] == $tag[0])++$c;
-            elseif($obj[$i] == $tag[1] && $tag == '[]')--$c;
-            elseif($obj[$i] == $tag[1]){--$c;$b = true;}
-            elseif($obj[$i] == '"' || $obj[$i] == 'p' || $obj[$i] == 'P' || $obj[$i] == '}' || $obj[$i] == '>')$b = true;
-        }
-        ++$i;
-        if($tag != '[]')
-            while($obj[$i++] != '"')
-                if($obj[$i] == '\\')++$i;
-        return $i - $l;
-    }
-    private static function serializeobj($obj, $cls = null){
-        if($obj == 'N;')return 'N';
-        if($obj == 'b:0;')return 'f';
+	public static function sizeencode($l){
+		$arr = array("c*");
+		while($l > 0) {
+			$arr[] = $l & 0xff;
+			$l >>= 8;
+		}
+		$size = call_user_func_array('pack',$arr);
+		return chr(strlen($size)) . $size;
+	}
+	public static function sizedecode($str){
+		$size = ord($str[0]);
+		$size = substr($str, 1, $size);
+		$arr = unpack("c*", $size);
+		$size = 0;
+		for($c = 1; isset($arr[$c]); ++$c)$size = $size * 255 + $arr[$c];
+		return (int)$size;
+	}
+	private static function serializetag($obj, $i){
+		$c = 1;
+		$b = false;
+		$l = $i;
+		while($c !== 0){
+			++$i;
+			if($b === true){
+				if($obj[$i] == '"')$b = false;
+				elseif($obj[$i] == '\\')++$i;
+			}
+			elseif($obj[$i] == '{')++$c;
+			elseif($obj[$i] == '}')--$c;
+			elseif($obj[$i] == '"')$b = true;
+		}
+		return $i - $l + 1;
+	}
+	private static function unserializetag($obj, $tag, $i){
+		$c = 1;
+		$b = false;
+		$l = $i;
+		while($c !== 0){
+			++$i;
+			if($b === true){
+				if($obj[$i] == '"')$b = false;
+				elseif($obj[$i] == '\\')++$i;
+			}
+			elseif($obj[$i] == $tag[0])++$c;
+			elseif($obj[$i] == $tag[1] && $tag == '[]')--$c;
+			elseif($obj[$i] == $tag[1]){--$c;$b = true;}
+			elseif($obj[$i] == '"' || $obj[$i] == 'p' || $obj[$i] == 'P' || $obj[$i] == '}' || $obj[$i] == '>')$b = true;
+		}
+		++$i;
+		if($tag != '[]')
+			while($obj[$i++] != '"')
+				if($obj[$i] == '\\')++$i;
+		return $i - $l;
+	}
+	private static function serializeobj($obj, $cls = null){
+		if($obj == 'N;')return 'N';
+		if($obj == 'b:0;')return 'f';
 		if($obj == 'b:1;')return 't';
 		if($obj == 'a:0:{}')return '|';
-        if($obj[0] == 'i'){
-            $num = substr($obj, 2, -1);
-            $nm  = $num < 0 ? ~self::hexdecode(base_convert(-$num, 10, 16)) : self::hexdecode(base_convert($num, 10, 16));
-            return 'i' . ($num < 0 ? chr(256 - strlen($nm)) : chr(strlen($nm))) . $nm;
-        }
-        if($obj[0] == 'd'){
-            $num = substr($obj, 2, -1);
-            $e = explode('E', $num, 2);
-            $num = $e[0];
-            $e = pack('v', isset($e[1]) ? $e[1] * 1 : 0);
-            $d = strpos($num, '.');
-            $d = chr($d === false ? 0 : $d);
-            $num = str_replace('.', '', $num);
-            $nm  = $num < 0 ? ~self::hexdecode(base_convert(-$num, 10, 16)) : self::hexdecode(base_convert($num, 10, 16));
-            return 'd' . $d . $e . ($num < 0 ? chr(256 - strlen($nm)) : chr(strlen($nm))) . $nm;
-        }
-        if($obj[0] == 's')
-            return '"' . str_replace(array('\\', '"'), array('\\\\', '\"'), substr($obj, strpos($obj, ':', 3) + 2, -2)) . '"';
-        if($obj[0] == 'R')
-            return 'R' . self::sizeencode((float)substr($obj, 2, -1));
-        if($obj[0] == 'r')
-            return 'r' . self::sizeencode((float)substr($obj, 2, -1));
-        if($obj[0] == 'x' || $obj[0] == 'm')
-            return $obj[0] . self::serializeobj(substr($obj, 2));
-        if($obj[0] == 'O')
-            return '{' . self::serializeobj(substr($obj, strpos($obj, '{', ($p = strpos($obj, ':', 2)) + ($l = substr($obj, 2, $p - 2) + 2) + 3)), $t = substr($obj, $p + 2, $l - 2)) . '}'
-                . ($t == 'stdClass' ? '' : $t) . '"';
-        if($obj[0] == 'C')
-            return '<' . self::serializeobj(substr($obj, strpos($obj, '{', ($p = strpos($obj, ':', 2)) + ($l = substr($obj, 2, $p - 2) + 2) + 3)), $t = substr($obj, $p + 2, $l - 2)) . '>'
-                . ($t == 'ArrayIterator' ? '' : $t) . '"';
-        if($obj[0] == 'a')
+		if($obj[0] == 'i'){
+			$num = substr($obj, 2, -1);
+			$nm  = $num < 0 ? ~self::hexdecode(base_convert(-$num, 10, 16)) : self::hexdecode(base_convert($num, 10, 16));
+			return 'i' . ($num < 0 ? chr(256 - strlen($nm)) : chr(strlen($nm))) . $nm;
+		}
+		if($obj[0] == 'd'){
+			$num = substr($obj, 2, -1);
+			$e = explode('E', $num, 2);
+			$num = $e[0];
+			$e = pack('v', isset($e[1]) ? $e[1] * 1 : 0);
+			$d = strpos($num, '.');
+			$d = chr($d === false ? 0 : $d);
+			$num = str_replace('.', '', $num);
+			$nm  = $num < 0 ? ~self::hexdecode(base_convert(-$num, 10, 16)) : self::hexdecode(base_convert($num, 10, 16));
+			return 'd' . $d . $e . ($num < 0 ? chr(256 - strlen($nm)) : chr(strlen($nm))) . $nm;
+		}
+		if($obj[0] == 's')
+			return '"' . str_replace(array('\\', '"'), array('\\\\', '\"'), substr($obj, strpos($obj, ':', 3) + 2, -2)) . '"';
+		if($obj[0] == 'R')
+			return 'R' . self::sizeencode((float)substr($obj, 2, -1));
+		if($obj[0] == 'r')
+			return 'r' . self::sizeencode((float)substr($obj, 2, -1));
+		if($obj[0] == 'x' || $obj[0] == 'm')
+			return $obj[0] . self::serializeobj(substr($obj, 2));
+		if($obj[0] == 'O')
+			return '{' . self::serializeobj(substr($obj, strpos($obj, '{', ($p = strpos($obj, ':', 2)) + ($l = substr($obj, 2, $p - 2) + 2) + 3)), $t = substr($obj, $p + 2, $l - 2)) . '}'
+				. ($t == 'stdClass' ? '' : $t) . '"';
+		if($obj[0] == 'C')
+			return '<' . self::serializeobj(substr($obj, strpos($obj, '{', ($p = strpos($obj, ':', 2)) + ($l = substr($obj, 2, $p - 2) + 2) + 3)), $t = substr($obj, $p + 2, $l - 2)) . '>'
+				. ($t == 'ArrayIterator' ? '' : $t) . '"';
+		if($obj[0] == 'a')
 			return '[' . self::serializeobj(substr($obj, strpos($obj, '{', 4))) . ']';
-        if($obj == '{}')return '';
-        if($obj[0] == '{'){
-            $res = '';
-            for($i = 1; $obj[$i] != '}';){
-                if($obj[$i] == 'x' || $obj[$i] == 'm'){
-                    $res .= $obj[$i];
-                    $i += 2;
-                }elseif(in_array($obj[$i], array('N', 'b', 'i', 'd', 'R', 'r'))){
-                    $res .= self::serializeobj($r = substr($obj, $i, ($p = strpos($obj, ';', $i)) - $i + 1));
-                    $i = $p + 1;
-                }elseif($obj[$i] == 's'){
-                    $l = substr($obj, $i + 2, ($p = strpos($obj, ':', $i + 2)) - $i - 2);
-                    $str = substr($obj, $p + 1, $l + 2);
-                    if($cls !== null){
-                        if(strpos($str, "\"\0*\0") === 0)$str = 'P' . substr($str, 4);
-                        if(strpos($str, "\"\0$cls\0") === 0)$str = 'p' . substr($str, strlen($cls) + 3);
-                    }$res .= $str;
-                    $i = $p + $l + 4;
-                }elseif(substr($obj, $i, 6) == 'a:0:{}'){
+		if($obj == '{}')return '';
+		if($obj[0] == '{'){
+			$res = '';
+			for($i = 1; $obj[$i] != '}';){
+				if($obj[$i] == 'x' || $obj[$i] == 'm'){
+					$res .= $obj[$i];
+					$i += 2;
+				}elseif(in_array($obj[$i], array('N', 'b', 'i', 'd', 'R', 'r'))){
+					$res .= self::serializeobj($r = substr($obj, $i, ($p = strpos($obj, ';', $i)) - $i + 1));
+					$i = $p + 1;
+				}elseif($obj[$i] == 's'){
+					$l = substr($obj, $i + 2, ($p = strpos($obj, ':', $i + 2)) - $i - 2);
+					$str = substr($obj, $p + 1, $l + 2);
+					if($cls !== null){
+						if(strpos($str, "\"\0*\0") === 0)$str = 'P' . substr($str, 4);
+						if(strpos($str, "\"\0$cls\0") === 0)$str = 'p' . substr($str, strlen($cls) + 3);
+					}$res .= $str;
+					$i = $p + $l + 4;
+				}elseif(substr($obj, $i, 6) == 'a:0:{}'){
 					$res .= '|';
 					$i += 6;
 				}elseif($obj[$i] == 'a'){
-                    $i = strpos($obj, '{', $i + 4);
-                    $l = self::serializetag($obj, $i);
-                    $res .= '[' . self::serializeobj(substr($obj, $i, $l)) . ']';
-                    $i += $l;
-                }elseif($obj[$i] == 'O'){
-                    $t = substr($obj, ($p = strpos($obj, ':', $i + 3)) + 2, $l = (int)substr($obj, $i + 2, $p - $i));
-                    $i = strpos($obj, '{', $p + $l + 5);
-                    $l = self::serializetag($obj, $i);
-                    $res .= '{' . self::serializeobj(substr($obj, $i, $l), $t) . '}' . ($t == 'stdClass' ? '' : $t) . '"';
-                    $i += $l;
-                }elseif($obj[$i] == 'C'){
-                    $t = substr($obj, ($p = strpos($obj, ':', $i + 3)) + 2, $l = (int)substr($obj, $i + 2, $p - $i));
-                    $i = strpos($obj, '{', $p + $l + 5);
-                    $l = self::serializetag($obj, $i);
-                    $res .= '<' . self::serializeobj(substr($obj, $i, $l), $t) . '>' . ($t == 'ArrayIterator' ? '' : $t) . '"';
-                    $i += $l;
-                }elseif($obj[$i] == ';')++$i;
-            }
-            if(strpos($res, "i\1\0") === 0)
-                return substr($res, 3);
-            return $res;
-        }
-    }
-    public static function unserializeobj($obj, $cls = null){
-        if($obj == 'N')return 'N;';
-        if($obj == 'f')return 'b:0;';
+					$i = strpos($obj, '{', $i + 4);
+					$l = self::serializetag($obj, $i);
+					$res .= '[' . self::serializeobj(substr($obj, $i, $l)) . ']';
+					$i += $l;
+				}elseif($obj[$i] == 'O'){
+					$t = substr($obj, ($p = strpos($obj, ':', $i + 3)) + 2, $l = (int)substr($obj, $i + 2, $p - $i));
+					$i = strpos($obj, '{', $p + $l + 5);
+					$l = self::serializetag($obj, $i);
+					$res .= '{' . self::serializeobj(substr($obj, $i, $l), $t) . '}' . ($t == 'stdClass' ? '' : $t) . '"';
+					$i += $l;
+				}elseif($obj[$i] == 'C'){
+					$t = substr($obj, ($p = strpos($obj, ':', $i + 3)) + 2, $l = (int)substr($obj, $i + 2, $p - $i));
+					$i = strpos($obj, '{', $p + $l + 5);
+					$l = self::serializetag($obj, $i);
+					$res .= '<' . self::serializeobj(substr($obj, $i, $l), $t) . '>' . ($t == 'ArrayIterator' ? '' : $t) . '"';
+					$i += $l;
+				}elseif($obj[$i] == ';')++$i;
+			}
+			if(strpos($res, "i\1\0") === 0)
+				return substr($res, 3);
+			return $res;
+		}
+	}
+	public static function unserializeobj($obj, $cls = null){
+		if($obj == 'N')return 'N;';
+		if($obj == 'f')return 'b:0;';
 		if($obj == 't')return 'b:1;';
 		if($obj == '|')return 'a:0:{}';
 		if($obj == ';')return '';
-        if($obj[0] == 'i'){
-            $l = ord($obj[1]);
-            $num = substr($obj, 2, $l > 127 ? 256 - $l : $l);
-            return 'i:' . ((int)($l > 127 ? -base_convert(self::hexencode($num), 16, 10) : base_convert(self::hexencode($num), 16, 10))) . ';';
-        }
-        if($obj[0] == 'd'){
-            $d = ord($obj[1]);
-            $e = array_value(unpack('v', $obj[2] . $obj[3]), 1);
-            $l = ord($obj[4]);
-            $num = substr($obj, 5, $l > 127 ? 256 - $l : $l);
-            $num = $l > 127 ? -base_convert(self::hexencode($num), 16, 10) : base_convert(self::hexencode($num), 16, 10);
-            if($d != 0)$num = substr_replace($num, '.', $d, 0);
-            return 'd:' . ((float)$num * pow(10, $e)) . ';';
-        }
+		if($obj[0] == 'i'){
+			$l = ord($obj[1]);
+			$num = substr($obj, 2, $l > 127 ? 256 - $l : $l);
+			return 'i:' . ((int)($l > 127 ? -base_convert(self::hexencode($num), 16, 10) : base_convert(self::hexencode($num), 16, 10))) . ';';
+		}
+		if($obj[0] == 'd'){
+			$d = ord($obj[1]);
+			$e = array_value(unpack('v', $obj[2] . $obj[3]), 1);
+			$l = ord($obj[4]);
+			$num = substr($obj, 5, $l > 127 ? 256 - $l : $l);
+			$num = $l > 127 ? -base_convert(self::hexencode($num), 16, 10) : base_convert(self::hexencode($num), 16, 10);
+			if($d != 0)$num = substr_replace($num, '.', $d, 0);
+			return 'd:' . ((float)$num * pow(10, $e)) . ';';
+		}
 		if($obj[0] == 'p' && $cls === null)$cls = 'stdClass';
 		if($obj[0] == '"' || $obj[0] == 'P' || $obj[0] == 'p')
 			$obj = $obj[0] . str_replace(array('\"', '\\\\'), array('"', '\\'), substr($obj, 1, -1)) . '"';
-        if($obj[0] == '"')
-            return 's:' . (strlen($obj) - 2) . ':"' . substr($obj, 1, -1) . '";';
-        if($obj[0] == 'P')
-            return 's:' . (strlen($obj) + 1) . ":\"\0*\0" . substr($obj, 1, -1) . '";';
-        if($obj[0] == 'p')
-            return 's:' . (strlen($obj) + strlen($cls)) . ":\"\0$cls\0" . substr($obj, 1, -1) . '";';
-        if($obj[0] == 'R')
-            return 'R:' . self::sizedecode(substr($obj, 1)) . ';';
-        if($obj[0] == 'r')
-            return 'r:' . self::sizedecode(substr($obj, 1)) . ';';
-        if($obj[0] == 'x' || $obj[0] == 'm')
-            return $obj[0] . ':' . (in_array($obj[1], array('[', '{', '<')) ? self::unserializeobj(substr($obj, 1), $cls) . ';' : self::unserializeobj(substr($obj, 1), $cls));
-        if($obj[0] == '['){
-            $obj = ':' . substr($obj, 1, -1);
-            return 'a:' . self::unserializeobj($obj);
-        }
-        if($obj[0] == '{'){
-            $l = strrpos($obj, '}', 1) + 1;
-            $cls = substr($obj, $l, -1);
-            if($cls === '')$cls = 'stdClass';
-            $obj = self::unserializeobj(':' . substr($obj, 1, $l - 2), $cls);
-            return 'O:' . strlen($cls) . ':"' . $cls . '":' . $obj;
-        }
-        if($obj[0] == '<'){
-            $l = strrpos($obj, '>', 1) + 1;
-            $cls = substr($obj, $l, -1);
-            if($cls === '')$cls = 'ArrayIterator';
-            $obj = self::unserializeobj(';' . substr($obj, 1, $l - 2), $cls);
-            return 'C:' . strlen($cls) . ':"' . $cls . '":' . $obj;
-        }
-        if($obj[0] == ':' || $obj[0] == ';'){
-            if($obj[0] == ';')$C = true;
-            else $C = false;
-            $res = '';
-            $c = 0;
-            for($i = 1; isset($obj[$i]); ++$c){
-                if(in_array($obj[$i], array('N', 'f', 't', '|', ';')))
-                    $res .= self::unserializeobj($obj[$i++]);
-                elseif($obj[$i] == 'i'){
-                    $l = ord($obj[$i + 1]);
-                    if($l > 127)$l = 256 - $l;
-                    $res .= self::unserializeobj(substr($obj, $i, $l + 2));
-                    $i += $l + 2;
-                }elseif($obj[$i] == 'd'){
-                    $l = ord($obj[$i + 4]);
-                    if($l > 127)$l = 256 - $l;
-                    $res .= self::unserializeobj(substr($obj, $i, $l + 5));
-                    $i += $l + 5;
-                }elseif($obj[$i] == '"' || $obj[$i] == 'p' || $obj[$i] == 'P'){
-                    $l = $i;
-                    while($obj[++$i] != '"')
-                        if($obj[$i] == '\\')++$i;
-                    ++$i;
-                    $res .= self::unserializeobj(substr($obj, $l, $i - $l), $cls);
-                }elseif($obj[$i] == 'x' || $obj[$i] == 'm'){
-                    if(isset($res[-1]) && $res[-1] != ';')$res .= ';';
-                    $res .= $obj[$i++] . ':';
-                    --$c;
-                }elseif($obj[$i] == 'r' || $obj[$i] == 'R'){
-                    $res .= $obj[$i] . ':';
-                    $res .= self::sizedecode(substr($obj, $i + 1, $p = ord($obj[$i + 1]) + 1)) . ';';
-                    $i += $p + 1;
-                }elseif($obj[$i] == '['){
-                    $l = self::unserializetag($obj, '[]', $i);
-                    $res .= self::unserializeobj(substr($obj, $i, $l));
-                    $i += $l;
-                }elseif($obj[$i] == '{'){
-                    $l = self::unserializetag($obj, '{}', $i);
-                    $res .= self::unserializeobj(substr($obj, $i, $l));
-                    $i += $l;
-                }elseif($obj[$i] == '<'){
-                    $l = self::unserializetag($obj, '<>', $i);
-                    $res .= self::unserializeobj(substr($obj, $i, $l));
-                    $i += $l;
+		if($obj[0] == '"')
+			return 's:' . (strlen($obj) - 2) . ':"' . substr($obj, 1, -1) . '";';
+		if($obj[0] == 'P')
+			return 's:' . (strlen($obj) + 1) . ":\"\0*\0" . substr($obj, 1, -1) . '";';
+		if($obj[0] == 'p')
+			return 's:' . (strlen($obj) + strlen($cls)) . ":\"\0$cls\0" . substr($obj, 1, -1) . '";';
+		if($obj[0] == 'R')
+			return 'R:' . self::sizedecode(substr($obj, 1)) . ';';
+		if($obj[0] == 'r')
+			return 'r:' . self::sizedecode(substr($obj, 1)) . ';';
+		if($obj[0] == 'x' || $obj[0] == 'm')
+			return $obj[0] . ':' . (in_array($obj[1], array('[', '{', '<')) ? self::unserializeobj(substr($obj, 1), $cls) . ';' : self::unserializeobj(substr($obj, 1), $cls));
+		if($obj[0] == '['){
+			$obj = ':' . substr($obj, 1, -1);
+			return 'a:' . self::unserializeobj($obj);
+		}
+		if($obj[0] == '{'){
+			$l = strrpos($obj, '}', 1) + 1;
+			$cls = substr($obj, $l, -1);
+			if($cls === '')$cls = 'stdClass';
+			$obj = self::unserializeobj(':' . substr($obj, 1, $l - 2), $cls);
+			return 'O:' . strlen($cls) . ':"' . $cls . '":' . $obj;
+		}
+		if($obj[0] == '<'){
+			$l = strrpos($obj, '>', 1) + 1;
+			$cls = substr($obj, $l, -1);
+			if($cls === '')$cls = 'ArrayIterator';
+			$obj = self::unserializeobj(';' . substr($obj, 1, $l - 2), $cls);
+			return 'C:' . strlen($cls) . ':"' . $cls . '":' . $obj;
+		}
+		if($obj[0] == ':' || $obj[0] == ';'){
+			if($obj[0] == ';')$C = true;
+			else $C = false;
+			$res = '';
+			$c = 0;
+			for($i = 1; isset($obj[$i]); ++$c){
+				if(in_array($obj[$i], array('N', 'f', 't', '|', ';')))
+					$res .= self::unserializeobj($obj[$i++]);
+				elseif($obj[$i] == 'i'){
+					$l = ord($obj[$i + 1]);
+					if($l > 127)$l = 256 - $l;
+					$res .= self::unserializeobj(substr($obj, $i, $l + 2));
+					$i += $l + 2;
+				}elseif($obj[$i] == 'd'){
+					$l = ord($obj[$i + 4]);
+					if($l > 127)$l = 256 - $l;
+					$res .= self::unserializeobj(substr($obj, $i, $l + 5));
+					$i += $l + 5;
+				}elseif($obj[$i] == '"' || $obj[$i] == 'p' || $obj[$i] == 'P'){
+					$l = $i;
+					while($obj[++$i] != '"')
+						if($obj[$i] == '\\')++$i;
+					++$i;
+					$res .= self::unserializeobj(substr($obj, $l, $i - $l), $cls);
+				}elseif($obj[$i] == 'x' || $obj[$i] == 'm'){
+					if(isset($res[-1]) && $res[-1] != ';')$res .= ';';
+					$res .= $obj[$i++] . ':';
+					--$c;
+				}elseif($obj[$i] == 'r' || $obj[$i] == 'R'){
+					$res .= $obj[$i] . ':';
+					$res .= self::sizedecode(substr($obj, $i + 1, $p = ord($obj[$i + 1]) + 1)) . ';';
+					$i += $p + 1;
+				}elseif($obj[$i] == '['){
+					$l = self::unserializetag($obj, '[]', $i);
+					$res .= self::unserializeobj(substr($obj, $i, $l));
+					$i += $l;
+				}elseif($obj[$i] == '{'){
+					$l = self::unserializetag($obj, '{}', $i);
+					$res .= self::unserializeobj(substr($obj, $i, $l));
+					$i += $l;
+				}elseif($obj[$i] == '<'){
+					$l = self::unserializetag($obj, '<>', $i);
+					$res .= self::unserializeobj(substr($obj, $i, $l));
+					$i += $l;
 				}
-            }
-            return $C ? strlen($res) . ':{' . $res . '}' : ($c % 2 === 1 ? (($c + 1) / 2) . ':{i:0;' . $res . '}' : ($c / 2) . ':{' . $res . '}');
-        }
-    }
-    public static function serialize($input){
-        return self::serializeobj(serialize($input));
-    }
-    public static function unserialize($input){
-        return @unserialize(self::unserializeobj($input));
+			}
+			return $C ? strlen($res) . ':{' . $res . '}' : ($c % 2 === 1 ? (($c + 1) / 2) . ':{i:0;' . $res . '}' : ($c / 2) . ':{' . $res . '}');
+		}
+	}
+	public static function serialize($input){
+		return self::serializeobj(serialize($input));
+	}
+	public static function unserialize($input){
+		return @unserialize(self::unserializeobj($input));
 	}
 	public static function isserialize($input){
 		return $input === 'f' || self::unserialize($input) !== false;
@@ -12958,7 +12641,7 @@ class XNCrypt {
 
 	protected static $iconvcharset = array(
 		'iso-8859-1' => array(
-			'utf-8'    => 'iso88591utf8',
+			'utf-8'	=> 'iso88591utf8',
 			'utf-16be' => 'iso88591utf16be',
 			'utf-16le' => 'iso88591utf16le',
 			'utf-16'   => 'iso88591utf16'
@@ -12967,16 +12650,16 @@ class XNCrypt {
 			'iso-8859-1' => 'utf8iso88591',
 			'utf-16be'   => 'utf8utf16be',
 			'utf-16le'   => 'utf8utf16le',
-			'utf-16'     => 'utf8utf16',
+			'utf-16'	 => 'utf8utf16',
 		),
 		'utf-16le' => array(
 			'iso-8859-1' => 'utf16leiso88591',
-			'utf-8'      => 'utf16leutf8',
+			'utf-8'	  => 'utf16leutf8',
 			'utf-16be'   => 'utf16lebe'
 		),
 		'utf-16be' => array(
 			'iso-8859-1' => 'utf16beiso88591',
-			'utf-8'      => 'utf16beutf8',
+			'utf-8'	  => 'utf16beutf8',
 			'utf-16le'   => 'utf16bele'
 		)
 	);
@@ -13099,18 +12782,18 @@ class XNCrypt {
 		while(isset($string[$i])) {
 			$cur = ord($string[$i]);
 			if(($cur | 0x07) == 0xF7) {
-				$char = (($cur                 & 0x07) << 18) &
+				$char = (($cur				 & 0x07) << 18) &
 						((ord($string[$i + 1]) & 0x3F) << 12) &
 						((ord($string[$i + 2]) & 0x3F) <<  6) &
 						 (ord($string[$i + 3]) & 0x3F);
 				$i += 4;
 			}elseif(($cur | 0x0F) == 0xEF) {
-				$char = (($cur                 & 0x0F) << 12) &
+				$char = (($cur				 & 0x0F) << 12) &
 						((ord($string[$i + 1]) & 0x3F) <<  6) &
 						 (ord($string[$i + 2]) & 0x3F);
 				$i += 3;
 			}elseif(($cur | 0x1F) == 0xDF) {
-				$char = (($cur                 & 0x1F) <<  6) &
+				$char = (($cur				 & 0x1F) <<  6) &
 						 (ord($string[$i + 1]) & 0x3F);
 				$i += 2;
 			}elseif(($cur | 0x7F) == 0x7F){
@@ -13133,18 +12816,18 @@ class XNCrypt {
 		$i = 0;
 		while(isset($string[$i])) {
 			if((ord($string[$i]) | 0x07) == 0xF7) {
-				$char = ((ord($string[$i    ]) & 0x07) << 18) &
+				$char = ((ord($string[$i	]) & 0x07) << 18) &
 						((ord($string[$i + 1]) & 0x3F) << 12) &
 						((ord($string[$i + 2]) & 0x3F) <<  6) &
 						 (ord($string[$i + 3]) & 0x3F);
 				$i += 4;
 			}elseif((ord($string[$i]) | 0x0F) == 0xEF) {
-				$char = ((ord($string[$i    ]) & 0x0F) << 12) &
+				$char = ((ord($string[$i	]) & 0x0F) << 12) &
 						((ord($string[$i + 1]) & 0x3F) <<  6) &
 						 (ord($string[$i + 2]) & 0x3F);
 				$i += 3;
 			}elseif((ord($string[$i]) | 0x1F) == 0xDF) {
-				$char = ((ord($string[$i    ]) & 0x1F) <<  6) &
+				$char = ((ord($string[$i	]) & 0x1F) <<  6) &
 						 (ord($string[$i + 1]) & 0x3F);
 				$i += 2;
 			}elseif((ord($string[$i]) | 0x7F) == 0x7F)
@@ -13165,18 +12848,18 @@ class XNCrypt {
 		$i = 0;
 		while(isset($string[$i])) {
 			if((ord($string[$i]) | 0x07) == 0xF7) {
-				$char = ((ord($string[$i    ]) & 0x07) << 18) &
+				$char = ((ord($string[$i	]) & 0x07) << 18) &
 						((ord($string[$i + 1]) & 0x3F) << 12) &
 						((ord($string[$i + 2]) & 0x3F) <<  6) &
 						 (ord($string[$i + 3]) & 0x3F);
 				$i += 4;
 			}elseif((ord($string[$i]) | 0x0F) == 0xEF) {
-				$char = ((ord($string[$i    ]) & 0x0F) << 12) &
+				$char = ((ord($string[$i	]) & 0x0F) << 12) &
 						((ord($string[$i + 1]) & 0x3F) <<  6) &
 						 (ord($string[$i + 2]) & 0x3F);
 				$i += 3;
 			}elseif((ord($string[$i]) | 0x1F) == 0xDF) {
-				$char = ((ord($string[$i    ]) & 0x1F) <<  6) &
+				$char = ((ord($string[$i	]) & 0x1F) <<  6) &
 						 (ord($string[$i + 1]) & 0x3F);
 				$i += 2;
 			}elseif((ord($string[$i]) | 0x7F) == 0x7F)
@@ -13337,23 +13020,23 @@ class XNCrypt {
 	const KEYBOARD_CONVERTER_AKAN 	  = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nɛ\nw\ne\nr\nt\ny\nu\ni\no\np\nq\nc\na\ns\nd\nf\ng\nh\nj\nk\nl\n;\n'\n\\\nz\nx\nɔ\nv\nb\nn\nm\n,\n.\n/\n~\n!\n@\n#\n$\n%\n^\n&\n*\n(\n)\n_\n+\nƐ\nW\nE\nR\nT\nY\nU\nI\nO\nP\nQ\nC\nA\nS\nD\nF\nG\nH\nJ\nK\nL\n:\n\"\n|\nZ\nX\nƆ\nV\nB\nN\nM\n<\n>\n?";
 	const KEYBOARD_CONVERTER_ALBANIAN = "\\\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nq\nw\ne\nr\nt\nz\nu\ni\no\np\nç\n@\na\ns\nd\nf\ng\nh\nj\nk\nl\në\n[\n]\ny\nx\nc\nv\nb\nn\nm\n,\n.\n/\n|\n!\n\"\n#\n$\n%\n^\n&\n*\n(\n)\n_\n+\nQ\nW\nE\nR\nT\nZ\nU\nI\nO\nP\nÇ\n'\nA\nS\nD\nF\nG\nH\nJ\nK\nL\nË\n{\n}\nY\nX\nC\nV\nB\nN\nM\n;\n:\n?";
 	const KEYBOARD_CONVERTER_ARABIC   = "ذ\n١\n٢\n٣\n٤\n٥\n٦\n٧\n٨\n٩\n٠\n-\n=\nض\nص\nث\nق\nف\nغ\nع\nه\nخ\nح\nج\nد\nش\nس\nي\nب\nل\nا\nت\nن\nم\nك\nط\n\\\nئ\nء\nؤ\nر\nلا\nى\nة\nو\nز\nظ\nّ\n!\n@\n#\n$\n%\n^\n&\n*\n)\n(\n_\n+\nَ\nً\nُ\nٌ\nﻹ\nإ\n’\n÷\n×\n؛\n>\n<\nِ\nٍ\n]\n[\nلأ\nأ\nـ\n،\n/\n:\n\"\n|\n~\nْ\n{\n}\nلآ\nآ\n‘\n,\n.\n؟";
-	const KEYBOARD_CONVERTER_AZERI    = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nq\nü\ne\nr\nt\ny\nu\ni\no\np\nö\nğ\na\ns\nd\nf\ng\nh\nj\nk\nl\nı\nə\n\\\nz\nx\nc\nv\nb\nn\nm\nç\nş\n.\n~\n!\n\"\nⅦ\n;\n%\n:\n?\n*\n(\n)\n_\n+\nQ\nÜ\nE\nR\nT\nY\nU\nİ\nO\nP\nÖ\nĞ\nA\nS\nD\nF\nG\nH\nJ\nK\nL\nI\nƏ\n/\nZ\nX\nC\nV\nB\nN\nM\nÇ\nŞ\n,";
+	const KEYBOARD_CONVERTER_AZERI	= "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nq\nü\ne\nr\nt\ny\nu\ni\no\np\nö\nğ\na\ns\nd\nf\ng\nh\nj\nk\nl\nı\nə\n\\\nz\nx\nc\nv\nb\nn\nm\nç\nş\n.\n~\n!\n\"\nⅦ\n;\n%\n:\n?\n*\n(\n)\n_\n+\nQ\nÜ\nE\nR\nT\nY\nU\nİ\nO\nP\nÖ\nĞ\nA\nS\nD\nF\nG\nH\nJ\nK\nL\nI\nƏ\n/\nZ\nX\nC\nV\nB\nN\nM\nÇ\nŞ\n,";
 	const KEYBOARD_CONVERTER_BANGLA   = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\nৃ\nৌ\nৈ\nা\nী\nূ\nব\nহ\nগ\nদ\nজ\nড\n়\nো\nে\n্\nি\nু\nপ\nর\nক\nত\nচ\nট\n\\\n\nং\nম\nন\nব\nল\nস\n,\n.\nয\n~\n!\n\n\n\n\n\n\n\n(\n)\nঃ\nঋ\nঔ\nঐ\nআ\nঈ\nঊ\nভ\nঙ\nঘ\nধ\nঝ\nঢ\nঞ\nও\nএ\nঅ\nই\nউ\nফ\n\nখ\nথ\nছ\nঠ\n|\n\nঁ\nণ\n\n\n\nশ\nষ\n{\nয়";
 	const KEYBOARD_CONVERTER_COPTIC   = "̈\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n·\n⸗\nⲑ\nⲱ\nⲉ\nⲣ\nⲧ\nⲯ\nⲩ\nⲓ\nⲟ\nⲡ\n[\n]\nⲁ\nⲥ\nⲇ\nⲫ\nⲅ\nⲏ\nϫ\nⲕ\nⲗ\n;\nʼ\ǹⲍ\nⲝ\nⲭ\nϣ\nⲃ\nⲛ\nⲙ\n,\n.\ń\n̑\n̄\n̆\nʹ\n͵\ṅ\ṇ\nⳤ\n*\n(\n)\n-\n̅\nⲐ\nⲰ\nⲈ\nⲢ\nⲦ\nⲮ\nⲨ\nⲒ\nⲞ\nⲠ\n{\n}\nⲀ\nⲤ\nⲆ\nⲪ\nⲄ\nⲎ\nϪ\nⲔ\nⲖ\n:\n⳿\n|\nⲌ\nⲜ\nⲬ\nϢ\nⲂ\nⲚ\nⲘ\n<\n>\n⳾";
 	const KEYBOARD_CONVERTER_CROATIAN = "ş\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n'\n+\nq\nw\ne\nr\nt\nz\nu\ni\no\np\nš\nđ\na\ns\nd\nf\ng\nh\nj\nk\nl\nč\nć\nž\ny\nx\nc\nv\nb\nn\nm\n,\n.\n-\nÄ\n!\n\"\n#\n$\n%\n&\n/\n(\n)\n=\n?\n*\nQ\nW\nE\nR\nT\nZ\nU\nI\nO\nP\nŠ\nĐ\nA\nS\nD\nF\nG\nH\nJ\nK\nL\nČ\nĆ\nŽ\nY\nX\nC\nV\nB\nN\nM\n;\n:\n_";
 	const KEYBOARD_CONVERTER_ENGLISH  = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nq\nw\ne\nr\nt\ny\nu\ni\no\np\n[\n]\na\ns\nd\nf\ng\nh\nj\nk\nl\n;\n'\n\\\nz\nx\nc\nv\nb\nn\nm\n,\n.\n/\n~\n!\n@\n#\n$\n%\n^\n&\n*\n(\n)\n_\n+\nQ\nW\nE\nR\nT\nY\nU\nI\nO\nP\n{\n}\nA\nS\nD\nF\nG\nH\nJ\nK\nL\n:\n\"\n|\nZ\nX\nC\nV\nB\nN\nM\n<\n>\n?";
-	const KEYBOARD_CONVERTER_FARSI    = "`‍‍‍\n۱\n۲\n۳\n۴\n۵\n۶\n۷\n۸\n۹\n۰\n-\n=\nض\nص\nث\nق\nف\nغ\nع\nه\nخ\nح\nج\nچ\nش\nس\nی\nب\nل\nا\nت\nن\nم\nک\nگ\n\\\nظ\nط\nز\nر\nذ\nد\nپ\nو\n.\n/\n~\n!\n٫\n؍\n﷼\n٪n\×\n٬\n٭\n(\n)\n_\n+\nْ\nٌ\nٍ\nً\nُ\nِ\nَ\nّ\n[\n]\n{\n}\nؤ\nُ\nي\nإ\nأ\nآ\nة\n«\n»\n:\n؛\n|\nك\nٓ\nژ\nٰ\n‌\nٔ\nء\n<\n>\n؟";
+	const KEYBOARD_CONVERTER_FARSI	= "`‍‍‍\n۱\n۲\n۳\n۴\n۵\n۶\n۷\n۸\n۹\n۰\n-\n=\nض\nص\nث\nق\nف\nغ\nع\nه\nخ\nح\nج\nچ\nش\nس\nی\nب\nل\nا\nت\nن\nم\nک\nگ\n\\\nظ\nط\nز\nر\nذ\nد\nپ\nو\n.\n/\n~\n!\n٫\n؍\n﷼\n٪n\×\n٬\n٭\n(\n)\n_\n+\nْ\nٌ\nٍ\nً\nُ\nِ\nَ\nّ\n[\n]\n{\n}\nؤ\nُ\nي\nإ\nأ\nآ\nة\n«\n»\n:\n؛\n|\nك\nٓ\nژ\nٰ\n‌\nٔ\nء\n<\n>\n؟";
 	const KEYBOARD_CONVERTER_FRENCH   = "²\n&\né\n\"\n'\n(\n-\nè\n_\nç\nà\n)\n=\na\nz\ne\nr\nt\ny\nu\ni\no\np\nâ\n$\nq\ns\nd\nf\ng\nh\nj\nk\nl\nm\nù\n*\nw\nx\nc\nv\nb\nn\n,\n;\n:\n!\n\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n°\n+\nA\nZ\nE\nR\nT\nY\nU\nI\nO\nP\nÄ\n£\nQ\nS\nD\nF\nG\nH\nJ\nK\nL\nM\n%\nµ\nW\nX\nC\nV\nB\nN\n?\n.\n/\n§";
 	const KEYBOARD_CONVERTER_GEORGIAN = "„\n!\n?\n№\n§\n%\n:\n.\n;\n,\n/\n–\n=\nღ\nჯ\nუ\nკ\nე\nნ\nგ\nშ\nწ\nზ\nხ\nც\nფ\nძ\nვ\nთ\nა\nპ\nრ\nო\nლ\nდ\nჟ\n(\nჭ\nჩ\nყ\nს\nმ\nი\nტ\nქ\nბ\nჰ\n“\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n+\nღ\nჯ\nუ\nკ\nე\nნ\nგ\nშ\nწ\nზ\nხ\nც\nფ\nძ\nვ\nთ\nა\nპ\nრ\nო\nლ\nდ\nჟ\n)\nჭ\nჩ\nყ\nს\nმ\nი\nტ\nქ\nბ\nჰ";
-	const KEYBOARD_CONVERTER_GREEK    = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\n;\nς\nε\nρ\nτ\nυ\nθ\nι\nο\nπ\n[\n]\nα\nσ\nδ\nφ\nγ\nη\nξ\nκ\nλ\nέ\n'\n\\\nζ\nχ\nψ\nω\nβ\nν\nμ\n,\n.\n/\n~\n!\n@\n#\n$\n%\n^\n&\n*\n(\n)\n_\n+\n:\n\nΕ\nΡ\nΤ\nΥ\nΘ\nΙ\nΟ\nΠ\n{\n}\nΑ\nΣ\nΔ\nΦ\nΓ\nΗ\nΞ\nΚ\nΛ\nΪ\n\n\"\n|\nΖ\nΧ\nΨ\nΩ\nΒ\nΝ\nΜ\n<\n>\n?";
+	const KEYBOARD_CONVERTER_GREEK	= "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\n;\nς\nε\nρ\nτ\nυ\nθ\nι\nο\nπ\n[\n]\nα\nσ\nδ\nφ\nγ\nη\nξ\nκ\nλ\nέ\n'\n\\\nζ\nχ\nψ\nω\nβ\nν\nμ\n,\n.\n/\n~\n!\n@\n#\n$\n%\n^\n&\n*\n(\n)\n_\n+\n:\n\nΕ\nΡ\nΤ\nΥ\nΘ\nΙ\nΟ\nΠ\n{\n}\nΑ\nΣ\nΔ\nΦ\nΓ\nΗ\nΞ\nΚ\nΛ\nΪ\n\n\"\n|\nΖ\nΧ\nΨ\nΩ\nΒ\nΝ\nΜ\n<\n>\n?";
 	const KEYBOARD_CONVERTER_GUJARATI = "\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\nૌ\nૈ\nા\nી\nૂ\nબ\nહ\nગ\nદ\nજ\nડ\n઼\nો\nે\n્\nિ\nુ\nપ\nર\nક\nત\nચ\nટ\nૉ\n\nં\nમ\nન\nવ\nલ\nસ\n,\n.\nય\n\nઍ\nૅ\n\n\n\n\n\n\n(\n)\nઃ\nઋ\nઔ\nઐ\nઆ\nઈ\nઊ\nભ\nઙ\nઘ\nધ\nઝ\nઢ\nઞ\nઓ\nએ\nઅ\nઇ\nઉ\nફ\n\nખ\nથ\nછ\nઠ\nઑ\n\nઁ\nણ\n\n\nળ\nશ\nષ\n।\n";
 	const KEYBOARD_CONVERTER_HEBREW   = ";\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\n/\n'\nק\nר\nא\nט\nו\nן\nם\nפ\n]\n[\nש\nד\nג\nכ\nע\nי\nח\nל\nך\nף\n,\\\nז\nס\nב\nה\nנ\nמ\nצ\nת\nץ\n.\n~\n!\n@\n#\n$\n%\n^\n&\n*\n)\n(\n_\n+\n<\n>\nקּ\nרּ\nאּ\nטּ\nוּ\nןּ\nּ\nפּ\n}\n{\nשּ\nדּ\nגּ\nכּ\n׳\nיּ\n״\nלּ\nךּ\n:\n\"\n|\nזּ\nסּ\nבּ\nהּ\nנּ\nמּ\nצּ\nתּ\n׆\n?";
-	const KEYBOARD_CONVERTER_HINDI    = "\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\nृ\nौ\nै\nा\nी\nू\nब\nह\nग\nद\nज\nड\n़\nो\nे\n्\nि\nु\nप\nर\nक\nत\nच\nट\nॉ\n\nं\nम\nन\nव\nल\nस\n,\n.\nय\n\nऍ\nॅ\n#\n$\n\n\n\n\n(\n)\nः\nऋ\nऔ\nऐ\nआ\nई\nऊ\nभ\nङ\nघ\nध\nझ\nढ\nञ\nओ\nए\nअ\nइ\nउ\nफ\nऱ\nख\nथ\nछ\nठ\nऑ\n\nँ\nण\n\n\nळ\nश\nष\n।\nय़";
+	const KEYBOARD_CONVERTER_HINDI	= "\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\nृ\nौ\nै\nा\nी\nू\nब\nह\nग\nद\nज\nड\n़\nो\nे\n्\nि\nु\nप\nर\nक\nत\nच\nट\nॉ\n\nं\nम\nन\nव\nल\nस\n,\n.\nय\n\nऍ\nॅ\n#\n$\n\n\n\n\n(\n)\nः\nऋ\nऔ\nऐ\nआ\nई\nऊ\nभ\nङ\nघ\nध\nझ\nढ\nञ\nओ\nए\nअ\nइ\nउ\nफ\nऱ\nख\nथ\nछ\nठ\nऑ\n\nँ\nण\n\n\nळ\nश\nष\n।\nय़";
 	const KEYBOARD_CONVERTER_JAPANESE = "ろ\nぬ\nふ\nあ\nう\nえ\nお\nや\nゆ\nよ\nわ\nほ\nへ\nた\nて\nい\nす\nか\nん\nな\nに\nら\nせ\n゛\n゜\nち\nと\nし\nは\nき\nく\nま\nの\nり\nれ\nけ\nむ\nつ\nさ\nそ\nひ\nこ\nみ\nも\nね\nる\nめ\n\n\nぁ\nぅ\nぇ\nぉ\nゃ\nゅ\nょ\nを\nー\n\n\n\nぃ\n\n\n\n\n\n\n\n「\n」\n\n\n\n\n\n\n\n\n\n\n\n\nっ\n\n\n\n\n\n\n、\n。\n・";
 	const KEYBOARD_CONVERTER_KAZAKH   = "(\n\"\nә\nі\nң\nғ\n,\n.\nү\nұ\nқ\nө\nһ\nй\nц\nу\nк\nе\nн\nг\nш\nщ\nз\nх\nъ\nф\nы\nв\nа\nп\nр\nо\nл\nд\nж\nэ\n\\\nя\nч\nс\nм\nи\nт\nь\nб\nю\n№\n)\n!\nӘ\nІ\nҢ\nҒ\n;\n:\nҮ\nҰ\nҚ\nӨ\nҺ\nЙ\nЦ\nУ\nК\nЕ\nН\nГ\nШ\nЩ\nЗ\nХ\nЪ\nФ\nЫ\nВ\nА\nП\nР\nО\nЛ\nД\nЖ\nЭ\n/\nЯ\nЧ\nС\nМ\nИ\nТ\nЬ\nБ\nЮ\n?";
-	const KEYBOARD_CONVERTER_KHMER    = "«\n១\n២\n៣\n៤\n៥\n៦\n៧\n៨\n៩\n០\nគ\nធ\nឆ\nឹ\nេ\nរ\nត\nយ\nុ\nិ\nោ\nផ\nៀ\nឨ\nា\nស\nដ\nថ\nង\nហ\n្\nក\nល\nើ\n់\nឮ\nឋ\nខ\nច\nវ\nប\nន\nម\nំុ\n។\n៊​\n»\n!\nៗ\n\"\n៛\n%\n៌\n័\n៏\n(\n)\n៝\nឪ\nឈ\nឺ\nែ\nឬ\nទ\nួ\nូ\nី\nៅ\nភ\nឿ\nឧ\nាំ\nៃ\nឌ\nធ\nឣ\nះ\nញ\nគ\nឡ\nោៈ\n៉\nឭ\nឍ\nឃ\nជ\nេះ\nព\nណ\nំ\nុះ\n៕\n?";
+	const KEYBOARD_CONVERTER_KHMER	= "«\n១\n២\n៣\n៤\n៥\n៦\n៧\n៨\n៩\n០\nគ\nធ\nឆ\nឹ\nេ\nរ\nត\nយ\nុ\nិ\nោ\nផ\nៀ\nឨ\nា\nស\nដ\nថ\nង\nហ\n្\nក\nល\nើ\n់\nឮ\nឋ\nខ\nច\nវ\nប\nន\nម\nំុ\n។\n៊​\n»\n!\nៗ\n\"\n៛\n%\n៌\n័\n៏\n(\n)\n៝\nឪ\nឈ\nឺ\nែ\nឬ\nទ\nួ\nូ\nី\nៅ\nភ\nឿ\nឧ\nាំ\nៃ\nឌ\nធ\nឣ\nះ\nញ\nគ\nឡ\nោៈ\n៉\nឭ\nឍ\nឃ\nជ\nេះ\nព\nណ\nំ\nុះ\n៕\n?";
 	const KEYBOARD_CONVERTER_KOREAN   = "`\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nㅂ\nㅈ\nㄷ\nㄱ\nㅅ\nㅛ\nㅕ\nㅑ\nㅐ\nㅔ\n[\n]\nㅁ\nㄴ\nㅇ\nㄹ\nㅎ\nㅗ\nㅓ\nㅏ\nㅣ\n;\n'\n\\\nㅋ\nㅌ\nㅊ\nㅍ\nㅠ\nㅜ\nㅡ\n,\n.\n/\n~\n!\n@\n#\n$\n%\n^\n&\n*\n(\n)\n_\n+\nㅃ\nㅉ\nㄸ\nㄲ\nㅆ\n\n\n\nㅒ\nㅖ\n{\n}\n\n\n\n\n\n\n\n\n\n:\n\"\n|\n\n\n\n\n\n\n\n<\n>\n?";
-	const KEYBOARD_CONVERTER_LAO      = "*\nຢ\nຟ\nໂ\nຖ\nຸ\n\nູຄ\nຕ\nຈ\nຂ\nຊ\nໍ\nົ\nໄ\nຳ\nພ\nະ\nິ\nີ\nຮ\nນ\nຍ\nບ\nລ\nັ\nຫ\nກ\nດ\nເ\n້\n່\nາ\nສ\nວ\nງ\n“\nຜ\nປ\nແ\nອ\nຶ\nື\nທ\nມ\nໃ\nຝ\n/\n໑\n໒\n໓\n໔\n໌\nຼ\n໕\n໖\n໗\n໘\n໙\nໍ່\nົ້\n໐\nຳ້\n_\n+\nິ້\nີ້\nຣ\nໜ\nຽ\n-\nຫຼ\nັ້\n;\n.\n,\n:\n໊\n໋\n!\n?\n%\n=\n”\n₭\n(\nຯ\nx\nຶ້\nື້\nໆ\nໝ\n$\n)";
+	const KEYBOARD_CONVERTER_LAO	  = "*\nຢ\nຟ\nໂ\nຖ\nຸ\n\nູຄ\nຕ\nຈ\nຂ\nຊ\nໍ\nົ\nໄ\nຳ\nພ\nະ\nິ\nີ\nຮ\nນ\nຍ\nບ\nລ\nັ\nຫ\nກ\nດ\nເ\n້\n່\nາ\nສ\nວ\nງ\n“\nຜ\nປ\nແ\nອ\nຶ\nື\nທ\nມ\nໃ\nຝ\n/\n໑\n໒\n໓\n໔\n໌\nຼ\n໕\n໖\n໗\n໘\n໙\nໍ່\nົ້\n໐\nຳ້\n_\n+\nິ້\nີ້\nຣ\nໜ\nຽ\n-\nຫຼ\nັ້\n;\n.\n,\n:\n໊\n໋\n!\n?\n%\n=\n”\n₭\n(\nຯ\nx\nຶ້\nື້\nໆ\nໝ\n$\n)";
 	const KEYBOARD_CONVERTER_MALAYALAM= "ൊ\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\nൃ\nൌ\nൈ\nാ\nീ\nൂ\nബ\nഹ\nഗ\nദ\nജ\nഡ\nർ\nോ\nേ\n്\nിു\nപ\nര\nക\nത\nച\nട\n\nെ\nം\nമ\nന\nവ\nല\nസ\n,\n.\nയ\nഒ\n\n\n\n\n\n\n\n\n(\n)\nഃ\nഋ\nഔ\nഐ\nആ\nഈ\nഊ\nഭ\nങ\nഘ\nധ\nഝ\nഢ\nഞ\nഓ\nഏ\nഅ\nഇ\nഉ\nഫ\nറ\nഖ\nഥ\nഛ\nഠ\n\nഎ\n\nണ\n\nഴ\nള\nശ\nഷ\n\n\n";
 	const KEYBOARD_CONVERTER_RUSSIAN  = "ё\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n-\n=\nй\nц\nу\nк\nе\nн\nг\nш\nщ\nз\nх\nъ\nф\nы\nв\nа\nп\nр\nо\nл\nд\nж\nэ\n\\\nя\nч\nс\nм\nи\nт\nь\nб\nю\n.\n!\n\"\n№\n;\n%\n:\n?\n*\n(\n)\n_\n+\nЙ\nЦ\nУ\nК\nЕ\nН\nГ\nШ\nЩ\nЗ\nХ\nЪ\nФ\nЫ\nВ\nА\nП\nР\nО\nЛ\nД\nЖ\nЭ\n/\nЯ\nЧ\nС\nМ\nИ\nТ\nЬ\nБ\nЮ\n,";
 	private static function kcglks($lang){
@@ -13404,38 +13087,68 @@ class XNCrypt {
 		return $coding === '' ? false : $coding;
 	}
 
+	public static function twomulencode($text){
+		for($i = 0; isset($text[$i]); ++$i){
+			$c = ord($text[$i]) * 2;
+			$text[$i] = chr($c > 255 ? $c + 1 : $c);
+		}
+		return $text;
+	}
+	public static function twomuldecode($text){
+		for($i = 0; isset($text[$i]); ++$i){
+			$c = ord($text[$i]);
+			$text[$i] = chr($c % 2 === 1 ? ($c + 255) / 2 : $c / 2);
+		}
+		return $text;
+	}
+	public static function addpos($text, $mul = 1, $add = 1){
+		for($i = 0; isset($text[$i]); ++$i)
+			$text[$i] = chr(ord($text[$i]) + $i * $mul + $add);
+		return $text;
+	}
+	public static function subpos($text, $mul = 1, $add = 1){
+		for($i = 0; isset($text[$i]); ++$i)
+			$text[$i] = chr(ord($text[$i]) - $i * $mul - $add);
+		return $text;
+	}
+	public static function twobyteabs($text){
+		for($i = 0; isset($text[$i + 1]); $i += 2)
+			$text[$i + 1] = chr(abs(ord($text[$i + 1]) - ord($text[$i])));
+		return $text;
+	}
+
 	public static function increment($string){
 		for($i = 4; isset($string[$i]); $i += 4) {
-            $tmp = substr($string, -$i, 4);
-            switch($tmp) {
-                case "\xFF\xFF\xFF\xFF":
-                    $var = substr_replace($var, "\x00\x00\x00\x00", -$i, 4);
-                break;
-                case "\x7F\xFF\xFF\xFF":
-                    $var = substr_replace($var, "\x80\x00\x00\x00", -$i, 4);
-                    return $var;
+			$tmp = substr($string, -$i, 4);
+			switch($tmp) {
+				case "\xFF\xFF\xFF\xFF":
+					$var = substr_replace($var, "\x00\x00\x00\x00", -$i, 4);
+				break;
+				case "\x7F\xFF\xFF\xFF":
+					$var = substr_replace($var, "\x80\x00\x00\x00", -$i, 4);
+					return $var;
 				default:
 					$tmp = unpack('N', $tmp);
-                    $var = substr_replace($var, pack('N', $tmp + 1), -$i, 4);
-                    return $var;
-            }
-        }
-        $remainder = strlen($string) % 4;
-        if($remainder == 0)
-            return $string;
-        $tmp = unpack('N', str_pad(substr($string, 0, $remainder), 4, "\0", STR_PAD_LEFT));
-        $tmp = substr(pack('N', $tmp[1] + 1), -$remainder);
-        return substr_replace($string, $tmp, 0, $remainder);
+					$var = substr_replace($var, pack('N', $tmp + 1), -$i, 4);
+					return $var;
+			}
+		}
+		$remainder = strlen($string) % 4;
+		if($remainder == 0)
+			return $string;
+		$tmp = unpack('N', str_pad(substr($string, 0, $remainder), 4, "\0", STR_PAD_LEFT));
+		$tmp = substr(pack('N', $tmp[1] + 1), -$remainder);
+		return substr_replace($string, $tmp, 0, $remainder);
 	}
 	public static function endianness($x){
 		$r = '';
-        for($i = strlen($x) - 1; $i >= 0; --$i) {
-            $b = ord($x[$i]);
-            $p1 = ($b * 0x0802) & 0x22110;
-            $p2 = ($b * 0x8020) & 0x88440;
-            $r .= chr((($p1 | $p2) * 0x10101) >> 16);
-        }
-        return $r;
+		for($i = strlen($x) - 1; $i >= 0; --$i) {
+			$b = ord($x[$i]);
+			$p1 = ($b * 0x0802) & 0x22110;
+			$p2 = ($b * 0x8020) & 0x88440;
+			$r .= chr((($p1 | $p2) * 0x10101) >> 16);
+		}
+		return $r;
 	}
 
 	protected static $bfs = array(
@@ -13574,9 +13287,9 @@ class XNCrypt {
 		)
 	);
 	protected static $bfp = array(
-        0x243f6a88, 0x85a308d3, 0x13198a2e, 0x03707344, 0xa4093822, 0x299f31d0,
-        0x082efa98, 0xec4e6c89, 0x452821e6, 0x38d01377, 0xbe5466cf, 0x34e90c6c,
-        0xc0ac29b7, 0xc97c50dd, 0x3f84d5b5, 0xb5470917, 0x9216d5d9, 0x8979fb1b
+		0x243f6a88, 0x85a308d3, 0x13198a2e, 0x03707344, 0xa4093822, 0x299f31d0,
+		0x082efa98, 0xec4e6c89, 0x452821e6, 0x38d01377, 0xbe5466cf, 0x34e90c6c,
+		0xc0ac29b7, 0xc97c50dd, 0x3f84d5b5, 0xb5470917, 0x9216d5d9, 0x8979fb1b
 	);
 	private static function bff($i, $sbox){
 		$x0 = $i & 0xff;
@@ -13589,71 +13302,39 @@ class XNCrypt {
 	}
 	protected static $tfq = array(
 		array(
-			0xA9, 0x67, 0xB3, 0xE8, 0x04, 0xFD, 0xA3, 0x76,
-			0x9A, 0x92, 0x80, 0x78, 0xE4, 0xDD, 0xD1, 0x38,
-			0x0D, 0xC6, 0x35, 0x98, 0x18, 0xF7, 0xEC, 0x6C,
-			0x43, 0x75, 0x37, 0x26, 0xFA, 0x13, 0x94, 0x48,
-			0xF2, 0xD0, 0x8B, 0x30, 0x84, 0x54, 0xDF, 0x23,
-			0x19, 0x5B, 0x3D, 0x59, 0xF3, 0xAE, 0xA2, 0x82,
-			0x63, 0x01, 0x83, 0x2E, 0xD9, 0x51, 0x9B, 0x7C,
-			0xA6, 0xEB, 0xA5, 0xBE, 0x16, 0x0C, 0xE3, 0x61,
-			0xC0, 0x8C, 0x3A, 0xF5, 0x73, 0x2C, 0x25, 0x0B,
-			0xBB, 0x4E, 0x89, 0x6B, 0x53, 0x6A, 0xB4, 0xF1,
-			0xE1, 0xE6, 0xBD, 0x45, 0xE2, 0xF4, 0xB6, 0x66,
-			0xCC, 0x95, 0x03, 0x56, 0xD4, 0x1C, 0x1E, 0xD7,
-			0xFB, 0xC3, 0x8E, 0xB5, 0xE9, 0xCF, 0xBF, 0xBA,
-			0xEA, 0x77, 0x39, 0xAF, 0x33, 0xC9, 0x62, 0x71,
-			0x81, 0x79, 0x09, 0xAD, 0x24, 0xCD, 0xF9, 0xD8,
-			0xE5, 0xC5, 0xB9, 0x4D, 0x44, 0x08, 0x86, 0xE7,
-			0xA1, 0x1D, 0xAA, 0xED, 0x06, 0x70, 0xB2, 0xD2,
-			0x41, 0x7B, 0xA0, 0x11, 0x31, 0xC2, 0x27, 0x90,
-			0x20, 0xF6, 0x60, 0xFF, 0x96, 0x5C, 0xB1, 0xAB,
-			0x9E, 0x9C, 0x52, 0x1B, 0x5F, 0x93, 0x0A, 0xEF,
-			0x91, 0x85, 0x49, 0xEE, 0x2D, 0x4F, 0x8F, 0x3B,
-			0x47, 0x87, 0x6D, 0x46, 0xD6, 0x3E, 0x69, 0x64,
-			0x2A, 0xCE, 0xCB, 0x2F, 0xFC, 0x97, 0x05, 0x7A,
-			0xAC, 0x7F, 0xD5, 0x1A, 0x4B, 0x0E, 0xA7, 0x5A,
-			0x28, 0x14, 0x3F, 0x29, 0x88, 0x3C, 0x4C, 0x02,
-			0xB8, 0xDA, 0xB0, 0x17, 0x55, 0x1F, 0x8A, 0x7D,
-			0x57, 0xC7, 0x8D, 0x74, 0xB7, 0xC4, 0x9F, 0x72,
-			0x7E, 0x15, 0x22, 0x12, 0x58, 0x07, 0x99, 0x34,
-			0x6E, 0x50, 0xDE, 0x68, 0x65, 0xBC, 0xDB, 0xF8,
-			0xC8, 0xA8, 0x2B, 0x40, 0xDC, 0xFE, 0x32, 0xA4,
-			0xCA, 0x10, 0x21, 0xF0, 0xD3, 0x5D, 0x0F, 0x00,
-			0x6F, 0x9D, 0x36, 0x42, 0x4A, 0x5E, 0xC1, 0xE0
+			0xA9, 0x67, 0xB3, 0xE8, 0x04, 0xFD, 0xA3, 0x76, 0x9A, 0x92, 0x80, 0x78, 0xE4, 0xDD, 0xD1, 0x38,
+			0x0D, 0xC6, 0x35, 0x98, 0x18, 0xF7, 0xEC, 0x6C, 0x43, 0x75, 0x37, 0x26, 0xFA, 0x13, 0x94, 0x48,
+			0xF2, 0xD0, 0x8B, 0x30, 0x84, 0x54, 0xDF, 0x23, 0x19, 0x5B, 0x3D, 0x59, 0xF3, 0xAE, 0xA2, 0x82,
+			0x63, 0x01, 0x83, 0x2E, 0xD9, 0x51, 0x9B, 0x7C, 0xA6, 0xEB, 0xA5, 0xBE, 0x16, 0x0C, 0xE3, 0x61,
+			0xC0, 0x8C, 0x3A, 0xF5, 0x73, 0x2C, 0x25, 0x0B, 0xBB, 0x4E, 0x89, 0x6B, 0x53, 0x6A, 0xB4, 0xF1,
+			0xE1, 0xE6, 0xBD, 0x45, 0xE2, 0xF4, 0xB6, 0x66, 0xCC, 0x95, 0x03, 0x56, 0xD4, 0x1C, 0x1E, 0xD7,
+			0xFB, 0xC3, 0x8E, 0xB5, 0xE9, 0xCF, 0xBF, 0xBA, 0xEA, 0x77, 0x39, 0xAF, 0x33, 0xC9, 0x62, 0x71,
+			0x81, 0x79, 0x09, 0xAD, 0x24, 0xCD, 0xF9, 0xD8, 0xE5, 0xC5, 0xB9, 0x4D, 0x44, 0x08, 0x86, 0xE7,
+			0xA1, 0x1D, 0xAA, 0xED, 0x06, 0x70, 0xB2, 0xD2, 0x41, 0x7B, 0xA0, 0x11, 0x31, 0xC2, 0x27, 0x90,
+			0x20, 0xF6, 0x60, 0xFF, 0x96, 0x5C, 0xB1, 0xAB, 0x9E, 0x9C, 0x52, 0x1B, 0x5F, 0x93, 0x0A, 0xEF,
+			0x91, 0x85, 0x49, 0xEE, 0x2D, 0x4F, 0x8F, 0x3B, 0x47, 0x87, 0x6D, 0x46, 0xD6, 0x3E, 0x69, 0x64,
+			0x2A, 0xCE, 0xCB, 0x2F, 0xFC, 0x97, 0x05, 0x7A, 0xAC, 0x7F, 0xD5, 0x1A, 0x4B, 0x0E, 0xA7, 0x5A,
+			0x28, 0x14, 0x3F, 0x29, 0x88, 0x3C, 0x4C, 0x02, 0xB8, 0xDA, 0xB0, 0x17, 0x55, 0x1F, 0x8A, 0x7D,
+			0x57, 0xC7, 0x8D, 0x74, 0xB7, 0xC4, 0x9F, 0x72, 0x7E, 0x15, 0x22, 0x12, 0x58, 0x07, 0x99, 0x34,
+			0x6E, 0x50, 0xDE, 0x68, 0x65, 0xBC, 0xDB, 0xF8, 0xC8, 0xA8, 0x2B, 0x40, 0xDC, 0xFE, 0x32, 0xA4,
+			0xCA, 0x10, 0x21, 0xF0, 0xD3, 0x5D, 0x0F, 0x00, 0x6F, 0x9D, 0x36, 0x42, 0x4A, 0x5E, 0xC1, 0xE0
 		), array(
-			0x75, 0xF3, 0xC6, 0xF4, 0xDB, 0x7B, 0xFB, 0xC8,
-			0x4A, 0xD3, 0xE6, 0x6B, 0x45, 0x7D, 0xE8, 0x4B,
-			0xD6, 0x32, 0xD8, 0xFD, 0x37, 0x71, 0xF1, 0xE1,
-			0x30, 0x0F, 0xF8, 0x1B, 0x87, 0xFA, 0x06, 0x3F,
-			0x5E, 0xBA, 0xAE, 0x5B, 0x8A, 0x00, 0xBC, 0x9D,
-			0x6D, 0xC1, 0xB1, 0x0E, 0x80, 0x5D, 0xD2, 0xD5,
-			0xA0, 0x84, 0x07, 0x14, 0xB5, 0x90, 0x2C, 0xA3,
-			0xB2, 0x73, 0x4C, 0x54, 0x92, 0x74, 0x36, 0x51,
-			0x38, 0xB0, 0xBD, 0x5A, 0xFC, 0x60, 0x62, 0x96,
-			0x6C, 0x42, 0xF7, 0x10, 0x7C, 0x28, 0x27, 0x8C,
-			0x13, 0x95, 0x9C, 0xC7, 0x24, 0x46, 0x3B, 0x70,
-			0xCA, 0xE3, 0x85, 0xCB, 0x11, 0xD0, 0x93, 0xB8,
-			0xA6, 0x83, 0x20, 0xFF, 0x9F, 0x77, 0xC3, 0xCC,
-			0x03, 0x6F, 0x08, 0xBF, 0x40, 0xE7, 0x2B, 0xE2,
-			0x79, 0x0C, 0xAA, 0x82, 0x41, 0x3A, 0xEA, 0xB9,
-			0xE4, 0x9A, 0xA4, 0x97, 0x7E, 0xDA, 0x7A, 0x17,
-			0x66, 0x94, 0xA1, 0x1D, 0x3D, 0xF0, 0xDE, 0xB3,
-			0x0B, 0x72, 0xA7, 0x1C, 0xEF, 0xD1, 0x53, 0x3E,
-			0x8F, 0x33, 0x26, 0x5F, 0xEC, 0x76, 0x2A, 0x49,
-			0x81, 0x88, 0xEE, 0x21, 0xC4, 0x1A, 0xEB, 0xD9,
-			0xC5, 0x39, 0x99, 0xCD, 0xAD, 0x31, 0x8B, 0x01,
-			0x18, 0x23, 0xDD, 0x1F, 0x4E, 0x2D, 0xF9, 0x48,
-			0x4F, 0xF2, 0x65, 0x8E, 0x78, 0x5C, 0x58, 0x19,
-			0x8D, 0xE5, 0x98, 0x57, 0x67, 0x7F, 0x05, 0x64,
-			0xAF, 0x63, 0xB6, 0xFE, 0xF5, 0xB7, 0x3C, 0xA5,
-			0xCE, 0xE9, 0x68, 0x44, 0xE0, 0x4D, 0x43, 0x69,
-			0x29, 0x2E, 0xAC, 0x15, 0x59, 0xA8, 0x0A, 0x9E,
-			0x6E, 0x47, 0xDF, 0x34, 0x35, 0x6A, 0xCF, 0xDC,
-			0x22, 0xC9, 0xC0, 0x9B, 0x89, 0xD4, 0xED, 0xAB,
-			0x12, 0xA2, 0x0D, 0x52, 0xBB, 0x02, 0x2F, 0xA9,
-			0xD7, 0x61, 0x1E, 0xB4, 0x50, 0x04, 0xF6, 0xC2,
-			0x16, 0x25, 0x86, 0x56, 0x55, 0x09, 0xBE, 0x91
+			0x75, 0xF3, 0xC6, 0xF4, 0xDB, 0x7B, 0xFB, 0xC8, 0x4A, 0xD3, 0xE6, 0x6B, 0x45, 0x7D, 0xE8, 0x4B,
+			0xD6, 0x32, 0xD8, 0xFD, 0x37, 0x71, 0xF1, 0xE1, 0x30, 0x0F, 0xF8, 0x1B, 0x87, 0xFA, 0x06, 0x3F,
+			0x5E, 0xBA, 0xAE, 0x5B, 0x8A, 0x00, 0xBC, 0x9D, 0x6D, 0xC1, 0xB1, 0x0E, 0x80, 0x5D, 0xD2, 0xD5,
+			0xA0, 0x84, 0x07, 0x14, 0xB5, 0x90, 0x2C, 0xA3, 0xB2, 0x73, 0x4C, 0x54, 0x92, 0x74, 0x36, 0x51,
+			0x38, 0xB0, 0xBD, 0x5A, 0xFC, 0x60, 0x62, 0x96, 0x6C, 0x42, 0xF7, 0x10, 0x7C, 0x28, 0x27, 0x8C,
+			0x13, 0x95, 0x9C, 0xC7, 0x24, 0x46, 0x3B, 0x70, 0xCA, 0xE3, 0x85, 0xCB, 0x11, 0xD0, 0x93, 0xB8,
+			0xA6, 0x83, 0x20, 0xFF, 0x9F, 0x77, 0xC3, 0xCC, 0x03, 0x6F, 0x08, 0xBF, 0x40, 0xE7, 0x2B, 0xE2,
+			0x79, 0x0C, 0xAA, 0x82, 0x41, 0x3A, 0xEA, 0xB9, 0xE4, 0x9A, 0xA4, 0x97, 0x7E, 0xDA, 0x7A, 0x17,
+			0x66, 0x94, 0xA1, 0x1D, 0x3D, 0xF0, 0xDE, 0xB3, 0x0B, 0x72, 0xA7, 0x1C, 0xEF, 0xD1, 0x53, 0x3E,
+			0x8F, 0x33, 0x26, 0x5F, 0xEC, 0x76, 0x2A, 0x49, 0x81, 0x88, 0xEE, 0x21, 0xC4, 0x1A, 0xEB, 0xD9,
+			0xC5, 0x39, 0x99, 0xCD, 0xAD, 0x31, 0x8B, 0x01, 0x18, 0x23, 0xDD, 0x1F, 0x4E, 0x2D, 0xF9, 0x48,
+			0x4F, 0xF2, 0x65, 0x8E, 0x78, 0x5C, 0x58, 0x19, 0x8D, 0xE5, 0x98, 0x57, 0x67, 0x7F, 0x05, 0x64,
+			0xAF, 0x63, 0xB6, 0xFE, 0xF5, 0xB7, 0x3C, 0xA5, 0xCE, 0xE9, 0x68, 0x44, 0xE0, 0x4D, 0x43, 0x69,
+			0x29, 0x2E, 0xAC, 0x15, 0x59, 0xA8, 0x0A, 0x9E, 0x6E, 0x47, 0xDF, 0x34, 0x35, 0x6A, 0xCF, 0xDC,
+			0x22, 0xC9, 0xC0, 0x9B, 0x89, 0xD4, 0xED, 0xAB, 0x12, 0xA2, 0x0D, 0x52, 0xBB, 0x02, 0x2F, 0xA9,
+			0xD7, 0x61, 0x1E, 0xB4, 0x50, 0x04, 0xF6, 0xC2, 0x16, 0x25, 0x86, 0x56, 0x55, 0x09, 0xBE, 0x91
 		)
 	);
 	protected static $tfm = array(
@@ -13904,310 +13585,397 @@ class XNCrypt {
 		0x7D000000, 0xFA000000, 0xEF000000, 0xC5000000, 0x91000000
 	);
 	protected static $rc2t = array(
-        0xD9, 0x78, 0xF9, 0xC4, 0x19, 0xDD, 0xB5, 0xED,
-        0x28, 0xE9, 0xFD, 0x79, 0x4A, 0xA0, 0xD8, 0x9D,
-        0xC6, 0x7E, 0x37, 0x83, 0x2B, 0x76, 0x53, 0x8E,
-        0x62, 0x4C, 0x64, 0x88, 0x44, 0x8B, 0xFB, 0xA2,
-        0x17, 0x9A, 0x59, 0xF5, 0x87, 0xB3, 0x4F, 0x13,
-        0x61, 0x45, 0x6D, 0x8D, 0x09, 0x81, 0x7D, 0x32,
-        0xBD, 0x8F, 0x40, 0xEB, 0x86, 0xB7, 0x7B, 0x0B,
-        0xF0, 0x95, 0x21, 0x22, 0x5C, 0x6B, 0x4E, 0x82,
-        0x54, 0xD6, 0x65, 0x93, 0xCE, 0x60, 0xB2, 0x1C,
-        0x73, 0x56, 0xC0, 0x14, 0xA7, 0x8C, 0xF1, 0xDC,
-        0x12, 0x75, 0xCA, 0x1F, 0x3B, 0xBE, 0xE4, 0xD1,
-        0x42, 0x3D, 0xD4, 0x30, 0xA3, 0x3C, 0xB6, 0x26,
-        0x6F, 0xBF, 0x0E, 0xDA, 0x46, 0x69, 0x07, 0x57,
-        0x27, 0xF2, 0x1D, 0x9B, 0xBC, 0x94, 0x43, 0x03,
-        0xF8, 0x11, 0xC7, 0xF6, 0x90, 0xEF, 0x3E, 0xE7,
-        0x06, 0xC3, 0xD5, 0x2F, 0xC8, 0x66, 0x1E, 0xD7,
-        0x08, 0xE8, 0xEA, 0xDE, 0x80, 0x52, 0xEE, 0xF7,
-        0x84, 0xAA, 0x72, 0xAC, 0x35, 0x4D, 0x6A, 0x2A,
-        0x96, 0x1A, 0xD2, 0x71, 0x5A, 0x15, 0x49, 0x74,
-        0x4B, 0x9F, 0xD0, 0x5E, 0x04, 0x18, 0xA4, 0xEC,
-        0xC2, 0xE0, 0x41, 0x6E, 0x0F, 0x51, 0xCB, 0xCC,
-        0x24, 0x91, 0xAF, 0x50, 0xA1, 0xF4, 0x70, 0x39,
-        0x99, 0x7C, 0x3A, 0x85, 0x23, 0xB8, 0xB4, 0x7A,
-        0xFC, 0x02, 0x36, 0x5B, 0x25, 0x55, 0x97, 0x31,
-        0x2D, 0x5D, 0xFA, 0x98, 0xE3, 0x8A, 0x92, 0xAE,
-        0x05, 0xDF, 0x29, 0x10, 0x67, 0x6C, 0xBA, 0xC9,
-        0xD3, 0x00, 0xE6, 0xCF, 0xE1, 0x9E, 0xA8, 0x2C,
-        0x63, 0x16, 0x01, 0x3F, 0x58, 0xE2, 0x89, 0xA9,
-        0x0D, 0x38, 0x34, 0x1B, 0xAB, 0x33, 0xFF, 0xB0,
-        0xBB, 0x48, 0x0C, 0x5F, 0xB9, 0xB1, 0xCD, 0x2E,
-        0xC5, 0xF3, 0xDB, 0x47, 0xE5, 0xA5, 0x9C, 0x77,
-        0x0A, 0xA6, 0x20, 0x68, 0xFE, 0x7F, 0xC1, 0xAD,
-        0xD9, 0x78, 0xF9, 0xC4, 0x19, 0xDD, 0xB5, 0xED,
-        0x28, 0xE9, 0xFD, 0x79, 0x4A, 0xA0, 0xD8, 0x9D,
-        0xC6, 0x7E, 0x37, 0x83, 0x2B, 0x76, 0x53, 0x8E,
-        0x62, 0x4C, 0x64, 0x88, 0x44, 0x8B, 0xFB, 0xA2,
-        0x17, 0x9A, 0x59, 0xF5, 0x87, 0xB3, 0x4F, 0x13,
-        0x61, 0x45, 0x6D, 0x8D, 0x09, 0x81, 0x7D, 0x32,
-        0xBD, 0x8F, 0x40, 0xEB, 0x86, 0xB7, 0x7B, 0x0B,
-        0xF0, 0x95, 0x21, 0x22, 0x5C, 0x6B, 0x4E, 0x82,
-        0x54, 0xD6, 0x65, 0x93, 0xCE, 0x60, 0xB2, 0x1C,
-        0x73, 0x56, 0xC0, 0x14, 0xA7, 0x8C, 0xF1, 0xDC,
-        0x12, 0x75, 0xCA, 0x1F, 0x3B, 0xBE, 0xE4, 0xD1,
-        0x42, 0x3D, 0xD4, 0x30, 0xA3, 0x3C, 0xB6, 0x26,
-        0x6F, 0xBF, 0x0E, 0xDA, 0x46, 0x69, 0x07, 0x57,
-        0x27, 0xF2, 0x1D, 0x9B, 0xBC, 0x94, 0x43, 0x03,
-        0xF8, 0x11, 0xC7, 0xF6, 0x90, 0xEF, 0x3E, 0xE7,
-        0x06, 0xC3, 0xD5, 0x2F, 0xC8, 0x66, 0x1E, 0xD7,
-        0x08, 0xE8, 0xEA, 0xDE, 0x80, 0x52, 0xEE, 0xF7,
-        0x84, 0xAA, 0x72, 0xAC, 0x35, 0x4D, 0x6A, 0x2A,
-        0x96, 0x1A, 0xD2, 0x71, 0x5A, 0x15, 0x49, 0x74,
-        0x4B, 0x9F, 0xD0, 0x5E, 0x04, 0x18, 0xA4, 0xEC,
-        0xC2, 0xE0, 0x41, 0x6E, 0x0F, 0x51, 0xCB, 0xCC,
-        0x24, 0x91, 0xAF, 0x50, 0xA1, 0xF4, 0x70, 0x39,
-        0x99, 0x7C, 0x3A, 0x85, 0x23, 0xB8, 0xB4, 0x7A,
-        0xFC, 0x02, 0x36, 0x5B, 0x25, 0x55, 0x97, 0x31,
-        0x2D, 0x5D, 0xFA, 0x98, 0xE3, 0x8A, 0x92, 0xAE,
-        0x05, 0xDF, 0x29, 0x10, 0x67, 0x6C, 0xBA, 0xC9,
-        0xD3, 0x00, 0xE6, 0xCF, 0xE1, 0x9E, 0xA8, 0x2C,
-        0x63, 0x16, 0x01, 0x3F, 0x58, 0xE2, 0x89, 0xA9,
-        0x0D, 0x38, 0x34, 0x1B, 0xAB, 0x33, 0xFF, 0xB0,
-        0xBB, 0x48, 0x0C, 0x5F, 0xB9, 0xB1, 0xCD, 0x2E,
-        0xC5, 0xF3, 0xDB, 0x47, 0xE5, 0xA5, 0x9C, 0x77,
-        0x0A, 0xA6, 0x20, 0x68, 0xFE, 0x7F, 0xC1, 0xAD
+		0xD9, 0x78, 0xF9, 0xC4, 0x19, 0xDD, 0xB5, 0xED, 0x28, 0xE9, 0xFD, 0x79, 0x4A, 0xA0, 0xD8, 0x9D,
+		0xC6, 0x7E, 0x37, 0x83, 0x2B, 0x76, 0x53, 0x8E, 0x62, 0x4C, 0x64, 0x88, 0x44, 0x8B, 0xFB, 0xA2,
+		0x17, 0x9A, 0x59, 0xF5, 0x87, 0xB3, 0x4F, 0x13, 0x61, 0x45, 0x6D, 0x8D, 0x09, 0x81, 0x7D, 0x32,
+		0xBD, 0x8F, 0x40, 0xEB, 0x86, 0xB7, 0x7B, 0x0B, 0xF0, 0x95, 0x21, 0x22, 0x5C, 0x6B, 0x4E, 0x82,
+		0x54, 0xD6, 0x65, 0x93, 0xCE, 0x60, 0xB2, 0x1C, 0x73, 0x56, 0xC0, 0x14, 0xA7, 0x8C, 0xF1, 0xDC,
+		0x12, 0x75, 0xCA, 0x1F, 0x3B, 0xBE, 0xE4, 0xD1, 0x42, 0x3D, 0xD4, 0x30, 0xA3, 0x3C, 0xB6, 0x26,
+		0x6F, 0xBF, 0x0E, 0xDA, 0x46, 0x69, 0x07, 0x57, 0x27, 0xF2, 0x1D, 0x9B, 0xBC, 0x94, 0x43, 0x03,
+		0xF8, 0x11, 0xC7, 0xF6, 0x90, 0xEF, 0x3E, 0xE7, 0x06, 0xC3, 0xD5, 0x2F, 0xC8, 0x66, 0x1E, 0xD7,
+		0x08, 0xE8, 0xEA, 0xDE, 0x80, 0x52, 0xEE, 0xF7, 0x84, 0xAA, 0x72, 0xAC, 0x35, 0x4D, 0x6A, 0x2A,
+		0x96, 0x1A, 0xD2, 0x71, 0x5A, 0x15, 0x49, 0x74, 0x4B, 0x9F, 0xD0, 0x5E, 0x04, 0x18, 0xA4, 0xEC,
+		0xC2, 0xE0, 0x41, 0x6E, 0x0F, 0x51, 0xCB, 0xCC, 0x24, 0x91, 0xAF, 0x50, 0xA1, 0xF4, 0x70, 0x39,
+		0x99, 0x7C, 0x3A, 0x85, 0x23, 0xB8, 0xB4, 0x7A, 0xFC, 0x02, 0x36, 0x5B, 0x25, 0x55, 0x97, 0x31,
+		0x2D, 0x5D, 0xFA, 0x98, 0xE3, 0x8A, 0x92, 0xAE, 0x05, 0xDF, 0x29, 0x10, 0x67, 0x6C, 0xBA, 0xC9,
+		0xD3, 0x00, 0xE6, 0xCF, 0xE1, 0x9E, 0xA8, 0x2C, 0x63, 0x16, 0x01, 0x3F, 0x58, 0xE2, 0x89, 0xA9,
+		0x0D, 0x38, 0x34, 0x1B, 0xAB, 0x33, 0xFF, 0xB0, 0xBB, 0x48, 0x0C, 0x5F, 0xB9, 0xB1, 0xCD, 0x2E,
+		0xC5, 0xF3, 0xDB, 0x47, 0xE5, 0xA5, 0x9C, 0x77, 0x0A, 0xA6, 0x20, 0x68, 0xFE, 0x7F, 0xC1, 0xAD,
+		0xD9, 0x78, 0xF9, 0xC4, 0x19, 0xDD, 0xB5, 0xED, 0x28, 0xE9, 0xFD, 0x79, 0x4A, 0xA0, 0xD8, 0x9D,
+		0xC6, 0x7E, 0x37, 0x83, 0x2B, 0x76, 0x53, 0x8E, 0x62, 0x4C, 0x64, 0x88, 0x44, 0x8B, 0xFB, 0xA2,
+		0x17, 0x9A, 0x59, 0xF5, 0x87, 0xB3, 0x4F, 0x13, 0x61, 0x45, 0x6D, 0x8D, 0x09, 0x81, 0x7D, 0x32,
+		0xBD, 0x8F, 0x40, 0xEB, 0x86, 0xB7, 0x7B, 0x0B, 0xF0, 0x95, 0x21, 0x22, 0x5C, 0x6B, 0x4E, 0x82,
+		0x54, 0xD6, 0x65, 0x93, 0xCE, 0x60, 0xB2, 0x1C, 0x73, 0x56, 0xC0, 0x14, 0xA7, 0x8C, 0xF1, 0xDC,
+		0x12, 0x75, 0xCA, 0x1F, 0x3B, 0xBE, 0xE4, 0xD1, 0x42, 0x3D, 0xD4, 0x30, 0xA3, 0x3C, 0xB6, 0x26,
+		0x6F, 0xBF, 0x0E, 0xDA, 0x46, 0x69, 0x07, 0x57, 0x27, 0xF2, 0x1D, 0x9B, 0xBC, 0x94, 0x43, 0x03,
+		0xF8, 0x11, 0xC7, 0xF6, 0x90, 0xEF, 0x3E, 0xE7, 0x06, 0xC3, 0xD5, 0x2F, 0xC8, 0x66, 0x1E, 0xD7,
+		0x08, 0xE8, 0xEA, 0xDE, 0x80, 0x52, 0xEE, 0xF7, 0x84, 0xAA, 0x72, 0xAC, 0x35, 0x4D, 0x6A, 0x2A,
+		0x96, 0x1A, 0xD2, 0x71, 0x5A, 0x15, 0x49, 0x74, 0x4B, 0x9F, 0xD0, 0x5E, 0x04, 0x18, 0xA4, 0xEC,
+		0xC2, 0xE0, 0x41, 0x6E, 0x0F, 0x51, 0xCB, 0xCC, 0x24, 0x91, 0xAF, 0x50, 0xA1, 0xF4, 0x70, 0x39,
+		0x99, 0x7C, 0x3A, 0x85, 0x23, 0xB8, 0xB4, 0x7A, 0xFC, 0x02, 0x36, 0x5B, 0x25, 0x55, 0x97, 0x31,
+		0x2D, 0x5D, 0xFA, 0x98, 0xE3, 0x8A, 0x92, 0xAE, 0x05, 0xDF, 0x29, 0x10, 0x67, 0x6C, 0xBA, 0xC9,
+		0xD3, 0x00, 0xE6, 0xCF, 0xE1, 0x9E, 0xA8, 0x2C, 0x63, 0x16, 0x01, 0x3F, 0x58, 0xE2, 0x89, 0xA9,
+		0x0D, 0x38, 0x34, 0x1B, 0xAB, 0x33, 0xFF, 0xB0, 0xBB, 0x48, 0x0C, 0x5F, 0xB9, 0xB1, 0xCD, 0x2E,
+		0xC5, 0xF3, 0xDB, 0x47, 0xE5, 0xA5, 0x9C, 0x77, 0x0A, 0xA6, 0x20, 0x68, 0xFE, 0x7F, 0xC1, 0xAD
 	);
 	protected static $rc2invt = array(
-        0xD1, 0xDA, 0xB9, 0x6F, 0x9C, 0xC8, 0x78, 0x66,
-        0x80, 0x2C, 0xF8, 0x37, 0xEA, 0xE0, 0x62, 0xA4,
-        0xCB, 0x71, 0x50, 0x27, 0x4B, 0x95, 0xD9, 0x20,
-        0x9D, 0x04, 0x91, 0xE3, 0x47, 0x6A, 0x7E, 0x53,
-        0xFA, 0x3A, 0x3B, 0xB4, 0xA8, 0xBC, 0x5F, 0x68,
-        0x08, 0xCA, 0x8F, 0x14, 0xD7, 0xC0, 0xEF, 0x7B,
-        0x5B, 0xBF, 0x2F, 0xE5, 0xE2, 0x8C, 0xBA, 0x12,
-        0xE1, 0xAF, 0xB2, 0x54, 0x5D, 0x59, 0x76, 0xDB,
-        0x32, 0xA2, 0x58, 0x6E, 0x1C, 0x29, 0x64, 0xF3,
-        0xE9, 0x96, 0x0C, 0x98, 0x19, 0x8D, 0x3E, 0x26,
-        0xAB, 0xA5, 0x85, 0x16, 0x40, 0xBD, 0x49, 0x67,
-        0xDC, 0x22, 0x94, 0xBB, 0x3C, 0xC1, 0x9B, 0xEB,
-        0x45, 0x28, 0x18, 0xD8, 0x1A, 0x42, 0x7D, 0xCC,
-        0xFB, 0x65, 0x8E, 0x3D, 0xCD, 0x2A, 0xA3, 0x60,
-        0xAE, 0x93, 0x8A, 0x48, 0x97, 0x51, 0x15, 0xF7,
-        0x01, 0x0B, 0xB7, 0x36, 0xB1, 0x2E, 0x11, 0xFD,
-        0x84, 0x2D, 0x3F, 0x13, 0x88, 0xB3, 0x34, 0x24,
-        0x1B, 0xDE, 0xC5, 0x1D, 0x4D, 0x2B, 0x17, 0x31,
-        0x74, 0xA9, 0xC6, 0x43, 0x6D, 0x39, 0x90, 0xBE,
-        0xC3, 0xB0, 0x21, 0x6B, 0xF6, 0x0F, 0xD5, 0x99,
-        0x0D, 0xAC, 0x1F, 0x5C, 0x9E, 0xF5, 0xF9, 0x4C,
-        0xD6, 0xDF, 0x89, 0xE4, 0x8B, 0xFF, 0xC7, 0xAA,
-        0xE7, 0xED, 0x46, 0x25, 0xB6, 0x06, 0x5E, 0x35,
-        0xB5, 0xEC, 0xCE, 0xE8, 0x6C, 0x30, 0x55, 0x61,
-        0x4A, 0xFE, 0xA0, 0x79, 0x03, 0xF0, 0x10, 0x72,
-        0x7C, 0xCF, 0x52, 0xA6, 0xA7, 0xEE, 0x44, 0xD3,
-        0x9A, 0x57, 0x92, 0xD0, 0x5A, 0x7A, 0x41, 0x7F,
-        0x0E, 0x00, 0x63, 0xF2, 0x4F, 0x05, 0x83, 0xC9,
-        0xA1, 0xD4, 0xDD, 0xC4, 0x56, 0xF4, 0xD2, 0x77,
-        0x81, 0x09, 0x82, 0x33, 0x9F, 0x07, 0x86, 0x75,
-        0x38, 0x4E, 0x69, 0xF1, 0xAD, 0x23, 0x73, 0x87,
-        0x70, 0x02, 0xC2, 0x1E, 0xB8, 0x0A, 0xFC, 0xE6
+		0xD1, 0xDA, 0xB9, 0x6F, 0x9C, 0xC8, 0x78, 0x66, 0x80, 0x2C, 0xF8, 0x37, 0xEA, 0xE0, 0x62, 0xA4,
+		0xCB, 0x71, 0x50, 0x27, 0x4B, 0x95, 0xD9, 0x20, 0x9D, 0x04, 0x91, 0xE3, 0x47, 0x6A, 0x7E, 0x53,
+		0xFA, 0x3A, 0x3B, 0xB4, 0xA8, 0xBC, 0x5F, 0x68, 0x08, 0xCA, 0x8F, 0x14, 0xD7, 0xC0, 0xEF, 0x7B,
+		0x5B, 0xBF, 0x2F, 0xE5, 0xE2, 0x8C, 0xBA, 0x12, 0xE1, 0xAF, 0xB2, 0x54, 0x5D, 0x59, 0x76, 0xDB,
+		0x32, 0xA2, 0x58, 0x6E, 0x1C, 0x29, 0x64, 0xF3, 0xE9, 0x96, 0x0C, 0x98, 0x19, 0x8D, 0x3E, 0x26,
+		0xAB, 0xA5, 0x85, 0x16, 0x40, 0xBD, 0x49, 0x67, 0xDC, 0x22, 0x94, 0xBB, 0x3C, 0xC1, 0x9B, 0xEB,
+		0x45, 0x28, 0x18, 0xD8, 0x1A, 0x42, 0x7D, 0xCC, 0xFB, 0x65, 0x8E, 0x3D, 0xCD, 0x2A, 0xA3, 0x60,
+		0xAE, 0x93, 0x8A, 0x48, 0x97, 0x51, 0x15, 0xF7, 0x01, 0x0B, 0xB7, 0x36, 0xB1, 0x2E, 0x11, 0xFD,
+		0x84, 0x2D, 0x3F, 0x13, 0x88, 0xB3, 0x34, 0x24, 0x1B, 0xDE, 0xC5, 0x1D, 0x4D, 0x2B, 0x17, 0x31,
+		0x74, 0xA9, 0xC6, 0x43, 0x6D, 0x39, 0x90, 0xBE, 0xC3, 0xB0, 0x21, 0x6B, 0xF6, 0x0F, 0xD5, 0x99,
+		0x0D, 0xAC, 0x1F, 0x5C, 0x9E, 0xF5, 0xF9, 0x4C, 0xD6, 0xDF, 0x89, 0xE4, 0x8B, 0xFF, 0xC7, 0xAA,
+		0xE7, 0xED, 0x46, 0x25, 0xB6, 0x06, 0x5E, 0x35, 0xB5, 0xEC, 0xCE, 0xE8, 0x6C, 0x30, 0x55, 0x61,
+		0x4A, 0xFE, 0xA0, 0x79, 0x03, 0xF0, 0x10, 0x72, 0x7C, 0xCF, 0x52, 0xA6, 0xA7, 0xEE, 0x44, 0xD3,
+		0x9A, 0x57, 0x92, 0xD0, 0x5A, 0x7A, 0x41, 0x7F, 0x0E, 0x00, 0x63, 0xF2, 0x4F, 0x05, 0x83, 0xC9,
+		0xA1, 0xD4, 0xDD, 0xC4, 0x56, 0xF4, 0xD2, 0x77, 0x81, 0x09, 0x82, 0x33, 0x9F, 0x07, 0x86, 0x75,
+		0x38, 0x4E, 0x69, 0xF1, 0xAD, 0x23, 0x73, 0x87, 0x70, 0x02, 0xC2, 0x1E, 0xB8, 0x0A, 0xFC, 0xE6
 	);
 	protected static $desm = array(
-        0x00, 0x10, 0x01, 0x11, 0x20, 0x30, 0x21, 0x31,
-        0x02, 0x12, 0x03, 0x13, 0x22, 0x32, 0x23, 0x33,
-        0x40, 0x50, 0x41, 0x51, 0x60, 0x70, 0x61, 0x71,
-        0x42, 0x52, 0x43, 0x53, 0x62, 0x72, 0x63, 0x73,
-        0x04, 0x14, 0x05, 0x15, 0x24, 0x34, 0x25, 0x35,
-        0x06, 0x16, 0x07, 0x17, 0x26, 0x36, 0x27, 0x37,
-        0x44, 0x54, 0x45, 0x55, 0x64, 0x74, 0x65, 0x75,
-        0x46, 0x56, 0x47, 0x57, 0x66, 0x76, 0x67, 0x77,
-        0x80, 0x90, 0x81, 0x91, 0xA0, 0xB0, 0xA1, 0xB1,
-        0x82, 0x92, 0x83, 0x93, 0xA2, 0xB2, 0xA3, 0xB3,
-        0xC0, 0xD0, 0xC1, 0xD1, 0xE0, 0xF0, 0xE1, 0xF1,
-        0xC2, 0xD2, 0xC3, 0xD3, 0xE2, 0xF2, 0xE3, 0xF3,
-        0x84, 0x94, 0x85, 0x95, 0xA4, 0xB4, 0xA5, 0xB5,
-        0x86, 0x96, 0x87, 0x97, 0xA6, 0xB6, 0xA7, 0xB7,
-        0xC4, 0xD4, 0xC5, 0xD5, 0xE4, 0xF4, 0xE5, 0xF5,
-        0xC6, 0xD6, 0xC7, 0xD7, 0xE6, 0xF6, 0xE7, 0xF7,
-        0x08, 0x18, 0x09, 0x19, 0x28, 0x38, 0x29, 0x39,
-        0x0A, 0x1A, 0x0B, 0x1B, 0x2A, 0x3A, 0x2B, 0x3B,
-        0x48, 0x58, 0x49, 0x59, 0x68, 0x78, 0x69, 0x79,
-        0x4A, 0x5A, 0x4B, 0x5B, 0x6A, 0x7A, 0x6B, 0x7B,
-        0x0C, 0x1C, 0x0D, 0x1D, 0x2C, 0x3C, 0x2D, 0x3D,
-        0x0E, 0x1E, 0x0F, 0x1F, 0x2E, 0x3E, 0x2F, 0x3F,
-        0x4C, 0x5C, 0x4D, 0x5D, 0x6C, 0x7C, 0x6D, 0x7D,
-        0x4E, 0x5E, 0x4F, 0x5F, 0x6E, 0x7E, 0x6F, 0x7F,
-        0x88, 0x98, 0x89, 0x99, 0xA8, 0xB8, 0xA9, 0xB9,
-        0x8A, 0x9A, 0x8B, 0x9B, 0xAA, 0xBA, 0xAB, 0xBB,
-        0xC8, 0xD8, 0xC9, 0xD9, 0xE8, 0xF8, 0xE9, 0xF9,
-        0xCA, 0xDA, 0xCB, 0xDB, 0xEA, 0xFA, 0xEB, 0xFB,
-        0x8C, 0x9C, 0x8D, 0x9D, 0xAC, 0xBC, 0xAD, 0xBD,
-        0x8E, 0x9E, 0x8F, 0x9F, 0xAE, 0xBE, 0xAF, 0xBF,
-        0xCC, 0xDC, 0xCD, 0xDD, 0xEC, 0xFC, 0xED, 0xFD,
-        0xCE, 0xDE, 0xCF, 0xDF, 0xEE, 0xFE, 0xEF, 0xFF
+		0x00, 0x10, 0x01, 0x11, 0x20, 0x30, 0x21, 0x31, 0x02, 0x12, 0x03, 0x13, 0x22, 0x32, 0x23, 0x33,
+		0x40, 0x50, 0x41, 0x51, 0x60, 0x70, 0x61, 0x71, 0x42, 0x52, 0x43, 0x53, 0x62, 0x72, 0x63, 0x73,
+		0x04, 0x14, 0x05, 0x15, 0x24, 0x34, 0x25, 0x35, 0x06, 0x16, 0x07, 0x17, 0x26, 0x36, 0x27, 0x37,
+		0x44, 0x54, 0x45, 0x55, 0x64, 0x74, 0x65, 0x75, 0x46, 0x56, 0x47, 0x57, 0x66, 0x76, 0x67, 0x77,
+		0x80, 0x90, 0x81, 0x91, 0xA0, 0xB0, 0xA1, 0xB1, 0x82, 0x92, 0x83, 0x93, 0xA2, 0xB2, 0xA3, 0xB3,
+		0xC0, 0xD0, 0xC1, 0xD1, 0xE0, 0xF0, 0xE1, 0xF1, 0xC2, 0xD2, 0xC3, 0xD3, 0xE2, 0xF2, 0xE3, 0xF3,
+		0x84, 0x94, 0x85, 0x95, 0xA4, 0xB4, 0xA5, 0xB5, 0x86, 0x96, 0x87, 0x97, 0xA6, 0xB6, 0xA7, 0xB7,
+		0xC4, 0xD4, 0xC5, 0xD5, 0xE4, 0xF4, 0xE5, 0xF5, 0xC6, 0xD6, 0xC7, 0xD7, 0xE6, 0xF6, 0xE7, 0xF7,
+		0x08, 0x18, 0x09, 0x19, 0x28, 0x38, 0x29, 0x39, 0x0A, 0x1A, 0x0B, 0x1B, 0x2A, 0x3A, 0x2B, 0x3B,
+		0x48, 0x58, 0x49, 0x59, 0x68, 0x78, 0x69, 0x79, 0x4A, 0x5A, 0x4B, 0x5B, 0x6A, 0x7A, 0x6B, 0x7B,
+		0x0C, 0x1C, 0x0D, 0x1D, 0x2C, 0x3C, 0x2D, 0x3D, 0x0E, 0x1E, 0x0F, 0x1F, 0x2E, 0x3E, 0x2F, 0x3F,
+		0x4C, 0x5C, 0x4D, 0x5D, 0x6C, 0x7C, 0x6D, 0x7D, 0x4E, 0x5E, 0x4F, 0x5F, 0x6E, 0x7E, 0x6F, 0x7F,
+		0x88, 0x98, 0x89, 0x99, 0xA8, 0xB8, 0xA9, 0xB9, 0x8A, 0x9A, 0x8B, 0x9B, 0xAA, 0xBA, 0xAB, 0xBB,
+		0xC8, 0xD8, 0xC9, 0xD9, 0xE8, 0xF8, 0xE9, 0xF9, 0xCA, 0xDA, 0xCB, 0xDB, 0xEA, 0xFA, 0xEB, 0xFB,
+		0x8C, 0x9C, 0x8D, 0x9D, 0xAC, 0xBC, 0xAD, 0xBD, 0x8E, 0x9E, 0x8F, 0x9F, 0xAE, 0xBE, 0xAF, 0xBF,
+		0xCC, 0xDC, 0xCD, 0xDD, 0xEC, 0xFC, 0xED, 0xFD, 0xCE, 0xDE, 0xCF, 0xDF, 0xEE, 0xFE, 0xEF, 0xFF
 	);
 	protected static $desinvm = array(
-        0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0,
-        0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
-        0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8,
-        0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8,
-        0x04, 0x84, 0x44, 0xC4, 0x24, 0xA4, 0x64, 0xE4,
-        0x14, 0x94, 0x54, 0xD4, 0x34, 0xB4, 0x74, 0xF4,
-        0x0C, 0x8C, 0x4C, 0xCC, 0x2C, 0xAC, 0x6C, 0xEC,
-        0x1C, 0x9C, 0x5C, 0xDC, 0x3C, 0xBC, 0x7C, 0xFC,
-        0x02, 0x82, 0x42, 0xC2, 0x22, 0xA2, 0x62, 0xE2,
-        0x12, 0x92, 0x52, 0xD2, 0x32, 0xB2, 0x72, 0xF2,
-        0x0A, 0x8A, 0x4A, 0xCA, 0x2A, 0xAA, 0x6A, 0xEA,
-        0x1A, 0x9A, 0x5A, 0xDA, 0x3A, 0xBA, 0x7A, 0xFA,
-        0x06, 0x86, 0x46, 0xC6, 0x26, 0xA6, 0x66, 0xE6,
-        0x16, 0x96, 0x56, 0xD6, 0x36, 0xB6, 0x76, 0xF6,
-        0x0E, 0x8E, 0x4E, 0xCE, 0x2E, 0xAE, 0x6E, 0xEE,
-        0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE,
-        0x01, 0x81, 0x41, 0xC1, 0x21, 0xA1, 0x61, 0xE1,
-        0x11, 0x91, 0x51, 0xD1, 0x31, 0xB1, 0x71, 0xF1,
-        0x09, 0x89, 0x49, 0xC9, 0x29, 0xA9, 0x69, 0xE9,
-        0x19, 0x99, 0x59, 0xD9, 0x39, 0xB9, 0x79, 0xF9,
-        0x05, 0x85, 0x45, 0xC5, 0x25, 0xA5, 0x65, 0xE5,
-        0x15, 0x95, 0x55, 0xD5, 0x35, 0xB5, 0x75, 0xF5,
-        0x0D, 0x8D, 0x4D, 0xCD, 0x2D, 0xAD, 0x6D, 0xED,
-        0x1D, 0x9D, 0x5D, 0xDD, 0x3D, 0xBD, 0x7D, 0xFD,
-        0x03, 0x83, 0x43, 0xC3, 0x23, 0xA3, 0x63, 0xE3,
-        0x13, 0x93, 0x53, 0xD3, 0x33, 0xB3, 0x73, 0xF3,
-        0x0B, 0x8B, 0x4B, 0xCB, 0x2B, 0xAB, 0x6B, 0xEB,
-        0x1B, 0x9B, 0x5B, 0xDB, 0x3B, 0xBB, 0x7B, 0xFB,
-        0x07, 0x87, 0x47, 0xC7, 0x27, 0xA7, 0x67, 0xE7,
-        0x17, 0x97, 0x57, 0xD7, 0x37, 0xB7, 0x77, 0xF7,
-        0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF,
-        0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFF
+		0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0, 0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
+		0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8, 0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8,
+		0x04, 0x84, 0x44, 0xC4, 0x24, 0xA4, 0x64, 0xE4, 0x14, 0x94, 0x54, 0xD4, 0x34, 0xB4, 0x74, 0xF4,
+		0x0C, 0x8C, 0x4C, 0xCC, 0x2C, 0xAC, 0x6C, 0xEC, 0x1C, 0x9C, 0x5C, 0xDC, 0x3C, 0xBC, 0x7C, 0xFC,
+		0x02, 0x82, 0x42, 0xC2, 0x22, 0xA2, 0x62, 0xE2, 0x12, 0x92, 0x52, 0xD2, 0x32, 0xB2, 0x72, 0xF2,
+		0x0A, 0x8A, 0x4A, 0xCA, 0x2A, 0xAA, 0x6A, 0xEA, 0x1A, 0x9A, 0x5A, 0xDA, 0x3A, 0xBA, 0x7A, 0xFA,
+		0x06, 0x86, 0x46, 0xC6, 0x26, 0xA6, 0x66, 0xE6, 0x16, 0x96, 0x56, 0xD6, 0x36, 0xB6, 0x76, 0xF6,
+		0x0E, 0x8E, 0x4E, 0xCE, 0x2E, 0xAE, 0x6E, 0xEE, 0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE,
+		0x01, 0x81, 0x41, 0xC1, 0x21, 0xA1, 0x61, 0xE1, 0x11, 0x91, 0x51, 0xD1, 0x31, 0xB1, 0x71, 0xF1,
+		0x09, 0x89, 0x49, 0xC9, 0x29, 0xA9, 0x69, 0xE9, 0x19, 0x99, 0x59, 0xD9, 0x39, 0xB9, 0x79, 0xF9,
+		0x05, 0x85, 0x45, 0xC5, 0x25, 0xA5, 0x65, 0xE5, 0x15, 0x95, 0x55, 0xD5, 0x35, 0xB5, 0x75, 0xF5,
+		0x0D, 0x8D, 0x4D, 0xCD, 0x2D, 0xAD, 0x6D, 0xED, 0x1D, 0x9D, 0x5D, 0xDD, 0x3D, 0xBD, 0x7D, 0xFD,
+		0x03, 0x83, 0x43, 0xC3, 0x23, 0xA3, 0x63, 0xE3, 0x13, 0x93, 0x53, 0xD3, 0x33, 0xB3, 0x73, 0xF3,
+		0x0B, 0x8B, 0x4B, 0xCB, 0x2B, 0xAB, 0x6B, 0xEB, 0x1B, 0x9B, 0x5B, 0xDB, 0x3B, 0xBB, 0x7B, 0xFB,
+		0x07, 0x87, 0x47, 0xC7, 0x27, 0xA7, 0x67, 0xE7, 0x17, 0x97, 0x57, 0xD7, 0x37, 0xB7, 0x77, 0xF7,
+		0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF, 0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFF
 	);
 	protected static $dess = array(
 		array(
-			0x00808200, 0x00000000, 0x00008000, 0x00808202,
-			0x00808002, 0x00008202, 0x00000002, 0x00008000,
-			0x00000200, 0x00808200, 0x00808202, 0x00000200,
-			0x00800202, 0x00808002, 0x00800000, 0x00000002,
-			0x00000202, 0x00800200, 0x00800200, 0x00008200,
-			0x00008200, 0x00808000, 0x00808000, 0x00800202,
-			0x00008002, 0x00800002, 0x00800002, 0x00008002,
-			0x00000000, 0x00000202, 0x00008202, 0x00800000,
-			0x00008000, 0x00808202, 0x00000002, 0x00808000,
-			0x00808200, 0x00800000, 0x00800000, 0x00000200,
-			0x00808002, 0x00008000, 0x00008200, 0x00800002,
-			0x00000200, 0x00000002, 0x00800202, 0x00008202,
-			0x00808202, 0x00008002, 0x00808000, 0x00800202,
-			0x00800002, 0x00000202, 0x00008202, 0x00808200,
-			0x00000202, 0x00800200, 0x00800200, 0x00000000,
-			0x00008002, 0x00008200, 0x00000000, 0x00808002
+			0x00808200, 0x00000000, 0x00008000, 0x00808202, 0x00808002, 0x00008202, 0x00000002, 0x00008000,
+			0x00000200, 0x00808200, 0x00808202, 0x00000200, 0x00800202, 0x00808002, 0x00800000, 0x00000002,
+			0x00000202, 0x00800200, 0x00800200, 0x00008200, 0x00008200, 0x00808000, 0x00808000, 0x00800202,
+			0x00008002, 0x00800002, 0x00800002, 0x00008002, 0x00000000, 0x00000202, 0x00008202, 0x00800000,
+			0x00008000, 0x00808202, 0x00000002, 0x00808000, 0x00808200, 0x00800000, 0x00800000, 0x00000200,
+			0x00808002, 0x00008000, 0x00008200, 0x00800002, 0x00000200, 0x00000002, 0x00800202, 0x00008202,
+			0x00808202, 0x00008002, 0x00808000, 0x00800202, 0x00800002, 0x00000202, 0x00008202, 0x00808200,
+			0x00000202, 0x00800200, 0x00800200, 0x00000000, 0x00008002, 0x00008200, 0x00000000, 0x00808002
 		), array(
-			0x40084010, 0x40004000, 0x00004000, 0x00084010,
-			0x00080000, 0x00000010, 0x40080010, 0x40004010,
-			0x40000010, 0x40084010, 0x40084000, 0x40000000,
-			0x40004000, 0x00080000, 0x00000010, 0x40080010,
-			0x00084000, 0x00080010, 0x40004010, 0x00000000,
-			0x40000000, 0x00004000, 0x00084010, 0x40080000,
-			0x00080010, 0x40000010, 0x00000000, 0x00084000,
-			0x00004010, 0x40084000, 0x40080000, 0x00004010,
-			0x00000000, 0x00084010, 0x40080010, 0x00080000,
-			0x40004010, 0x40080000, 0x40084000, 0x00004000,
-			0x40080000, 0x40004000, 0x00000010, 0x40084010,
-			0x00084010, 0x00000010, 0x00004000, 0x40000000,
-			0x00004010, 0x40084000, 0x00080000, 0x40000010,
-			0x00080010, 0x40004010, 0x40000010, 0x00080010,
-			0x00084000, 0x00000000, 0x40004000, 0x00004010,
-			0x40000000, 0x40080010, 0x40084010, 0x00084000
+			0x40084010, 0x40004000, 0x00004000, 0x00084010, 0x00080000, 0x00000010, 0x40080010, 0x40004010,
+			0x40000010, 0x40084010, 0x40084000, 0x40000000, 0x40004000, 0x00080000, 0x00000010, 0x40080010,
+			0x00084000, 0x00080010, 0x40004010, 0x00000000, 0x40000000, 0x00004000, 0x00084010, 0x40080000,
+			0x00080010, 0x40000010, 0x00000000, 0x00084000, 0x00004010, 0x40084000, 0x40080000, 0x00004010,
+			0x00000000, 0x00084010, 0x40080010, 0x00080000, 0x40004010, 0x40080000, 0x40084000, 0x00004000,
+			0x40080000, 0x40004000, 0x00000010, 0x40084010, 0x00084010, 0x00000010, 0x00004000, 0x40000000,
+			0x00004010, 0x40084000, 0x00080000, 0x40000010, 0x00080010, 0x40004010, 0x40000010, 0x00080010,
+			0x00084000, 0x00000000, 0x40004000, 0x00004010, 0x40000000, 0x40080010, 0x40084010, 0x00084000
 		), array(
-			0x00000104, 0x04010100, 0x00000000, 0x04010004,
-			0x04000100, 0x00000000, 0x00010104, 0x04000100,
-			0x00010004, 0x04000004, 0x04000004, 0x00010000,
-			0x04010104, 0x00010004, 0x04010000, 0x00000104,
-			0x04000000, 0x00000004, 0x04010100, 0x00000100,
-			0x00010100, 0x04010000, 0x04010004, 0x00010104,
-			0x04000104, 0x00010100, 0x00010000, 0x04000104,
-			0x00000004, 0x04010104, 0x00000100, 0x04000000,
-			0x04010100, 0x04000000, 0x00010004, 0x00000104,
-			0x00010000, 0x04010100, 0x04000100, 0x00000000,
-			0x00000100, 0x00010004, 0x04010104, 0x04000100,
-			0x04000004, 0x00000100, 0x00000000, 0x04010004,
-			0x04000104, 0x00010000, 0x04000000, 0x04010104,
-			0x00000004, 0x00010104, 0x00010100, 0x04000004,
-			0x04010000, 0x04000104, 0x00000104, 0x04010000,
-			0x00010104, 0x00000004, 0x04010004, 0x00010100
+			0x00000104, 0x04010100, 0x00000000, 0x04010004, 0x04000100, 0x00000000, 0x00010104, 0x04000100,
+			0x00010004, 0x04000004, 0x04000004, 0x00010000, 0x04010104, 0x00010004, 0x04010000, 0x00000104,
+			0x04000000, 0x00000004, 0x04010100, 0x00000100, 0x00010100, 0x04010000, 0x04010004, 0x00010104,
+			0x04000104, 0x00010100, 0x00010000, 0x04000104, 0x00000004, 0x04010104, 0x00000100, 0x04000000,
+			0x04010100, 0x04000000, 0x00010004, 0x00000104, 0x00010000, 0x04010100, 0x04000100, 0x00000000,
+			0x00000100, 0x00010004, 0x04010104, 0x04000100, 0x04000004, 0x00000100, 0x00000000, 0x04010004,
+			0x04000104, 0x00010000, 0x04000000, 0x04010104, 0x00000004, 0x00010104, 0x00010100, 0x04000004,
+			0x04010000, 0x04000104, 0x00000104, 0x04010000, 0x00010104, 0x00000004, 0x04010004, 0x00010100
 		), array(
-			0x80401000, 0x80001040, 0x80001040, 0x00000040,
-			0x00401040, 0x80400040, 0x80400000, 0x80001000,
-			0x00000000, 0x00401000, 0x00401000, 0x80401040,
-			0x80000040, 0x00000000, 0x00400040, 0x80400000,
-			0x80000000, 0x00001000, 0x00400000, 0x80401000,
-			0x00000040, 0x00400000, 0x80001000, 0x00001040,
-			0x80400040, 0x80000000, 0x00001040, 0x00400040,
-			0x00001000, 0x00401040, 0x80401040, 0x80000040,
-			0x00400040, 0x80400000, 0x00401000, 0x80401040,
-			0x80000040, 0x00000000, 0x00000000, 0x00401000,
-			0x00001040, 0x00400040, 0x80400040, 0x80000000,
-			0x80401000, 0x80001040, 0x80001040, 0x00000040,
-			0x80401040, 0x80000040, 0x80000000, 0x00001000,
-			0x80400000, 0x80001000, 0x00401040, 0x80400040,
-			0x80001000, 0x00001040, 0x00400000, 0x80401000,
-			0x00000040, 0x00400000, 0x00001000, 0x00401040
+			0x80401000, 0x80001040, 0x80001040, 0x00000040, 0x00401040, 0x80400040, 0x80400000, 0x80001000,
+			0x00000000, 0x00401000, 0x00401000, 0x80401040, 0x80000040, 0x00000000, 0x00400040, 0x80400000,
+			0x80000000, 0x00001000, 0x00400000, 0x80401000, 0x00000040, 0x00400000, 0x80001000, 0x00001040,
+			0x80400040, 0x80000000, 0x00001040, 0x00400040, 0x00001000, 0x00401040, 0x80401040, 0x80000040,
+			0x00400040, 0x80400000, 0x00401000, 0x80401040, 0x80000040, 0x00000000, 0x00000000, 0x00401000,
+			0x00001040, 0x00400040, 0x80400040, 0x80000000, 0x80401000, 0x80001040, 0x80001040, 0x00000040,
+			0x80401040, 0x80000040, 0x80000000, 0x00001000, 0x80400000, 0x80001000, 0x00401040, 0x80400040,
+			0x80001000, 0x00001040, 0x00400000, 0x80401000, 0x00000040, 0x00400000, 0x00001000, 0x00401040
 		), array(
-			0x00000080, 0x01040080, 0x01040000, 0x21000080,
-			0x00040000, 0x00000080, 0x20000000, 0x01040000,
-			0x20040080, 0x00040000, 0x01000080, 0x20040080,
-			0x21000080, 0x21040000, 0x00040080, 0x20000000,
-			0x01000000, 0x20040000, 0x20040000, 0x00000000,
-			0x20000080, 0x21040080, 0x21040080, 0x01000080,
-			0x21040000, 0x20000080, 0x00000000, 0x21000000,
-			0x01040080, 0x01000000, 0x21000000, 0x00040080,
-			0x00040000, 0x21000080, 0x00000080, 0x01000000,
-			0x20000000, 0x01040000, 0x21000080, 0x20040080,
-			0x01000080, 0x20000000, 0x21040000, 0x01040080,
-			0x20040080, 0x00000080, 0x01000000, 0x21040000,
-			0x21040080, 0x00040080, 0x21000000, 0x21040080,
-			0x01040000, 0x00000000, 0x20040000, 0x21000000,
-			0x00040080, 0x01000080, 0x20000080, 0x00040000,
-			0x00000000, 0x20040000, 0x01040080, 0x20000080
+			0x00000080, 0x01040080, 0x01040000, 0x21000080, 0x00040000, 0x00000080, 0x20000000, 0x01040000,
+			0x20040080, 0x00040000, 0x01000080, 0x20040080, 0x21000080, 0x21040000, 0x00040080, 0x20000000,
+			0x01000000, 0x20040000, 0x20040000, 0x00000000, 0x20000080, 0x21040080, 0x21040080, 0x01000080,
+			0x21040000, 0x20000080, 0x00000000, 0x21000000, 0x01040080, 0x01000000, 0x21000000, 0x00040080,
+			0x00040000, 0x21000080, 0x00000080, 0x01000000, 0x20000000, 0x01040000, 0x21000080, 0x20040080,
+			0x01000080, 0x20000000, 0x21040000, 0x01040080, 0x20040080, 0x00000080, 0x01000000, 0x21040000,
+			0x21040080, 0x00040080, 0x21000000, 0x21040080, 0x01040000, 0x00000000, 0x20040000, 0x21000000,
+			0x00040080, 0x01000080, 0x20000080, 0x00040000, 0x00000000, 0x20040000, 0x01040080, 0x20000080
 		), array(
-			0x10000008, 0x10200000, 0x00002000, 0x10202008,
-			0x10200000, 0x00000008, 0x10202008, 0x00200000,
-			0x10002000, 0x00202008, 0x00200000, 0x10000008,
-			0x00200008, 0x10002000, 0x10000000, 0x00002008,
-			0x00000000, 0x00200008, 0x10002008, 0x00002000,
-			0x00202000, 0x10002008, 0x00000008, 0x10200008,
-			0x10200008, 0x00000000, 0x00202008, 0x10202000,
-			0x00002008, 0x00202000, 0x10202000, 0x10000000,
-			0x10002000, 0x00000008, 0x10200008, 0x00202000,
-			0x10202008, 0x00200000, 0x00002008, 0x10000008,
-			0x00200000, 0x10002000, 0x10000000, 0x00002008,
-			0x10000008, 0x10202008, 0x00202000, 0x10200000,
-			0x00202008, 0x10202000, 0x00000000, 0x10200008,
-			0x00000008, 0x00002000, 0x10200000, 0x00202008,
-			0x00002000, 0x00200008, 0x10002008, 0x00000000,
-			0x10202000, 0x10000000, 0x00200008, 0x10002008
+			0x10000008, 0x10200000, 0x00002000, 0x10202008, 0x10200000, 0x00000008, 0x10202008, 0x00200000,
+			0x10002000, 0x00202008, 0x00200000, 0x10000008, 0x00200008, 0x10002000, 0x10000000, 0x00002008,
+			0x00000000, 0x00200008, 0x10002008, 0x00002000, 0x00202000, 0x10002008, 0x00000008, 0x10200008,
+			0x10200008, 0x00000000, 0x00202008, 0x10202000, 0x00002008, 0x00202000, 0x10202000, 0x10000000,
+			0x10002000, 0x00000008, 0x10200008, 0x00202000, 0x10202008, 0x00200000, 0x00002008, 0x10000008,
+			0x00200000, 0x10002000, 0x10000000, 0x00002008, 0x10000008, 0x10202008, 0x00202000, 0x10200000,
+			0x00202008, 0x10202000, 0x00000000, 0x10200008, 0x00000008, 0x00002000, 0x10200000, 0x00202008,
+			0x00002000, 0x00200008, 0x10002008, 0x00000000, 0x10202000, 0x10000000, 0x00200008, 0x10002008
 		), array(
-			0x00100000, 0x02100001, 0x02000401, 0x00000000,
-			0x00000400, 0x02000401, 0x00100401, 0x02100400,
-			0x02100401, 0x00100000, 0x00000000, 0x02000001,
-			0x00000001, 0x02000000, 0x02100001, 0x00000401,
-			0x02000400, 0x00100401, 0x00100001, 0x02000400,
-			0x02000001, 0x02100000, 0x02100400, 0x00100001,
-			0x02100000, 0x00000400, 0x00000401, 0x02100401,
-			0x00100400, 0x00000001, 0x02000000, 0x00100400,
-			0x02000000, 0x00100400, 0x00100000, 0x02000401,
-			0x02000401, 0x02100001, 0x02100001, 0x00000001,
-			0x00100001, 0x02000000, 0x02000400, 0x00100000,
-			0x02100400, 0x00000401, 0x00100401, 0x02100400,
-			0x00000401, 0x02000001, 0x02100401, 0x02100000,
-			0x00100400, 0x00000000, 0x00000001, 0x02100401,
-			0x00000000, 0x00100401, 0x02100000, 0x00000400,
-			0x02000001, 0x02000400, 0x00000400, 0x00100001
+			0x00100000, 0x02100001, 0x02000401, 0x00000000, 0x00000400, 0x02000401, 0x00100401, 0x02100400,
+			0x02100401, 0x00100000, 0x00000000, 0x02000001, 0x00000001, 0x02000000, 0x02100001, 0x00000401,
+			0x02000400, 0x00100401, 0x00100001, 0x02000400, 0x02000001, 0x02100000, 0x02100400, 0x00100001,
+			0x02100000, 0x00000400, 0x00000401, 0x02100401, 0x00100400, 0x00000001, 0x02000000, 0x00100400,
+			0x02000000, 0x00100400, 0x00100000, 0x02000401, 0x02000401, 0x02100001, 0x02100001, 0x00000001,
+			0x00100001, 0x02000000, 0x02000400, 0x00100000, 0x02100400, 0x00000401, 0x00100401, 0x02100400,
+			0x00000401, 0x02000001, 0x02100401, 0x02100000, 0x00100400, 0x00000000, 0x00000001, 0x02100401,
+			0x00000000, 0x00100401, 0x02100000, 0x00000400, 0x02000001, 0x02000400, 0x00000400, 0x00100001
 		), array(
-			0x00100000, 0x02100001, 0x02000401, 0x00000000,
-			0x00000400, 0x02000401, 0x00100401, 0x02100400,
-			0x02100401, 0x00100000, 0x00000000, 0x02000001,
-			0x00000001, 0x02000000, 0x02100001, 0x00000401,
-			0x02000400, 0x00100401, 0x00100001, 0x02000400,
-			0x02000001, 0x02100000, 0x02100400, 0x00100001,
-			0x02100000, 0x00000400, 0x00000401, 0x02100401,
-			0x00100400, 0x00000001, 0x02000000, 0x00100400,
-			0x02000000, 0x00100400, 0x00100000, 0x02000401,
-			0x02000401, 0x02100001, 0x02100001, 0x00000001,
-			0x00100001, 0x02000000, 0x02000400, 0x00100000,
-			0x02100400, 0x00000401, 0x00100401, 0x02100400,
-			0x00000401, 0x02000001, 0x02100401, 0x02100000,
-			0x00100400, 0x00000000, 0x00000001, 0x02100401,
-			0x00000000, 0x00100401, 0x02100000, 0x00000400,
-			0x02000001, 0x02000400, 0x00000400, 0x00100001
+			0x08000820, 0x00000800, 0x00020000, 0x08020820, 0x08000000, 0x08000820, 0x00000020, 0x08000000,
+			0x00020020, 0x08020000, 0x08020820, 0x00020800, 0x08020800, 0x00020820, 0x00000800, 0x00000020,
+			0x08020000, 0x08000020, 0x08000800, 0x00000820, 0x00020800, 0x00020020, 0x08020020, 0x08020800,
+			0x00000820, 0x00000000, 0x00000000, 0x08020020, 0x08000020, 0x08000800, 0x00020820, 0x00020000,
+			0x00020820, 0x00020000, 0x08020800, 0x00000800, 0x00000020, 0x08020020, 0x00000800, 0x00020820,
+			0x08000800, 0x00000020, 0x08000020, 0x08020000, 0x08020020, 0x08000000, 0x00020000, 0x08000820,
+			0x00000000, 0x08020820, 0x00020020, 0x08000020, 0x08020000, 0x08000800, 0x08000820, 0x00000000,
+			0x08020820, 0x00020800, 0x00020800, 0x00000820, 0x00000820, 0x00020020, 0x08000000, 0x08020800
+		)
+	);
+	protected static $desshs = array(
+		1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1
+	);
+	protected static $despc1 = array(
+		0x00, 0x00, 0x08, 0x08, 0x04, 0x04, 0x0C, 0x0C, 0x02, 0x02, 0x0A, 0x0A, 0x06, 0x06, 0x0E, 0x0E,
+		0x10, 0x10, 0x18, 0x18, 0x14, 0x14, 0x1C, 0x1C, 0x12, 0x12, 0x1A, 0x1A, 0x16, 0x16, 0x1E, 0x1E,
+		0x20, 0x20, 0x28, 0x28, 0x24, 0x24, 0x2C, 0x2C, 0x22, 0x22, 0x2A, 0x2A, 0x26, 0x26, 0x2E, 0x2E,
+		0x30, 0x30, 0x38, 0x38, 0x34, 0x34, 0x3C, 0x3C, 0x32, 0x32, 0x3A, 0x3A, 0x36, 0x36, 0x3E, 0x3E,
+		0x40, 0x40, 0x48, 0x48, 0x44, 0x44, 0x4C, 0x4C, 0x42, 0x42, 0x4A, 0x4A, 0x46, 0x46, 0x4E, 0x4E,
+		0x50, 0x50, 0x58, 0x58, 0x54, 0x54, 0x5C, 0x5C, 0x52, 0x52, 0x5A, 0x5A, 0x56, 0x56, 0x5E, 0x5E,
+		0x60, 0x60, 0x68, 0x68, 0x64, 0x64, 0x6C, 0x6C, 0x62, 0x62, 0x6A, 0x6A, 0x66, 0x66, 0x6E, 0x6E,
+		0x70, 0x70, 0x78, 0x78, 0x74, 0x74, 0x7C, 0x7C, 0x72, 0x72, 0x7A, 0x7A, 0x76, 0x76, 0x7E, 0x7E,
+		0x80, 0x80, 0x88, 0x88, 0x84, 0x84, 0x8C, 0x8C, 0x82, 0x82, 0x8A, 0x8A, 0x86, 0x86, 0x8E, 0x8E,
+		0x90, 0x90, 0x98, 0x98, 0x94, 0x94, 0x9C, 0x9C, 0x92, 0x92, 0x9A, 0x9A, 0x96, 0x96, 0x9E, 0x9E,
+		0xA0, 0xA0, 0xA8, 0xA8, 0xA4, 0xA4, 0xAC, 0xAC, 0xA2, 0xA2, 0xAA, 0xAA, 0xA6, 0xA6, 0xAE, 0xAE,
+		0xB0, 0xB0, 0xB8, 0xB8, 0xB4, 0xB4, 0xBC, 0xBC, 0xB2, 0xB2, 0xBA, 0xBA, 0xB6, 0xB6, 0xBE, 0xBE,
+		0xC0, 0xC0, 0xC8, 0xC8, 0xC4, 0xC4, 0xCC, 0xCC, 0xC2, 0xC2, 0xCA, 0xCA, 0xC6, 0xC6, 0xCE, 0xCE,
+		0xD0, 0xD0, 0xD8, 0xD8, 0xD4, 0xD4, 0xDC, 0xDC, 0xD2, 0xD2, 0xDA, 0xDA, 0xD6, 0xD6, 0xDE, 0xDE,
+		0xE0, 0xE0, 0xE8, 0xE8, 0xE4, 0xE4, 0xEC, 0xEC, 0xE2, 0xE2, 0xEA, 0xEA, 0xE6, 0xE6, 0xEE, 0xEE,
+		0xF0, 0xF0, 0xF8, 0xF8, 0xF4, 0xF4, 0xFC, 0xFC, 0xF2, 0xF2, 0xFA, 0xFA, 0xF6, 0xF6, 0xFE, 0xFE
+	);
+	protected static $despc2c = array(
+		array(
+			0x00000000, 0x00000400, 0x00200000, 0x00200400, 0x00000001, 0x00000401, 0x00200001, 0x00200401,
+			0x02000000, 0x02000400, 0x02200000, 0x02200400, 0x02000001, 0x02000401, 0x02200001, 0x02200401
+		),array(
+			0x00000000, 0x00000800, 0x08000000, 0x08000800, 0x00010000, 0x00010800, 0x08010000, 0x08010800,
+			0x00000000, 0x00000800, 0x08000000, 0x08000800, 0x00010000, 0x00010800, 0x08010000, 0x08010800,
+			0x00000100, 0x00000900, 0x08000100, 0x08000900, 0x00010100, 0x00010900, 0x08010100, 0x08010900,
+			0x00000100, 0x00000900, 0x08000100, 0x08000900, 0x00010100, 0x00010900, 0x08010100, 0x08010900,
+			0x00000010, 0x00000810, 0x08000010, 0x08000810, 0x00010010, 0x00010810, 0x08010010, 0x08010810,
+			0x00000010, 0x00000810, 0x08000010, 0x08000810, 0x00010010, 0x00010810, 0x08010010, 0x08010810,
+			0x00000110, 0x00000910, 0x08000110, 0x08000910, 0x00010110, 0x00010910, 0x08010110, 0x08010910,
+			0x00000110, 0x00000910, 0x08000110, 0x08000910, 0x00010110, 0x00010910, 0x08010110, 0x08010910,
+			0x00040000, 0x00040800, 0x08040000, 0x08040800, 0x00050000, 0x00050800, 0x08050000, 0x08050800,
+			0x00040000, 0x00040800, 0x08040000, 0x08040800, 0x00050000, 0x00050800, 0x08050000, 0x08050800,
+			0x00040100, 0x00040900, 0x08040100, 0x08040900, 0x00050100, 0x00050900, 0x08050100, 0x08050900,
+			0x00040100, 0x00040900, 0x08040100, 0x08040900, 0x00050100, 0x00050900, 0x08050100, 0x08050900,
+			0x00040010, 0x00040810, 0x08040010, 0x08040810, 0x00050010, 0x00050810, 0x08050010, 0x08050810,
+			0x00040010, 0x00040810, 0x08040010, 0x08040810, 0x00050010, 0x00050810, 0x08050010, 0x08050810,
+			0x00040110, 0x00040910, 0x08040110, 0x08040910, 0x00050110, 0x00050910, 0x08050110, 0x08050910,
+			0x00040110, 0x00040910, 0x08040110, 0x08040910, 0x00050110, 0x00050910, 0x08050110, 0x08050910,
+			0x01000000, 0x01000800, 0x09000000, 0x09000800, 0x01010000, 0x01010800, 0x09010000, 0x09010800,
+			0x01000000, 0x01000800, 0x09000000, 0x09000800, 0x01010000, 0x01010800, 0x09010000, 0x09010800,
+			0x01000100, 0x01000900, 0x09000100, 0x09000900, 0x01010100, 0x01010900, 0x09010100, 0x09010900,
+			0x01000100, 0x01000900, 0x09000100, 0x09000900, 0x01010100, 0x01010900, 0x09010100, 0x09010900,
+			0x01000010, 0x01000810, 0x09000010, 0x09000810, 0x01010010, 0x01010810, 0x09010010, 0x09010810,
+			0x01000010, 0x01000810, 0x09000010, 0x09000810, 0x01010010, 0x01010810, 0x09010010, 0x09010810,
+			0x01000110, 0x01000910, 0x09000110, 0x09000910, 0x01010110, 0x01010910, 0x09010110, 0x09010910,
+			0x01000110, 0x01000910, 0x09000110, 0x09000910, 0x01010110, 0x01010910, 0x09010110, 0x09010910,
+			0x01040000, 0x01040800, 0x09040000, 0x09040800, 0x01050000, 0x01050800, 0x09050000, 0x09050800,
+			0x01040000, 0x01040800, 0x09040000, 0x09040800, 0x01050000, 0x01050800, 0x09050000, 0x09050800,
+			0x01040100, 0x01040900, 0x09040100, 0x09040900, 0x01050100, 0x01050900, 0x09050100, 0x09050900,
+			0x01040100, 0x01040900, 0x09040100, 0x09040900, 0x01050100, 0x01050900, 0x09050100, 0x09050900,
+			0x01040010, 0x01040810, 0x09040010, 0x09040810, 0x01050010, 0x01050810, 0x09050010, 0x09050810,
+			0x01040010, 0x01040810, 0x09040010, 0x09040810, 0x01050010, 0x01050810, 0x09050010, 0x09050810,
+			0x01040110, 0x01040910, 0x09040110, 0x09040910, 0x01050110, 0x01050910, 0x09050110, 0x09050910,
+			0x01040110, 0x01040910, 0x09040110, 0x09040910, 0x01050110, 0x01050910, 0x09050110, 0x09050910
+		),array(
+			0x00000000, 0x00000004, 0x00001000, 0x00001004, 0x00000000, 0x00000004, 0x00001000, 0x00001004,
+			0x10000000, 0x10000004, 0x10001000, 0x10001004, 0x10000000, 0x10000004, 0x10001000, 0x10001004,
+			0x00000020, 0x00000024, 0x00001020, 0x00001024, 0x00000020, 0x00000024, 0x00001020, 0x00001024,
+			0x10000020, 0x10000024, 0x10001020, 0x10001024, 0x10000020, 0x10000024, 0x10001020, 0x10001024,
+			0x00080000, 0x00080004, 0x00081000, 0x00081004, 0x00080000, 0x00080004, 0x00081000, 0x00081004,
+			0x10080000, 0x10080004, 0x10081000, 0x10081004, 0x10080000, 0x10080004, 0x10081000, 0x10081004,
+			0x00080020, 0x00080024, 0x00081020, 0x00081024, 0x00080020, 0x00080024, 0x00081020, 0x00081024,
+			0x10080020, 0x10080024, 0x10081020, 0x10081024, 0x10080020, 0x10080024, 0x10081020, 0x10081024,
+			0x20000000, 0x20000004, 0x20001000, 0x20001004, 0x20000000, 0x20000004, 0x20001000, 0x20001004,
+			0x30000000, 0x30000004, 0x30001000, 0x30001004, 0x30000000, 0x30000004, 0x30001000, 0x30001004,
+			0x20000020, 0x20000024, 0x20001020, 0x20001024, 0x20000020, 0x20000024, 0x20001020, 0x20001024,
+			0x30000020, 0x30000024, 0x30001020, 0x30001024, 0x30000020, 0x30000024, 0x30001020, 0x30001024,
+			0x20080000, 0x20080004, 0x20081000, 0x20081004, 0x20080000, 0x20080004, 0x20081000, 0x20081004,
+			0x30080000, 0x30080004, 0x30081000, 0x30081004, 0x30080000, 0x30080004, 0x30081000, 0x30081004,
+			0x20080020, 0x20080024, 0x20081020, 0x20081024, 0x20080020, 0x20080024, 0x20081020, 0x20081024,
+			0x30080020, 0x30080024, 0x30081020, 0x30081024, 0x30080020, 0x30080024, 0x30081020, 0x30081024,
+			0x00000002, 0x00000006, 0x00001002, 0x00001006, 0x00000002, 0x00000006, 0x00001002, 0x00001006,
+			0x10000002, 0x10000006, 0x10001002, 0x10001006, 0x10000002, 0x10000006, 0x10001002, 0x10001006,
+			0x00000022, 0x00000026, 0x00001022, 0x00001026, 0x00000022, 0x00000026, 0x00001022, 0x00001026,
+			0x10000022, 0x10000026, 0x10001022, 0x10001026, 0x10000022, 0x10000026, 0x10001022, 0x10001026,
+			0x00080002, 0x00080006, 0x00081002, 0x00081006, 0x00080002, 0x00080006, 0x00081002, 0x00081006,
+			0x10080002, 0x10080006, 0x10081002, 0x10081006, 0x10080002, 0x10080006, 0x10081002, 0x10081006,
+			0x00080022, 0x00080026, 0x00081022, 0x00081026, 0x00080022, 0x00080026, 0x00081022, 0x00081026,
+			0x10080022, 0x10080026, 0x10081022, 0x10081026, 0x10080022, 0x10080026, 0x10081022, 0x10081026,
+			0x20000002, 0x20000006, 0x20001002, 0x20001006, 0x20000002, 0x20000006, 0x20001002, 0x20001006,
+			0x30000002, 0x30000006, 0x30001002, 0x30001006,	0x30000002, 0x30000006, 0x30001002, 0x30001006,
+			0x20000022, 0x20000026, 0x20001022, 0x20001026, 0x20000022, 0x20000026, 0x20001022, 0x20001026,
+			0x30000022, 0x30000026, 0x30001022, 0x30001026, 0x30000022, 0x30000026, 0x30001022, 0x30001026,
+			0x20080002, 0x20080006, 0x20081002, 0x20081006, 0x20080002, 0x20080006, 0x20081002, 0x20081006,
+			0x30080002, 0x30080006, 0x30081002, 0x30081006, 0x30080002, 0x30080006, 0x30081002, 0x30081006,
+			0x20080022, 0x20080026, 0x20081022, 0x20081026, 0x20080022, 0x20080026, 0x20081022, 0x20081026,
+			0x30080022, 0x30080026, 0x30081022, 0x30081026, 0x30080022, 0x30080026, 0x30081022, 0x30081026
+		),array(
+			0x00000000, 0x00100000, 0x00000008, 0x00100008, 0x00000200, 0x00100200, 0x00000208, 0x00100208,
+			0x00000000, 0x00100000, 0x00000008, 0x00100008, 0x00000200, 0x00100200, 0x00000208, 0x00100208,
+			0x04000000, 0x04100000, 0x04000008, 0x04100008, 0x04000200, 0x04100200, 0x04000208, 0x04100208,
+			0x04000000, 0x04100000, 0x04000008, 0x04100008, 0x04000200, 0x04100200, 0x04000208, 0x04100208,
+			0x00002000, 0x00102000, 0x00002008, 0x00102008, 0x00002200, 0x00102200, 0x00002208, 0x00102208,
+			0x00002000, 0x00102000, 0x00002008, 0x00102008, 0x00002200, 0x00102200, 0x00002208, 0x00102208,
+			0x04002000, 0x04102000, 0x04002008, 0x04102008, 0x04002200, 0x04102200, 0x04002208, 0x04102208,
+			0x04002000, 0x04102000, 0x04002008, 0x04102008, 0x04002200, 0x04102200, 0x04002208, 0x04102208,
+			0x00000000, 0x00100000, 0x00000008, 0x00100008, 0x00000200, 0x00100200, 0x00000208, 0x00100208,
+			0x00000000, 0x00100000, 0x00000008, 0x00100008, 0x00000200, 0x00100200, 0x00000208, 0x00100208,
+			0x04000000, 0x04100000, 0x04000008, 0x04100008, 0x04000200, 0x04100200, 0x04000208, 0x04100208,
+			0x04000000, 0x04100000, 0x04000008, 0x04100008, 0x04000200, 0x04100200, 0x04000208, 0x04100208,
+			0x00002000, 0x00102000, 0x00002008, 0x00102008, 0x00002200, 0x00102200, 0x00002208, 0x00102208,
+			0x00002000, 0x00102000, 0x00002008, 0x00102008, 0x00002200, 0x00102200, 0x00002208, 0x00102208,
+			0x04002000, 0x04102000, 0x04002008, 0x04102008, 0x04002200, 0x04102200, 0x04002208, 0x04102208,
+			0x04002000, 0x04102000, 0x04002008, 0x04102008, 0x04002200, 0x04102200, 0x04002208, 0x04102208,
+			0x00020000, 0x00120000, 0x00020008, 0x00120008, 0x00020200, 0x00120200, 0x00020208, 0x00120208,
+			0x00020000, 0x00120000, 0x00020008, 0x00120008, 0x00020200, 0x00120200, 0x00020208, 0x00120208,
+			0x04020000, 0x04120000, 0x04020008, 0x04120008, 0x04020200, 0x04120200, 0x04020208, 0x04120208,
+			0x04020000, 0x04120000, 0x04020008, 0x04120008, 0x04020200, 0x04120200, 0x04020208, 0x04120208,
+			0x00022000, 0x00122000, 0x00022008, 0x00122008, 0x00022200, 0x00122200, 0x00022208, 0x00122208,
+			0x00022000, 0x00122000, 0x00022008, 0x00122008, 0x00022200, 0x00122200, 0x00022208, 0x00122208,
+			0x04022000, 0x04122000, 0x04022008, 0x04122008, 0x04022200, 0x04122200, 0x04022208, 0x04122208,
+			0x04022000, 0x04122000, 0x04022008, 0x04122008, 0x04022200, 0x04122200, 0x04022208, 0x04122208,
+			0x00020000, 0x00120000, 0x00020008, 0x00120008, 0x00020200, 0x00120200, 0x00020208, 0x00120208,
+			0x00020000, 0x00120000, 0x00020008, 0x00120008, 0x00020200, 0x00120200, 0x00020208, 0x00120208,
+			0x04020000, 0x04120000, 0x04020008, 0x04120008, 0x04020200, 0x04120200, 0x04020208, 0x04120208,
+			0x04020000, 0x04120000, 0x04020008, 0x04120008, 0x04020200, 0x04120200, 0x04020208, 0x04120208,
+			0x00022000, 0x00122000, 0x00022008, 0x00122008, 0x00022200, 0x00122200, 0x00022208, 0x00122208,
+			0x00022000, 0x00122000, 0x00022008, 0x00122008, 0x00022200, 0x00122200, 0x00022208, 0x00122208,
+			0x04022000, 0x04122000, 0x04022008, 0x04122008, 0x04022200, 0x04122200, 0x04022208, 0x04122208,
+			0x04022000, 0x04122000, 0x04022008, 0x04122008, 0x04022200, 0x04122200, 0x04022208, 0x04122208
+		)
+	);
+	protected static $despc2d = array(
+		array(
+			0x00000000, 0x00000001, 0x08000000, 0x08000001, 0x00200000, 0x00200001, 0x08200000, 0x08200001,
+			0x00000002, 0x00000003, 0x08000002, 0x08000003, 0x00200002, 0x00200003, 0x08200002, 0x08200003
+		),array(
+			0x00000000, 0x00100000, 0x00000800, 0x00100800, 0x00000000, 0x00100000, 0x00000800, 0x00100800,
+			0x04000000, 0x04100000, 0x04000800, 0x04100800, 0x04000000, 0x04100000, 0x04000800, 0x04100800,
+			0x00000004, 0x00100004, 0x00000804, 0x00100804, 0x00000004, 0x00100004, 0x00000804, 0x00100804,
+			0x04000004, 0x04100004, 0x04000804, 0x04100804, 0x04000004, 0x04100004, 0x04000804, 0x04100804,
+			0x00000000, 0x00100000, 0x00000800, 0x00100800, 0x00000000, 0x00100000, 0x00000800, 0x00100800,
+			0x04000000, 0x04100000, 0x04000800, 0x04100800, 0x04000000, 0x04100000, 0x04000800, 0x04100800,
+			0x00000004, 0x00100004, 0x00000804, 0x00100804, 0x00000004, 0x00100004, 0x00000804, 0x00100804,
+			0x04000004, 0x04100004, 0x04000804, 0x04100804, 0x04000004, 0x04100004, 0x04000804, 0x04100804,
+			0x00000200, 0x00100200, 0x00000A00, 0x00100A00, 0x00000200, 0x00100200, 0x00000A00, 0x00100A00,
+			0x04000200, 0x04100200, 0x04000A00, 0x04100A00, 0x04000200, 0x04100200, 0x04000A00, 0x04100A00,
+			0x00000204, 0x00100204, 0x00000A04, 0x00100A04, 0x00000204, 0x00100204, 0x00000A04, 0x00100A04,
+			0x04000204, 0x04100204, 0x04000A04, 0x04100A04, 0x04000204, 0x04100204, 0x04000A04, 0x04100A04,
+			0x00000200, 0x00100200, 0x00000A00, 0x00100A00, 0x00000200, 0x00100200, 0x00000A00, 0x00100A00,
+			0x04000200, 0x04100200, 0x04000A00, 0x04100A00, 0x04000200, 0x04100200, 0x04000A00, 0x04100A00,
+			0x00000204, 0x00100204, 0x00000A04, 0x00100A04, 0x00000204, 0x00100204, 0x00000A04, 0x00100A04,
+			0x04000204, 0x04100204, 0x04000A04, 0x04100A04, 0x04000204, 0x04100204, 0x04000A04, 0x04100A04,
+			0x00020000, 0x00120000, 0x00020800, 0x00120800, 0x00020000, 0x00120000, 0x00020800, 0x00120800,
+			0x04020000, 0x04120000, 0x04020800, 0x04120800, 0x04020000, 0x04120000, 0x04020800, 0x04120800,
+			0x00020004, 0x00120004, 0x00020804, 0x00120804, 0x00020004, 0x00120004, 0x00020804, 0x00120804,
+			0x04020004, 0x04120004, 0x04020804, 0x04120804, 0x04020004, 0x04120004, 0x04020804, 0x04120804,
+			0x00020000, 0x00120000, 0x00020800, 0x00120800, 0x00020000, 0x00120000, 0x00020800, 0x00120800,
+			0x04020000, 0x04120000, 0x04020800, 0x04120800, 0x04020000, 0x04120000, 0x04020800, 0x04120800,
+			0x00020004, 0x00120004, 0x00020804, 0x00120804, 0x00020004, 0x00120004, 0x00020804, 0x00120804,
+			0x04020004, 0x04120004, 0x04020804, 0x04120804, 0x04020004, 0x04120004, 0x04020804, 0x04120804,
+			0x00020200, 0x00120200, 0x00020A00, 0x00120A00, 0x00020200, 0x00120200, 0x00020A00, 0x00120A00,
+			0x04020200, 0x04120200, 0x04020A00, 0x04120A00, 0x04020200, 0x04120200, 0x04020A00, 0x04120A00,
+			0x00020204, 0x00120204, 0x00020A04, 0x00120A04, 0x00020204, 0x00120204, 0x00020A04, 0x00120A04,
+			0x04020204, 0x04120204, 0x04020A04, 0x04120A04, 0x04020204, 0x04120204, 0x04020A04, 0x04120A04,
+			0x00020200, 0x00120200, 0x00020A00, 0x00120A00, 0x00020200, 0x00120200, 0x00020A00, 0x00120A00,
+			0x04020200, 0x04120200, 0x04020A00, 0x04120A00, 0x04020200, 0x04120200, 0x04020A00, 0x04120A00,
+			0x00020204, 0x00120204, 0x00020A04, 0x00120A04, 0x00020204, 0x00120204, 0x00020A04, 0x00120A04,
+			0x04020204, 0x04120204, 0x04020A04, 0x04120A04, 0x04020204, 0x04120204, 0x04020A04, 0x04120A04
+		),array(
+			0x00000000, 0x00010000, 0x02000000, 0x02010000, 0x00000020, 0x00010020, 0x02000020, 0x02010020,
+			0x00040000, 0x00050000, 0x02040000, 0x02050000, 0x00040020, 0x00050020, 0x02040020, 0x02050020,
+			0x00002000, 0x00012000, 0x02002000, 0x02012000, 0x00002020, 0x00012020, 0x02002020, 0x02012020,
+			0x00042000, 0x00052000, 0x02042000, 0x02052000, 0x00042020, 0x00052020, 0x02042020, 0x02052020,
+			0x00000000, 0x00010000, 0x02000000, 0x02010000, 0x00000020, 0x00010020, 0x02000020, 0x02010020,
+			0x00040000, 0x00050000, 0x02040000, 0x02050000, 0x00040020, 0x00050020, 0x02040020, 0x02050020,
+			0x00002000, 0x00012000, 0x02002000, 0x02012000, 0x00002020, 0x00012020, 0x02002020, 0x02012020,
+			0x00042000, 0x00052000, 0x02042000, 0x02052000, 0x00042020, 0x00052020, 0x02042020, 0x02052020,
+			0x00000010, 0x00010010, 0x02000010, 0x02010010, 0x00000030, 0x00010030, 0x02000030, 0x02010030,
+			0x00040010, 0x00050010, 0x02040010, 0x02050010, 0x00040030, 0x00050030, 0x02040030, 0x02050030,
+			0x00002010, 0x00012010, 0x02002010, 0x02012010, 0x00002030, 0x00012030, 0x02002030, 0x02012030,
+			0x00042010, 0x00052010, 0x02042010, 0x02052010, 0x00042030, 0x00052030, 0x02042030, 0x02052030,
+			0x00000010, 0x00010010, 0x02000010, 0x02010010, 0x00000030, 0x00010030, 0x02000030, 0x02010030,
+			0x00040010, 0x00050010, 0x02040010, 0x02050010, 0x00040030, 0x00050030, 0x02040030, 0x02050030,
+			0x00002010, 0x00012010, 0x02002010, 0x02012010, 0x00002030, 0x00012030, 0x02002030, 0x02012030,
+			0x00042010, 0x00052010, 0x02042010, 0x02052010, 0x00042030, 0x00052030, 0x02042030, 0x02052030,
+			0x20000000, 0x20010000, 0x22000000, 0x22010000, 0x20000020, 0x20010020, 0x22000020, 0x22010020,
+			0x20040000, 0x20050000, 0x22040000, 0x22050000, 0x20040020, 0x20050020, 0x22040020, 0x22050020,
+			0x20002000, 0x20012000, 0x22002000, 0x22012000, 0x20002020, 0x20012020, 0x22002020, 0x22012020,
+			0x20042000, 0x20052000, 0x22042000, 0x22052000, 0x20042020, 0x20052020, 0x22042020, 0x22052020,
+			0x20000000, 0x20010000, 0x22000000, 0x22010000, 0x20000020, 0x20010020, 0x22000020, 0x22010020,
+			0x20040000, 0x20050000, 0x22040000, 0x22050000, 0x20040020, 0x20050020, 0x22040020, 0x22050020,
+			0x20002000, 0x20012000, 0x22002000, 0x22012000, 0x20002020, 0x20012020, 0x22002020, 0x22012020,
+			0x20042000, 0x20052000, 0x22042000, 0x22052000, 0x20042020, 0x20052020, 0x22042020, 0x22052020,
+			0x20000010, 0x20010010, 0x22000010, 0x22010010, 0x20000030, 0x20010030, 0x22000030, 0x22010030,
+			0x20040010, 0x20050010, 0x22040010, 0x22050010, 0x20040030, 0x20050030, 0x22040030, 0x22050030,
+			0x20002010, 0x20012010, 0x22002010, 0x22012010, 0x20002030, 0x20012030, 0x22002030, 0x22012030,
+			0x20042010, 0x20052010, 0x22042010, 0x22052010, 0x20042030, 0x20052030, 0x22042030, 0x22052030,
+			0x20000010, 0x20010010, 0x22000010, 0x22010010, 0x20000030, 0x20010030, 0x22000030, 0x22010030,
+			0x20040010, 0x20050010, 0x22040010, 0x22050010, 0x20040030, 0x20050030, 0x22040030, 0x22050030,
+			0x20002010, 0x20012010, 0x22002010, 0x22012010, 0x20002030, 0x20012030, 0x22002030, 0x22012030,
+			0x20042010, 0x20052010, 0x22042010, 0x22052010, 0x20042030, 0x20052030, 0x22042030, 0x22052030
+		),array(
+			0x00000000, 0x00000400, 0x01000000, 0x01000400, 0x00000000, 0x00000400, 0x01000000, 0x01000400,
+			0x00000100, 0x00000500, 0x01000100, 0x01000500, 0x00000100, 0x00000500, 0x01000100, 0x01000500,
+			0x10000000, 0x10000400, 0x11000000, 0x11000400, 0x10000000, 0x10000400, 0x11000000, 0x11000400,
+			0x10000100, 0x10000500, 0x11000100, 0x11000500, 0x10000100, 0x10000500, 0x11000100, 0x11000500,
+			0x00080000, 0x00080400, 0x01080000, 0x01080400,	0x00080000, 0x00080400, 0x01080000, 0x01080400,
+			0x00080100, 0x00080500, 0x01080100, 0x01080500, 0x00080100, 0x00080500, 0x01080100, 0x01080500,
+			0x10080000, 0x10080400, 0x11080000, 0x11080400, 0x10080000, 0x10080400, 0x11080000, 0x11080400,
+			0x10080100, 0x10080500, 0x11080100, 0x11080500, 0x10080100, 0x10080500, 0x11080100, 0x11080500,
+			0x00000008, 0x00000408, 0x01000008, 0x01000408, 0x00000008, 0x00000408, 0x01000008, 0x01000408,
+			0x00000108, 0x00000508, 0x01000108, 0x01000508, 0x00000108, 0x00000508, 0x01000108, 0x01000508,
+			0x10000008, 0x10000408, 0x11000008, 0x11000408, 0x10000008, 0x10000408, 0x11000008, 0x11000408,
+			0x10000108, 0x10000508, 0x11000108, 0x11000508, 0x10000108, 0x10000508, 0x11000108, 0x11000508,
+			0x00080008, 0x00080408, 0x01080008, 0x01080408, 0x00080008, 0x00080408, 0x01080008, 0x01080408,
+			0x00080108, 0x00080508, 0x01080108, 0x01080508, 0x00080108, 0x00080508, 0x01080108, 0x01080508,
+			0x10080008, 0x10080408, 0x11080008, 0x11080408, 0x10080008, 0x10080408, 0x11080008, 0x11080408,
+			0x10080108, 0x10080508, 0x11080108, 0x11080508, 0x10080108, 0x10080508, 0x11080108, 0x11080508,
+			0x00001000, 0x00001400, 0x01001000, 0x01001400, 0x00001000, 0x00001400, 0x01001000, 0x01001400,
+			0x00001100, 0x00001500, 0x01001100, 0x01001500, 0x00001100, 0x00001500, 0x01001100, 0x01001500,
+			0x10001000, 0x10001400, 0x11001000, 0x11001400, 0x10001000, 0x10001400, 0x11001000, 0x11001400,
+			0x10001100, 0x10001500, 0x11001100, 0x11001500, 0x10001100, 0x10001500, 0x11001100, 0x11001500,
+			0x00081000, 0x00081400, 0x01081000, 0x01081400, 0x00081000, 0x00081400, 0x01081000, 0x01081400,
+			0x00081100, 0x00081500, 0x01081100, 0x01081500, 0x00081100, 0x00081500, 0x01081100, 0x01081500,
+			0x10081000, 0x10081400, 0x11081000, 0x11081400, 0x10081000, 0x10081400, 0x11081000, 0x11081400,
+			0x10081100, 0x10081500, 0x11081100, 0x11081500, 0x10081100, 0x10081500, 0x11081100, 0x11081500,
+			0x00001008, 0x00001408, 0x01001008, 0x01001408, 0x00001008, 0x00001408, 0x01001008, 0x01001408,
+			0x00001108, 0x00001508, 0x01001108, 0x01001508, 0x00001108, 0x00001508, 0x01001108, 0x01001508,
+			0x10001008, 0x10001408, 0x11001008, 0x11001408, 0x10001008, 0x10001408, 0x11001008, 0x11001408,
+			0x10001108, 0x10001508, 0x11001108, 0x11001508, 0x10001108, 0x10001508, 0x11001108, 0x11001508,
+			0x00081008, 0x00081408, 0x01081008, 0x01081408, 0x00081008, 0x00081408, 0x01081008, 0x01081408,
+			0x00081108, 0x00081508, 0x01081108, 0x01081508, 0x00081108, 0x00081508, 0x01081108, 0x01081508,
+			0x10081008, 0x10081408, 0x11081008, 0x11081408, 0x10081008, 0x10081408, 0x11081008, 0x11081408,
+			0x10081108, 0x10081508, 0x11081108, 0x11081508, 0x10081108, 0x10081508, 0x11081108, 0x11081508
 		)
 	);
 	protected static $sjf = array(
@@ -14308,9 +14076,295 @@ class XNCrypt {
 		'Y','Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X',
 		'Z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y'
 	);
+	protected static function a4prga($key, $l){
+		$res = '';
+		$j = 0;
+		$s = range(0, 255);
+		$z = strlen($key);
+		for($i = 0; $i < 256; ++$i){
+			$k = $key[$i % $z];
+			$j = ($j + $s[$i] + ord($k)) % 256;
+			swap($s[$i], $s[$j]);
+		}
+		for($c = 0; $c < $l; ++$c){
+			$i = ($i + 1) % 256;
+			$j = ($j + $s[$i]) % 256;
+			swap($s[$i], $s[$j]);
+			$res .= chr($s[($s[$i] + $s[$j]) % 256]);
+		}
+		return $res;
+	}
+	protected static $casts = array(
+		array(
+			0x30FB40D4, 0x9FA0FF0B, 0x6BECCD2F, 0x3F258C7A, 0x1E213F2F, 0x9C004DD3, 0x6003E540, 0xCF9FC949,
+			0xBFD4AF27, 0x88BBBDB5, 0xE2034090, 0x98D09675, 0x6E63A0E0, 0x15C361D2, 0xC2E7661D, 0x22D4FF8E,
+			0x28683B6F, 0xC07FD059, 0xFF2379C8, 0x775F50E2, 0x43C340D3, 0xDF2F8656, 0x887CA41A, 0xA2D2BD2D,
+			0xA1C9E0D6, 0x346C4819, 0x61B76D87, 0x22540F2F, 0x2ABE32E1, 0xAA54166B, 0x22568E3A, 0xA2D341D0,
+			0x66DB40C8, 0xA784392F, 0x004DFF2F, 0x2DB9D2DE, 0x97943FAC, 0x4A97C1D8, 0x527644B7, 0xB5F437A7,
+			0xB82CBAEF, 0xD751D159, 0x6FF7F0ED, 0x5A097A1F, 0x827B68D0, 0x90ECF52E, 0x22B0C054, 0xBC8E5935,
+			0x4B6D2F7F, 0x50BB64A2, 0xD2664910, 0xBEE5812D, 0xB7332290, 0xE93B159F, 0xB48EE411, 0x4BFF345D,
+			0xFD45C240, 0xAD31973F, 0xC4F6D02E, 0x55FC8165, 0xD5B1CAAD, 0xA1AC2DAE, 0xA2D4B76D, 0xC19B0C50,
+			0x882240F2, 0x0C6E4F38, 0xA4E4BFD7, 0x4F5BA272, 0x564C1D2F, 0xC59C5319, 0xB949E354, 0xB04669FE,
+			0xB1B6AB8A, 0xC71358DD, 0x6385C545, 0x110F935D, 0x57538AD5, 0x6A390493, 0xE63D37E0, 0x2A54F6B3,
+			0x3A787D5F, 0x6276A0B5, 0x19A6FCDF, 0x7A42206A, 0x29F9D4D5, 0xF61B1891, 0xBB72275E, 0xAA508167,
+			0x38901091, 0xC6B505EB, 0x84C7CB8C, 0x2AD75A0F, 0x874A1427, 0xA2D1936B, 0x2AD286AF, 0xAA56D291,
+			0xD7894360, 0x425C750D, 0x93B39E26, 0x187184C9, 0x6C00B32D, 0x73E2BB14, 0xA0BEBC3C, 0x54623779,
+			0x64459EAB, 0x3F328B82, 0x7718CF82, 0x59A2CEA6, 0x04EE002E, 0x89FE78E6, 0x3FAB0950, 0x325FF6C2,
+			0x81383F05, 0x6963C5C8, 0x76CB5AD6, 0xD49974C9, 0xCA180DCF, 0x380782D5, 0xC7FA5CF6, 0x8AC31511,
+			0x35E79E13, 0x47DA91D0, 0xF40F9086, 0xA7E2419E, 0x31366241, 0x051EF495, 0xAA573B04, 0x4A805D8D,
+			0x548300D0, 0x00322A3C, 0xBF64CDDF, 0xBA57A68E, 0x75C6372B, 0x50AFD341, 0xA7C13275, 0x915A0BF5,
+			0x6B54BFAB, 0x2B0B1426, 0xAB4CC9D7, 0x449CCD82, 0xF7FBF265, 0xAB85C5F3, 0x1B55DB94, 0xAAD4E324,
+			0xCFA4BD3F, 0x2DEAA3E2, 0x9E204D02, 0xC8BD25AC, 0xEADF55B3, 0xD5BD9E98, 0xE31231B2, 0x2AD5AD6C,
+			0x954329DE, 0xADBE4528, 0xD8710F69, 0xAA51C90F, 0xAA786BF6, 0x22513F1E, 0xAA51A79B, 0x2AD344CC,
+			0x7B5A41F0, 0xD37CFBAD, 0x1B069505, 0x41ECE491, 0xB4C332E6, 0x032268D4, 0xC9600ACC, 0xCE387E6D,
+			0xBF6BB16C, 0x6A70FB78, 0x0D03D9C9, 0xD4DF39DE, 0xE01063DA, 0x4736F464, 0x5AD328D8, 0xB347CC96,
+			0x75BB0FC3, 0x98511BFB, 0x4FFBCC35, 0xB58BCF6A, 0xE11F0ABC, 0xBFC5FE4A, 0xA70AEC10, 0xAC39570A,
+			0x3F04442F, 0x6188B153, 0xE0397A2E, 0x5727CB79, 0x9CEB418F, 0x1CACD68D, 0x2AD37C96, 0x0175CB9D,
+			0xC69DFF09, 0xC75B65F0, 0xD9DB40D8, 0xEC0E7779, 0x4744EAD4, 0xB11C3274, 0xDD24CB9E, 0x7E1C54BD,
+			0xF01144F9, 0xD2240EB1, 0x9675B3FD, 0xA3AC3755, 0xD47C27AF, 0x51C85F4D, 0x56907596, 0xA5BB15E6,
+			0x580304F0, 0xCA042CF1, 0x011A37EA, 0x8DBFAADB, 0x35BA3E4A, 0x3526FFA0, 0xC37B4D09, 0xBC306ED9,
+			0x98A52666, 0x5648F725, 0xFF5E569D, 0x0CED63D0, 0x7C63B2CF, 0x700B45E1, 0xD5EA50F1, 0x85A92872,
+			0xAF1FBDA7, 0xD4234870, 0xA7870BF3, 0x2D3B4D79, 0x42E04198, 0x0CD0EDE7, 0x26470DB8, 0xF881814C,
+			0x474D6AD7, 0x7C0C5E5C, 0xD1231959, 0x381B7298, 0xF5D2F4DB, 0xAB838653, 0x6E2F1E23, 0x83719C9E,
+			0xBD91E046, 0x9A56456E, 0xDC39200C, 0x20C8C571, 0x962BDA1C, 0xE1E696FF, 0xB141AB08, 0x7CCA89B9,
+			0x1A69E783, 0x02CC4843, 0xA2F7C579, 0x429EF47D, 0x427B169C, 0x5AC9F049, 0xDD8F0F00, 0x5C8165BF
+		), array(
+			0x1F201094, 0xEF0BA75B, 0x69E3CF7E, 0x393F4380, 0xFE61CF7A, 0xEEC5207A, 0x55889C94, 0x72FC0651,
+			0xADA7EF79, 0x4E1D7235, 0xD55A63CE, 0xDE0436BA, 0x99C430EF, 0x5F0C0794, 0x18DCDB7D, 0xA1D6EFF3,
+			0xA0B52F7B, 0x59E83605, 0xEE15B094, 0xE9FFD909, 0xDC440086, 0xEF944459, 0xBA83CCB3, 0xE0C3CDFB,
+			0xD1DA4181, 0x3B092AB1, 0xF997F1C1, 0xA5E6CF7B, 0x01420DDB, 0xE4E7EF5B, 0x25A1FF41, 0xE180F806,
+			0x1FC41080, 0x179BEE7A, 0xD37AC6A9, 0xFE5830A4, 0x98DE8B7F, 0x77E83F4E, 0x79929269, 0x24FA9F7B,
+			0xE113C85B, 0xACC40083, 0xD7503525, 0xF7EA615F, 0x62143154, 0x0D554B63, 0x5D681121, 0xC866C359,
+			0x3D63CF73, 0xCEE234C0, 0xD4D87E87, 0x5C672B21, 0x071F6181, 0x39F7627F, 0x361E3084, 0xE4EB573B,
+			0x602F64A4, 0xD63ACD9C, 0x1BBC4635, 0x9E81032D, 0x2701F50C, 0x99847AB4, 0xA0E3DF79, 0xBA6CF38C,
+			0x10843094, 0x2537A95E, 0xF46F6FFE, 0xA1FF3B1F, 0x208CFB6A, 0x8F458C74, 0xD9E0A227, 0x4EC73A34,
+			0xFC884F69, 0x3E4DE8DF, 0xEF0E0088, 0x3559648D, 0x8A45388C, 0x1D804366, 0x721D9BFD, 0xA58684BB,
+			0xE8256333, 0x844E8212, 0x128D8098, 0xFED33FB4, 0xCE280AE1, 0x27E19BA5, 0xD5A6C252, 0xE49754BD,
+			0xC5D655DD, 0xEB667064, 0x77840B4D, 0xA1B6A801, 0x84DB26A9, 0xE0B56714, 0x21F043B7, 0xE5D05860,
+			0x54F03084, 0x066FF472, 0xA31AA153, 0xDADC4755, 0xB5625DBF, 0x68561BE6, 0x83CA6B94, 0x2D6ED23B,
+			0xECCF01DB, 0xA6D3D0BA, 0xB6803D5C, 0xAF77A709, 0x33B4A34C, 0x397BC8D6, 0x5EE22B95, 0x5F0E5304,
+			0x81ED6F61, 0x20E74364, 0xB45E1378, 0xDE18639B, 0x881CA122, 0xB96726D1, 0x8049A7E8, 0x22B7DA7B,
+			0x5E552D25, 0x5272D237, 0x79D2951C, 0xC60D894C, 0x488CB402, 0x1BA4FE5B, 0xA4B09F6B, 0x1CA815CF,
+			0xA20C3005, 0x8871DF63, 0xB9DE2FCB, 0x0CC6C9E9, 0x0BEEFF53, 0xE3214517, 0xB4542835, 0x9F63293C,
+			0xEE41E729, 0x6E1D2D7C, 0x50045286, 0x1E6685F3, 0xF33401C6, 0x30A22C95, 0x31A70850, 0x60930F13,
+			0x73F98417, 0xA1269859, 0xEC645C44, 0x52C877A9, 0xCDFF33A6, 0xA02B1741, 0x7CBAD9A2, 0x2180036F,
+			0x50D99C08, 0xCB3F4861, 0xC26BD765, 0x64A3F6AB, 0x80342676, 0x25A75E7B, 0xE4E6D1FC, 0x20C710E6,
+			0xCDF0B680, 0x17844D3B, 0x31EEF84D, 0x7E0824E4, 0x2CCB49EB, 0x846A3BAE, 0x8FF77888, 0xEE5D60F6,
+			0x7AF75673, 0x2FDD5CDB, 0xA11631C1, 0x30F66F43, 0xB3FAEC54, 0x157FD7FA, 0xEF8579CC, 0xD152DE58,
+			0xDB2FFD5E, 0x8F32CE19, 0x306AF97A, 0x02F03EF8, 0x99319AD5, 0xC242FA0F, 0xA7E3EBB0, 0xC68E4906,
+			0xB8DA230C, 0x80823028, 0xDCDEF3C8, 0xD35FB171, 0x088A1BC8, 0xBEC0C560, 0x61A3C9E8, 0xBCA8F54D,
+			0xC72FEFFA, 0x22822E99, 0x82C570B4, 0xD8D94E89, 0x8B1C34BC, 0x301E16E6, 0x273BE979, 0xB0FFEAA6,
+			0x61D9B8C6, 0x00B24869, 0xB7FFCE3F, 0x08DC283B, 0x43DAF65A, 0xF7E19798, 0x7619B72F, 0x8F1C9BA4,
+			0xDC8637A0, 0x16A7D3B1, 0x9FC393B7, 0xA7136EEB, 0xC6BCC63E, 0x1A513742, 0xEF6828BC, 0x520365D6,
+			0x2D6A77AB, 0x3527ED4B, 0x821FD216, 0x095C6E2E, 0xDB92F2FB, 0x5EEA29CB, 0x145892F5, 0x91584F7F,
+			0x5483697B, 0x2667A8CC, 0x85196048, 0x8C4BACEA, 0x833860D4, 0x0D23E0F9, 0x6C387E8A, 0x0AE6D249,
+			0xB284600C, 0xD835731D, 0xDCB1C647, 0xAC4C56EA, 0x3EBD81B3, 0x230EABB0, 0x6438BC87, 0xF0B5B1FA,
+			0x8F5EA2B3, 0xFC184642, 0x0A036B7A, 0x4FB089BD, 0x649DA589, 0xA345415E, 0x5C038323, 0x3E5D3BB9,
+			0x43D79572, 0x7E6DD07C, 0x06DFDF1E, 0x6C6CC4EF, 0x7160A539, 0x73BFBE70, 0x83877605, 0x4523ECF1
+		), array(
+			0x8DEFC240, 0x25FA5D9F, 0xEB903DBF, 0xE810C907, 0x47607FFF, 0x369FE44B, 0x8C1FC644, 0xAECECA90,
+			0xBEB1F9BF, 0xEEFBCAEA, 0xE8CF1950, 0x51DF07AE, 0x920E8806, 0xF0AD0548, 0xE13C8D83, 0x927010D5,
+			0x11107D9F, 0x07647DB9, 0xB2E3E4D4, 0x3D4F285E, 0xB9AFA820, 0xFADE82E0, 0xA067268B, 0x8272792E,
+			0x553FB2C0, 0x489AE22B, 0xD4EF9794, 0x125E3FBC, 0x21FFFCEE, 0x825B1BFD, 0x9255C5ED, 0x1257A240,
+			0x4E1A8302, 0xBAE07FFF, 0x528246E7, 0x8E57140E, 0x3373F7BF, 0x8C9F8188, 0xA6FC4EE8, 0xC982B5A5,
+			0xA8C01DB7, 0x579FC264, 0x67094F31, 0xF2BD3F5F, 0x40FFF7C1, 0x1FB78DFC, 0x8E6BD2C1, 0x437BE59B,
+			0x99B03DBF, 0xB5DBC64B, 0x638DC0E6, 0x55819D99, 0xA197C81C, 0x4A012D6E, 0xC5884A28, 0xCCC36F71,
+			0xB843C213, 0x6C0743F1, 0x8309893C, 0x0FEDDD5F, 0x2F7FE850, 0xD7C07F7E, 0x02507FBF, 0x5AFB9A04,
+			0xA747D2D0, 0x1651192E, 0xAF70BF3E, 0x58C31380, 0x5F98302E, 0x727CC3C4, 0x0A0FB402, 0x0F7FEF82,
+			0x8C96FDAD, 0x5D2C2AAE, 0x8EE99A49, 0x50DA88B8, 0x8427F4A0, 0x1EAC5790, 0x796FB449, 0x8252DC15,
+			0xEFBD7D9B, 0xA672597D, 0xADA840D8, 0x45F54504, 0xFA5D7403, 0xE83EC305, 0x4F91751A, 0x925669C2,
+			0x23EFE941, 0xA903F12E, 0x60270DF2, 0x0276E4B6, 0x94FD6574, 0x927985B2, 0x8276DBCB, 0x02778176,
+			0xF8AF918D, 0x4E48F79E, 0x8F616DDF, 0xE29D840E, 0x842F7D83, 0x340CE5C8, 0x96BBB682, 0x93B4B148,
+			0xEF303CAB, 0x984FAF28, 0x779FAF9B, 0x92DC560D, 0x224D1E20, 0x8437AA88, 0x7D29DC96, 0x2756D3DC,
+			0x8B907CEE, 0xB51FD240, 0xE7C07CE3, 0xE566B4A1, 0xC3E9615E, 0x3CF8209D, 0x6094D1E3, 0xCD9CA341,
+			0x5C76460E, 0x00EA983B, 0xD4D67881, 0xFD47572C, 0xF76CEDD9, 0xBDA8229C, 0x127DADAA, 0x438A074E,
+			0x1F97C090, 0x081BDB8A, 0x93A07EBE, 0xB938CA15, 0x97B03CFF, 0x3DC2C0F8, 0x8D1AB2EC, 0x64380E51,
+			0x68CC7BFB, 0xD90F2788, 0x12490181, 0x5DE5FFD4, 0xDD7EF86A, 0x76A2E214, 0xB9A40368, 0x925D958F,
+			0x4B39FFFA, 0xBA39AEE9, 0xA4FFD30B, 0xFAF7933B, 0x6D498623, 0x193CBCFA, 0x27627545, 0x825CF47A,
+			0x61BD8BA0, 0xD11E42D1, 0xCEAD04F4, 0x127EA392, 0x10428DB7, 0x8272A972, 0x9270C4A8, 0x127DE50B,
+			0x285BA1C8, 0x3C62F44F, 0x35C0EAA5, 0xE805D231, 0x428929FB, 0xB4FCDF82, 0x4FB66A53, 0x0E7DC15B,
+			0x1F081FAB, 0x108618AE, 0xFCFD086D, 0xF9FF2889, 0x694BCC11, 0x236A5CAE, 0x12DECA4D, 0x2C3F8CC5,
+			0xD2D02DFE, 0xF8EF5896, 0xE4CF52DA, 0x95155B67, 0x494A488C, 0xB9B6A80C, 0x5C8F82BC, 0x89D36B45,
+			0x3A609437, 0xEC00C9A9, 0x44715253, 0x0A874B49, 0xD773BC40, 0x7C34671C, 0x02717EF6, 0x4FEB5536,
+			0xA2D02FFF, 0xD2BF60C4, 0xD43F03C0, 0x50B4EF6D, 0x07478CD1, 0x006E1888, 0xA2E53F55, 0xB9E6D4BC,
+			0xA2048016, 0x97573833, 0xD7207D67, 0xDE0F8F3D, 0x72F87B33, 0xABCC4F33, 0x7688C55D, 0x7B00A6B0,
+			0x947B0001, 0x570075D2, 0xF9BB88F8, 0x8942019E, 0x4264A5FF, 0x856302E0, 0x72DBD92B, 0xEE971B69,
+			0x6EA22FDE, 0x5F08AE2B, 0xAF7A616D, 0xE5C98767, 0xCF1FEBD2, 0x61EFC8C2, 0xF1AC2571, 0xCC8239C2,
+			0x67214CB8, 0xB1E583D1, 0xB7DC3E62, 0x7F10BDCE, 0xF90A5C38, 0x0FF0443D, 0x606E6DC6, 0x60543A49,
+			0x5727C148, 0x2BE98A1D, 0x8AB41738, 0x20E1BE24, 0xAF96DA0F, 0x68458425, 0x99833BE5, 0x600D457D,
+			0x282F9350, 0x8334B362, 0xD91D1120, 0x2B6D8DA0, 0x642B1E31, 0x9C305A00, 0x52BCE688, 0x1B03588A,
+			0xF7BAEFD5, 0x4142ED9C, 0xA4315C11, 0x83323EC5, 0xDFEF4636, 0xA133C501, 0xE9D3531C, 0xEE353783
+		), array(
+			0x9DB30420, 0x1FB6E9DE, 0xA7BE7BEF, 0xD273A298, 0x4A4F7BDB, 0x64AD8C57, 0x85510443, 0xFA020ED1,
+			0x7E287AFF, 0xE60FB663, 0x095F35A1, 0x79EBF120, 0xFD059D43, 0x6497B7B1, 0xF3641F63, 0x241E4ADF,
+			0x28147F5F, 0x4FA2B8CD, 0xC9430040, 0x0CC32220, 0xFDD30B30, 0xC0A5374F, 0x1D2D00D9, 0x24147B15,
+			0xEE4D111A, 0x0FCA5167, 0x71FF904C, 0x2D195FFE, 0x1A05645F, 0x0C13FEFE, 0x081B08CA, 0x05170121,
+			0x80530100, 0xE83E5EFE, 0xAC9AF4F8, 0x7FE72701, 0xD2B8EE5F, 0x06DF4261, 0xBB9E9B8A, 0x7293EA25,
+			0xCE84FFDF, 0xF5718801, 0x3DD64B04, 0xA26F263B, 0x7ED48400, 0x547EEBE6, 0x446D4CA0, 0x6CF3D6F5,
+			0x2649ABDF, 0xAEA0C7F5, 0x36338CC1, 0x503F7E93, 0xD3772061, 0x11B638E1, 0x72500E03, 0xF80EB2BB,
+			0xABE0502E, 0xEC8D77DE, 0x57971E81, 0xE14F6746, 0xC9335400, 0x6920318F, 0x081DBB99, 0xFFC304A5,
+			0x4D351805, 0x7F3D5CE3, 0xA6C866C6, 0x5D5BCCA9, 0xDAEC6FEA, 0x9F926F91, 0x9F46222F, 0x3991467D,
+			0xA5BF6D8E, 0x1143C44F, 0x43958302, 0xD0214EEB, 0x022083B8, 0x3FB6180C, 0x18F8931E, 0x281658E6,
+			0x26486E3E, 0x8BD78A70, 0x7477E4C1, 0xB506E07C, 0xF32D0A25, 0x79098B02, 0xE4EABB81, 0x28123B23,
+			0x69DEAD38, 0x1574CA16, 0xDF871B62, 0x211C40B7, 0xA51A9EF9, 0x0014377B, 0x041E8AC8, 0x09114003,
+			0xBD59E4D2, 0xE3D156D5, 0x4FE876D5, 0x2F91A340, 0x557BE8DE, 0x00EAE4A7, 0x0CE5C2EC, 0x4DB4BBA6,
+			0xE756BDFF, 0xDD3369AC, 0xEC17B035, 0x06572327, 0x99AFC8B0, 0x56C8C391, 0x6B65811C, 0x5E146119,
+			0x6E85CB75, 0xBE07C002, 0xC2325577, 0x893FF4EC, 0x5BBFC92D, 0xD0EC3B25, 0xB7801AB7, 0x8D6D3B24,
+			0x20C763EF, 0xC366A5FC, 0x9C382880, 0x0ACE3205, 0xAAC9548A, 0xECA1D7C7, 0x041AFA32, 0x1D16625A,
+			0x6701902C, 0x9B757A54, 0x31D477F7, 0x9126B031, 0x36CC6FDB, 0xC70B8B46, 0xD9E66A48, 0x56E55A79,
+			0x026A4CEB, 0x52437EFF, 0x2F8F76B4, 0x0DF980A5, 0x8674CDE3, 0xEDDA04EB, 0x17A9BE04, 0x2C18F4DF,
+			0xB7747F9D, 0xAB2AF7B4, 0xEFC34D20, 0x2E096B7C, 0x1741A254, 0xE5B6A035, 0x213D42F6, 0x2C1C7C26,
+			0x61C2F50F, 0x6552DAF9, 0xD2C231F8, 0x25130F69, 0xD8167FA2, 0x0418F2C8, 0x001A96A6, 0x0D1526AB,
+			0x63315C21, 0x5E0A72EC, 0x49BAFEFD, 0x187908D9, 0x8D0DBD86, 0x311170A7, 0x3E9B640C, 0xCC3E10D7,
+			0xD5CAD3B6, 0x0CAEC388, 0xF73001E1, 0x6C728AFF, 0x71EAE2A1, 0x1F9AF36E, 0xCFCBD12F, 0xC1DE8417,
+			0xAC07BE6B, 0xCB44A1D8, 0x8B9B0F56, 0x013988C3, 0xB1C52FCA, 0xB4BE31CD, 0xD8782806, 0x12A3A4E2,
+			0x6F7DE532, 0x58FD7EB6, 0xD01EE900, 0x24ADFFC2, 0xF4990FC5, 0x9711AAC5, 0x001D7B95, 0x82E5E7D2,
+			0x109873F6, 0x00613096, 0xC32D9521, 0xADA121FF, 0x29908415, 0x7FBB977F, 0xAF9EB3DB, 0x29C9ED2A,
+			0x5CE2A465, 0xA730F32C, 0xD0AA3FE8, 0x8A5CC091, 0xD49E2CE7, 0x0CE454A9, 0xD60ACD86, 0x015F1919,
+			0x77079103, 0xDEA03AF6, 0x78A8565E, 0xDEE356DF, 0x21F05CBE, 0x8B75E387, 0xB3C50651, 0xB8A5C3EF,
+			0xD8EEB6D2, 0xE523BE77, 0xC2154529, 0x2F69EFDF, 0xAFE67AFB, 0xF470C4B2, 0xF3E0EB5B, 0xD6CC9876,
+			0x39E4460C, 0x1FDA8538, 0x1987832F, 0xCA007367, 0xA99144F8, 0x296B299E, 0x492FC295, 0x9266BEAB,
+			0xB5676E69, 0x9BD3DDDA, 0xDF7E052F, 0xDB25701C, 0x1B5E51EE, 0xF65324E6, 0x6AFCE36C, 0x0316CC04,
+			0x8644213E, 0xB7DC59D0, 0x7965291F, 0xCCD6FD43, 0x41823979, 0x932BCDF6, 0xB657C34D, 0x4EDFD282,
+			0x7AE5290C, 0x3CB9536B, 0x851E20FE, 0x9833557E, 0x13ECF0B0, 0xD3FFB372, 0x3F85C5C1, 0x0AEF7ED2
+		), array(
+			0x7EC90C04, 0x2C6E74B9, 0x9B0E66DF, 0xA6337911, 0xB86A7FFF, 0x1DD358F5, 0x44DD9D44, 0x1731167F,
+			0x08FBF1FA, 0xE7F511CC, 0xD2051B00, 0x735ABA00, 0x2AB722D8, 0x386381CB, 0xACF6243A, 0x69BEFD7A,
+			0xE6A2E77F, 0xF0C720CD, 0xC4494816, 0xCCF5C180, 0x38851640, 0x15B0A848, 0xE68B18CB, 0x4CAADEFF,
+			0x5F480A01, 0x0412B2AA, 0x259814FC, 0x41D0EFE2, 0x4E40B48D, 0x248EB6FB, 0x8DBA1CFE, 0x41A99B02,
+			0x1A550A04, 0xBA8F65CB, 0x7251F4E7, 0x95A51725, 0xC106ECD7, 0x97A5980A, 0xC539B9AA, 0x4D79FE6A,
+			0xF2F3F763, 0x68AF8040, 0xED0C9E56, 0x11B4958B, 0xE1EB5A88, 0x8709E6B0, 0xD7E07156, 0x4E29FEA7,
+			0x6366E52D, 0x02D1C000, 0xC4AC8E05, 0x9377F571, 0x0C05372A, 0x578535F2, 0x2261BE02, 0xD642A0C9,
+			0xDF13A280, 0x74B55BD2, 0x682199C0, 0xD421E5EC, 0x53FB3CE8, 0xC8ADEDB3, 0x28A87FC9, 0x3D959981,
+			0x5C1FF900, 0xFE38D399, 0x0C4EFF0B, 0x062407EA, 0xAA2F4FB1, 0x4FB96976, 0x90C79505, 0xB0A8A774,
+			0xEF55A1FF, 0xE59CA2C2, 0xA6B62D27, 0xE66A4263, 0xDF65001F, 0x0EC50966, 0xDFDD55BC, 0x29DE0655,
+			0x911E739A, 0x17AF8975, 0x32C7911C, 0x89F89468, 0x0D01E980, 0x524755F4, 0x03B63CC9, 0x0CC844B2,
+			0xBCF3F0AA, 0x87AC36E9, 0xE53A7426, 0x01B3D82B, 0x1A9E7449, 0x64EE2D7E, 0xCDDBB1DA, 0x01C94910,
+			0xB868BF80, 0x0D26F3FD, 0x9342EDE7, 0x04A5C284, 0x636737B6, 0x50F5B616, 0xF24766E3, 0x8ECA36C1,
+			0x136E05DB, 0xFEF18391, 0xFB887A37, 0xD6E7F7D4, 0xC7FB7DC9, 0x3063FCDF, 0xB6F589DE, 0xEC2941DA,
+			0x26E46695, 0xB7566419, 0xF654EFC5, 0xD08D58B7, 0x48925401, 0xC1BACB7F, 0xE5FF550F, 0xB6083049,
+			0x5BB5D0E8, 0x87D72E5A, 0xAB6A6EE1, 0x223A66CE, 0xC62BF3CD, 0x9E0885F9, 0x68CB3E47, 0x086C010F,
+			0xA21DE820, 0xD18B69DE, 0xF3F65777, 0xFA02C3F6, 0x407EDAC3, 0xCBB3D550, 0x1793084D, 0xB0D70EBA,
+			0x0AB378D5, 0xD951FB0C, 0xDED7DA56, 0x4124BBE4, 0x94CA0B56, 0x0F5755D1, 0xE0E1E56E, 0x6184B5BE,
+			0x580A249F, 0x94F74BC0, 0xE327888E, 0x9F7B5561, 0xC3DC0280, 0x05687715, 0x646C6BD7, 0x44904DB3,
+			0x66B4F0A3, 0xC0F1648A, 0x697ED5AF, 0x49E92FF6, 0x309E374F, 0x2CB6356A, 0x85808573, 0x4991F840,
+			0x76F0AE02, 0x083BE84D, 0x28421C9A, 0x44489406, 0x736E4CB8, 0xC1092910, 0x8BC95FC6, 0x7D869CF4,
+			0x134F616F, 0x2E77118D, 0xB31B2BE1, 0xAA90B472, 0x3CA5D717, 0x7D161BBA, 0x9CAD9010, 0xAF462BA2,
+			0x9FE459D2, 0x45D34559, 0xD9F2DA13, 0xDBC65487, 0xF3E4F94E, 0x176D486F, 0x097C13EA, 0x631DA5C7,
+			0x445F7382, 0x175683F4, 0xCDC66A97, 0x70BE0288, 0xB3CDCF72, 0x6E5DD2F3, 0x20936079, 0x459B80A5,
+			0xBE60E2DB, 0xA9C23101, 0xEBA5315C, 0x224E42F2, 0x1C5C1572, 0xF6721B2C, 0x1AD2FFF3, 0x8C25404E,
+			0x324ED72F, 0x4067B7FD, 0x0523138E, 0x5CA3BC78, 0xDC0FD66E, 0x75922283, 0x784D6B17, 0x58EBB16E,
+			0x44094F85, 0x3F481D87, 0xFCFEAE7B, 0x77B5FF76, 0x8C2302BF, 0xAAF47556, 0x5F46B02A, 0x2B092801,
+			0x3D38F5F7, 0x0CA81F36, 0x52AF4A8A, 0x66D5E7C0, 0xDF3B0874, 0x95055110, 0x1B5AD7A8, 0xF61ED5AD,
+			0x6CF6E479, 0x20758184, 0xD0CEFA65, 0x88F7BE58, 0x4A046826, 0x0FF6F8F3, 0xA09C7F70, 0x5346ABA0,
+			0x5CE96C28, 0xE176EDA3, 0x6BAC307F, 0x376829D2, 0x85360FA9, 0x17E3FE2A, 0x24B79767, 0xF5A96B20,
+			0xD6CD2595, 0x68FF1EBF, 0x7555442C, 0xF19F06BE, 0xF9E0659A, 0xEEB9491D, 0x34010718, 0xBB30CAB8,
+			0xE822FE15, 0x88570983, 0x750E6249, 0xDA627E55, 0x5E76FFA8, 0xB1534546, 0x6D47DE08, 0xEFE9E7D4
+		), array(
+			0xF6FA8F9D, 0x2CAC6CE1, 0x4CA34867, 0xE2337F7C, 0x95DB08E7, 0x016843B4, 0xECED5CBC, 0x325553AC,
+			0xBF9F0960, 0xDFA1E2ED, 0x83F0579D, 0x63ED86B9, 0x1AB6A6B8, 0xDE5EBE39, 0xF38FF732, 0x8989B138,
+			0x33F14961, 0xC01937BD, 0xF506C6DA, 0xE4625E7E, 0xA308EA99, 0x4E23E33C, 0x79CBD7CC, 0x48A14367,
+			0xA3149619, 0xFEC94BD5, 0xA114174A, 0xEAA01866, 0xA084DB2D, 0x09A8486F, 0xA888614A, 0x2900AF98,
+			0x01665991, 0xE1992863, 0xC8F30C60, 0x2E78EF3C, 0xD0D51932, 0xCF0FEC14, 0xF7CA07D2, 0xD0A82072,
+			0xFD41197E, 0x9305A6B0, 0xE86BE3DA, 0x74BED3CD, 0x372DA53C, 0x4C7F4448, 0xDAB5D440, 0x6DBA0EC3,
+			0x083919A7, 0x9FBAEED9, 0x49DBCFB0, 0x4E670C53, 0x5C3D9C01, 0x64BDB941, 0x2C0E636A, 0xBA7DD9CD,
+			0xEA6F7388, 0xE70BC762, 0x35F29ADB, 0x5C4CDD8D, 0xF0D48D8C, 0xB88153E2, 0x08A19866, 0x1AE2EAC8,
+			0x284CAF89, 0xAA928223, 0x9334BE53, 0x3B3A21BF, 0x16434BE3, 0x9AEA3906, 0xEFE8C36E, 0xF890CDD9,
+			0x80226DAE, 0xC340A4A3, 0xDF7E9C09, 0xA694A807, 0x5B7C5ECC, 0x221DB3A6, 0x9A69A02F, 0x68818A54,
+			0xCEB2296F, 0x53C0843A, 0xFE893655, 0x25BFE68A, 0xB4628ABC, 0xCF222EBF, 0x25AC6F48, 0xA9A99387,
+			0x53BDDB65, 0xE76FFBE7, 0xE967FD78, 0x0BA93563, 0x8E342BC1, 0xE8A11BE9, 0x4980740D, 0xC8087DFC,
+			0x8DE4BF99, 0xA11101A0, 0x7FD37975, 0xDA5A26C0, 0xE81F994F, 0x9528CD89, 0xFD339FED, 0xB87834BF,
+			0x5F04456D, 0x22258698, 0xC9C4C83B, 0x2DC156BE, 0x4F628DAA, 0x57F55EC5, 0xE2220ABE, 0xD2916EBF,
+			0x4EC75B95, 0x24F2C3C0, 0x42D15D99, 0xCD0D7FA0, 0x7B6E27FF, 0xA8DC8AF0, 0x7345C106, 0xF41E232F,
+			0x35162386, 0xE6EA8926, 0x3333B094, 0x157EC6F2, 0x372B74AF, 0x692573E4, 0xE9A9D848, 0xF3160289,
+			0x3A62EF1D, 0xA787E238, 0xF3A5F676, 0x74364853, 0x20951063, 0x4576698D, 0xB6FAD407, 0x592AF950,
+			0x36F73523, 0x4CFB6E87, 0x7DA4CEC0, 0x6C152DAA, 0xCB0396A8, 0xC50DFE5D, 0xFCD707AB, 0x0921C42F,
+			0x89DFF0BB, 0x5FE2BE78, 0x448F4F33, 0x754613C9, 0x2B05D08D, 0x48B9D585, 0xDC049441, 0xC8098F9B,
+			0x7DEDE786, 0xC39A3373, 0x42410005, 0x6A091751, 0x0EF3C8A6, 0x890072D6, 0x28207682, 0xA9A9F7BE,
+			0xBF32679D, 0xD45B5B75, 0xB353FD00, 0xCBB0E358, 0x830F220A, 0x1F8FB214, 0xD372CF08, 0xCC3C4A13,
+			0x8CF63166, 0x061C87BE, 0x88C98F88, 0x6062E397, 0x47CF8E7A, 0xB6C85283, 0x3CC2ACFB, 0x3FC06976,
+			0x4E8F0252, 0x64D8314D, 0xDA3870E3, 0x1E665459, 0xC10908F0, 0x513021A5, 0x6C5B68B7, 0x822F8AA0,
+			0x3007CD3E, 0x74719EEF, 0xDC872681, 0x073340D4, 0x7E432FD9, 0x0C5EC241, 0x8809286C, 0xF592D891,
+			0x08A930F6, 0x957EF305, 0xB7FBFFBD, 0xC266E96F, 0x6FE4AC98, 0xB173ECC0, 0xBC60B42A, 0x953498DA,
+			0xFBA1AE12, 0x2D4BD736, 0x0F25FAAB, 0xA4F3FCEB, 0xE2969123, 0x257F0C3D, 0x9348AF49, 0x361400BC,
+			0xE8816F4A, 0x3814F200, 0xA3F94043, 0x9C7A54C2, 0xBC704F57, 0xDA41E7F9, 0xC25AD33A, 0x54F4A084,
+			0xB17F5505, 0x59357CBE, 0xEDBD15C8, 0x7F97C5AB, 0xBA5AC7B5, 0xB6F6DEAF, 0x3A479C3A, 0x5302DA25,
+			0x653D7E6A, 0x54268D49, 0x51A477EA, 0x5017D55B, 0xD7D25D88, 0x44136C76, 0x0404A8C8, 0xB8E5A121,
+			0xB81A928A, 0x60ED5869, 0x97C55B96, 0xEAEC991B, 0x29935913, 0x01FDB7F1, 0x088E8DFA, 0x9AB6F6F5,
+			0x3B4CBF9F, 0x4A5DE3AB, 0xE6051D35, 0xA0E1D855, 0xD36B4CF1, 0xF544EDEB, 0xB0E93524, 0xBEBB8FBD,
+			0xA2D762CF, 0x49C92F54, 0x38B5F331, 0x7128A454, 0x48392905, 0xA65B1DB8, 0x851C97BD, 0xD675CF2F
+		), array(
+			0x85E04019, 0x332BF567, 0x662DBFFF, 0xCFC65693, 0x2A8D7F6F, 0xAB9BC912, 0xDE6008A1, 0x2028DA1F,
+			0x0227BCE7, 0x4D642916, 0x18FAC300, 0x50F18B82, 0x2CB2CB11, 0xB232E75C, 0x4B3695F2, 0xB28707DE,
+			0xA05FBCF6, 0xCD4181E9, 0xE150210C, 0xE24EF1BD, 0xB168C381, 0xFDE4E789, 0x5C79B0D8, 0x1E8BFD43,
+			0x4D495001, 0x38BE4341, 0x913CEE1D, 0x92A79C3F, 0x089766BE, 0xBAEEADF4, 0x1286BECF, 0xB6EACB19,
+			0x2660C200, 0x7565BDE4, 0x64241F7A, 0x8248DCA9, 0xC3B3AD66, 0x28136086, 0x0BD8DFA8, 0x356D1CF2,
+			0x107789BE, 0xB3B2E9CE, 0x0502AA8F, 0x0BC0351E, 0x166BF52A, 0xEB12FF82, 0xE3486911, 0xD34D7516,
+			0x4E7B3AFF, 0x5F43671B, 0x9CF6E037, 0x4981AC83, 0x334266CE, 0x8C9341B7, 0xD0D854C0, 0xCB3A6C88,
+			0x47BC2829, 0x4725BA37, 0xA66AD22B, 0x7AD61F1E, 0x0C5CBAFA, 0x4437F107, 0xB6E79962, 0x42D2D816,
+			0x0A961288, 0xE1A5C06E, 0x13749E67, 0x72FC081A, 0xB1D139F7, 0xF9583745, 0xCF19DF58, 0xBEC3F756,
+			0xC06EBA30, 0x07211B24, 0x45C28829, 0xC95E317F, 0xBC8EC511, 0x38BC46E9, 0xC6E6FA14, 0xBAE8584A,
+			0xAD4EBC46, 0x468F508B, 0x7829435F, 0xF124183B, 0x821DBA9F, 0xAFF60FF4, 0xEA2C4E6D, 0x16E39264,
+			0x92544A8B, 0x009B4FC3, 0xABA68CED, 0x9AC96F78, 0x06A5B79A, 0xB2856E6E, 0x1AEC3CA9, 0xBE838688,
+			0x0E0804E9, 0x55F1BE56, 0xE7E5363B, 0xB3A1F25D, 0xF7DEBB85, 0x61FE033C, 0x16746233, 0x3C034C28,
+			0xDA6D0C74, 0x79AAC56C, 0x3CE4E1AD, 0x51F0C802, 0x98F8F35A, 0x1626A49F, 0xEED82B29, 0x1D382FE3,
+			0x0C4FB99A, 0xBB325778, 0x3EC6D97B, 0x6E77A6A9, 0xCB658B5C, 0xD45230C7, 0x2BD1408B, 0x60C03EB7,
+			0xB9068D78, 0xA33754F4, 0xF430C87D, 0xC8A71302, 0xB96D8C32, 0xEBD4E7BE, 0xBE8B9D2D, 0x7979FB06,
+			0xE7225308, 0x8B75CF77, 0x11EF8DA4, 0xE083C858, 0x8D6B786F, 0x5A6317A6, 0xFA5CF7A0, 0x5DDA0033,
+			0xF28EBFB0, 0xF5B9C310, 0xA0EAC280, 0x08B9767A, 0xA3D9D2B0, 0x79D34217, 0x021A718D, 0x9AC6336A,
+			0x2711FD60, 0x438050E3, 0x069908A8, 0x3D7FEDC4, 0x826D2BEF, 0x4EEB8476, 0x488DCF25, 0x36C9D566,
+			0x28E74E41, 0xC2610ACA, 0x3D49A9CF, 0xBAE3B9DF, 0xB65F8DE6, 0x92AEAF64, 0x3AC7D5E6, 0x9EA80509,
+			0xF22B017D, 0xA4173F70, 0xDD1E16C3, 0x15E0D7F9, 0x50B1B887, 0x2B9F4FD5, 0x625ABA82, 0x6A017962,
+			0x2EC01B9C, 0x15488AA9, 0xD716E740, 0x40055A2C, 0x93D29A22, 0xE32DBF9A, 0x058745B9, 0x3453DC1E,
+			0xD699296E, 0x496CFF6F, 0x1C9F4986, 0xDFE2ED07, 0xB87242D1, 0x19DE7EAE, 0x053E561A, 0x15AD6F8C,
+			0x66626C1C, 0x7154C24C, 0xEA082B2A, 0x93EB2939, 0x17DCB0F0, 0x58D4F2AE, 0x9EA294FB, 0x52CF564C,
+			0x9883FE66, 0x2EC40581, 0x763953C3, 0x01D6692E, 0xD3A0C108, 0xA1E7160E, 0xE4F2DFA6, 0x693ED285,
+			0x74904698, 0x4C2B0EDD, 0x4F757656, 0x5D393378, 0xA132234F, 0x3D321C5D, 0xC3F5E194, 0x4B269301,
+			0xC79F022F, 0x3C997E7E, 0x5E4F9504, 0x3FFAFBBD, 0x76F7AD0E, 0x296693F4, 0x3D1FCE6F, 0xC61E45BE,
+			0xD3B5AB34, 0xF72BF9B7, 0x1B0434C0, 0x4E72B567, 0x5592A33D, 0xB5229301, 0xCFD2A87F, 0x60AEB767,
+			0x1814386B, 0x30BCC33D, 0x38A0C07D, 0xFD1606F2, 0xC363519B, 0x589DD390, 0x5479F8E6, 0x1CB8D647,
+			0x97FD61A9, 0xEA7759F4, 0x2D57539D, 0x569A58CF, 0xE84E63AD, 0x462E1B78, 0x6580F87E, 0xF3817914,
+			0x91DA55F4, 0x40A230F3, 0xD1988F35, 0xB6E318D2, 0x3FFA50BC, 0x3D40F021, 0xC3C0BDAE, 0x4958C24C,
+			0x518F36B2, 0x84B1D370, 0x0FEDCE83, 0x878DDADA, 0xF2A279C7, 0x94E01BE8, 0x90716F4B, 0x954B8AA3
+		), array(
+			0xE216300D, 0xBBDDFFFC, 0xA7EBDABD, 0x35648095, 0x7789F8B7, 0xE6C1121B, 0x0E241600, 0x052CE8B5,
+			0x11A9CFB0, 0xE5952F11, 0xECE7990A, 0x9386D174, 0x2A42931C, 0x76E38111, 0xB12DEF3A, 0x37DDDDFC,
+			0xDE9ADEB1, 0x0A0CC32C, 0xBE197029, 0x84A00940, 0xBB243A0F, 0xB4D137CF, 0xB44E79F0, 0x049EEDFD,
+			0x0B15A15D, 0x480D3168, 0x8BBBDE5A, 0x669DED42, 0xC7ECE831, 0x3F8F95E7, 0x72DF191B, 0x7580330D,
+			0x94074251, 0x5C7DCDFA, 0xABBE6D63, 0xAA402164, 0xB301D40A, 0x02E7D1CA, 0x53571DAE, 0x7A3182A2,
+			0x12A8DDEC, 0xFDAA335D, 0x176F43E8, 0x71FB46D4, 0x38129022, 0xCE949AD4, 0xB84769AD, 0x965BD862,
+			0x82F3D055, 0x66FB9767, 0x15B80B4E, 0x1D5B47A0, 0x4CFDE06F, 0xC28EC4B8, 0x57E8726E, 0x647A78FC,
+			0x99865D44, 0x608BD593, 0x6C200E03, 0x39DC5FF6, 0x5D0B00A3, 0xAE63AFF2, 0x7E8BD632, 0x70108C0C,
+			0xBBD35049, 0x2998DF04, 0x980CF42A, 0x9B6DF491, 0x9E7EDD53, 0x06918548, 0x58CB7E07, 0x3B74EF2E,
+			0x522FFFB1, 0xD24708CC, 0x1C7E27CD, 0xA4EB215B, 0x3CF1D2E2, 0x19B47A38, 0x424F7618, 0x35856039,
+			0x9D17DEE7, 0x27EB35E6, 0xC9AFF67B, 0x36BAF5B8, 0x09C467CD, 0xC18910B1, 0xE11DBF7B, 0x06CD1AF8,
+			0x7170C608, 0x2D5E3354, 0xD4DE495A, 0x64C6D006, 0xBCC0C62C, 0x3DD00DB3, 0x708F8F34, 0x77D51B42,
+			0x264F620F, 0x24B8D2BF, 0x15C1B79E, 0x46A52564, 0xF8D7E54E, 0x3E378160, 0x7895CDA5, 0x859C15A5,
+			0xE6459788, 0xC37BC75F, 0xDB07BA0C, 0x0676A3AB, 0x7F229B1E, 0x31842E7B, 0x24259FD7, 0xF8BEF472,
+			0x835FFCB8, 0x6DF4C1F2, 0x96F5B195, 0xFD0AF0FC, 0xB0FE134C, 0xE2506D3D, 0x4F9B12EA, 0xF215F225,
+			0xA223736F, 0x9FB4C428, 0x25D04979, 0x34C713F8, 0xC4618187, 0xEA7A6E98, 0x7CD16EFC, 0x1436876C,
+			0xF1544107, 0xBEDEEE14, 0x56E9AF27, 0xA04AA441, 0x3CF7C899, 0x92ECBAE6, 0xDD67016D, 0x151682EB,
+			0xA842EEDF, 0xFDBA60B4, 0xF1907B75, 0x20E3030F, 0x24D8C29E, 0xE139673B, 0xEFA63FB8, 0x71873054,
+			0xB6F2CF3B, 0x9F326442, 0xCB15A4CC, 0xB01A4504, 0xF1E47D8D, 0x844A1BE5, 0xBAE7DFDC, 0x42CBDA70,
+			0xCD7DAE0A, 0x57E85B7A, 0xD53F5AF6, 0x20CF4D8C, 0xCEA4D428, 0x79D130A4, 0x3486EBFB, 0x33D3CDDC,
+			0x77853B53, 0x37EFFCB5, 0xC5068778, 0xE580B3E6, 0x4E68B8F4, 0xC5C8B37E, 0x0D809EA2, 0x398FEB7C,
+			0x132A4F94, 0x43B7950E, 0x2FEE7D1C, 0x223613BD, 0xDD06CAA2, 0x37DF932B, 0xC4248289, 0xACF3EBC3,
+			0x5715F6B7, 0xEF3478DD, 0xF267616F, 0xC148CBE4, 0x9052815E, 0x5E410FAB, 0xB48A2465, 0x2EDA7FA4,
+			0xE87B40E4, 0xE98EA084, 0x5889E9E1, 0xEFD390FC, 0xDD07D35B, 0xDB485694, 0x38D7E5B2, 0x57720101,
+			0x730EDEBC, 0x5B643113, 0x94917E4F, 0x503C2FBA, 0x646F1282, 0x7523D24A, 0xE0779695, 0xF9C17A8F,
+			0x7A5B2121, 0xD187B896, 0x29263A4D, 0xBA510CDF, 0x81F47C9F, 0xAD1163ED, 0xEA7B5965, 0x1A00726E,
+			0x11403092, 0x00DA6D77, 0x4A0CDD61, 0xAD1F4603, 0x605BDFB0, 0x9EEDC364, 0x22EBE6A8, 0xCEE7D28A,
+			0xA0E736A0, 0x5564A6B9, 0x10853209, 0xC7EB8F37, 0x2DE705CA, 0x8951570F, 0xDF09822B, 0xBD691A6C,
+			0xAA12E4F2, 0x87451C0F, 0xE0F6A27A, 0x3ADA4819, 0x4CF1764F, 0x0D771C2B, 0x67CDB156, 0x350D8384,
+			0x5938FA0F, 0x42399EF3, 0x36997B07, 0x0E84093D, 0x4AA93E61, 0x8360D87B, 0x1FA98B0C, 0x1149382C,
+			0xE97625A5, 0x0614D1B7, 0x0E25244B, 0x0C768347, 0x589E8D82, 0x0D2059D1, 0xA466BB1E, 0xF8DA0A82,
+			0x04F19130, 0xBA6E4EC0, 0x99265164, 0x1EE7230D, 0x50B2AD80, 0xEAEE6801, 0x8DB2A283, 0xEA8BF59E
+		)
+	);
 
 	public static function blocklength($cipher, $bits = null){
 		$cipher = strtolower($cipher);
+		if(substr($cipher, -3) == 'des' && is_numeric(substr($cipher, 0, -3)))$cipher = 'des';
 		switch($cipher){
 			case 'xor': 	 return $bits === true ? 8 : 1;
 			case 'blowfish': return $bits === true ? 64 : 8;
@@ -14318,14 +14372,16 @@ class XNCrypt {
 			case 'skipjack': return $bits === true ? 64 : 8;
 			case 'vigenere': return $bits === true ? 8 : 1;
 			case 'enigma':   return $bits === true ? 8 : 1;
-			case 'rc2':      return $bits === true ? 64 : 8;
-			case 'rc4':      return $bits === true ? 8 : 1;
-			case 'rc4-64':   return $bits === true ? 8 : 1;
-			case 'rc4-40':   return $bits === true ? 8 : 1;
+			case 'rc2':  	 return $bits === true ? 64 : 8;
+			case 'rc4':	     return $bits === true ? 8 : 1;
+			case 'des':      return $bits === true ? 64 : 8;
+			case 'tripledes':return $bits === true ? 64 : 8;
+			case 'arc4':     return $bits === true ? 8 : 1;
 		}
 	}
 	public static function keylength($cipher, $bits = null){
 		$cipher = strtolower($cipher);
+		if(substr($cipher, -3) == 'des' && is_numeric(substr($cipher, 0, -3)))$cipher = 'des';
 		switch($cipher){
 			case 'xor': 	 return $bits === true ? 8 : 1;
 			case 'blowfish': return $bits === true ? 128 : 16;
@@ -14333,8 +14389,11 @@ class XNCrypt {
 			case 'skipjack': return $bits === true ? 80 : 10;
 			case 'vigenere': return $bits === true ? 8 : 1;
 			case 'enigma':   return $bits === true ? 8 : 1;
-			case 'rc2':      return $bits === true ? 128 : 16;
-			case 'rc4':      return $bits === true ? 128 : 16;
+			case 'rc2':	     return $bits === true ? 128 : 16;
+			case 'rc4':	     return $bits === true ? 128 : 16;
+			case 'des':      return $bits === true ? 64 : 8;
+			case 'tripledes':return $bits === true ? 64 : 24;
+			case 'arc4':     return $bits === true ? 8 : 1;
 		}
 	}
 	private static function keyinitsize($cipher, $key = null, $options = 0, $size = null){
@@ -14344,25 +14403,32 @@ class XNCrypt {
 			$size = self::keylength($cipher);
 		if($options & self::KEYPAD)
 			switch($cipher){
-				case 'blowfish': $key = self::zeropad($key, $size);break;
-				case 'twofish':  return self::zeropad($key, $size);
-				case 'skipjack': return self::zeropad($key, $size);
-				case 'rc2':      return self::zeropad($key, $size);
-				case 'rc4':      return self::zeropad($key, $size);
+				case 'twofish': $key = self::zeropad($key, $size);break;
+				case 'blowfish':
+				case 'skipjack':
+				case 'rc2':
+				case 'rc4':
+				case 'des':
+				case 'tripledes':
+					return self::zeropad($key, $size);
 			}
 		elseif($options & self::KEYMIX)
 			switch($cipher){
-				case 'blowfish': $key = self::mixpad($key, $size);break;
-				case 'twofish':  return self::mixpad($key, $size);
-				case 'skipjack': return self::mixpad($key, $size);
-				case 'rc2':      return self::mixpad($key, $size);
-				case 'rc4':      return self::mixpad($key, $size);
+				case 'twofish': $key = self::mixpad($key, $size);break;
+				case 'blowfish':
+				case 'skipjack':
+				case 'rc2':
+				case 'rc4':
+				case 'des':
+				case 'tripledes':
+					return self::mixpad($key, $size);
 			}
 		$lk = strlen($key);
 		switch($cipher){
 			case 'xor':
 			case 'blowfish':
 			case 'vigenere':
+			case 'arc4':
 				return $key;
 			case 'twofish':
 				if($lk < 8)return '';
@@ -14374,13 +14440,17 @@ class XNCrypt {
 			case 'skipjack':
 			case 'rc2':
 			case 'rc4':
+			case 'des':
+			case 'tripledes':
 				return $lk < $size ? self::mixpad($key, $size) : $key;
 		}
 	}
 	private static function keyinstall($cipher, $key){
 		switch($cipher){
 			case 'xor':
-				return $key;
+			case 'arc4':
+			if($key === null)$key = "\0";
+				return array($key);
 			case 'blowfish':
 			if($key === null)return array(self::$bfp, self::$bfs);
 				$p  = self::$bfp;
@@ -14398,13 +14468,13 @@ class XNCrypt {
 				$data = "\0\0\0\0\0\0\0\0";
 				for($i = 0; $i < 18; $i += 2) {
 					list($l, $r) = array_values(unpack('N*', $data = self::blockencrypt($cipher, $data, array($p, $sb))));
-					$p[$i    ] = $l;
+					$p[$i	] = $l;
 					$p[$i + 1] = $r;
 				}
 				for($i = 0; $i < 4; ++$i) {
 					for($j = 0; $j < 256; $j += 2) {
 						list($l, $r) = array_values(unpack('N*', $data = self::blockencrypt($cipher, $data, array($p, $sb))));
-						$sb[$i][$j    ] = $l;
+						$sb[$i][$j	] = $l;
 						$sb[$i][$j + 1] = $r;
 					}
 				}
@@ -14541,10 +14611,10 @@ class XNCrypt {
 			return array($s0, $s1, $s2, $s3, $k);
 			case 'skipjack':
 			if($key === null)$key = "\0\0\0\0\0\0\0\0";
-				return str_repeat($key, 16);
+				return array(str_repeat($key, 16));
 			case 'vigenere':
 			if($key === null)$key = 'A';
-				return xnstring::getinrange(strtoupper($key), xnstring::UPPER_RANGE);
+				return array(xnstring::getinrange(strtoupper($key), xnstring::UPPER_RANGE));
 			case 'enigma':
 			if($key === null)$key = "\0\0\0\0\0\0\0\0";
 				$deck = $t1 = array();
@@ -14598,7 +14668,7 @@ class XNCrypt {
 				array_unshift($key, self::$rc2t[$key['a']] | ($key['b'] << 8));
 				unset($key['a']);
 				unset($key['b']);
-				return $key;
+				return array($key);
 			case 'rc4':
 			if($key === null)$key = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 				$lk = strlen($key);
@@ -14608,12 +14678,79 @@ class XNCrypt {
 					swap($res[$i], $res[$j]);
 				}
 				return $res;
+			case 'tripledes':
+			if($key === null)$key = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+				return array(
+					self::keyinstall('des', substr($key, 0, 8)),
+					self::keyinstall('des', substr($key, 8, 8)),
+					self::keyinstall('des', substr($key, 16, 8))
+				);
 		}
+		if(substr($cipher, -3) == 'des'){
+			if($key === null)$key = "\0\0\0\0\0\0\0\0";
+			$rounds = substr($cipher, 0, -3);
+			$rounds = $rounds === '' || $rounds <= 0 ? 1 : (int)$rounds;
+			$res = array();
+			$shuffle = array_map(function($x){
+				return strtr(str_pad(decbin($x), 8, '0', STR_PAD_LEFT), '01', "\0\xff");
+			}, range(0, 255));
+			for($round = 0; $round < $rounds; ++$round) {
+				$tmp = str_pad(substr($key, $round * 8, 8), 8, "\0");
+				$t = unpack('N2', $tmp);
+				$l = $t[1];
+				$r = $t[2];
+				$tmp = ($shuffle[self::$despc1[ $r        & 0xFF]] & "\x80\x80\x80\x80\x80\x80\x80\x00") |
+					   ($shuffle[self::$despc1[($r >>  8) & 0xFF]] & "\x40\x40\x40\x40\x40\x40\x40\x00") |
+					   ($shuffle[self::$despc1[($r >> 16) & 0xFF]] & "\x20\x20\x20\x20\x20\x20\x20\x00") |
+					   ($shuffle[self::$despc1[($r >> 24) & 0xFF]] & "\x10\x10\x10\x10\x10\x10\x10\x00") |
+					   ($shuffle[self::$despc1[ $l        & 0xFF]] & "\x08\x08\x08\x08\x08\x08\x08\x00") |
+					   ($shuffle[self::$despc1[($l >>  8) & 0xFF]] & "\x04\x04\x04\x04\x04\x04\x04\x00") |
+					   ($shuffle[self::$despc1[($l >> 16) & 0xFF]] & "\x02\x02\x02\x02\x02\x02\x02\x00") |
+					   ($shuffle[self::$despc1[($l >> 24) & 0xFF]] & "\x01\x01\x01\x01\x01\x01\x01\x00");
+				$tmp = unpack('N2', $tmp);
+				$c = ( $tmp[1] >> 4) & 0x0FFFFFFF;
+				$d = (($tmp[2] >> 4) & 0x0FFFFFF0) | ($tmp[1] & 0x0F);
+				$res[$round] = array(
+					array(), array_fill(0, 32, 0)
+				);
+				for($i = 0, $ki = 31; $i < 16; ++$i, $ki-= 2) {
+					$c <<= self::$desshs[$i];
+					$c = ($c | ($c >> 28)) & 0x0FFFFFFF;
+					$d <<= self::$desshs[$i];
+					$d = ($d | ($d >> 28)) & 0x0FFFFFFF;
+					$cp = self::$despc2c[0][ $c >> 24        ] | self::$despc2c[1][($c >> 16) & 0xFF] |
+						  self::$despc2c[2][($c >>  8) & 0xFF] | self::$despc2c[3][ $c        & 0xFF];
+					$dp = self::$despc2d[0][ $d >> 24        ] | self::$despc2d[1][($d >> 16) & 0xFF] |
+						  self::$despc2d[2][($d >>  8) & 0xFF] | self::$despc2d[3][ $d        & 0xFF];
+					$v1 = ( $cp        & 0xFF000000) | (($cp <<  8) & 0x00FF0000) |
+						  (($dp >> 16) & 0x0000FF00) | (($dp >>  8) & 0x000000FF);
+					$v2 = (($cp <<  8) & 0xFF000000) | (($cp << 16) & 0x00FF0000) |
+						  (($dp >>  8) & 0x0000FF00) | ( $dp        & 0x000000FF);
+					$res[$round][0][       ] = $v1;
+					$res[$round][1][$ki - 1] = $v1;
+					$res[$round][0][       ] = $v2;
+					$res[$round][1][$ki    ] = $v2;
+				}
+			}
+			$c = 1;
+			$en = call_user_func_array('array_merge', array_map(function($x)use(&$c){
+					return $x[$c = $c == 0 ? 1 : 0];
+				}, $res));
+			$c = 0;
+			$de = call_user_func_array('array_merge', array_map(function($x)use(&$c){
+					return $x[$c = $c == 0 ? 1 : 0];
+				}, array_reverse($res)));
+			return array($en, $de, $rounds);
+		}
+		new XNError('installkey', 'Undefined cipher name', XNError::WARNING);
+		return false;
 	}
 	private static function blockencrypt($cipher, $in, $key = null){
 		$cipher = strtolower($cipher);
 		if(!is_array($key))
 			$key = self::keyinstall($cipher, $key);
+		if(is_array($key) && !isset($key[1]))
+			$key = $key[0];
 		switch($cipher){
 			case 'xor':
 				return self::xorcrypt($in, $key);
@@ -14638,23 +14775,23 @@ class XNCrypt {
 				$r3 = $k[3] ^ $in[4];
 				$ki = 7;
 				while($ki < 39) {
-					$t0 =   $s0[ $r0        & 0xff] ^
+					$t0 =   $s0[ $r0		& 0xff] ^
 							$s1[($r0 >>  8) & 0xff] ^
 							$s2[($r0 >> 16) & 0xff] ^
 							$s3[($r0 >> 24) & 0xff];
 					$t1 =   $s0[($r1 >> 24) & 0xff] ^
-							$s1[ $r1        & 0xff] ^
+							$s1[ $r1		& 0xff] ^
 							$s2[($r1 >>  8) & 0xff] ^
 							$s3[($r1 >> 16) & 0xff];
 					$r2^= $t0 + $t1 + $k[++$ki];
 					$r2 = ($r2 >> 1 & 0x7fffffff) | ($r2 << 31);
 					$r3 = ((($r3 >> 31) & 1) | ($r3 << 1)) ^ ($t0 + ($t1 << 1) + $k[++$ki]);
-					$t0 =   $s0[ $r2        & 0xff] ^
+					$t0 =   $s0[ $r2		& 0xff] ^
 							$s1[($r2 >>  8) & 0xff] ^
 							$s2[($r2 >> 16) & 0xff] ^
 							$s3[($r2 >> 24) & 0xff];
 					$t1 =   $s0[($r3 >> 24) & 0xff] ^
-							$s1[ $r3        & 0xff] ^
+							$s1[ $r3		& 0xff] ^
 							$s2[($r3 >>  8) & 0xff] ^
 							$s3[($r3 >> 16) & 0xff];
 					$r0^= $t0 + $t1 + $k[++$ki];
@@ -14736,6 +14873,68 @@ class XNCrypt {
 					$in[$k] = $in[$k] ^ chr($key[($ksj + $ksi) & 0xff]);
 				}
 				return $in;
+			case 'des':
+				$sbox = self::$dess;
+				if(is_float($sbox[3][0])){
+					$sbox[0] = array_map('intval', $sbox[0]);
+					$sbox[1] = array_map('intval', $sbox[1]);
+					$sbox[2] = array_map('intval', $sbox[2]);
+					$sbox[3] = array_map('intval', $sbox[3]);
+					$sbox[4] = array_map('intval', $sbox[4]);
+					$sbox[5] = array_map('intval', $sbox[5]);
+					$sbox[6] = array_map('intval', $sbox[6]);
+					$sbox[7] = array_map('intval', $sbox[7]);
+					self::$dess = $sbox;
+				}
+				$shuffle = array_map(function($x){
+					return strtr(str_pad(decbin($x), 8, '0', STR_PAD_LEFT), '01', "\0\xff");
+				}, range(0, 255));
+				$shuffleinvip = $shuffleip = array();
+				for($i = 0; $i < 256; ++$i) {
+					$shuffleip[]    = $shuffle[self::$desm[$i]];
+					$shuffleinvip[] = $shuffle[self::$desinvm[$i]];
+				}
+				$box = $key[0];
+				$ki  = -1;
+				$t = unpack('N2', $in);
+				$l = $t[1];
+				$r = $t[2];
+				$tmp =  ($shuffleip[ $r        & 0xFF] & "\x80\x80\x80\x80\x80\x80\x80\x80") |
+						($shuffleip[($r >>  8) & 0xFF] & "\x40\x40\x40\x40\x40\x40\x40\x40") |
+						($shuffleip[($r >> 16) & 0xFF] & "\x20\x20\x20\x20\x20\x20\x20\x20") |
+						($shuffleip[($r >> 24) & 0xFF] & "\x10\x10\x10\x10\x10\x10\x10\x10") |
+						($shuffleip[ $l        & 0xFF] & "\x08\x08\x08\x08\x08\x08\x08\x08") |
+						($shuffleip[($l >>  8) & 0xFF] & "\x04\x04\x04\x04\x04\x04\x04\x04") |
+						($shuffleip[($l >> 16) & 0xFF] & "\x02\x02\x02\x02\x02\x02\x02\x02") |
+						($shuffleip[($l >> 24) & 0xFF] & "\x01\x01\x01\x01\x01\x01\x01\x01");
+				$t = unpack('N2', $tmp);
+				$l = $t[1];
+				$r = $t[2];
+				for($round = 0; $round < $key[2]; ++$round) {
+					for($i = 0; $i < 16; ++$i) {
+						$b1 = (($r >>  3) & 0x1FFFFFFF) ^ ($r << 29) ^ $box[++$ki];
+						$b2 = (($r >> 31) & 0x00000001) ^ ($r <<  1) ^ $box[++$ki];
+						$t = $sbox[0][($b1 >> 24) & 0x3F] ^ $sbox[1][($b2 >> 24) & 0x3F] ^
+							 $sbox[2][($b1 >> 16) & 0x3F] ^ $sbox[3][($b2 >> 16) & 0x3F] ^
+							 $sbox[4][($b1 >>  8) & 0x3F] ^ $sbox[5][($b2 >>  8) & 0x3F] ^
+							 $sbox[6][ $b1        & 0x3F] ^ $sbox[7][ $b2        & 0x3F] ^ $l;
+						$l = $r;
+						$r = $t;
+					}
+					swap($l, $r);
+				}
+				return ($shuffleinvip[($r >> 24) & 0xFF] & "\x80\x80\x80\x80\x80\x80\x80\x80") |
+					   ($shuffleinvip[($l >> 24) & 0xFF] & "\x40\x40\x40\x40\x40\x40\x40\x40") |
+					   ($shuffleinvip[($r >> 16) & 0xFF] & "\x20\x20\x20\x20\x20\x20\x20\x20") |
+					   ($shuffleinvip[($l >> 16) & 0xFF] & "\x10\x10\x10\x10\x10\x10\x10\x10") |
+					   ($shuffleinvip[($r >>  8) & 0xFF] & "\x08\x08\x08\x08\x08\x08\x08\x08") |
+					   ($shuffleinvip[($l >>  8) & 0xFF] & "\x04\x04\x04\x04\x04\x04\x04\x04") |
+					   ($shuffleinvip[ $r        & 0xFF] & "\x02\x02\x02\x02\x02\x02\x02\x02") |
+					   ($shuffleinvip[ $l        & 0xFF] & "\x01\x01\x01\x01\x01\x01\x01\x01");
+			case 'tripledes':
+				return self::blockencrypt('des', self::blockdecrypt('des', self::blockencrypt('des', $in, $key[0]), $key[1]), $key[2]);
+			case 'arc4':
+				return $in ^ self::a4prga($key, strlen($in));
 		}
 		new XNError('blockencrypt', 'Undefined cipher name', XNError::WARNING);
 		return false;
@@ -14744,6 +14943,8 @@ class XNCrypt {
 		$cipher = strtolower($cipher);
 		if(!is_array($key))
 			$key = self::keyinstall($cipher, $key);
+		if(is_array($key) && !isset($key[1]))
+			$key = $key[0];
 		switch($cipher){
 			case 'xor':
 				return self::xorcrypt($in, $key);
@@ -14768,23 +14969,23 @@ class XNCrypt {
 				$r3 = $k[7] ^ $in[4];
 				$ki = 40;
 				while($ki > 8) {
-					$t0 =   $s0[$r0       & 0xff] ^
+					$t0 =   $s0[$r0	   & 0xff] ^
 							$s1[$r0 >>  8 & 0xff] ^
 							$s2[$r0 >> 16 & 0xff] ^
 							$s3[$r0 >> 24 & 0xff];
 					$t1 =   $s0[$r1 >> 24 & 0xff] ^
-							$s1[$r1       & 0xff] ^
+							$s1[$r1	   & 0xff] ^
 							$s2[$r1 >>  8 & 0xff] ^
 							$s3[$r1 >> 16 & 0xff];
 					$r3^= ($t0 + ($t1 << 1) + $k[--$ki]);
 					$r3 = $r3 >> 1 & 0x7fffffff | $r3 << 31;
 					$r2 = ($r2 >> 31 & 0x1 | $r2 << 1) ^ ($t0 + $t1 + $k[--$ki]);
-					$t0 =   $s0[$r2       & 0xff] ^
+					$t0 =   $s0[$r2	   & 0xff] ^
 							$s1[$r2 >>  8 & 0xff] ^
 							$s2[$r2 >> 16 & 0xff] ^
 							$s3[$r2 >> 24 & 0xff];
 					$t1 =   $s0[$r3 >> 24 & 0xff] ^
-							$s1[$r3       & 0xff] ^
+							$s1[$r3	   & 0xff] ^
 							$s2[$r3 >>  8 & 0xff] ^
 							$s3[$r3 >> 16 & 0xff];
 					$r1^= ($t0 + ($t1 << 1) + $k[--$ki]);
@@ -14872,6 +15073,69 @@ class XNCrypt {
 					$in[$k] = $in[$k] ^ chr($key[($ksj + $ksi) & 0xff]);
 				}
 				return $in;
+			case 'des':
+				$sbox = self::$dess;
+				if(is_float($sbox[3][0])){
+					$sbox[0] = array_map('intval', $sbox[0]);
+					$sbox[1] = array_map('intval', $sbox[1]);
+					$sbox[2] = array_map('intval', $sbox[2]);
+					$sbox[3] = array_map('intval', $sbox[3]);
+					$sbox[4] = array_map('intval', $sbox[4]);
+					$sbox[5] = array_map('intval', $sbox[5]);
+					$sbox[6] = array_map('intval', $sbox[6]);
+					$sbox[7] = array_map('intval', $sbox[7]);
+					self::$dess = $sbox;
+				}
+				$shuffle = array_map(function($x){
+					return strtr(str_pad(decbin($x), 8, '0', STR_PAD_LEFT), '01', "\0\xff");
+				}, range(0, 255));
+				$shuffleinvip = $shuffleip = array();
+				for($i = 0; $i < 256; ++$i) {
+					$shuffleip[]    = $shuffle[self::$desm[$i]];
+					$shuffleinvip[] = $shuffle[self::$desinvm[$i]];
+				}
+				$box = $key[1];
+				$ki  = -1;
+				$t = unpack('N2', $in);
+				$l = $t[1];
+				$r = $t[2];
+				$tmp =  ($shuffleip[ $r        & 0xFF] & "\x80\x80\x80\x80\x80\x80\x80\x80") |
+						($shuffleip[($r >>  8) & 0xFF] & "\x40\x40\x40\x40\x40\x40\x40\x40") |
+						($shuffleip[($r >> 16) & 0xFF] & "\x20\x20\x20\x20\x20\x20\x20\x20") |
+						($shuffleip[($r >> 24) & 0xFF] & "\x10\x10\x10\x10\x10\x10\x10\x10") |
+						($shuffleip[ $l        & 0xFF] & "\x08\x08\x08\x08\x08\x08\x08\x08") |
+						($shuffleip[($l >>  8) & 0xFF] & "\x04\x04\x04\x04\x04\x04\x04\x04") |
+						($shuffleip[($l >> 16) & 0xFF] & "\x02\x02\x02\x02\x02\x02\x02\x02") |
+						($shuffleip[($l >> 24) & 0xFF] & "\x01\x01\x01\x01\x01\x01\x01\x01");
+				$t = unpack('N2', $tmp);
+				$l = $t[1];
+				$r = $t[2];
+				for($round = 0; $round < $key[2]; ++$round) {
+					for($i = 0; $i < 16; ++$i) {
+						$b1 = (($r >>  3) & 0x1FFFFFFF) ^ ($r << 29) ^ $box[++$ki];
+						$b2 = (($r >> 31) & 0x00000001) ^ ($r <<  1) ^ $box[++$ki];
+						$t = $sbox[0][($b1 >> 24) & 0x3F] ^ $sbox[1][($b2 >> 24) & 0x3F] ^
+							 $sbox[2][($b1 >> 16) & 0x3F] ^ $sbox[3][($b2 >> 16) & 0x3F] ^
+							 $sbox[4][($b1 >>  8) & 0x3F] ^ $sbox[5][($b2 >>  8) & 0x3F] ^
+							 $sbox[6][ $b1        & 0x3F] ^ $sbox[7][ $b2        & 0x3F] ^ $l;
+						$l = $r;
+						$r = $t;
+					}
+					swap($l, $r);
+				}
+				return ($shuffleinvip[($r >> 24) & 0xFF] & "\x80\x80\x80\x80\x80\x80\x80\x80") |
+					   ($shuffleinvip[($l >> 24) & 0xFF] & "\x40\x40\x40\x40\x40\x40\x40\x40") |
+					   ($shuffleinvip[($r >> 16) & 0xFF] & "\x20\x20\x20\x20\x20\x20\x20\x20") |
+					   ($shuffleinvip[($l >> 16) & 0xFF] & "\x10\x10\x10\x10\x10\x10\x10\x10") |
+					   ($shuffleinvip[($r >>  8) & 0xFF] & "\x08\x08\x08\x08\x08\x08\x08\x08") |
+					   ($shuffleinvip[($l >>  8) & 0xFF] & "\x04\x04\x04\x04\x04\x04\x04\x04") |
+					   ($shuffleinvip[ $r        & 0xFF] & "\x02\x02\x02\x02\x02\x02\x02\x02") |
+					   ($shuffleinvip[ $l        & 0xFF] & "\x01\x01\x01\x01\x01\x01\x01\x01");
+			case 'tripledes':
+				$in = str_pad($in, (strlen($in) + 7) & 0xFFFFFFF8, "\0");
+				return self::blockdecrypt('des', self::blockencrypt('des', self::blockdecrypt('des', $in, $key[2]), $key[1]), $key[0]);
+			case 'arc4':
+				return $in ^ self::a4prga($key, strlen($in));
 		}
 		new XNError('blockdecrypt', 'Undefined cipher name', XNError::WARNING);
 		return false;
@@ -14880,13 +15144,25 @@ class XNCrypt {
 	const KEYPAD = 1;
 	const KEYMIX = 2;
 	// CBC | CCM | CFB | CFB1 | CFB8 | CTR | COFB | ECB | GCM | NCFB | NOFB | OFB | PCBC | RAW | XTS
-	private static function modeencrypt($cipher, $mode, $data, $key = null, $dsize = null, $iv = null, $options = 0, $more = array()){
+	private static function modeencrypt($cipher, $mode, $data, $key = null, $dsize = null, $iv = null, $options = 0){
+		if(substr($cipher, -3) == 'des' && is_numeric(substr($cipher, 0, -3)))$cipher = 'des';
 		$size = self::blocklength($cipher);
 		$mode = strtolower($mode);
 		$key = self::keyinitsize($cipher, $key, $options, $dsize);
 		if($iv === null)$iv = str_repeat("\0", $size);
 		$iv = substr(self::zeropad($iv, $size), 0, $size);
 		$res = '';
+		switch($cipher . ':' . $mode){
+			case 'tripledes:cbc3':
+				$data = self::cryptopad($data, $size);
+				for($i = 0; isset($data[$i]); $i += $size)
+					$res .= $iv = self::blockencrypt($cipher, substr($data, $i, $size) ^ $iv, $key);
+			return $res;
+			case 'tripledes:3cbc':
+				$res = self::modeencrypt('des', 'cbc', self::modedecrypt('des', 'cbc', self::modeencrypt('des', 'cbc',
+					$data, $key[0], $dsize, $iv, $options), $key[1], $dsize, $iv, $options), $key[2], $dsize, $iv, $options);
+			return $res;
+		}
 		switch($mode){
 			case 'raw':
 				return self::blockencrypt($cipher, $data, $key);
@@ -14954,12 +15230,26 @@ class XNCrypt {
 		return false;
 	}
 	private static function modedecrypt($cipher, $mode, $data, $key = null, $dsize = null, $iv = null, $options = 0){
+		if(substr($cipher, -3) == 'des' && is_numeric(substr($cipher, 0, -3)))$cipher = 'des';
 		$size = self::blocklength($cipher);
 		$mode = strtolower($mode);
 		$key = self::keyinitsize($cipher, $key, $options, $dsize);
 		if($iv === null)$iv = str_repeat("\0", $size);
 		$iv = substr(self::zeropad($iv, $size), 0, $size);
 		$res = '';
+		switch($cipher . ':' . $mode){
+			case 'tripledes:cbc3':
+				for($i = 0; isset($data[$i]); $i += $size){
+					$tmp = substr($data, $i, $size);
+					$res .= self::blockdecrypt($cipher, $tmp, $key) ^ $iv;
+					$iv = $tmp;
+				}
+			return self::cryptounpad($res);
+			case 'tripledes:3cbc':
+				$res = self::modedecrypt('des', 'cbc', self::modeencrypt('des', 'cbc', self::modedecrypt('des', 'cbc',
+					$data, $key[2], $dsize, $iv, $options), $key[1], $dsize, $iv, $options), $key[0], $dsize, $iv, $options);
+			return $res;
+		}
 		switch($mode){
 			case 'raw':
 				return self::blockdecrypt($cipher, $data, $key);
@@ -15056,7 +15346,7 @@ class XNCrypt {
 	private static function cryptopad($string, $size){
 		$length = strlen($string);
 		$pad = $size - ($length % $size);
-        return str_pad($string, $length + $pad, chr($pad));
+		return str_pad($string, $length + $pad, chr($pad));
 	}
 	private static function cryptounpad($string){
 		if($string === '')return '';
@@ -15065,13 +15355,13 @@ class XNCrypt {
 	private static function zeropad($string, $size){
 		$length = strlen($string);
 		$pad = $size - ($length % $size);
-        return str_pad($string, $length + $pad, "\0");
+		return str_pad($string, $length + $pad, "\0");
 	}
 	private static function mixpad($string, $size){
 		$length = strlen($string);
 		if($length % $size === 0)return $string;
 		$pad = $size - ($length % $size);
-        return str_pad($string, $length + $pad, "\0");
+		return str_pad($string, $length + $pad, "\0");
 	}
 	private static function ivunpad($iv){
 		if($iv === "\0\0\0\0\0\0\0\0")return null;
@@ -15145,14 +15435,23 @@ class XNCrypt {
 		$mode = isset($method[1]) ? $method[1] : 'cbc';
 		return self::modeextractiv($cipher, $mode, $plaintext, $ciphertext, $key, $dsize, $options);
 	}
-	public static function cryption_modes(){
+	public static function installkey($cipher, $key = null, $options = 0){
+		$cipher = explode('-', strtolower($cipher));
+		if(isset($cipher[1]) && (int)$cipher[1] !== 0)$dsize = (int)$cipher[1] >> 3;
+		else $dsize = null;
+		$ciph = $cipher = $cipher[0];
+		if(substr($ciph, -3) == 'des')$ciph = 'des';
+		$key = self::keyinitsize($ciph, $key, $options, $dsize);
+		return self::keyinstall($cipher, $key);
+	}
+	public static function modes(){
 		return array(
-			'raw', 'ecb', 'cbc', 'pcbc', 'cfb', 'ofb', 'ctr', 'ofb8', 'ncfb', 'nofb'
+			'raw', 'ecb', 'cbc', 'pcbc', 'cfb', 'ofb', 'ctr', 'ofb8', 'ncfb', 'nofb', 'cbc3', '3cbc'
 		);
 	}
-	public static function cryption_ciphers(){
+	public static function ciphers(){
 		return array(
-			'xor', 'blowfish', 'twofish', 'skipjack', 'vigenere', 'enigma'
+			'xor', 'blowfish', 'twofish', 'skipjack', 'vigenere', 'enigma', 'rc2', 'rc4', 'des', 'tripledes'
 		);
 	}
 }
@@ -18440,16 +18739,16 @@ class xncolor {
 	}
 	private static function _hue($a, $b, $h){
 		if($h < 0)
-            $h += 1;
-        if($h > 1)
-            $h -= 1;
-        if(6 * $h < 1)
-            return $a + ($b - $a) * 6 * $h;
-        if(2 * $h < 1)
-            return $b;
-        if(3 * $h < 2)
-            return $a + ($b - $a) * (2 / 3 - $h) * 6;
-        return $a;
+			$h += 1;
+		if($h > 1)
+			$h -= 1;
+		if(6 * $h < 1)
+			return $a + ($b - $a) * 6 * $h;
+		if(2 * $h < 1)
+			return $b;
+		if(3 * $h < 2)
+			return $a + ($b - $a) * (2 / 3 - $h) * 6;
+		return $a;
 	}
 	public static function hslrgb($h, $s, $l){
 		if($s == 0)
@@ -18481,7 +18780,7 @@ class xncolor {
 			$dr = ((($max - $r) / 6) + ($delta / 2)) / $delta;
 			$dg = ((($max - $g) / 6) + ($delta / 2)) / $delta;
 			$db = ((($max - $b) / 6) + ($delta / 2)) / $delta;
-			if    ($r == $max)$h = $db - $dg;
+			if	($r == $max)$h = $db - $dg;
 			elseif($g == $max)$h = (1 / 3) + $dr - $db;
 			elseif($b == $max)$h = (2 / 3) + $dg - $dr;
 			if($h < 0)++$h;
@@ -18508,8 +18807,8 @@ class xncolor {
 		return $hsla;
 	}
 	public static function hsvrgb($h, $s, $v){
-        if($s == 0)
-            return array($v * 255, $v * 255, $v * 255);
+		if($s == 0)
+			return array($v * 255, $v * 255, $v * 255);
 		$h *= 6;
 		$i = floor($h);
 		$a = $v * (1 - $s);
@@ -18539,7 +18838,7 @@ class xncolor {
 		   $dr = ((($max - $r) / 6) + ($max / 2)) / $delta;
 		   $dg = ((($max - $g) / 6) + ($max / 2)) / $delta;
 		   $db = ((($max - $b) / 6) + ($max / 2)) / $delta;
-		   if    ($r == $max)$h = $b - $dg;
+		   if	($r == $max)$h = $b - $dg;
 		   elseif($g == $max)$h = (1 / 3) + $dr - $db;
 		   elseif($b == $max)$h = (2 / 3) + $dg - $dr;
 		   if($h < 0)++$h;
@@ -18968,7 +19267,7 @@ class XNGraphicPNG {
 					}
 					$this->gifs[$this->gif_count]['disposal_method'] = ord($data[0]);
 					$this->gifs[$this->gif_count]['user_input_flag'] = ord($data[1]);
-					$this->gifs[$this->gif_count]['delay_time']      = unpack('n', substr($data, 2, 2));
+					$this->gifs[$this->gif_count]['delay_time']	  = unpack('n', substr($data, 2, 2));
 					++$this->gif_count;
 				break;
 				case 'gIFx':
@@ -18977,8 +19276,8 @@ class XNGraphicPNG {
 						$this->extension_count = 0;
 					}
 					$this->extensions[$this->extension_count]['application_identifier'] = substr($data, 0, 8);
-					$this->extensions[$this->extension_count]['authentication_code']    = substr($data, 8, 3);
-					$this->extensions[$this->extension_count]['application_data']       = substr($data, 11);
+					$this->extensions[$this->extension_count]['authentication_code']	= substr($data, 8, 3);
+					$this->extensions[$this->extension_count]['application_data']	   = substr($data, 11);
 					++$this->extension_count;
 				break;
 				case 'IDAT':
@@ -19184,7 +19483,7 @@ class XNGraphicPNG {
 					switch($this->unit){
 						case 'unknown': $unit = 0; break;
 						case 'meter'  : $unit = 1; break;
-						default       : $unit = $this->unit; break;
+						default	   : $unit = $this->unit; break;
 					}
 					$content .= pack('N', $this->pixels_per_unit_x);
 					$content .= pack('N', $this->pixels_per_unit_y);
@@ -19266,7 +19565,7 @@ class XNGraphicPNG {
 					switch($this->offset_unit){
 						case 'unknown': $unit = 0; break;
 						case 'meter':   $unit = 1; break;
-						default:        $unit = $this->offset_unit; break;
+						default:		$unit = $this->offset_unit; break;
 					}
 					$content .= xncrypt::strbe($this->position_x, 4, false, true);
 					$content .= xncrypt::strbe($this->position_y, 4, false, true);
@@ -19306,7 +19605,7 @@ class XNGraphicPNG {
 					switch($this->scale_unit){
 						case 'unknown': $unit = 0; break;
 						case 'meter':   $unit = 1; break;
-						default:        $unit = $this->scale_unit; break;
+						default:		$unit = $this->scale_unit; break;
 					}
 					$content .= chr($unit);
 					$content .= $this->pixel_width . "\0" . $this->pixel_height;
@@ -19605,7 +19904,7 @@ class XNBigGraphicPNG {
 					}
 					$this->gifs[$this->gif_count]['disposal_method'] = ord($data[0]);
 					$this->gifs[$this->gif_count]['user_input_flag'] = ord($data[1]);
-					$this->gifs[$this->gif_count]['delay_time']      = unpack('n', substr($data, 2, 2));
+					$this->gifs[$this->gif_count]['delay_time']	  = unpack('n', substr($data, 2, 2));
 					++$this->gif_count;
 				break;
 				case 'gIFx':
@@ -19614,8 +19913,8 @@ class XNBigGraphicPNG {
 						$this->extension_count = 0;
 					}
 					$this->extensions[$this->extension_count]['application_identifier'] = substr($data, 0, 8);
-					$this->extensions[$this->extension_count]['authentication_code']    = substr($data, 8, 3);
-					$this->extensions[$this->extension_count]['application_data']       = substr($data, 11);
+					$this->extensions[$this->extension_count]['authentication_code']	= substr($data, 8, 3);
+					$this->extensions[$this->extension_count]['application_data']	   = substr($data, 11);
 					++$this->extension_count;
 				break;
 				case 'IDAT':
@@ -20003,16 +20302,16 @@ class XNStream {
 		if($cur === false)return false;
 		$cur = ord($cur);
 		if(($cur | 0x07) == 0xF7)
-			$char = (($cur                & 0x07) << 18) &
+			$char = (($cur				& 0x07) << 18) &
 					((ord(fgetc($stream)) & 0x3F) << 12) &
 					((ord(fgetc($stream)) & 0x3F) <<  6) &
 					 (ord(fgetc($stream)) & 0x3F);
 		elseif(($cur | 0x0F) == 0xEF)
-			$char = (($cur                & 0x0F) << 12) &
+			$char = (($cur				& 0x0F) << 12) &
 					((ord(fgetc($stream)) & 0x3F) <<  6) &
 					 (ord(fgetc($stream)) & 0x3F);
 		elseif(($cur | 0x1F) == 0xDF)
-			$char = (($cur                & 0x1F) <<  6) &
+			$char = (($cur				& 0x1F) <<  6) &
 					 (ord(fgetc($stream)) & 0x3F);
 		elseif(($cur | 0x7F) == 0x7F)
 			$char = $cur;
