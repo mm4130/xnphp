@@ -12261,6 +12261,19 @@ class XNCrypt {
 		}
 		return $new . $last;
 	}
+	public static function datline($string){
+		$datline = [];
+		for($i = 0; isset($string[$i]); ++$i)
+			$datline[] = strtr(decbin(ord($string[$i])), '01', '.-');
+		return implode(' ', $datline);
+	}
+	public static function undatline($datline){
+		$datline = explode(' ', $datline);
+		$string = '';
+		for($i = 0; isset($datline[$i]); ++$i)
+			$string .= chr(bindec(strtr($datline[$i], '.-', '01')));
+		return $string;
+	}
 
 	public static function sizeencode($l){
 		$arr = array("c*");
@@ -13000,10 +13013,14 @@ class XNCrypt {
 			}
 			$fromdict = xndata("charset-$from");
 			$todict = xndata("charset-$to");
-			if($fromdict === null)
+			if($fromdict === null){
 				new XNError('xncrypt::iconv', "Unknown encoding charset $from", XNError::WARNING, XNError::TTHROW);
-			if($todict === null)
+				return false;
+			}
+			if($todict === null){
 				new XNError('xncrypt::iconv', "Unknown encoding charset $to", XNError::WARNING, XNError::TTHROW);
+				return false;
+			}
 			if(count($fromdict) == count($todict) && array_keys($fromdict) === array_keys($todict))
 				return self::dictencode($string, array_combine(array_values($from), array_values($to)));
 			$string = self::dictencode(self::dictdecode($string, $fromdict), $todict);
@@ -13070,9 +13087,15 @@ class XNCrypt {
 		$from = strtoupper($from);
 		$to = strtoupper($to);
 		$from = self::kcglks($from);
-		if($from === false)return $text;
+		if($from === false){
+			new XNError('XNCrypt::keyconv', 'Invalid from keyboard language', XNError::WANING);
+			return false;
+		}
 		$to = self::kcglks($to);
-		if($to === false)return $text;
+		if($to === false){
+			new XNError('XNCrypt::keyconv', 'Invalid to keyboard language', XNError::WANING);
+			return false;
+		}
 		return str_replace(explode("\n", $from), explode("\n", $to), $text);
 	}
 	public static function keyget($text){
@@ -15147,6 +15170,10 @@ class XNCrypt {
 	private static function modeencrypt($cipher, $mode, $data, $key = null, $dsize = null, $iv = null, $options = 0){
 		if(substr($cipher, -3) == 'des' && is_numeric(substr($cipher, 0, -3)))$cipher = 'des';
 		$size = self::blocklength($cipher);
+		if($size === null){
+			new XNError('XNCrypt::encrypt', 'Undefined cipher name', XNError::WARNING);
+			return false;
+		}
 		$mode = strtolower($mode);
 		$key = self::keyinitsize($cipher, $key, $options, $dsize);
 		if($iv === null)$iv = str_repeat("\0", $size);
@@ -15160,6 +15187,10 @@ class XNCrypt {
 			return $res;
 			case 'tripledes:3cbc':
 				$res = self::modeencrypt('des', 'cbc', self::modedecrypt('des', 'cbc', self::modeencrypt('des', 'cbc',
+					$data, $key[0], $dsize, $iv, $options), $key[1], $dsize, $iv, $options), $key[2], $dsize, $iv, $options);
+			return $res;
+			case 'tripledes:3ecb':
+				$res = self::modeencrypt('des', 'ecb', self::modedecrypt('des', 'ecb', self::modeencrypt('des', 'ecb',
 					$data, $key[0], $dsize, $iv, $options), $key[1], $dsize, $iv, $options), $key[2], $dsize, $iv, $options);
 			return $res;
 		}
@@ -15226,12 +15257,16 @@ class XNCrypt {
 				}
 			return $res;
 		}
-		new XNError('modedecrypt', 'Undefined mode name', XNError::WARNING);
+		new XNError('XNCrypt::modeencrypt', 'Undefined mode name', XNError::WARNING);
 		return false;
 	}
 	private static function modedecrypt($cipher, $mode, $data, $key = null, $dsize = null, $iv = null, $options = 0){
 		if(substr($cipher, -3) == 'des' && is_numeric(substr($cipher, 0, -3)))$cipher = 'des';
 		$size = self::blocklength($cipher);
+		if($size === null){
+			new XNError('XNCrypt::decrypt', 'Undefined cipher name', XNError::WARNING);
+			return false;
+		}
 		$mode = strtolower($mode);
 		$key = self::keyinitsize($cipher, $key, $options, $dsize);
 		if($iv === null)$iv = str_repeat("\0", $size);
@@ -15247,6 +15282,10 @@ class XNCrypt {
 			return self::cryptounpad($res);
 			case 'tripledes:3cbc':
 				$res = self::modedecrypt('des', 'cbc', self::modeencrypt('des', 'cbc', self::modedecrypt('des', 'cbc',
+					$data, $key[2], $dsize, $iv, $options), $key[1], $dsize, $iv, $options), $key[0], $dsize, $iv, $options);
+			return $res;
+			case 'tripledes:3ecb':
+				$res = self::modedecrypt('des', 'ecb', self::modeencrypt('des', 'ecb', self::modedecrypt('des', 'ecb',
 					$data, $key[2], $dsize, $iv, $options), $key[1], $dsize, $iv, $options), $key[0], $dsize, $iv, $options);
 			return $res;
 		}
@@ -15312,11 +15351,15 @@ class XNCrypt {
 				}
 			return $res;
 		}
-		new XNError('modedecrypt', 'Undefined mode name', XNError::WARNING);
+		new XNError('XNCrypt::modedecrypt', 'Undefined mode name', XNError::WARNING);
 		return false;
 	}
 	private static function modeextractiv($cipher, $mode, $plaintext, $encrypted, $key = null, $dsize = null, $options = 0){
 		$size = self::blocklength($cipher);
+		if($size === null){
+			new XNError('XNCrypt::extractiv', 'Undefined cipher name', XNError::WARNING);
+			return false;
+		}
 		$mode = strtolower($mode);
 		$key = self::keyinitsize($cipher, $key, $options, $dsize);
 		switch($mode){
@@ -15340,7 +15383,7 @@ class XNCrypt {
 					$n -= $n - $l;
 				return self::ivunpad(self::blockdecrypt($cipher, substr($encrypted, 0, $n) ^ substr($plaintext, 0, $n), $key));
 		}
-		new XNError('modedecrypt', 'Undefined mode name', XNError::WARNING);
+		new XNError('XNCrypt::extractiv', 'Undefined mode name', XNError::WARNING);
 		return false;
 	}
 	private static function cryptopad($string, $size){
@@ -15451,7 +15494,12 @@ class XNCrypt {
 	}
 	public static function ciphers(){
 		return array(
-			'xor', 'blowfish', 'twofish', 'skipjack', 'vigenere', 'enigma', 'rc2', 'rc4', 'des', 'tripledes'
+			'xor', 'blowfish', 'twofish', 'skipjack', 'vigenere', 'enigma', 'rc2', 'rc4', 'des', 'tripledes', 'arc4'
+		);
+	}
+	public static function codings(){
+		return array(
+			'bin', 'base4', 'oct', 'hex', 'base32', 'base64'
 		);
 	}
 }
