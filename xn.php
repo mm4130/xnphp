@@ -60,10 +60,51 @@ class xnlib {
 	static $remoter = '';
 
 	static $includeAt = array();
+
+	public static function memlimitfree(){
+		return get_memory_limit() - memory_get_peak_usage();
+	}
+	public static function memof($var){
+		$mem = memory_get_usage();
+		$tmp = unserialize(serialize($var));
+		return memory_get_usage() - $mem;
+	}
+	public static function runtime(){
+		return microtime(true) - xnlib::$requestTime;
+	}
+	private static function _sizeof($var){
+		if(count(func_get_args()) > 1){
+			$parent = func_get_arg(1);
+			if(in_array($var, $parent, true))return 24;
+			$parent[] = $var;
+		}else $parent = array($var);
+		switch(gettype($var)){
+			case 'object':
+				$c = strlen(get_class($var));
+				foreach((array)$var as $x => $y)
+					$c += (is_bool($x) || $x === null ? 1 : strlen($x)) + self::_sizeof($y, $parent);
+				return $c;
+			case 'array':
+				$c = 0;
+				foreach($var as $x => $y)
+					$c += (is_bool($x) || $x === null ? 1 : strlen($x)) + self::_sizeof($y, $parent);
+				return $c;
+			case 'string':
+			case 'integer':
+			case 'float':
+			case 'double':
+				return strlen($var);
+			default:
+				return 1;
+		}
+	}
+	public static function sizeof($var){
+		return self::_sizeof($var);
+	}
 }
 
 __xnlib_data::$startTime =  microtime(true);
-__xnlib_data::$startMemory = memory_get_peak_usage();
+__xnlib_data::$startMemory = memory_get_usage();
 __xnlib_data::$dirname = __DIR__;
 
 xnlib::$includeAt = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 1);
@@ -3639,6 +3680,7 @@ class XNString {
 	const BCRYPT64_RANGE = './ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 	const BASE32_RANGE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ23456789=';
 	const BASE128_RANGE = '!#$%()*,.0123456789:;=@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz{|}~¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎ';
+	const URLACCEPT_RANGE = '-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
 	const ALPHBA_NUMBERS_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 	const WORD_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_';
 	const GMAIL_USERNAME_RANGE = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_';
@@ -3743,9 +3785,6 @@ class XNString {
 	public static function tolower($string){
 		return xncrypt::dictdecode($string, xncrypt::dictget(xndata("encoding_upperlower")));
 	}
-}
-function script_runtime(){
-	return microtime(true) - xnlib::$requestTime;
 }
 function userip(){
 	if(@$_SERVER['HTTP_CLIENT_IP'])return $_SERVER['HTTP_CLIENT_IP'];
@@ -3946,9 +3985,6 @@ function unicode_decode($str){
 		}
 		return $str;
 	},$str));
-}
-function militime(){
-	return floor(microtime(true) * 1000);
 }
 define("XNDEFINE_TEXT",		   1);
 define("XNDEFINE_REGEX",		  2);
@@ -4574,27 +4610,6 @@ function length($input){
 			return strlen($input);
 		default:
 			return 0;
-	}
-}
-function fulllength($input){
-	switch(gettype($input)){
-		case 'object':
-			$c = strlen(get_class($input));
-			foreach((array)$input as $x => $y)
-				$c += (is_bool($x) || $x === null ? 1 : strlen($x)) + fulllength($y);
-			return $c;
-		case 'array':
-			$c = 0;
-			foreach($input as $x => $y)
-				$c += (is_bool($x) || $x === null ? 1 : strlen($x)) + fulllength($y);
-			return $c;
-		case 'string':
-		case 'integer':
-		case 'float':
-		case 'double':
-			return strlen($input);
-		default:
-			return 1;
 	}
 }
 function destruct_call($object){
@@ -6512,7 +6527,9 @@ function set_memory_limit($limit = null){
 	return ini_set('memory_limit', $limit !== null ? $limit : '256M');
 }
 function get_memory_limit(){
-	return ini_get('memory_limit');
+	$mem = ini_get('memory_limit');
+	if($mem[-1] === 'M')$mem = substr($mem, 0, -1) * 1048576;
+	return $mem + 0;
 }
 function get_time_limit(){
 	return ini_get('max_execution_time');
@@ -7512,11 +7529,6 @@ function xml_beauty($xml){
 	}
 	return $result;
 }
-function fullurlencode($str){
-	if($str === '')
-		return '';
-	return '%' . implode('%', str_split(strtoupper(bin2hex($str)), 2));
-}
 function wss_secaccept($key, $magic = null){
 	return sha1($key . ($magic ? $magic : '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'), true);
 }
@@ -8333,7 +8345,7 @@ class XNMath {
 	public static function tree($x){
 		if($x == 0)return array(0);
 		$r = array($l = self::native($x));
-		while(($x/= $l)> 1)$r[] = $l = self::native($x);
+		while(($x /= $l) > 1)$r[] = $l = self::native($x);
 		return $r;
 	}
 	public static function nominal($x, $y){
@@ -8347,64 +8359,79 @@ class XNMath {
 				$a[] = $c;
 		return $a;
 	}
-	public static function pnt($x){
-		return self::native($x) == $x;
+	public static function isprime($x){
+		if($x < 0)$x = -$x;
+		if($x == 0 || $x == 1)return false;
+		$y = (int)sqrt($x);
+		for($c = 2; $c < $y; ++$c)
+		if($x % $c == 0)return false;
+		return true;
 	}
-	public static function pnpnt($x){
+	public static function pnprime($x){
 		$a = array();
-		for($c = 2;$c < $x;++$c)
-			if(self::native($c) == $c)
+		for($c = 2; $c < $x; ++$c)
+			if(self::isprime($c))
 				$a[] = $c;
 		return $a;
 	}
 	public static function prand($x = null, $y = null){
-		if($x === null)$x = PHP_INT_MIN;
-		if($y === null)$y = PHP_INT_MAX;
+		if($x === null)$x = -0xffff;
+		if($y === null)$y = 0xffff;
 		if($y < $x)swap($x, $y);
 		$r = rand($x, $y);
 		for($i = 0; true; ++$i)
 			if($r - $i >= $x){
-				if(self::native($r - $i) == $r - $i)
+				if(self::isprime($r - $i))
 					return $r - $i;
 			}elseif($r + $i <= $y){
-				if(self::native($r + $i) == $r + $i)
+				if(self::isprime($r + $i))
 					return $r + $i;
 			}else return false;
 	}
-	public static function onpnt($x){
-		$x = abs($x);
-		while(--$x >= 1)
-			if(self::native($x) == $x)
-				return $x - 1;
-		return false;
+	public static function nearprime($r){
+		for($i = 0; true; ++$i)
+			if(self::isprime($r - $i))
+				return $r - $i;
+			elseif(self::isprime($r + $i))
+				return $r + $i;
 	}
-	public static function cpnt($x){
+	public static function prevprime($x){
+		while(--$x)
+			if(self::isprime($x))
+				return $x;
+	}
+	public static function nextprime($x){
+		while(++$x)
+			if(self::isprime($x))
+				return $x;
+	}
+	public static function cprime($x){
 		$a = 0;
 		for($c = 2;$c < $x;++$c)
-			if(self::native($c) == $c)
+			if(self::isprime($c))
 				++$a;
 		return $a;
 	}
 	public static function phi($x){
 		if($x == 0)return 0;
 		$n = 1;
-		for($c = 2;$c < $x;)
-			if(self::gcd($x,$c++) == 1)
+		for($c = 2; $c < $x;)
+			if(self::gcd($x, $c++) == 1)
 				++$n;
 		return $n;
 	}
 	public static function nphi($x){
 		if($x == 0)return 0;
-		for($c = 2;$c < $x;)
-			if(self::gcd($x,$c++) == 1)
+		for($c = 2; $c < $x;)
+			if(self::gcd($x, $c++) == 1)
 				return $c;
 		return false;
 	}
 	public static function pnphi($x){
 		if($x == 0)return 0;
 		$n = array();
-		for($c = 2;$c < $x;)
-			if(self::gcd($x,$c++) == 1)
+		for($c = 2; $c < $x;)
+			if(self::gcd($x, $c++) == 1)
 				$n[] = $c;
 		return $n;
 	}
@@ -9910,6 +9937,10 @@ class XNNumber {
 	public static function pow($a, $b, $c = null){
 		if(!self::_check($a))return false;
 		if(!self::_check($b))return false;
+		if(($c === null && strlen($a) * $b <= 10) || strlen($a) * $b <= 12 - $c)
+			return (string)(pow($a, $b));
+		if(strpos($b, '.') === false)
+			return self::powFloor($a, $b);
 		$b1 = self::floor($b);
 		$b2 = '0.' . self::_th($b);
 		$b = $b1 == 0 ? '1' : self::powFloor($a, $b1);
@@ -11821,7 +11852,7 @@ class XNCrypt {
 	public static function crc($algo, $data, $crc = null){
 		$algo = self::crcalgo($algo);
 		if($algo === false){
-			trigger_error("XNCrypt::crc(): Unknown CRC hashing algorithm: $algo", E_USER_WANING);
+			new XNError('XNCrypt::crc', "Unknown CRC hashing algorithm: $algo", XNError::WARNING);
 			return false;
 		}
 		$mask = (((1 << ($algo['length'] - 1)) - 1) << 1) | 1;
@@ -11846,6 +11877,19 @@ class XNCrypt {
 			$crc = xnmath::brev($crc, $algo['length']);
 		$crc ^= $algo['xorout'];
 		return $crc & $mask;
+	}
+	public static function crcfile($algo, $file, $crc = null){
+		if(!is_file($file)){
+			new XNError('XNCrypt::crcfile', 'No such file', XNError::WARNING);
+			return false;
+		}
+		$file = fopen($file, 'r');
+		$mem = xnlib::memlimitfree() / 5;
+		do{
+			$read = fread($file, $mem);
+			$crc = self::crc($algo, $read, $crc);
+		}while(strlen($read) == $mem);
+		return $crc;
 	}
 
 	public static function to64itoa($b2, $b1, $b0, $n){
@@ -12273,6 +12317,41 @@ class XNCrypt {
 		for($i = 0; isset($datline[$i]); ++$i)
 			$string .= chr(bindec(strtr($datline[$i], '.-', '01')));
 		return $string;
+	}
+	public static function urlencode($string, $space = false){
+		if(function_exists('urlencode'))
+			if($space === true)
+				return str_replace(array('+', '%2B'), array('%20', '+'), urlencode($string));
+			else return urlencode($string);
+		$url = '';
+		for($i = 0; isset($string[$i]); ++$i){
+			if(strpos(xnstring::URLACCEPT_RANGE, $string[$i]) !== false)
+				$url .= $string[$i];
+			elseif($string[$i] === ' ' && $space !== true)$url .= '+';
+			elseif($string[$i] === '+' && $space === true)$url .= '+';
+			else{
+				$c = ord($string[$i]);
+				$url .= $c < 16 ? '%0' . strtoupper(dechex($c)) : '%' . strtoupper(dechex($c));
+			}
+		}
+		return $url;
+	}
+	public static function urldecode($url, $space = false){
+		if(function_exists('urldecode'))return urldecode($url);
+		$string = '';
+		for($i = 0; isset($url[$i]); ++$i){
+			if($url[$i] == '%'){
+				$string .= chr(hexdec(substr($url, $i + 1, 2)));
+				$i += 2;
+			}elseif($url[$i] == '+' && $space !== true)$string .= ' ';
+			else $string .= $url[$i];
+		}
+		return $string;
+	}
+	public static function fullurlencode($string, $space = false){
+		if($string === '')return '';
+		$string = '%' . implode('%', str_split(self::hexencode($string), 2));
+		return $space === true ? $string : str_replace('%20', '+', $string);
 	}
 
 	public static function sizeencode($l){
@@ -20544,7 +20623,7 @@ class XNStream {
 	}
 }
 
-__xnlib_data::$endMemory = memory_get_peak_usage();
+__xnlib_data::$endMemory = memory_get_usage();
 xnlib::$memoryUsage = __xnlib_data::$endMemory - __xnlib_data::$startMemory;
 __xnlib_data::$endTime = microtime(true);
 xnlib::$loadTime = __xnlib_data::$endTime - __xnlib_data::$startTime;
