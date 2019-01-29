@@ -13,8 +13,6 @@ class __xnlib_data {
 	static $dirname;
 	static $dirnamedir;
 	static $source = false;
-	static $locvar = array();
-	static $saveMemory = array();
 	static $cwdtmpfiles = array();
 
 	static $jsonerror;
@@ -29,11 +27,27 @@ class __xnlib_data {
 
 	static $push = array();
 	static $pushed = 0;
+
+	static $installedJson;
+	static $installedHex;
+	static $installedBase64;
+	static $installedMbstr;
+	static $installedIconv;
+	static $installedHash;
+	static $installedHashHmac;
+	static $installedHashHkdf;
+	static $installedHashPbkdf2;
+	static $installedBcmath;
+	static $installedMhash;
+	static $installedCrypt;
+	static $installedRandomDiv;
+	static $installedUrlcoding;
+	static $installedUtf8coding;
 }
 class xnlib {
 	const version = 2.3;
 
-	static $thumb;
+	static $tmp;
 	static $isMobile  = false;
 	static $browserType = false;
 	static $userAgent = false;
@@ -113,6 +127,21 @@ if(!isset(xnlib::$includeAt[0])){
 	exit;
 }
 xnlib::$includeAt = xnlib::$includeAt[0];
+__xnlib_data::$installedJson = function_exists('json_encode') && function_exists('json_decode') && function_exists('json_last_error') && function_exists('json_last_error_msg');
+__xnlib_data::$installedHex = function_exists('hex2bin') && function_exists('bin2hex');
+__xnlib_data::$installedBase64 = function_exists('base64_encode') && function_exists('base64_decode');
+__xnlib_data::$installedMbstr = extension_loaded('mbstring');
+__xnlib_data::$installedIconv = extension_loaded('iconv');
+__xnlib_data::$installedHash = function_exists('hash') && function_exists('hash_algos');
+__xnlib_data::$installedHashHmac = function_exists('hash_hmac') && function_exists('hash_hmac_algos');
+__xnlib_data::$installedHashHkdf = __xnlib_data::$installedHashHmac && function_exists('hash_hkdf');
+__xnlib_data::$installedHashPbkdf2 = __xnlib_data::$installedHashHmac && function_exists('hash_pbkdf2');
+__xnlib_data::$installedBcmath = extension_loaded('bcmath');
+__xnlib_data::$installedMhash = extension_loaded('mhash');
+__xnlib_data::$installedCrypt = function_exists('crypt');
+__xnlib_data::$installedRandomDiv = function_exists('random_bytes') && function_exists('random_int');
+__xnlib_data::$installedUrlcoding = function_exists('url_encode') && function_exists('url_decode');
+__xnlib_data::$installedUtf8coding = function_exists('utf8_encode') && function_exists('utf8_decode');
 
 if(!defined('PHP_INT_MIN'))define('PHP_INT_MIN', ~PHP_INT_MAX);
 define("XNVERSION", "2.3");
@@ -164,38 +193,16 @@ if(!xnlib::$isApache && (strpos(xnlib::$SoftWare, 'Microsoft-IIS') !== false || 
 if(xnlib::$isIIS && (int)substr(xnlib::$SoftWare, strpos(xnlib::$SoftWare, 'Microsoft-IIS/') + 14) >= 7)xnlib::$isIIS7 = true;
 
 if(!function_exists('call_user_method_array')){
-	eval('function call_user_method_array($method, $class, $params){
-		return $class::$method(...$params);
-	};');
+	eval('function call_user_method_array($method,$class,$params){return $class::$method(...$params);};');
 }
 if(!function_exists('call_user_method')){
-	eval('function call_user_method($method, $class, ...$params){
-		return $class::$method(...$params);
-	};');
+	eval('function call_user_method($method,$class,...$params){return $class::$method(...$params);};');
 }
 if(!function_exists('call_user_func')){
-	eval('function call_user_func($func, ...$params){
-		if(is_array($func)){
-			$funct = $func[0];
-			unset($func[0]);
-			foreach($func as $f)
-				$funct = $funct->$f;
-			$func = $funct;
-		}
-		return $func(...$params);
-	}');
+	eval('function call_user_func($func,...$params){if(is_array($func)){$funct=$func[0];unset($func[0]);foreach($func as $f)$funct=$funct->$f;$func=$funct;}return $func(...$params);}');
 }
 if(!function_exists('call_user_func_array')){
-	eval('function call_user_func_array($func, $params){
-		if(is_array($func)){
-			$funct = $func[0];
-			unset($func[0]);
-			foreach($func as $f)
-				$funct = $funct->$f;
-			$func = $funct;
-		}
-		return $func(...$params);
-	}');
+	eval('function call_user_func_array($func,$params){if(is_array($func)){$funct=$func[0];unset($func[0]);foreach($func as $f)$funct=$funct->$f;$func=$funct;}return $func(...$params);}');
 }
 
 class ThumbCode {
@@ -216,9 +223,6 @@ class ThumbCode {
 		return new ThumbCode($this->code);
 	}
 }
-function thumbCode($func){
-	return new ThumbCode($func);
-}
 function xnupdate($data = null){
 	$code = @gzinflate(file_get_contents('http://xntm.ir/lib/download.php?#php'));
 	if(!$code){
@@ -236,12 +240,6 @@ function xnupdate($data = null){
 }
 
 /* ---------- Equalization PHP Version ---------- */
-
-if(!defined('PASSWORD_BCRYPT')){
-	define('PASSWORD_BCRYPT', 1);
-	define('PASSWORD_DEFAULT', 1);
-	define('PASSWORD_BCRYPT_DEFAULT_COST', 10);
-}
 
 /*
 \Throwable
@@ -317,271 +315,8 @@ if(!defined('JSON_OBJECT_AS_ARRAY' ))define('JSON_OBJECT_AS_ARRAY' ,1);
 if(!defined('JSON_BIGINT_AS_STRING'))define('JSON_BIGINT_AS_STRING',2);
 if(!defined('JSON_PARSE_JAVASCRIPT'))define('JSON_PARSE_JAVASCRIPT',4);
 
-if(!function_exists('json_last_error') || !function_exists('json_last_error_msg')){
-	__xnlib_data::$jsonerror = JSON_ERROR_NONE;
-	function json_last_error() {
-		return __xnlib_data::$jsonerror;
-	}
-	function json_last_error_msg() {
-		return array_value(array(
-			'No error',
-			'Maximum stack depth exceeded',
-			'Invalid or malformed JSON',
-			'Control character error, possibly incorrectly encoded',
-			'Syntax error',
-			'Malformed UTF-8 characters, possibly incorrectly encoded',
-			'One or more recursive references in the value to be encoded',
-			'Inf and NaN cannot be JSON encoded',
-			'A value of a type that cannot be encoded was given',
-			'A property name that cannot be encoded was given',
-			'Malformed UTF-16 characters, possibly incorrectly encoded'
-		), __xnlib_data::$jsonerror);
-	}
-}
-if(!function_exists('json_encode')){
-	function _json_encode($value, $options = 0, $depth = 512){
-		if($value === null)
-			return 'null';
-		if($value === false)
-			return 'false';
-		if($value === true)
-			return 'true';
-		switch(gettype($value)){
-			case 'string':
-				if($options & JSON_NUMERIC_CHECK && is_numeric($value))
-					return ($value + 0).'';
-				if(~$options & JSON_UNESCAPED_UNICODE)
-					$value = unicode_encode($value);
-				$value = '"'.str_replace(array('\\','"',"\n","\r","\t"),array('\\\\','\"','\n','\r','\t'),$value).'"';
-				if($options & JSON_HEX_TAG)
-					$value = str_replace(array('<','>'),array('\u003C','\u003E'),$value);
-				if($options & JSON_HEX_AMP)
-					$value = str_replace('&','\u0026',$value);
-				if($options & JSON_HEX_APOS)
-					$value = str_replace("'",'\u0027',$value);
-				if($options & JSON_HEX_QUOT)
-					$value = str_replace('"','\u0022',$value);
-				if(~$options & JSON_UNESCAPED_SLASHES)
-					$value = str_replace('/','\/',$value);
-				return $value;
-			break;
-			case 'integer':
-			case 'double':
-			case 'float':
-				if(is_infinite($value) || is_nan($value)){
-					__xnlib_data::$jsonerror = JSON_ERROR_INF_OR_NAN;
-					if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
-					return '0';
-				}
-				if($options & JSON_PRESERVE_ZERO_FRACTION && !is_int($value))
-					return $value.'.0';
-				return (string)$value;
-			break;
-			case 'array':
-			case 'object':
-				if($depth <= 0){
-					__xnlib_data::$jsonerror = JSON_ERROR_INF_OR_NAN;
-					if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
-				}
-				if($options & JSON_PRETTY_PRINT){
-					if(is_array($value) && ~$options & JSON_FORCE_OBJECT){
-						$str = "[\n	";
-						$c = 0;
-						foreach($value as $key => $val){
-							if($key == $c++)
-								$str .= str_replace("\n","\n	",_json_encode($val,$options,$depth - 1)) . ",\n	";
-							else{
-								$str = '';
-								break;
-							}
-							if(__xnlib_data::$jsonerror > 0 && ~$options & JSON_FORCE_OBJECT)return null;
-						}
-					}else $str = '';
-					if($str){
-						if($str == "[\n	")
-							$str = '[]';
-						else
-							$str = substr_replace($str,"\n]",-6,6);
-						return $str;
-					}
-					if(is_object($value))
-						$value = (array)$value;
-					$str = "{\n	";
-					foreach($value as $key => $val){
-						if($val[0] == "\0")continue;
-						$str .= _json_encode((string)$key,$options,$depth - 1) . ': ' . str_replace("\n","\n	",_json_encode($val,$options,$depth - 1)) . ",\n	";
-						if(__xnlib_data::$jsonerror > 0 && ~$options & JSON_FORCE_OBJECT)return null;
-					}
-					if($str == "{\n	")
-						$str = '{}';
-					else
-						$str = substr_replace($str,"\n}",-6,6);
-					return $str;
-				}
-				if(is_array($value) && ~$options & JSON_FORCE_OBJECT){
-					$str = '[';
-					$c = 0;
-					foreach($value as $key => $val){
-						if($key == $c++)
-							$str .= _json_encode($val,$options,$depth - 1) . ',';
-						else{
-							$str = '';
-							break;
-						}
-						if(__xnlib_data::$jsonerror > 0 && ~$options & JSON_FORCE_OBJECT)return nulll;
-					}
-				}else $str = '';
-				if($str){
-					if($str == '[')
-						$str = '[]';
-					else $str[strlen($str) - 1] = ']';
-					return $str;
-				}
-				if(is_object($value))
-					$value = (array)$value;
-				$str = '{';
-				foreach($value as $key => $val){
-					if($val[0] == "\0")continue;
-					$str .= _json_encode((string)$key,$options,$depth - 1) . ':' . _json_encode($val,$options,$depth - 1) . ',';
-					if(__xnlib_data::$jsonerror > 0 && ~$options & JSON_FORCE_OBJECT)return null;
-				}
-				if($str == '{')
-					$str = '{}';
-				else
-					$str[strlen($str) - 1] = '}';
-				return $str;
-			break;
-			default:
-				__xnlib_data::$jsonerror = JSON_ERROR_UNSUPPORTED_TYPE;
-				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
-				return '';
-		}
-	}
-	function json_encode($value, $options = 0, $depth = 512){
-		__xnlib_data::$jsonerror = JSON_ERROR_NONE;
-		return _json_encode($value, $options, $depth);
-	}
-}
-if(!function_exists('json_decode')){
-	function _json_decode($value, $assoc = false, $depth = 512, $options = 0){
-		if($value == 'null')
-			return null;
-		if($value == 'false')
-			return false;
-		if($value == 'true')
-			return true;
-		if(is_numeric($value))
-			return (float)$value;
-		if($value[0] == '"'){
-			$l = strlen($value);
-			if($value[$l - 1] !== '"' || preg_match("/(?<!\\\\)\"/", $value = substr($value, 1, -1))){
-				__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
-				return null;
-			}
-			$value = unicode_decode($value);
-			if(preg_match("/(?<!\\\\)\\\\u/", $value)){
-				__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
-				return null;
-			}
-			return str_replace(array('\"','\/','\\\\'),array('"','/','\\'),$value);
-		}
-		if($options & JSON_PARSE_JAVASCRIPT && $value[0] == "'"){
-			$l = strlen($value);
-			if($value[$l - 1] !== "'" || preg_match("/(?<!\\\\)'/", $value = substr($value, 1, -1))){
-				__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
-				return null;
-			}
-			$value = unicode_decode($value);
-			if(preg_match("/(?<!\\\\)\\\\u/", $value)){
-				__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
-				return null;
-			}
-			return str_replace(array("\\'",'\/','\\\\'),array("'",'/','\\'),$value);
-		}
-		if($value[0] == '['){
-			if($depth <= 0){
-				__xnlib_data::$jsonerror = JSON_ERROR_INF_OR_NAN;
-				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
-			}
-			$value = substr($value, 1, -1);
-			$poses = array();
-			$prev = $pos = 0;
-			preg_replace_callback("/\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\[\]])*)\])|(?<y>\{((?:\g<y>|\\\\\{|\\\\\}|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\{\}])*)\})|,/",
-				function($x)use(&$poses, &$pos, &$prev, $value){
-					$pos = strpos($value, $x[0], $pos) + strlen($x[0]);
-					if($x[0] == ','){
-						$poses[] = substr($value, $prev, $pos - 1 - $prev);
-						$prev = $pos;
-					}
-					return '';
-				}, $value);
-			$pos = substr($value, $prev);
-			if($pos !== '')
-				$poses[] = $pos;
-			foreach($poses as &$pos){
-				$pos = _json_decode(trim($pos), $assoc, $depth - 1, $options);
-				if($pos === null)return null;
-			}
-			return $poses;
-		}
-		if($value[0] == '{'){
-			if($depth <= 0){
-				__xnlib_data::$jsonerror = JSON_ERROR_INF_OR_NAN;
-				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
-			}
-			$value = substr($value, 1, -1);
-			$poses = array();
-			$prev = $pos = 0;
-			preg_replace_callback("/\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\[\]])*)\])|(?<y>\{((?:\g<y>|\\\\\{|\\\\\}|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\{\}])*)\})|,|:/",
-				function($x)use(&$poses, &$pos, &$prev, $value){
-					$pos = strpos($value, $x[0], $pos) + strlen($x[0]);
-					if($x[0] == ','){
-						$poses[] = array(',', substr($value, $prev, $pos - 1 - $prev));
-						$prev = $pos;
-					}elseif($x[0] == ':'){
-						$poses[] = array(':', substr($value, $prev, $pos - 1 - $prev));
-						$prev = $pos;
-					}
-					return '';
-				}, $value);
-			$pos = substr($value, $prev);
-			if($pos !== '')
-				$poses[] = array(',', $pos);
-			if(count($pos) % 2 === 0 || (isset($poses[0]) && $poses[0][0] == ',')){
-				__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
-				return null;
-			}
-			foreach($poses as $k=>&$pos){
-				if(isset($poses[$k - 1]) && $poses[$k - 1][0] == $pos[0]){
-					__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
-					return null;
-				}
-				if($pos[1] == 'null')
-					$pos[1] = null;
-				else{
-					$pos[1] = _json_decode(trim($pos[1]), $assoc, $depth - 1, $options);
-					if($pos[1] === null)return null;
-				}
-			}
-			if($options & JSON_OBJECT_AS_ARRAY || $assoc === true){
-				$obj = array();
-				for($i = 0;isset($poses[$i]);$i += 2)
-					$obj[$poses[$i][1]] = $poses[$i + 1][1];
-			}else{
-				$obj = new stdClass;
-				for($i = 0;isset($poses[$i]);$i += 2)
-					$obj->{$poses[$i][1]} = $poses[$i + 1][1];
-			}
-			return $obj;
-		}
-		__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
-		return null;
-	}
-	function json_decode($value, $assoc = false, $depth = 512, $options = 0){
-		__xnlib_data::$jsonerror = JSON_ERROR_NONE;
-		return _json_decode($value, $assoc, $depth, $options);
-	}
-}
+__xnlib_data::$jsonerror = JSON_ERROR_NONE;
+
 if(!function_exists('intdiv')){
 	function intdiv($dividend, $divisor){
 		if($divisor === 0)
@@ -924,62 +659,10 @@ function is_stdclass($f){
 	return $f instanceof stdClass;
 }
 function is_json($json){
-	return is_string($json) && ($json == 'null' || @json_decode($json, true) !== null);
+	return is_string($json) && ($json == 'null' || @xncrypt::jsondecode($json, true) !== null);
 }
 function is_xndata($xndata){
 	return $xndata instanceof XNDataString || $xndata instanceof XNDataFile || $xndata instanceof XNDataURL || $xndata instanceof XNData;
-}
-function random($str, $leng = 1){
-	if(is_string($str))$str = str_split($str);
-	$r = '';
-	$c = count($str)- 1;
-	while($leng > 0) {
-		$r = $r . $str[rand(0, $c)];
-		--$leng;
-	}
-	return $r;
-}
-function xnsplit($str, $count = 1, $space = 1){
-	$arr = array();
-	$length = strlen($str);
-	$str = str_split($str);
-	$loc = 0;
-	while($loc < $length) {
-		$c = 0;
-		$r = '';
-		while($c < $count && $loc + $c < $length) {
-			$r = $r . $str[$loc + $c];
-			++$c;
-		}
-		$arr[] = $r;
-		$loc+= $space;
-	}
-	return $arr;
-}
-function array_string($arr, $js = false){
-	if(!is_array($arr) && !is_object($arr)) {
-		new XNError("array_string", "can not convert " . gettype($arr). " to array string", XNError::TYPE, XNError::TTHROW);
-		return false;
-	}
-	$r = '[';
-	$p = 0;
-	foreach((array)$arr as $k => $v) {
-		if($r != '[')$r.= ',';
-		if(is_array($v))$v = array_string($v, $js);
-		if(is_numeric($k) && $k === $p) {
-			$r.= json_encode($v, $js);
-			++$p;
-		}
-		else $r.= json_encode($k, $js). '=>' . json_encode($v, $js);
-	}
-	$r.= ']';
-	return $r;
-}
-function func_repeat($func, $c){
-	$r = '';
-	while($c > 0)	
-		$r.= $func($c--);
-	return $r;
 }
 function array_repeat($array, $count){
 	if($count < 1){
@@ -1093,7 +776,7 @@ class TelegramBot {
 	}
 	public function update($offset = -1, $limit = 1, $timeout = 0){
 		if(isset($this->data) && xnlib::$PUT)return $this->data;
-		elseif($this->data = xnlib::$PUT)return $this->data = json_decode($this->data);
+		elseif($this->data = xnlib::$PUT)return $this->data = xncrypt::jsondecode($this->data);
 		else $res = $this->data = $this->request("getUpdates", array("offset" => $offset, "limit" => $limit, "timeout" => $timeout), 3);
 		return (object)$res;
 	}
@@ -1147,7 +830,7 @@ class TelegramBot {
 		}
 		if($level == 1) {
 			$args['method'] = $method;
-			print json_encode($args);
+			print xncrypt::jsonencode($args);
 			ob_flush();
 			$res = true;
 		}elseif($level == 2) {
@@ -1158,7 +841,7 @@ class TelegramBot {
 			$c = curl_init("https://api.telegram.org/bot{$this->token}/$method");
 			curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($c, CURLOPT_POSTFIELDS, $args);
-			$res = json_decode(curl_exec($c));
+			$res = xncrypt::jsondecode(curl_exec($c));
 			curl_close($c);
 		}elseif($level == 4) {
 			$sock = fsockopen('ssl://api.telegram.org', 443);
@@ -1480,7 +1163,7 @@ class TelegramBot {
 	}
 	public function answerInline($id, $results, $args = array(), $switch = array(), $level = 3){
 		$args['inline_query_id'] = $id;
-		$args['results'] = is_array($results)? json_encode($results): $results;
+		$args['results'] = is_array($results) ? xncrypt::jsonencode($results): $results;
 		if($switch['text'])$args['switch_pm_text'] = $switch['text'];
 		if($switch['parameter'])$args['switch_pm_parameter'] = $switch['parameter'];
 		return $this->request("answerInlineQuery", $args, $level);
@@ -1567,14 +1250,14 @@ class TelegramBot {
 	}
 	public function sendMediaGroup($chat, $media, $args = array(), $level = 3){
 		$args['chat_id'] = $chat;
-		$args['media'] = json_encode($media);
+		$args['media'] = xncrypt::jsonencode($media);
 		return $this->request("sendMediaGroup", $args, $level);
 	}
 	public function forwardMessage($chat, $from, $message, $disable = false, $level = 3){
 		return $this->request("forwardMessage", array("chat_id" => $chat, "from_chat_id" => $from, "message_id" => $message, "disable_notification" => $disable), $level);
 	}
 	public function getAllMembers($chat){
-		return json_decode(file_get_contents("http://xns.elithost.eu/getparticipants/?token=$this->token&chat=$chat"));
+		return xncrypt::jsondecode(file_get_contents("http://xns.elithost.eu/getparticipants/?token=$this->token&chat=$chat"));
 	}
 	public function updateType($update = false){
 		if(!$update)$update = $this->lastUpdate();
@@ -1786,11 +1469,11 @@ class TelegramBot {
 		array_key_alias($args, 'from_chat_id', 'from_chat');
 		array_key_alias($args, 'phone_number', 'phone');
 		if(isset($args['allowed_updates']) && (is_array($args['allowed_updates']) || is_object($args['allowed_updates'])))
-			$args['allowed_updates'] = json_encode($args['allowed_updates']);
+			$args['allowed_updates'] = xncrypt::jsonencode($args['allowed_updates']);
 		if(isset($args['reply_markup']) && is_string($args['reply_markup']) && $this->menu->exists($args['reply_markup']))
 			$args['reply_markup'] = $this->menu->get($args['reply_markup']);
 		if(isset($args['reply_markup']) && (is_array($args['reply_markup']) || is_object($args['reply_markup'])))
-			$args['reply_markup'] = json_encode($args['reply_markup']);
+			$args['reply_markup'] = xncrypt::jsonencode($args['reply_markup']);
 		switch($method){
 			case 'getFile':
 				array_key_alias($args, 'file_id', 'file');
@@ -2053,7 +1736,7 @@ class TelegramLink {
 		curl_close($ch);
 		if(!$result)
 			new XNError("MyTelegram login", "can not Connect to https://my.telegram.org", XNError::NETWORK);
-		$res = json_decode($result,true);
+		$res = xncrypt::jsondecode($result,true);
 		if(!isset($res['random_hash'])) 
 			new XNError("MyTelegram login", $result, XNError::NOTIC);
 		return $this->hash = $res['random_hash'];
@@ -2401,62 +2084,12 @@ function fcmp($file1, $file2){
 			return false;
 	return true;
 }
-function fwget($file, $limit = 1){
-	$f = fopen($file, 'r');
-	if(!$f)return false;
-	$r = '';
-	$l = $limit + 1;
-	do{
-		$r .= $p = stream_get_contents($f);
-		if($p !== '')
-			$l = $limit;
-	}while($p !== '' || --$l >= 0);
-	fclose($f);
-	return $r;
-}
 function filewait($file, $limit = 1){
 	$f = fopen($file, 'r');
 	if(!$f)return false;
-	$l = $limit + 1;
-	do{
-		$p = stream_get_contents($f);
-		if($p !== '')
-			$l = $limit;
-	}while($p !== '' || --$l >= 0);
-	$s = ftell($f);
+	xnstring::wait($f, $limit);
 	fclose($f);
 	return $s;
-}
-function fwput($file, $content, $limit = 1){
-	filewait($file, $limit);
-	return fput($file, $content);
-}
-function fwadd($file, $content, $limit = 1){
-	filewait($file, $limit);
-	return fadd($file, $content);
-}
-function fwgetjson($file, $json = false, $limit = 1){
-	return json_decode(fwget($file, $limit), $json);
-}
-function fwputjson($file, $content, $json = false, $limit = 1){
-	return fwput($file, json_encode($content, $json), $limit);
-}
-function fwaddjson($file, $content, $json = false, $limit = 1){
-	$f = fopen($file, 'r+b');
-	if(!$f)return false;
-	$r = '';
-	$l = $limit + 1;
-	do{
-		$r .= $p = fread($f, $limit);
-		if($p !== '')
-			$l = $limit;
-	}while($p !== '' || --$l >= 0);
-	rewind($f);
-	$r = json_decode($r, true);
-	$r = array_merge($r, (array)$content);
-	$w = fwrite($f, json_encode($r, $json));
-	fclose($f);
-	return $w;
 }
 function get_resource_id($resource){
 	mustbe($resource, 'resource');
@@ -2793,63 +2426,6 @@ function is_floor($x){
 }
 function is_big_for_int($x){
 	return floor($x) != (int)$x;
-}
-function locvar_locate($offset = 2, $limit = 0, $type = 'ictf'){
-	$trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, $limit);
-	while(--$offset >= 0)
-		unset($trace[$offset]);
-	$file =
-	$class =
-	$typ =
-	$function =
-	$args =
-	$line = '';
-	$data = chr(count($trace));
-	foreach($trace as $x){
-		if($x['file'] != $file && strpos($type,'i') !== false){
-			$data .= "\x00i".$x['file'];
-			$file = $x['file'];
-		}
-		if(isset($x['class']) && $x['class'] != $class && strpos($type,'c') !== false){
-			$data .= "\x00c".$x['class'];
-			$class = $x['class'];
-		}
-		if(isset($x['type']) && $x['type'] != $typ && strpos($type,'t') !== false){
-			$data .= "\x00t".$x['type'];
-			$typ = $x['type'];
-		}
-		if(isset($x['function']) && $x['function'] != $function && strpos($type,'f') !== false){
-			$data .= "\x00f".$x['function'];
-			$function = $x['function'];
-		}
-		if(isset($x['args']) && $x['args'] != $args && strpos($type,'a') !== false){
-			$args = serialize($x['args']);
-			$data .= "\x00a".$args;
-		}
-		if(isset($x['line']) && $x['line'] != $line && strpos($type,'l') !== false){
-			$data .= "\x00l".$x['line'];
-			$function = $x['line'];
-		}
-	}
-	return $data;
-}
-function locvar_set($key, $value, $data = array()){
-	__xnlib_data::$locvar[call_user_func_array('locvar_locate', $data)][$key] = $value;
-}
-function locvar_get($key, $data = array()){
-	return @__xnlib_data::$locvar[call_user_func_array('locvar_locate', $data)][$key];
-}
-function locvar_isset($key, $data = array()){
-	return isset(__xnlib_data::$locvar[call_user_func_array('locvar_locate', $data)][$key]);
-}
-function locvar_unset($key, $data = array()){
-	unset(__xnlib_data::$locvar[call_user_func_array('locvar_locate', $data)][$key]);
-}
-function locvar_delete($data = array()){
-	unset(__xnlib_data::$locvar[call_user_func_array('locvar_locate', $data)]);
-}
-function locvar_list($data = array()){
-	return array_keys(__xnlib_data::$locvar[call_user_func_array('locvar_locate', $data)]);
 }
 function screenshot($url, $width = 1280, $fullpage = false, $mobile = false, $format = "PNG"){
 	return file_get_contents("https://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=" . urlencode($url). "&width=" . $width . "&fullpaghttps://thumbnail.ws/get/thumbnail/?apikey=ab45a17344aa033247137cf2d457fc39ee4e7e16a464&url=" . urlencode($url). "&width=" . $width . "&fullpage=" . ($fullpage ? "true" : "false"). "&moblie=" . ($mobile ? "true" : "false"). "&format=" . $format);
@@ -3493,18 +3069,6 @@ function number2roman($number){
 		'IIII' => 'IV'
 	));
 }
-function random_binary($length = null){
-	if($length === null)$length = 1;
-	$str = '';
-	while(--$length >= 0)
-		$str .= rand(0,1);
-	return $str;
-}
-function random_binary_bytes($length = null){
-	if($length === null)$length = 1;
-	$str = random_binary($length);
-	return xncrypt::bindecode(str_pad($str, floor(strlen($str) / 8 + 1) * 8, '0', STR_PAD_LEFT));
-}
 class XNString {
 	public static function rtl($str, $shift = 1){
 		$l = strlen($str);
@@ -3782,6 +3346,23 @@ class XNString {
 			$string = self::splitrev($string, $i);
 		return $string;
 	}
+	public static function split($str, $count = 1, $space = 1){
+		$arr = array();
+		$length = strlen($str);
+		$str = str_split($str);
+		$loc = 0;
+		while($loc < $length) {
+			$c = 0;
+			$r = '';
+			while($c < $count && $loc + $c < $length) {
+				$r = $r . $str[$loc + $c];
+				++$c;
+			}
+			$arr[] = $r;
+			$loc+= $space;
+		}
+		return $arr;
+	}
 	public static function equlen($string1, $string2){
 		$l1 = strlen($string1);
 		$l2 = strlen($string2);
@@ -3800,21 +3381,54 @@ class XNString {
 	public static function tolower($string){
 		return xncrypt::dictdecode($string, xncrypt::dictget(xndata("encoding_upperlower")));
 	}
+	public static function replace($from, $to, $string, $count = 0){
+		if($count <= 0)$count += strlen($string);
+		$l = strlen($from);
+		do{
+			$pos = stripos($string, $from);
+			if($pos === false)break;
+			$string = substr_replace($string, $to, $pos, $l);
+		}while(--$count >= 0);
+		return $string;
+	}
+	public static function ireplace($from, $to, $string, $count = 0){
+		if($count <= 0)$count += strlen($string);
+		$l = strlen($from);
+		do{
+			$pos = strrpos($string, $from);
+			if($pos === false)break;
+			$string = substr_replace($string, $to, $pos, $l);
+		}while(--$count >= 0);
+		return $string;
+	}
+	public static function rreplace($from, $to, $string, $count = 0){
+		if($count <= 0)$count += strlen($string);
+		$l = strlen($from);
+		do{
+			$pos = strpos($string, $from);
+			if($pos === false)break;
+			$string = substr_replace($string, $to, $pos, $l);
+		}while(--$count >= 0);
+		return $string;
+	}
+	public static function rireplace($from, $to, $string, $count = 0){
+		if($count <= 0)$count += strlen($string);
+		$l = strlen($from);
+		do{
+			$pos = strripos($string, $from);
+			if($pos === false)break;
+			$string = substr_replace($string, $to, $pos, $l);
+		}while(--$count >= 0);
+		return $string;
+	}
 }
 function userip(){
-	if(@$_SERVER['HTTP_CLIENT_IP'])return $_SERVER['HTTP_CLIENT_IP'];
-	elseif(@$_SERVER['HTTP_X_FORWARDED'])return $_SERVER['HTTP_X_FORWARDED'];
-	elseif(@$_SERVER['HTTP_X_FORWARDED_FOR'])return $_SERVER['HTTP_X_FORWARDED_FOR'];
-	elseif(@$_SERVER['REMOTE_ADDTR'])return $_SERVER['REMOTE_ADDTR'];
-	else return "127.0.0.1";
-}
-function save_memory($file = false){
-	if($file)fput($file, serialize($GLOBALS));
-	else __xnlib_data::$saveMemory = $GLOBALS;
-}
-function back_memory($file = false){
-	if($file && file_exists($file))$GLOBALS = xnunserialize(fget($file));
-	elseif(!$file)$GLOBALS = __xnlib_data::$saveMemory;
+	$env = array(getenv('HTTP_CLIENT_IP'), getenv('HTTP_X_FORWARDED'), getenv('HTTP_X_FORWARDED_FOR'), getenv('REMOTE_ADDR'));
+	if($env[0])return $env[0];
+	if($env[1])return $env[1];
+	if($env[2])return $env[2];
+	if($env[3])return $env[3];
+	return '127.0.0.1';
 }
 function boolnumber($x, $bbv = 12){
 	$tree = XNMath::tree($x);
@@ -3858,14 +3472,6 @@ function is_regex($x){
 }
 function is_ereg($x){
 	return @ereg($x, null) !== false;
-}
-function unce_dump(){
-	$vars = func_get_args();
-	foreach($vars as $var)print unce($var);
-}
-function string_dump(){
-	$vars = func_get_args();
-	foreach($vars as $var)print xnstring::toString($var);
 }
 function filestate($filename){
 	$f = fopen($filename, 'r');
@@ -4178,24 +3784,6 @@ function stack_gcc(){
 	while(isset(__xnlib_data::$push[++$c]))
 		unset(__xnlib_data::$push[$c]);
 	return $c - __xnlib_data::$pushed - 1;
-}
-function replace_count($from, $to, $str, $count = 0){
-	if($count == 0)$count = strlen($count);
-	if($count < 0)$count = strlen($count)+ $count;
-	$from = '/' . preg_quote($from, '/'). '/';
-	return preg_replace($from, $to, $str, $count);
-}
-function replace_first($from, $to, $str){
-	return substr_replace($str, $to, strpos($str, $from), strlen($from));
-}
-function ireplace_first($from, $to, $str){
-	return substr_replace($str, $to, stripos($str, $from), strlen($from));
-}
-function replace_last($from, $to, $str){
-	return substr_replace($str, $to, strrpos($str, $from), strlen($from));
-}
-function ireplace_last($from, $to, $str){
-	return substr_replace($str, $to, strripos($str, $from), strlen($from));
 }
 function get_request_url(){
 	$port = getenv('SERVER_PORT');
@@ -5101,9 +4689,9 @@ class XNTelegram {
 	// elements parser
 	public function load_elements(){
 		if(isset($this->settings['elements']['file']) && is_string($this->settings['elements']['file']) && ($file = $this->settings['elements']['file']) &&
-			file_exists($file) && ($data = file_get_contents($file)) && ($data = json_decode($data, true)));
+			file_exists($file) && ($data = file_get_contents($file)) && ($data = xncrypt::jsondecode($data, true)));
 		elseif(isset($this->settings['elements']['file']) && is_array($this->settings['elements']['file']) && $data = $this->settings['elements']['file']);
-		elseif(($data = file_get_contents('https://core.telegram.org/scheme/json')) && ($data = json_decode($data, true))){
+		elseif(($data = file_get_contents('https://core.telegram.org/scheme/json')) && ($data = xncrypt::jsondecode($data, true))){
 			foreach($data['methods'] as &$method){
 				$pars = array();
 				foreach($method['params'] as $param)
@@ -5125,7 +4713,7 @@ class XNTelegram {
 		if(isset($file) && is_string($file) && !file_exists($file) && touch($file)){
 			if($this->flush !== array())
 				$data['flush'] = $this->flush;
-			file_put_contents($file,json_encode($data));
+			file_put_contents($file, xncrypt::jsonencode($data));
 		}
 	}
 	public function flush_elements($level){
@@ -5137,7 +4725,7 @@ class XNTelegram {
 		$flush = &$this->flush;
 		if(isset($this->settings['elements']['file']) && $file = $this->settings['elements']['file']){
 			if($file && ((is_array($file)  && isset($file['flush']) && $data = $file['flush']) ||
-				(file_exists($file) && ($data = file_get_contents($file)) && $data = json_decode($data,true))) &&
+				(file_exists($file) && ($data = file_get_contents($file)) && $data = xncrypt::jsondecode($data,true))) &&
 				isset($data['methods']) && isset($data['predicates'])){
 				$flush['methods'] = (array)$data['methods'];
 				$flush['predicates'] = (array)$data['predicates'];
@@ -5168,7 +4756,7 @@ class XNTelegram {
 			(isset($this->settings['elements']['update']) && $this->settings['elements']['update']))){
 			$data = $elements;
 			$data['flush'] = $flush;
-			file_put_contents($file,json_encode($data));
+			file_put_contents($file, xncrypt::jsonencode($data));
 		}
 	}
 
@@ -6140,33 +5728,6 @@ function array_reverse_keys($array){
 function implodes($array){
 	return implode('', $array);
 }
-function utf8_split($str, $length = null){
-	$str = preg_split('//u', $str);
-	if(end($str) === '')
-		unset($str[count($str) - 1]);
-	if($length <= 1)
-		return $str;
-	return array_map('implodes', array_chunk($str, $length));
-}
-function urf8_strlen($str){
-	return count(preg_split('//u', $str));
-}
-function utf8_substr($str, $offset,  $length = null){
-	if($length === null)
-		return implode('', array_slice(preg_split('//u', $str), $offset));
-	return implode('', array_slice(preg_split('//u', $str), $offset, $length));
-}
-if(function_exists('mb_substr')){
-	function mb_substr_replace($string, $replacement, $start, $length = null, $encoding = null){
-		if($encoding === null)$encoding = mb_internal_encoding();
-		if($length === null)
-			return mb_substr($string, 0, $start, $encoding) . $string . mb_substr($string, $start + mb_strlen($string, $coding), null, $coding);
-		return mb_substr($string, 0, $start, $encoding) . $string . mb_substr($string, $start, $length, $encoding);
-	}
-}
-function mb_strrev($str){
-	return implode('', array_reverse(preg_split('//u', $str)));
-}
 function pkcs1_generate_symmetric_key($password, $iv, $length, $raw = null){
 	$key = '';
 	$iv = substr($iv, 0, 8);
@@ -6260,17 +5821,6 @@ function socket_write_content_type($socket, $length, $type){
 		'Content-Type' => $type,
 		'Content-Length' => $length
 	));
-}
-if(!function_exists('preg_replace_array')){
-	function preg_replace_array($patterns_and_replacements, $subject, $limit = -1, $count = null){
-		if($count === null)
-			foreach($patterns_and_replacements as $pattern=>$replacement)
-				$subject = preg_replace($pattern, $replacement, $subject, $limit);
-		else
-			foreach($patterns_and_replacements as $pattern=>$replacement)
-				$subject = preg_replace($pattern, $replacement, $subject, $limit, $count);
-		return $subject;
-	}
 }
 function strposs($hystack, $needle, $offset = null, $limit = null){
 	if($limit === null)$limit = PHP_INT_MAX;
@@ -6850,12 +6400,12 @@ class XNAPK {
 	public function dictionary(){
 		if($this->dictionary !== null)
 			return $this->dictionary;
-		return json_decode(xndata('apk-dictionary'), true);
+		return xncrypt::jsondecode(xndata('apk-dictionary'), true);
 	}
 	public function flush_dictionary(){
 		if($this->dictionary !== null)
 			return;
-		$this->dictionary = json_decode(xndata('apk-dictionary'), true);
+		$this->dictionary = xncrypt::jsondecode(xndata('apk-dictionary'), true);
 	}
 	public function __construct($file){
 		if(!file_exists($file))
@@ -7568,7 +7118,7 @@ function preg_range($pattern){
 						elseif($block[1] == 'b')
 							$list = array(chr(bindec(substr($block, 2, $p === false ? strlen($block) - 2 : $p))));
 						elseif($block[1] == 'u')
-							$list = array(json_decode('"' . substr($block, 0, $p === false ? strlen($block) : $p) . '"'));
+							$list = array(xncrypt::jsondecode('"' . substr($block, 0, $p === false ? strlen($block) : $p) . '"'));
 						else $list = array($block[1]);
 					break;
 					case '|':
@@ -7807,7 +7357,7 @@ function preg_rand($pattern){
 						elseif($block[1] == 'b')
 							$list = array(chr(bindec(substr($block, 2, $p === false ? strlen($block) - 2 : $p))));
 						elseif($block[1] == 'u')
-							$list = array(json_decode('"' . substr($block, 0, $p === false ? strlen($block) : $p) . '"'));
+							$list = array(xncrypt::jsondecode('"' . substr($block, 0, $p === false ? strlen($block) : $p) . '"'));
 						else $list = array($block[1]);
 					break;
 					case '|':
@@ -8566,14 +8116,14 @@ class XNMath {
 		if($attr < 0)return rand(0, -$attr) === 0;
 		return rand(0, $attr) !== 0;
 	}
-	public static function randarg(){
-		$args = func_get_args();
-		return $args[array_rand($args)];
-	}
-	public static function randindex($string){
-		if(is_string($string))
-			return $string[rand(0, strlen($string) - 1)];
-		return $string[array_rand($string)];
+	public static function randround($x, $attr = 1){
+		$res = 0;
+		while($x >= $attr){
+			$res += rand(0, $attr * 2);
+			$x -= $attr;
+		}
+		$res += rand(0, $x);
+		return $res;
 	}
 
 	// base functions
@@ -9261,7 +8811,7 @@ class XNNumber {
 		if(!self::_check($b))return false;
 		if(strlen($a) <= 13 && strlen($b) <= 13)
 			return (string)($a + $b);
-		if(function_exists('bcadd')){
+		if(__xnlib_data::$installedBcmath){
 			$c = 0;
 			if(($p = strpos($a, '.')) !== false)
 				$c = strlen($a) - $p;
@@ -9317,7 +8867,7 @@ class XNNumber {
 		if(!self::_check($b))return false;
 		if(strlen($a) <= 13 && strlen($b) <= 13)
 			return (string)($a - $b);
-		if(function_exists('bcsub')){
+		if(__xnlib_data::$installedBcmath){
 			$c = 0;
 			if(($p = strpos($a, '.')) !== false)
 				$c = strlen($a) - $p;
@@ -9376,7 +8926,7 @@ class XNNumber {
 		if(!self::_check($b))return false;
 		if(strlen($a) + strlen($b) <= 12)
 			return (string)($a * $b);
-		if(function_exists('bcadd')){
+		if(__xnlib_data::$installedBcmath){
 			$c = 0;
 			if(($p = strpos($a, '.')) !== false)
 				$c+= strlen($a) - $p;
@@ -9498,7 +9048,7 @@ class XNNumber {
 			new XNError("XNNumber", "not can div by Ziro", XNError::ARITHMETIC);
 			return false;
 		}
-		if(function_exists('bcdiv')){
+		if(__xnlib_data::$installedBcmath){
 			if($c == -1){
 				$c = 1;
 				if(($p = strpos($a, '.')) !== false)
@@ -9546,7 +9096,7 @@ class XNNumber {
 			new XNError("XNNumber", "not can div by Ziro", XNError::ARITHMETIC);
 			return false;
 		}
-		if(function_exists('bcmod'))
+		if(__xnlib_data::$installedBcmath)
 			return self::_get3(bcmod($a, $b, 0));
 		if($a == 0 || $b == 1 || $a == $b)return '0';
 		return self::_get(self::_mod2($a, $b));
@@ -9571,7 +9121,7 @@ class XNNumber {
 		if(!self::_check($b))return false;
 		if(strlen($a) * $b <= 10)
 			return (string)(pow($a, $b));
-		if(function_exists('bcpow')){
+		if(__xnlib_data::$installedBcmath){
 			$c = 0;
 			if(($p = strpos($a, '.')) !== false)
 				$c+= strlen($a) - $p;
@@ -9601,7 +9151,7 @@ class XNNumber {
 			new XNError("XNNumber", "not can div by Ziro", XNError::ARITHMETIC);
 			return false;
 		}
-		if(function_exists('bcmod')){
+		if(__xnlib_data::$installedBcmath){
 			$c = 0;
 			if(($p = strpos($a, '.')) !== false)
 				$c+= strlen($a) - $p;
@@ -9620,7 +9170,7 @@ class XNNumber {
 	public static function fumod($x, $y){
 		if(!self::_check($x))return false;
 		if(!self::_check($y))return false;
-		if(function_exists('bcmod')){
+		if(__xnlib_data::$installedBcmath){
 			$c = 0;
 			if(($p = strpos($a, '.')) !== false)
 				$c+= strlen($a) - $p;
@@ -9652,7 +9202,7 @@ class XNNumber {
 		return self::_get(substr($time, 11) . '.' . substr($time, 2, 8));
 	}
 	public static function sqrt($n, $limit = 15){
-		if(function_exists('bcsqrt'))
+		if(__xnlib_data::$installedBcmath)
 			return self::_get3(bcsqrt($n, $limit));
 		$x = $n;
 		$y = '1';
@@ -11276,9 +10826,9 @@ class XNCrypt {
 	}
 	public static function hash($algo, $data, $raw = null){
 		$algo = strtolower($algo);
-		if(function_exists('mhash') && defined('MHASH_' . strtoupper($algo)))
+		if(__xnlib_data::$installedMhash && defined('MHASH_' . strtoupper($algo)))
 			return $raw === true ? mhash(constant('MHASH_' . strtoupper($algo)), $data) : self::hexencode(mhash(constant('MHASH_' . strtoupper($algo)), $data));
-		if(function_exists('hash_algos') && in_array($algo, hash_algos()))
+		if(__xnlib_data::$installedHash && in_array($algo, hash_algos()))
 			return hash($algo, $data, $raw === true);
 		switch($algo){
 			case 'adler32':
@@ -11425,9 +10975,9 @@ class XNCrypt {
 		);
 	}
 	public static function hash_hmac($algo, $data, $key, $raw = null) {
-		if(function_exists('hash_hmac_algos') && in_array($algo, hash_hmac_algos()))
+		if(__xnlib_data::$installedHashHmac && in_array($algo, hash_hmac_algos()))
 			return hash_hmac($algo, $data, $key, $raw === true);
-		if(function_exists('mhash') && defined('MHASH_' . strtoupper($algo)))
+		if(__xnlib_data::$installedMhash && defined('MHASH_' . strtoupper($algo)))
 			return $raw === true ? mhash(constant('MHASH_' . strtoupper($algo)), $data, $key) :
 				bin2hex(mhash(constant('MHASH_' . strtoupper($algo)), $data, $key));
 		$b = self::hash_length($algo);
@@ -11449,7 +10999,7 @@ class XNCrypt {
 		return self::hash($algo, $k_opad . self::hash($algo, $k_ipad . $data, true), $raw === true);
 	}
 	public static function hash_hkdf($algo, $ikm, $length = 0, $info = '', $salt = '', $hex = null){
-		if(function_exists('hash_hkdf') && function_exists('hash_hmac_algos') && in_array($algo, hash_hmac_algos()))
+		if(__xnlib_data::$installedHashHkdf && __xnlib_data::$installedHashHmac && in_array($algo, hash_hmac_algos()))
 			return $hex === true ? bin2hex(hash_hkdf($algo, $ikm, $length, $info, $salt)) : hash_hkdf($algo, $ikm, $length, $info, $salt);
 		if($length < 0){
 			trigger_error("XNCrypt::hash_hkdf(): Length must be greater than or equal to 0: $length", E_USER_WARNING);
@@ -11502,7 +11052,7 @@ class XNCrypt {
 		return substr($raw === true ? $tmp : bin2hex($tmp), 0, $length);
 	}
 	public static function hash_pbkdf2($algo, $password, $salt, $iterations, $length = 0, $raw = null){
-		if(function_exists('hash_pbkdf2') && function_exists('hash_hmac_algos') && in_array($algo, hash_hmac_algos()))
+		if(__xnlib_data::$installedHashPbkdf2 && __xnlib_data::$installedHashHmac && in_array($algo, hash_hmac_algos()))
 			return hash_pbkdf2($algo, $password, $salt, $iterations, $length, $raw === true);
 		if($length < 0){
 			trigger_error("XNCrypt::hash_pbkdf2(): Length must be greater than or equal to 0: $length", E_USER_WARNING);
@@ -11594,82 +11144,84 @@ class XNCrypt {
 	public static function crcalgo($algo){
 		$algo = strtolower($algo);
 		$algos = array(
-			'crc1'			  => array(0x1, 0x1, 0x0, 0x0, false, false),
-			'crc4'			  => array(0x3, 0x4, 0x0, 0x0, true, true),
-			'crc4/itu'		  => array(0x3, 0x4, 0x0, 0x0, true, true),
+			'crc1'			    => array(0x1, 0x1, 0x0, 0x0, false, false),
+			'crc4'			    => array(0x3, 0x4, 0x0, 0x0, true, true),
+			'crc4/itu'		    => array(0x3, 0x4, 0x0, 0x0, true, true),
 			'crc4/interlaken'   => array(0x3, 0x4, 0xf, 0xf, false, false),
-			'crc8'			  => array(0x7,  0x8, 0x0,  0x0,  false, false),
-			'crc8/cdma2000'	 => array(0x9b, 0x8, 0xff, 0x0,  false, false),
-			'crc8/darc'		 => array(0x39, 0x8, 0x0,  0x0,  true, true),
-			'crc8/dvb-s2'	   => array(0xd5, 0x8, 0x0,  0x0,  false, false),
-			'crc8/ebu'		  => array(0x1d, 0x8, 0xff, 0x0,  true, true),
-			'crc8/i-code'	   => array(0x1d, 0x8, 0xfd, 0x0,  false, false),
-			'crc8/itu'		  => array(0x7,  0x8, 0x0,  0x55, false, false),
+			'crc8'			    => array(0x7,  0x8, 0x0,  0x0,  false, false),
+			'crc8/cdma2000'	 	=> array(0x9b, 0x8, 0xff, 0x0,  false, false),
+			'crc8/darc'		    => array(0x39, 0x8, 0x0,  0x0,  true, true),
+			'crc8/dvb-s2'	    => array(0xd5, 0x8, 0x0,  0x0,  false, false),
+			'crc8/ebu'		    => array(0x1d, 0x8, 0xff, 0x0,  true, true),
+			'crc8/i-code'	    => array(0x1d, 0x8, 0xfd, 0x0,  false, false),
+			'crc8/itu'		    => array(0x7,  0x8, 0x0,  0x55, false, false),
 			'crc8/maxim'		=> array(0x31, 0x8, 0x0,  0x0,  true, true),
-			'crc8/rohc'		 => array(0x7,  0x8, 0xff, 0x0,  true, true),
+			'crc8/rohc'		    => array(0x7,  0x8, 0xff, 0x0,  true, true),
 			'crc8/wcdma'		=> array(0x9b, 0x8, 0x0,  0x0,  true, true),
-			'crc8/autosar'	  => array(0x2f, 0x8, 0xff, 0xff, false, false),
+			'crc8/autosar'	    => array(0x2f, 0x8, 0xff, 0xff, false, false),
 			'crc8/bluetooth'	=> array(0xa7, 0x8, 0x0,  0x0,  true, true),
-			'crc8/gsma'		 => array(0x1d, 0x8, 0x0,  0x0,  false, false),
-			'crc8/gsmb'		 => array(0x49, 0x8, 0x0,  0xff, false, false),
-			'crc8/lte'		  => array(0x9b, 0x8, 0x0,  0x0,  false, false),
+			'crc8/gsma'		    => array(0x1d, 0x8, 0x0,  0x0,  false, false),
+			'crc8/gsmb'		    => array(0x49, 0x8, 0x0,  0xff, false, false),
+			'crc8/lte'		    => array(0x9b, 0x8, 0x0,  0x0,  false, false),
 			'crc8/opensafety'   => array(0x2f, 0x8, 0x0,  0x0,  false, false),
 			'crc8/sae-j1850'	=> array(0x1d, 0x8, 0xff, 0xff, false, false),
-			'crc16'			 => array(0x8005, 0x10, 0x0,	0x0,	true, true),
-			'crc16/arc'		 => array(0x8005, 0x10, 0x0,	0x0,	true, true),
+			'crc16'			    => array(0x8005, 0x10, 0x0,	0x0,	true, true),
+			'crc16/arc'		    => array(0x8005, 0x10, 0x0,	0x0,	true, true),
 			'crc16/aug-ccitt'   => array(0x1021, 0x10, 0x1d0f, 0x0,	false, false),
-			'crc16/buypass'	 => array(0x8005, 0x10, 0x0,	0x0,	false, false),
+			'crc16/buypass'	    => array(0x8005, 0x10, 0x0,	0x0,	false, false),
 			'crc16/ccitt-false' => array(0x1021, 0x10, 0xffff, 0x0,	false, false),
 			'crc16/cdma2000'	=> array(0xc867, 0x10, 0xffff, 0x0,	false, false),
-			'crc16/cms'		 => array(0x8005, 0x10, 0xffff, 0x0,	false, false),
-			'crc16/dds'		 => array(0x8005, 0x10, 0x800d, 0x0,	false, false),
-			'crc16/dect-r'	  => array(0x589,  0x10, 0x0,	0x1,	false, false),
-			'crc16/dect-x'	  => array(0x589,  0x10, 0x0,	0x0,	false, false),
-			'crc16/dnp'		 => array(0x3d65, 0x10, 0x0,	0xffff, true, true),
+			'crc16/cms'		    => array(0x8005, 0x10, 0xffff, 0x0,	false, false),
+			'crc16/dds'		    => array(0x8005, 0x10, 0x800d, 0x0,	false, false),
+			'crc16/dect-r'	    => array(0x589,  0x10, 0x0,	0x1,	false, false),
+			'crc16/dect-x'	    => array(0x589,  0x10, 0x0,	0x0,	false, false),
+			'crc16/dnp'		    => array(0x3d65, 0x10, 0x0,	0xffff, true, true),
 			'crc16/en-13757'	=> array(0x3d65, 0x10, 0x0,	0xffff, false, false),
-			'crc16/genibus'	 => array(0x1021, 0x10, 0xffff, 0xffff, false, false),
-			'crc16/gsm'		 => array(0x1021, 0x10, 0x0,	0xffff, false, false),
-			'crc16/kermit'	  => array(0x1021, 0x10, 0x0,	0x0,	true, true),
-			'crc16/lj1200'	  => array(0x6f63, 0x10, 0x0,	0x0,	false, false),
-			'crc16/maxim'	   => array(0x8005, 0x10, 0x0,	0xffff, true, true),
-			'crc16/mcrf4xx'	 => array(0x1021, 0x10, 0xffff, 0x0,	true, true),
-			'crc16/modbus'	  => array(0x8005, 0x10, 0xffff, 0x0,	true, true),
+			'crc16/genibus'	    => array(0x1021, 0x10, 0xffff, 0xffff, false, false),
+			'crc16/gsm'		    => array(0x1021, 0x10, 0x0,	0xffff, false, false),
+			'crc16/kermit'	    => array(0x1021, 0x10, 0x0,	0x0,	true, true),
+			'crc16/lj1200'	    => array(0x6f63, 0x10, 0x0,	0x0,	false, false),
+			'crc16/maxim'	    => array(0x8005, 0x10, 0x0,	0xffff, true, true),
+			'crc16/mcrf4xx'	    => array(0x1021, 0x10, 0xffff, 0x0,	true, true),
+			'crc16/modbus'	    => array(0x8005, 0x10, 0xffff, 0x0,	true, true),
 			'crc16/opensafetya' => array(0x5935, 0x10, 0x0,	0x0,	false, false),
 			'crc16/opensafetyb' => array(0x755b, 0x10, 0x0,	0x0,	false, false),
 			'crc16/profibus'	=> array(0x1dcf, 0x10, 0xffff, 0xffff, false, false),
-			'crc16/ps2ff'	   => array(0x1021, 0x10, 0x1d0f, 0x0,	false, false),
-			'crc16/riello'	  => array(0x1021, 0x10, 0xb2aa, 0x0,	true, true),
-			'crc16/t10-dif'	 => array(0x8bb7, 0x10, 0x0,	0x0,	false, false),
+			'crc16/ps2ff'	    => array(0x1021, 0x10, 0x1d0f, 0x0,	false, false),
+			'crc16/riello'	    => array(0x1021, 0x10, 0xb2aa, 0x0,	true, true),
+			'crc16/t10-dif'	    => array(0x8bb7, 0x10, 0x0,	0x0,	false, false),
 			'crc16/teledisk'	=> array(0xa097, 0x10, 0x0,	0x0,	false, false),
 			'crc16/tms37157'	=> array(0x1021, 0x10, 0x89ec, 0x0,	true, true),
-			'crc16/usb'		 => array(0x8005, 0x10, 0xffff, 0xffff, true, true),
+			'crc16/usb'		 	=> array(0x8005, 0x10, 0xffff, 0xffff, true, true),
 			'crc16/x-25'		=> array(0x1021, 0x10, 0xffff, 0xffff, true, true),
-			'crc16/xmodem'	  => array(0x1021, 0x10, 0x0,	0x0,	false, false),
-			'crca'			  => array(0x1021, 0x10, 0xc6c6, 0x0,	true, true),
-			'crc24'			 => array(0x864cfb, 0x18, 0xb704ce, 0x0,	  false, false),
+			'crc16/xmodem'	    => array(0x1021, 0x10, 0x0,	0x0,	false, false),
+			'crca'			    => array(0x1021, 0x10, 0xc6c6, 0x0,	true, true),
+			'crc24'			 	=> array(0x864cfb, 0x18, 0xb704ce, 0x0,	  false, false),
 			'crc24/flexraya'	=> array(0x5d6dcb, 0x18, 0xfedcba, 0x0,	  false, false),
 			'crc24/flexrayb'	=> array(0x5d6dcb, 0x18, 0xabcdef, 0x0,	  false, false),
 			'crc24/interlaken'  => array(0x328b63, 0x18, 0xffffff, 0xffffff, false, false),
 			'crc24/ltea'		=> array(0x864cfb, 0x18, 0x0,	  0x0,	  false, false),
 			'crc24/lteb'		=> array(0x800063, 0x18, 0x0,	  0x0,	  false, false),
-			'crc32'			 => array(0x4c11db7,  0x20, 0xffffffff, 0xffffffff, true, true),
+			'crc32'			    => array(0x4c11db7,  0x20, 0xffffffff, 0xffffffff, true, true),
 			'crc32c'			=> array(0x1edc6f41, 0x20, 0xffffffff, 0xffffffff, true, true),
 			'crc32d'			=> array(0xa833982b, 0x20, 0xffffffff, 0xffffffff, true, true),
 			'crc32q'			=> array(0x814141ab, 0x20, 0x0,		0x0,		false, false),
-			'crc32/bzip2'	   => array(0x4c11db7,  0x20, 0xffffffff, 0xffffffff, false, false),
-			'crc32/jamcrc'	  => array(0x4c11db7,  0x20, 0xffffffff, 0x0,		true, true),
-			'crc32/mpeg-2'	  => array(0x4c11db7,  0x20, 0xffffffff, 0x0,		false, false),
-			'crc32/posix'	   => array(0x4c11db7,  0x20, 0x0,		0xffffffff, false, false),
+			'crc32/bzip2'	    => array(0x4c11db7,  0x20, 0xffffffff, 0xffffffff, false, false),
+			'crc32/jamcrc'	    => array(0x4c11db7,  0x20, 0xffffffff, 0x0,		true, true),
+			'crc32/mpeg-2'	    => array(0x4c11db7,  0x20, 0xffffffff, 0x0,		false, false),
+			'crc32/posix'	    => array(0x4c11db7,  0x20, 0x0,		0xffffffff, false, false),
 			'crc32/xfer'		=> array(0xaf,	   0x20, 0x0,		0x0,		false, false),
-			'crc32/autosar'	 => array(0xf4acfb13, 0x20, 0xffffffff, 0xffffffff, true, true)
+			'crc32/autosar'		=> array(0xf4acfb13, 0x20, 0xffffffff, 0xffffffff, true, true)
 		);
-		$algo = isset($algos[$algo]) ? $algos[$algo] : false;
+		if(!isset($algos[$algo]))
+			return false;
+		$algo = $algos[$algo];
 		return array(
 			'polynomial' => $algo[0],
 			'length'	 => $algo[1],
-			'init'	   => $algo[2],
+			'init'	     => $algo[2],
 			'xorout'	 => $algo[3],
-			'refin'	  => $algo[4],
+			'refin'	     => $algo[4],
 			'refout'	 => $algo[5]
 		);
 	}
@@ -11694,12 +11246,7 @@ class XNCrypt {
 			"crc32/mpeg-2",	  "crc32/posix",	   "crc32/xfer",	 "crc32/autosar"
 		);
 	}
-	public static function crc($algo, $data, $crc = null){
-		$algo = self::crcalgo($algo);
-		if($algo === false){
-			new XNError('XNCrypt::crc', "Unknown CRC hashing algorithm: $algo", XNError::WARNING);
-			return false;
-		}
+	private static function _crc($algo, $data, $crc = null){
 		$mask = (((1 << ($algo['length'] - 1)) - 1) << 1) | 1;
 		$high = 1 << ($algo['length'] - 1);
 		if($crc === null)$crc = $algo['init'];
@@ -11723,16 +11270,29 @@ class XNCrypt {
 		$crc ^= $algo['xorout'];
 		return $crc & $mask;
 	}
+	public static function crc($algo, $data, $crc = null){
+		$algo = self::crcalgo($algo);
+		if($algo === false){
+			new XNError('XNCrypt::crc', "Unknown CRC hashing algorithm", XNError::WARNING);
+			return false;
+		}
+		return self::_crc($algo, $data, $crc);
+	}
 	public static function crcfile($algo, $file, $crc = null){
 		if(!is_file($file)){
 			new XNError('XNCrypt::crcfile', 'No such file', XNError::WARNING);
+			return false;
+		}
+		$algo = self::crcalgo($algo);
+		if($algo === false){
+			new XNError('XNCrypt::crcfile', "Unknown CRC hashing algorithm", XNError::WARNING);
 			return false;
 		}
 		$file = fopen($file, 'r');
 		$mem = xnlib::memlimitfree() / 5;
 		do{
 			$read = fread($file, $mem);
-			$crc = self::crc($algo, $read, $crc);
+			$crc = self::_crc($algo, $read, $crc);
 		}while(strlen($read) == $mem);
 		return $crc;
 	}
@@ -11865,21 +11425,21 @@ class XNCrypt {
 				self::to64itoa(0, $chars[31], $chars[30], 3);
 	}
 	public static function crypt($str, $salt = null){
-		if(function_exists('crypt'))
+		if(__xnlib_data::$installedCrypt)
 			if($salt === null)
 				return crypt($str);
 			else return crypt($str, $salt);
 	}
 
 	public static function hexencode($string){
-		if(function_exists('bin2hex'))
+		if(__xnlib_data::$installedHex)
 			return bin2hex($string);
 		return array_value(npack('H*', $string), 1);
 	}
 	public static function hexdecode($string){
 		$l = strlen($string);
 		if($l % 2 === 1)$string = '0' . $string;
-		if(function_exists('hex2bin'))
+		if(__xnlib_data::$installedHex)
 			return hex2bin($string);
 		return pack('H*', $string);
 	}
@@ -11887,7 +11447,7 @@ class XNCrypt {
 		return ceil(strlen($string) / 2);
 	}
 	public static function binencode($string){
-		if(function_exists('bin2hex'))
+		if(__xnlib_data::$installedHex)
 				return strtr(bin2hex($string), array(
 					'0000', '0001', '0010', '0011',
 					'0100', '0101', '0110', '0111',
@@ -11903,7 +11463,7 @@ class XNCrypt {
 	public static function bindecode($string){
 		$l = strlen($string);
 		if($l % 8 !== 0)$string = str_repeat('0', 8 - $l % 8) . $string;
-		if(function_exists('hex2bin'))
+		if(__xnlib_data::$installedHex)
 			return hex2bin(strtr($string, array(
 				"0000" => "0", "0001" => "1", "0010" => "2", "0011" => "3",
 				"0100" => "4", "0101" => "5", "0110" => "6", "0111" => "7",
@@ -11919,7 +11479,7 @@ class XNCrypt {
 		return ceil(strlen($string) / 8);
 	}
 	public static function base4encode($string){
-		if(function_exists('bin2hex'))
+		if(__xnlib_data::$installedHex)
 				return strtr(bin2hex($string), array(
 					'00', '01', '02', '03',
 					'10', '11', '12', '13',
@@ -11935,7 +11495,7 @@ class XNCrypt {
 	public static function base4decode($string){
 		$l = strlen($string);
 		if($l % 4 !== 0)$string = str_repeat('0', 4 - $l % 4) . $string;
-		if(function_exists('hex2bin'))
+		if(__xnlib_data::$installedHex)
 			return hex2bin(strtr($string, array(
 				"00" => "0", "01" => "1", "02" => "2", "03" => "3",
 				"10" => "4", "11" => "5", "12" => "6", "13" => "7",
@@ -12000,7 +11560,7 @@ class XNCrypt {
 		return ceil(strlen($string) / 8 * 3);
 	}
 	public static function base64encode($string){
-		if(function_exists('base64_encode'))return base64_encode($string);
+		if(__xnlib_data::$installedBase64)return base64_encode($string);
 		$s = xnstring::BASE64T_RANGE;
 		$res = '';
 		for($i = 0; isset($string[$i]); $i += 3){
@@ -12022,7 +11582,7 @@ class XNCrypt {
 	public static function base64decode($string){
 		$l = strlen($string);
 		if($l % 4 !== 0)$string .= str_repeat('=', 4 - $l % 4);
-		if(function_exists('base64_decode'))return base64_decode($string);
+		if(__xnlib_data::$installedBase64)return base64_decode($string);
 		$s = xnstring::BASE64T_RANGE;
 		$bin = '';
 		for($i = 0; isset($string[$i]); $i += 4){
@@ -12168,7 +11728,7 @@ class XNCrypt {
 		return substr_count($datline, ' ') + 1;
 	}
 	public static function urlencode($string, $space = false){
-		if(function_exists('urlencode'))
+		if(__xnlib_data::$installedUrlcoding)
 			if($space === true)
 				return str_replace(array('+', '%2B'), array('%20', '+'), urlencode($string));
 			else return urlencode($string);
@@ -12186,7 +11746,7 @@ class XNCrypt {
 		return $url;
 	}
 	public static function urldecode($url, $space = false){
-		if(function_exists('urldecode'))return urldecode($url);
+		if(__xnlib_data::$installedUrlcoding)return urldecode($url);
 		$string = '';
 		for($i = 0; isset($url[$i]); ++$i){
 			if($url[$i] == '%'){
@@ -12684,7 +12244,7 @@ class XNCrypt {
 			 . chr(($int & 0x3F) | 0x80);
 	}
 	public static function iso88591utf8($string, $bom = null){
-		if(function_exists('utf8_encode'))
+		if(__xnlib_data::$installedUtf8coding)
 			if($bom === true)
 				return "\xEF\xBB\xBF" . utf8_encode($string);
 			else return utf8_encode($string);
@@ -12716,7 +12276,7 @@ class XNCrypt {
 	}
 	public static function utf8iso88591($string){
 		if(substr($string, 0, 3) == "\xEF\xBB\xBF")$string = substr($string, 3);
-		if(function_exists('utf8_decode'))
+		if(__xnlib_data::$installedUtf8coding)
 			return utf8_decode($string);
 		$iso88591 = '';
 		$i = 0;
@@ -12924,10 +12484,10 @@ class XNCrypt {
 			$from = self::bomget($string);
 		$fromu = strtoupper($from);
 		$tou = strtoupper($to);
-		if(function_exists('iconv'))
+		if(__xnlib_data::$installedIconv)
 			$res = @iconv($fromu, $tou, $string);
 		if($res !== false)return $res;
-		if(function_exists('mb_convert_encoding'))
+		if(__xnlib_data::$installedMbstr)
 			$res = @mb_convert_encoding($string, $tou, $fromu);
 		if($res !== false)return $res;
 		$from = strtolower($from);
@@ -13039,6 +12599,273 @@ class XNCrypt {
 		return $coding === '' ? false : $coding;
 	}
 
+	function json_last_error() {
+		if(__xnlib_data::$installedJson)
+			return json_last_error();
+		return __xnlib_data::$jsonerror;
+	}
+	function json_last_error_msg() {
+		if(__xnlib_data::$installedJson)
+			return json_last_error_msg();
+		return array_value(array(
+			'No error',
+			'Maximum stack depth exceeded',
+			'Invalid or malformed JSON',
+			'Control character error, possibly incorrectly encoded',
+			'Syntax error',
+			'Malformed UTF-8 characters, possibly incorrectly encoded',
+			'One or more recursive references in the value to be encoded',
+			'Inf and NaN cannot be JSON encoded',
+			'A value of a type that cannot be encoded was given',
+			'A property name that cannot be encoded was given',
+			'Malformed UTF-16 characters, possibly incorrectly encoded'
+		), __xnlib_data::$jsonerror);
+	}
+	private static function _jsonencode($value, $options = 0, $depth = 512){
+		if($value === null)
+			return 'null';
+		if($value === false)
+			return 'false';
+		if($value === true)
+			return 'true';
+		switch(gettype($value)){
+			case 'string':
+				if($options & JSON_NUMERIC_CHECK && is_numeric($value))
+					return ($value + 0) . '';
+				if(~$options & JSON_UNESCAPED_UNICODE)
+					$value = unicode_encode($value);
+				$value = '"' . str_replace(array('\\', '"', "\n", "\r", "\t"), array('\\\\', '\"', '\n', '\r', '\t'), $value) . '"';
+				if($options & JSON_HEX_TAG)
+					$value = str_replace(array('<', '>'), array('\u003C', '\u003E'), $value);
+				if($options & JSON_HEX_AMP)
+					$value = str_replace('&', '\u0026', $value);
+				if($options & JSON_HEX_APOS)
+					$value = str_replace("'", '\u0027', $value);
+				if($options & JSON_HEX_QUOT)
+					$value = str_replace('"', '\u0022', $value);
+				if(~$options & JSON_UNESCAPED_SLASHES)
+					$value = str_replace('/', '\/', $value);
+				return $value;
+			break;
+			case 'integer':
+			case 'double':
+			case 'float':
+				if(is_infinite($value) || is_nan($value)){
+					__xnlib_data::$jsonerror = JSON_ERROR_INF_OR_NAN;
+					if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
+					return '0';
+				}
+				if($options & JSON_PRESERVE_ZERO_FRACTION && !is_int($value))
+					return $value . '.0';
+				return (string)$value;
+			break;
+			case 'array':
+			case 'object':
+				if($depth <= 0){
+					__xnlib_data::$jsonerror = JSON_ERROR_INF_OR_NAN;
+					if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
+				}
+				if($options & JSON_PRETTY_PRINT){
+					if(is_array($value) && ~$options & JSON_FORCE_OBJECT){
+						$str = "[\n	";
+						$c = 0;
+						foreach($value as $key => $val){
+							if($key == $c++)
+								$str .= str_replace("\n","\n	",self::_jsonencode($val, $options, $depth - 1)) . ",\n	";
+							else{
+								$str = '';
+								break;
+							}
+							if(__xnlib_data::$jsonerror > 0 && ~$options & JSON_FORCE_OBJECT)return null;
+						}
+					}else $str = '';
+					if($str){
+						if($str == "[\n	")
+							$str = '[]';
+						else
+							$str = substr_replace($str,"\n]",-6,6);
+						return $str;
+					}
+					if(is_object($value))
+						$value = (array)$value;
+					$str = "{\n	";
+					foreach($value as $key => $val){
+						if($key[0] == "\0")continue;
+						$str .= self::_jsonencode((string)$key, $options, $depth - 1) . ': ' . str_replace("\n", "\n	", self::_jsonencode($val,$options,$depth - 1)) . ",\n	";
+						if(__xnlib_data::$jsonerror > 0 && ~$options & JSON_FORCE_OBJECT)return null;
+					}
+					if($str == "{\n	")
+						$str = '{}';
+					else
+						$str = substr_replace($str, "\n}", -6, 6);
+					return $str;
+				}
+				if(is_array($value) && ~$options & JSON_FORCE_OBJECT){
+					$str = '[';
+					$c = 0;
+					foreach($value as $key => $val){
+						if($key == $c++)
+							$str .= self::_jsonencode($val,$options,$depth - 1) . ',';
+						else{
+							$str = '';
+							break;
+						}
+						if(__xnlib_data::$jsonerror > 0 && ~$options & JSON_FORCE_OBJECT)return null;
+					}
+				}else $str = '';
+				if($str){
+					if($str == '[')
+						$str = '[]';
+					else $str[strlen($str) - 1] = ']';
+					return $str;
+				}
+				if(is_object($value))
+					$value = (array)$value;
+				$str = '{';
+				foreach($value as $key => $val){
+					if($key[0] == "\0")continue;
+					$str .= self::_jsonencode((string)$key,$options,$depth - 1) . ':' . self::_jsonencode($val,$options,$depth - 1) . ',';
+					if(__xnlib_data::$jsonerror > 0 && ~$options & JSON_FORCE_OBJECT)return null;
+				}
+				if($str == '{')
+					$str = '{}';
+				else
+					$str[strlen($str) - 1] = '}';
+				return $str;
+			break;
+			default:
+				__xnlib_data::$jsonerror = JSON_ERROR_UNSUPPORTED_TYPE;
+				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
+				return '';
+		}
+	}
+	public static function jsonencode($value, $options = 0, $depth = 512){
+		if(__xnlib_data::$installedJson)
+			return json_encode($value, $options, $depth);
+		__xnlib_data::$jsonerror = JSON_ERROR_NONE;
+		return self::_jsonencode($value, $options, $depth);
+	}
+	private static function _jsondecode($value, $assoc = false, $depth = 512, $options = 0){
+		if($value == 'null')
+			return null;
+		if($value == 'false')
+			return false;
+		if($value == 'true')
+			return true;
+		if(is_numeric($value))
+			return (float)$value;
+		if($value[0] == '"'){
+			$l = strlen($value);
+			if($value[$l - 1] !== '"' || preg_match("/(?<!\\\\)\"/", $value = substr($value, 1, -1))){
+				__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
+				return null;
+			}
+			$value = unicode_decode($value);
+			if(preg_match("/(?<!\\\\)\\\\u/", $value)){
+				__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
+				return null;
+			}
+			return str_replace(array('\"','\/','\\\\'),array('"','/','\\'),$value);
+		}
+		if($options & JSON_PARSE_JAVASCRIPT && $value[0] == "'"){
+			$l = strlen($value);
+			if($value[$l - 1] !== "'" || preg_match("/(?<!\\\\)'/", $value = substr($value, 1, -1))){
+				__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
+				return null;
+			}
+			$value = unicode_decode($value);
+			if(preg_match("/(?<!\\\\)\\\\u/", $value)){
+				__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
+				return null;
+			}
+			return str_replace(array("\\'",'\/','\\\\'),array("'",'/','\\'),$value);
+		}
+		if($value[0] == '['){
+			if($depth <= 0){
+				__xnlib_data::$jsonerror = JSON_ERROR_INF_OR_NAN;
+				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
+			}
+			$value = substr($value, 1, -1);
+			$poses = array();
+			$prev = $pos = 0;
+			preg_replace_callback("/\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\[\]])*)\])|(?<y>\{((?:\g<y>|\\\\\{|\\\\\}|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\{\}])*)\})|,/",
+				function($x)use(&$poses, &$pos, &$prev, $value){
+					$pos = strpos($value, $x[0], $pos) + strlen($x[0]);
+					if($x[0] == ','){
+						$poses[] = substr($value, $prev, $pos - 1 - $prev);
+						$prev = $pos;
+					}
+					return '';
+				}, $value);
+			$pos = substr($value, $prev);
+			if($pos !== '')
+				$poses[] = $pos;
+			foreach($poses as &$pos){
+				$pos = self::_jsondecode(trim($pos), $assoc, $depth - 1, $options);
+				if($pos === null)return null;
+			}
+			return $poses;
+		}
+		if($value[0] == '{'){
+			if($depth <= 0){
+				__xnlib_data::$jsonerror = JSON_ERROR_INF_OR_NAN;
+				if(~$options & JSON_PARTIAL_OUTPUT_ON_ERROR)return null;
+			}
+			$value = substr($value, 1, -1);
+			$poses = array();
+			$prev = $pos = 0;
+			preg_replace_callback("/\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\[\]])*)\])|(?<y>\{((?:\g<y>|\\\\\{|\\\\\}|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\{\}])*)\})|,|:/",
+				function($x)use(&$poses, &$pos, &$prev, $value){
+					$pos = strpos($value, $x[0], $pos) + strlen($x[0]);
+					if($x[0] == ','){
+						$poses[] = array(',', substr($value, $prev, $pos - 1 - $prev));
+						$prev = $pos;
+					}elseif($x[0] == ':'){
+						$poses[] = array(':', substr($value, $prev, $pos - 1 - $prev));
+						$prev = $pos;
+					}
+					return '';
+				}, $value);
+			$pos = substr($value, $prev);
+			if($pos !== '')
+				$poses[] = array(',', $pos);
+			if(count($pos) % 2 === 0 || (isset($poses[0]) && $poses[0][0] == ',')){
+				__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
+				return null;
+			}
+			foreach($poses as $k=>&$pos){
+				if(isset($poses[$k - 1]) && $poses[$k - 1][0] == $pos[0]){
+					__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
+					return null;
+				}
+				if($pos[1] == 'null')
+					$pos[1] = null;
+				else{
+					$pos[1] = self::_jsondecode(trim($pos[1]), $assoc, $depth - 1, $options);
+					if($pos[1] === null)return null;
+				}
+			}
+			if($options & JSON_OBJECT_AS_ARRAY || $assoc === true){
+				$obj = array();
+				for($i = 0;isset($poses[$i]);$i += 2)
+					$obj[$poses[$i][1]] = $poses[$i + 1][1];
+			}else{
+				$obj = new stdClass;
+				for($i = 0;isset($poses[$i]);$i += 2)
+					$obj->{$poses[$i][1]} = $poses[$i + 1][1];
+			}
+			return $obj;
+		}
+		__xnlib_data::$jsonerror = JSON_ERROR_SYNTAX;
+		return null;
+	}
+	public static function jsondecode($value, $assoc = false, $depth = 512, $options = 0){
+		if(__xnlib_data::$installedJson)
+			return json_decode($value, $assoc, $depth, $options);
+		__xnlib_data::$jsonerror = JSON_ERROR_NONE;
+		return self::_jsondecode($value, $assoc, $depth, $options);
+	}
+
 	public static function twomulencode($text){
 		for($i = 0; isset($text[$i]); ++$i){
 			$c = ord($text[$i]) * 2;
@@ -13128,6 +12955,32 @@ class XNCrypt {
 					$string[$i] = chr(ord($string[$i]) - ord($string[0]));
 				else
 					$string[$i] = chr(ord($string[$i]) - ord($string[$i + 1]));
+		return $string;
+	}
+	public static function minimize($string){
+		$min = xnstring::minchar($string);
+		for($i = 0; isset($string[$i]); ++$i)
+			$string[$i] = chr(ord($string[$i]) - $min);
+		return chr($min) . $string;
+	}
+	public static function maximize($string){
+		$max = 255 - xnstring::maxchar($string);
+		for($i = 0; isset($string[$i]); ++$i)
+			$string[$i] = chr(ord($string[$i]) + $max);
+		return chr(255 - $max) . $string;
+	}
+	public static function unminimize($string){
+		$min = ord($string[0]);
+		$string = substr($string, 1);
+		for($i = 0; isset($string[$i]); ++$i)
+			$string[$i] = chr(ord($string[$i]) + $min);
+		return $string;
+	}
+	public static function unmaximize($string){
+		$max = 255 - ord($string[0]);
+		$string = substr($string, 1);
+		for($i = 0; isset($string[$i]); ++$i)
+			$string[$i] = chr(ord($string[$i]) - $max);
 		return $string;
 	}
 
@@ -13238,10 +13091,16 @@ class XNCrypt {
 	);
 	public static function twisting($string, $iv = 0){
 		$l = strlen($string);
+		if($iv === true){
+			$rounds = $l;
+			$iv = 0;
+		}else{
+			$rounds = $iv + 1;
+			$iv &= 0xff;
+		}
 		if($l === 0)return '';
 		if($l === 1)return chr(self::$tws[1][self::$tws[2][ord($string)] ^ $iv]);
-		$iv &= 0xff;
-		for($c = 0; $c < $l; ++$c)
+		for($c = 0; $c < $rounds; ++$c)
 			for($i = 0; $i < $l; ++$i){
 				if($i == 0)$h = ord($string[$i] ^ $string[$l - 1]);
 				else $h = ord($string[$i] ^ $string[$i - 1]);
@@ -13256,10 +13115,16 @@ class XNCrypt {
 	}
 	public static function untwisting($string, $iv = 0){
 		$l = strlen($string);
+		if($iv === true){
+			$rounds = $l;
+			$iv = 0;
+		}else{
+			$rounds = $iv + 1;
+			$iv &= 0xff;
+		}
 		if($l === 0)return '';
 		if($l === 1)return chr(self::$tws[5][self::$tws[4][ord($string)] ^ $iv]);
-		$iv &= 0xff;
-		for($c = 0; $c < $l; ++$c)
+		for($c = 0; $c < $rounds; ++$c)
 			for($i = $l - 1; $i >= 0; --$i){
 				$h = self::$tws[5][ord($string[$i])] ^ $iv;
 				if($l - $i - 1 !== $i)
@@ -14540,7 +14405,6 @@ class XNCrypt {
 			case 'des':      return $bits === true ? 64 : 8;
 			case 'tripledes':return $bits === true ? 64 : 8;
 			case 'arc4':     return $bits === true ? 8 : 1;
-			case 'rijndael': return $bits === true ? 128 : 16;
 		}
 		if(substr($cipher, 0, 8) == 'rijndael')
 			return $bits === true ? (int)substr($cipher, 8) : (int)substr($cipher, 8) >> 3;
@@ -14563,6 +14427,9 @@ class XNCrypt {
 			case 'arc4':     return $bits === true ? 8 : 1;
 			case 'rijndael': return $bits === true ? 32 : 4;
 		}
+		$cipher = explode('-', $cipher, 2);
+		if(isset($cipher[1]) && is_numeric($cipher[1]))
+			return $bits === true ? (int)$cipher[1] : (int)$cipher[1] >> 3;
 	}
 	private static function keyinitsize($cipher, $key = null, $options = 0, $size = null){
 		$cipher = strtolower($cipher);
@@ -14608,10 +14475,7 @@ class XNCrypt {
 				if($lk < 24)return substr($key, 0, 16);
 				return substr($key, 0, 32);
 			case 'rijndael':
-				if($lk < 4) return null;
-				if($lk < 8) return substr($key, 0, 4);
-				if($lk < 12)return substr($key, 0, 8);
-				if($lk < 16)return substr($key, 0, 12);
+				if($lk < 16)return self::mixpad($key, 16);
 				if($lk < 20)return substr($key, 0, 16);
 				if($lk < 24)return substr($key, 0, 20);
 				if($lk < 28)return substr($key, 0, 24);
@@ -14870,7 +14734,8 @@ class XNCrypt {
 		if(substr($cipher, -3) == 'des'){
 			if($key === null)$key = "\0\0\0\0\0\0\0\0";
 			$rounds = substr($cipher, 0, -3);
-			$rounds = $rounds === '' || $rounds <= 0 ? 1 : (int)$rounds;
+			$rounds = $rounds === '' ? 1 : (int)$rounds;
+			$rounds = $rounds <= 0 ? 1 : ($rounds > 3 ? ($rounds - 1) % 3 + 1 : $rounds);
 			$res = array();
 			$shuffle = array_map(function($x){
 				return strtr(str_pad(decbin($x), 8, '0', STR_PAD_LEFT), '01', "\0\xff");
@@ -14932,29 +14797,27 @@ class XNCrypt {
 					$tables[1][] = (($i << 16) & 0xFFFF0000) | (($i >> 16) & 0x0000FFFF);
 					$tables[2][] = (($i <<  8) & 0xFFFFFF00) | (($i >> 24) & 0x000000FF);
 				}
-				$revtables = array(array(), array(), array(), array_map('intval', self::$rjinvt), self::$rjinvs);
-				foreach($revtables[3] as $i) {
-					$revtables[0][] = (($i << 24) & 0xFF000000) | (($i >>  8) & 0x00FFFFFF);
-					$revtables[1][] = (($i << 16) & 0xFFFF0000) | (($i >> 16) & 0x0000FFFF);
-					$revtables[2][] = (($i <<  8) & 0xFFFFFF00) | (($i >> 24) & 0x000000FF);
+				$invtables = array(array(), array(), array(), array_map('intval', self::$rjinvt), self::$rjinvs);
+				foreach($invtables[3] as $i) {
+					$invtables[0][] = (($i << 24) & 0xFF000000) | (($i >>  8) & 0x00FFFFFF);
+					$invtables[1][] = (($i << 16) & 0xFFFF0000) | (($i >> 16) & 0x0000FFFF);
+					$invtables[2][] = (($i <<  8) & 0xFFFFFF00) | (($i >> 24) & 0x000000FF);
 				};
 				self::$rjs = self::$rjinvs = null;
 				self::$rjt = $tables;
-				self::$rjinvt = $revtables;
-				unset($tables, $revtables);
+				self::$rjinvt = $invtables;
+				unset($tables, $invtables);
 			}
 			$b = (int)substr($cipher, 8) >> 5;
 			$k = strlen($key) >> 2;
 			$r = max($k, $b) + 6;
 			switch($b) {
-				case 1:
-				case 2:
-				case 3:
 				case 4:
 				case 5:
 				case 6: $tc = array(0, 1, 2, 3); break;
 				case 7: $tc = array(0, 1, 2, 4); break;
 				case 8: $tc = array(0, 1, 3, 4); break;
+				default: return;
 			}
 			$w = array_values(unpack('N*', $key));
 			$l = $b * ($r + 1);
@@ -14962,7 +14825,7 @@ class XNCrypt {
 				$tmp = $w[$i - 1];
 				if($i % $k == 0) {
 					$tmp = (($tmp << 8) & 0xFFFFFF00) | (($tmp >> 24) & 0x000000FF);
-					$tmp = self::rjsw($tmp) ^ self::$rjrcon[$i / $k];
+					$tmp = self::rjsw($tmp) ^ self::$rjrcon[($i / $k) % 31];
 				}elseif($k > 6 && $i % $k == 4)
 					$tmp = self::rjsw($tmp);
 				$w[$i] = $w[$i - $k] ^ $tmp;
@@ -14993,23 +14856,18 @@ class XNCrypt {
 			$tdw = array_reverse($tdw);
 			$w  = array_pop($tw);
 			$dw = array_pop($tdw);
-			foreach($tw as $r => $wr)
+			foreach($tw as $i => $wr)
 				foreach($wr as $c => $wc) {
 					$w[]  = $wc;
-					$dw[] = $tdw[$r][$c];
+					$dw[] = $tdw[$i][$c];
 				}
-			return array($b, $r, $tc, $tw, $tdw);
+			return array($b, $r, $tc, $w, $dw);
 		}
 		new XNError('installkey', 'Undefined cipher name', XNError::WARNING);
 		return false;
 	}
 	private static function blockencrypt($cipher, $in, $key = null){
 		$cipher = strtolower($cipher);
-		if(!is_array($key))
-			$key = self::keyinstall($cipher, $key);
-		if(is_array($key) && !isset($key[1]))
-			$key = $key[0];
-		if(substr($cipher, 0, 8) == 'rijndael')$cipher = 'rijndael';
 		switch($cipher){
 			case 'xor':
 				return self::xorcrypt($in, $key);
@@ -15247,11 +15105,6 @@ class XNCrypt {
 	}
 	private static function blockdecrypt($cipher, $in, $key = null){
 		$cipher = strtolower($cipher);
-		if(!is_array($key))
-			$key = self::keyinstall($cipher, $key);
-		if(is_array($key) && !isset($key[1]))
-			$key = $key[0];
-		if(substr($cipher, 0, 8) == 'rijndael')$cipher = 'rijndael';
 		switch($cipher){
 			case 'xor':
 				return self::xorcrypt($in, $key);
@@ -15443,6 +15296,52 @@ class XNCrypt {
 				return self::blockdecrypt('des', self::blockencrypt('des', self::blockdecrypt('des', $in, $key[2]), $key[1]), $key[0]);
 			case 'arc4':
 				return $in ^ self::a4prga($key, strlen($in));
+			case 'rijndael':
+				$state = array();
+				$words = unpack('N*', $in);
+				$wc = $key[0] - 1;
+				foreach($words as $word)
+					$state[] = $word ^ $key[4][++$wc];
+				$tmp = array();
+				for($round = $key[1] - 1; $round > 0; --$round) {
+					$i = 0;
+					$j = $key[0] - $key[2][1];
+					$k = $key[0] - $key[2][2];
+					$l = $key[0] - $key[2][3];
+					while($i < $key[0]) {
+						$tmp[$i]  = self::$rjinvt[0][$state[$i] >> 24 & 0x000000FF] ^
+									self::$rjinvt[1][$state[$j] >> 16 & 0x000000FF] ^
+									self::$rjinvt[2][$state[$k] >>  8 & 0x000000FF] ^
+									self::$rjinvt[3][$state[$l]       & 0x000000FF] ^
+									$key[4][++$wc];
+						++$i;
+						$j = ($j + 1) % $key[0];
+						$k = ($k + 1) % $key[0];
+						$l = ($l + 1) % $key[0];
+					}
+					$state = $tmp;
+				}
+				$i = 0;
+				$j = $key[0] - $key[2][1];
+				$k = $key[0] - $key[2][2];
+				$l = $key[0] - $key[2][3];
+				while($i < $key[0]) {
+					$word = ($state[$i] & 0xFF000000) |
+							($state[$j] & 0x00FF0000) |
+							($state[$k] & 0x0000FF00) |
+							($state[$l] & 0x000000FF);
+					$tmp[$i] =			$key[4][$i] ^
+										(self::$rjinvt[4][$word       & 0x000000FF]        |
+										(self::$rjinvt[4][$word >>  8 & 0x000000FF] <<  8) |
+										(self::$rjinvt[4][$word >> 16 & 0x000000FF] << 16) |
+										(self::$rjinvt[4][$word >> 24 & 0x000000FF] << 24));
+					++$i;
+					$j = ($j + 1) % $key[0];
+					$k = ($k + 1) % $key[0];
+					$l = ($l + 1) % $key[0];
+				}
+				array_unshift($tmp, 'N*');
+				return call_user_func_array('pack', $tmp);
 		}
 		new XNError('blockdecrypt', 'Undefined cipher name', XNError::WARNING);
 		return false;
@@ -15452,14 +15351,21 @@ class XNCrypt {
 	const KEYMIX = 2;
 	// CBC | CCM | CFB | CFB1 | CFB8 | CTR | COFB | ECB | GCM | NCFB | NOFB | OFB | PCBC | RAW | XTS
 	private static function modeencrypt($cipher, $mode, $data, $key = null, $dsize = null, $iv = null, $options = 0){
-		if(substr($cipher, -3) == 'des' && is_numeric(substr($cipher, 0, -3)))$cipher = 'des';
+		$cipher = strtolower($cipher);
+		if(substr($cipher, 0, 3) == 'aes')$cipher = 'rijndael' . substr($cipher, 3);
+		$mc = $cipher;
+		if(substr($cipher, -3) == 'des')$cipher = 'des';
 		$size = self::blocklength($cipher);
 		if($size === null){
 			new XNError('XNCrypt::encrypt', 'Undefined cipher name', XNError::WARNING);
 			return false;
 		}
 		$mode = strtolower($mode);
-		$key = self::keyinitsize($cipher, $key, $options, $dsize);
+		if(substr($cipher, 0, 8) == 'rijndael')$cipher = 'rijndael';
+		if($key !== null && !is_array($key))
+			$key = self::keyinstall($mc, self::keyinitsize($cipher, $key, $options, $dsize), $options, $dsize);
+		if(is_array($key) && !isset($key[1]))
+			$key = $key[0];
 		if($iv === null)$iv = str_repeat("\0", $size);
 		$iv = substr(self::zeropad($iv, $size), 0, $size);
 		$res = '';
@@ -15545,14 +15451,20 @@ class XNCrypt {
 		return false;
 	}
 	private static function modedecrypt($cipher, $mode, $data, $key = null, $dsize = null, $iv = null, $options = 0){
-		if(substr($cipher, -3) == 'des' && is_numeric(substr($cipher, 0, -3)))$cipher = 'des';
+		$cipher = strtolower($cipher);
+		if(substr($cipher, 0, 3) == 'aes')$cipher = 'rijndael' . substr($cipher, 3);
+		$mc = $cipher;
+		if(substr($cipher, -3) == 'des')$cipher = 'des';
 		$size = self::blocklength($cipher);
 		if($size === null){
 			new XNError('XNCrypt::decrypt', 'Undefined cipher name', XNError::WARNING);
 			return false;
 		}
-		$mode = strtolower($mode);
-		$key = self::keyinitsize($cipher, $key, $options, $dsize);
+		if(substr($cipher, 0, 8) == 'rijndael')$cipher = 'rijndael';
+		if($key !== null && !is_array($key))
+			$key = self::keyinstall($mc, self::keyinitsize($cipher, $key, $options, $dsize), $options, $dsize);
+		if(is_array($key) && !isset($key[1]))
+			$key = $key[0];
 		if($iv === null)$iv = str_repeat("\0", $size);
 		$iv = substr(self::zeropad($iv, $size), 0, $size);
 		$res = '';
@@ -15645,6 +15557,7 @@ class XNCrypt {
 			return false;
 		}
 		$mode = strtolower($mode);
+		if(substr($cipher, 0, 3) == 'aes')$cipher = 'rijndael' . substr($cipher, 3);
 		$key = self::keyinitsize($cipher, $key, $options, $dsize);
 		switch($mode){
 			case 'raw':
@@ -15766,10 +15679,13 @@ class XNCrypt {
 		$cipher = explode('-', strtolower($cipher));
 		if(isset($cipher[1]) && (int)$cipher[1] !== 0)$dsize = (int)$cipher[1] >> 3;
 		else $dsize = null;
-		$ciph = $cipher = $cipher[0];
-		if(substr($ciph, -3) == 'des')$ciph = 'des';
-		$key = self::keyinitsize($ciph, $key, $options, $dsize);
-		return self::keyinstall($cipher, $key);
+		$mc = $cipher[0];
+		if(substr($mc, 0, 3) == 'aes')$mc = 'rijndael' . substr($mc, 3);
+		$cipher = $mc;
+		if(substr($cipher, -3) == 'des')$cipher = 'des';
+		if(substr($cipher, 0, 8) == 'rijndael')$cipher = 'rijndael';
+		$key = self::keyinitsize($cipher, $key, $options, $dsize);
+		return self::keyinstall($mc, $key);
 	}
 	public static function modes(){
 		return array(
@@ -15778,12 +15694,13 @@ class XNCrypt {
 	}
 	public static function ciphers(){
 		return array(
-			'xor', 'blowfish', 'twofish', 'skipjack', 'vigenere', 'enigma', 'rc2', 'rc4', 'des', 'tripledes', 'arc4'
+			'xor', 'blowfish', 'twofish', 'skipjack', 'vigenere', 'enigma', 'rc2', 'rc4', 'des',
+			'tripledes', 'arc4', 'rijndael', 'aes'
 		);
 	}
 	public static function codings(){
 		return array(
-			'bin', 'base4', 'oct', 'hex', 'base32', 'base64'
+			'bin', 'base4', 'oct', 'hex', 'base32', 'base64', 'bcrypt64', 'url', 'json', 'serialization'
 		);
 	}
 	public static function randint($min, $max){
@@ -15797,7 +15714,7 @@ class XNCrypt {
 		return $res + $min + rand(0, $abs);
 	}
 	public static function randbytes($length = 1){
-		if(function_exists('random_bytes'))
+		if(__xnlib_data::$installedRandomDiv)
 			return random_bytes($length);
 		$res = '';
 		while(--$length >= 0)
@@ -15812,6 +15729,37 @@ class XNCrypt {
 			return false;
 		}
 		return self::randbytes($size);
+	}
+	public static function randbin($length = 1){
+		$res = '';
+		while(--$length >= 0)
+			$res .= rand(0, 1);
+		return $res;
+	}
+	public static function randbase4($length = 1){
+		$res = '';
+		while(--$length >= 0)
+			$res .= rand(0, 3);
+		return $res;
+	}
+	public static function randhex($length = 1){
+		$res = '';
+		$hex = array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f');
+		while(--$length >= 0)
+			$res .= $hex[rand(0, 15)];
+		return $res;
+	}
+	public static function randoct($length = 1){
+		$res = '';
+		while(--$length >= 0)
+			$res .= rand(0, 7);
+		return $res;
+	}
+	public static function randdec($length = 1){
+		$res = '';
+		while(--$length >= 0)
+			$res .= rand(0, 9);
+		return $res;
 	}
 }
 
@@ -16871,12 +16819,12 @@ class XNData {
 		}, $query);
 		$query = preg_replace_callback("/(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\\\\\(|\\\\\)|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\])/",
 		function($x)use(&$datas, &$c){
-			$datas[$c] = json_decode($x[2]);
+			$datas[$c] = xncrypt::jsondecode($x[2]);
 			return $c++;
 		}, $query);
 		$query = preg_replace_callback("/(?<x>\[((?:\g<x>|\\\\\[|\\\\\]|\\\\\(|\\\\\)|\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|[^\]])*)\])/",
 		function($x)use(&$datas, &$c){
-			$datas[$c] = json_decode($x[2]);
+			$datas[$c] = xncrypt::jsondecode($x[2]);
 			return $c++;
 		}, $query);
 		$query = preg_replace_callback("/\"((?:\\\\\"|[^\"])*)\"|'((?:\\\\'|[^'])*)'/",
@@ -20629,18 +20577,6 @@ class XNStream {
 	public static function input(){
 		return fopen('php://input', 'r');
 	}
-	public static function wait($stream, $limit = 2, $back = null){
-		if($back === true)$locate = ftell($file);
-		$l = $limit + 1;
-		$c = 0;
-		do{++$c;
-			$read = stream_get_contents($stream);
-			if($read !== '')
-				$l = $limit;
-		}while($read !== '' || --$l >= 0);
-		if($back === true)fseek($file, $locate);
-		return $c;
-	}
 	public static function canmode($file){
 		$file = strtolower($file);
 		if($file == 'php://output')return 'w';
@@ -20661,16 +20597,16 @@ class XNStream {
 		if($cur === false)return false;
 		$cur = ord($cur);
 		if(($cur | 0x07) == 0xF7)
-			$char = (($cur				& 0x07) << 18) &
+			$char = (($cur				  & 0x07) << 18) &
 					((ord(fgetc($stream)) & 0x3F) << 12) &
 					((ord(fgetc($stream)) & 0x3F) <<  6) &
 					 (ord(fgetc($stream)) & 0x3F);
 		elseif(($cur | 0x0F) == 0xEF)
-			$char = (($cur				& 0x0F) << 12) &
+			$char = (($cur				  & 0x0F) << 12) &
 					((ord(fgetc($stream)) & 0x3F) <<  6) &
 					 (ord(fgetc($stream)) & 0x3F);
 		elseif(($cur | 0x1F) == 0xDF)
-			$char = (($cur				& 0x1F) <<  6) &
+			$char = (($cur				  & 0x1F) <<  6) &
 					 (ord(fgetc($stream)) & 0x3F);
 		elseif(($cur | 0x7F) == 0x7F)
 			$char = $cur;
@@ -20852,6 +20788,29 @@ class XNStream {
 				fseek($stream, 2, SEEK_CUR);
 			break;
 		}
+	}
+	public static function wread($stream, $limit = 1, $back = false){
+		if($back === true)$locate = ftell($stream);
+		$r = '';
+		$l = $limit + 1;
+		do{
+			$r .= $p = stream_get_contents($f);
+			if($p !== '')
+				$l = $limit;
+		}while($p !== '' || --$l >= 0);
+		if($back === true)fseek($stream, $locate);
+		return $r;
+	}
+	public static function wait($stream, $limit = 1){
+		if($back === true)$locate = ftell($stream);
+		$free = (int)(xnlib::memlimitfree() / 10);
+		$l = $limit + 1;
+		do{
+			$p = stream_get_contents($f, $free);
+			if($p !== '')
+				$l = $limit;
+		}while($p !== '' || --$l >= 0);
+		if($back === true)fseek($stream, $locate);
 	}
 }
 
