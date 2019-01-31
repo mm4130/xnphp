@@ -43,6 +43,7 @@ class __xnlib_data {
 	static $installedRandomDiv;
 	static $installedUrlcoding;
 	static $installedUtf8coding;
+	static $installedMtrand;
 }
 class xnlib {
 	const version = 2.3;
@@ -142,6 +143,7 @@ __xnlib_data::$installedCrypt = function_exists('crypt');
 __xnlib_data::$installedRandomDiv = function_exists('random_bytes') && function_exists('random_int');
 __xnlib_data::$installedUrlcoding = function_exists('url_encode') && function_exists('url_decode');
 __xnlib_data::$installedUtf8coding = function_exists('utf8_encode') && function_exists('utf8_decode');
+__xnlib_data::$installedMtrand = function_exists('mt_rand');
 
 if(!defined('PHP_INT_MIN'))define('PHP_INT_MIN', ~PHP_INT_MAX);
 define("XNVERSION", "2.3");
@@ -2092,7 +2094,6 @@ function filewait($file, $limit = 1){
 	return $s;
 }
 function get_resource_id($resource){
-	mustbe($resource, 'resource');
 	return array_search($resource, get_resources());
 }
 function dirdel($dir){
@@ -2709,7 +2710,8 @@ function canbe($input, $type, $return = null){
 	return false;
 }
 function get_callable_outer($callable){
-	canbe($callable, 'callable|array');
+	if(is_string($callable) && strpos($callable, '::') !== false)
+		$callable = explode('::', $callable);
 	if(is_array($callable)){
 		if(!isset($callable[1]) || !isset($callable[0]) || !class_exists($callable[0]) || !method_exists($callable[0], $callable[1]))return false;
 		$reflection = new ReflectionMethod($class = $callable[0], $callable = $callable[1]);
@@ -2759,12 +2761,10 @@ function get_callable_outer($callable){
 	return substr($code, 0, $c);
 }
 function get_callable_inner($callable){
-	canbe($callable, 'callable|array');
 	$outer = get_callable_outer($callable);
 	return trim(substr($outer, strpos($outer, '{') + 1, -1));
 }
 function closure_of_callable($callable){
-	canbe($callable, 'callable');
 	if(!is_string($callable))
 		return eval('return ' . unce($callable) . ';');
 	$code = get_callable_outer($callable);
@@ -2772,7 +2772,8 @@ function closure_of_callable($callable){
 	return eval("return $code;");
 }
 function get_callable_args($callable){
-	canbe($callable, 'callable|object:ReflectionFunction');
+	if(is_string($callable) && strpos($callable, '::') !== false)
+		$callable = explode('::', $callable);
 	if(!($callable instanceof ReflectionFunction))
 		$callable = new ReflectionFunction($callable);
 	$pars = $callable->getParameters();
@@ -2789,7 +2790,8 @@ function get_callable_args($callable){
 	return $p;
 }
 function get_callable_arg($callable, $arg){
-	canbe($callable, 'callable|object:ReflectionFunction');
+	if(is_string($callable) && strpos($callable, '::') !== false)
+		$callable = explode('::', $callable);
 	if(!($callable instanceof ReflectionFunction))
 		$callable = new ReflectionFunction($callable);
 	$par = $callable->getParameters();
@@ -2806,7 +2808,6 @@ function get_callable_arg($callable, $arg){
 	return $p;
 }
 function call_class_constructor($classname){
-	canbe($classname, 'object|str');
 	if(is_object($classname))
 		$classname = get_class($classname);
 	$params = func_get_args();
@@ -2816,7 +2817,6 @@ function call_class_constructor($classname){
 	return $object;
 }
 function call_class_constructor_array($classname, $params = array()){
-	canbe($classname, 'object|str');
 	if(is_object($classname))
 		$classname = get_class($classname);
 	$args = '$params[' . implode('],$params[', array_keys($params)) . ']';
@@ -4393,7 +4393,6 @@ function is_gd($gd){
 	return is_resource($gd) && strtolower(get_resource_type($gd)) == 'gd';
 }
 function imagecreatefromfile($file){
-	mustbe($file, 'file');
 	return imagecreatefromstring(file_get_contents($file));
 }
 function number2rgb($number){
@@ -5909,9 +5908,6 @@ function strposnn($hystack, $needle, $none, $nonenone, $offset = null, $right = 
 			return false;
 	}while($offset == $np + $nl);
 	return $offset;
-}
-function printr($expression, $return = null){
-	return print_r($expression, $return === true);
 }
 function pregpos($pattern, $subject, $offset = null){
 	if(!preg_match($pattern, $subject, $match, 0, $offset !== null ? $offset : 0))
@@ -7472,16 +7468,10 @@ function preg_rand($pattern){
 	return $rand[array_rand($rand)];
 }
 function get_timeout_time(){
-	return (isset($_SERVER['REQUEST_TIME_FLOAT']) ? $_SERVER['REQUEST_TIME_FLOAT'] : __xnlib_data::$startTime) + ini_get('max_execution_time');
+	return (isset(xnlib::$requestTime) ? xnlib::$requestTime : __xnlib_data::$startTime) + ini_get('max_execution_time');
 }
 define('M_DEG', M_PI / 180);
 define('M_RAD', 180 / M_PI);
-function rad($x){
-	return $x * M_DEG;
-}
-function deg($x){
-	return $x * M_RAD;
-}
 function show_errors($type = null){
 	if($type === null)$type = E_USER_NOTICE;
 	ob_start();
@@ -7561,7 +7551,6 @@ define('VEC_FLOORBIT_LEFT', 3);
 define('VEC_FLOORBIT_RIGHT', 4);
 define('VEC_BITS', 5);
 function vec($input, $from = null, $length = null, $replacement = null, $zirobit = null){
-	canbe($replacement, 'bool|int|str|null');
 	if($from === null)$from = strlen($input) * 8;
 	elseif($from < 0)$from += strlen($input) * 8;
 	if($length === null)$length = strlen($input) * 8;
@@ -7712,20 +7701,25 @@ class XNMath {
 		if($x < 0)$x = -$x;
 		if($x == 0 || $x == 1)return false;
 		$y = (int)sqrt($x);
-		for($c = 2; $c < $y; ++$c)
+		for($c = 2; $c <= $y; ++$c)
 		if($x % $c == 0)return false;
 		return true;
 	}
 	public static function pnprime($x){
+		if($x < 0){
+			$a = array();
+			for($c = 2; $c < $x; ++$c)
+				if(self::isprime($c))
+					$a[] = -$c;
+			return $a;
+		}
 		$a = array();
 		for($c = 2; $c < $x; ++$c)
 			if(self::isprime($c))
 				$a[] = $c;
 		return $a;
 	}
-	public static function prand($x = null, $y = null){
-		if($x === null)$x = -0xffff;
-		if($y === null)$y = 0xffff;
+	public static function prand($x = -0xffff, $y = 0xffff){
 		if($y < $x)swap($x, $y);
 		$r = rand($x, $y);
 		for($i = 0; true; ++$i)
@@ -7764,23 +7758,23 @@ class XNMath {
 	public static function phi($x){
 		if($x == 0)return 0;
 		$n = 1;
-		for($c = 2; $c < $x;)
-			if(self::gcd($x, $c++) == 1)
+		for($c = 2; $c < $x; ++$c)
+			if(self::gcd($x, $c) == 1)
 				++$n;
 		return $n;
 	}
 	public static function nphi($x){
 		if($x == 0)return 0;
-		for($c = 2; $c < $x;)
-			if(self::gcd($x, $c++) == 1)
+		for($c = 2; $c < $x; ++$c)
+			if(self::gcd($x, $c) == 1)
 				return $c;
 		return false;
 	}
 	public static function pnphi($x){
 		if($x == 0)return 0;
 		$n = array();
-		for($c = 2; $c < $x;)
-			if(self::gcd($x, $c++) == 1)
+		for($c = 2; $c < $x; ++$c)
+			if(self::gcd($x, $c) == 1)
 				$n[] = $c;
 		return $n;
 	}
@@ -10878,7 +10872,7 @@ class XNCrypt {
 			case 'mysql5':
 				return self::hash('sha1', self::hash('sha1', $data, true), $raw === true);
 			case 'add-chars':
-				return $raw === true ? chr(array_add(unpack('C*', $data))) : str_pad(dechex(array_add(unpack('C*', $data)) % 256), 2, '0', STR_PAD_LEFT);
+				return $raw === true ? chr(array_add(unpack('C*', $data))) : str_pad(dechex(array_add(unpack('C*', $data)) & 0xff), 2, '0', STR_PAD_LEFT);
 		}
 		if(in_array($algo, self::crcalgos())){
 			$length = self::crcalgo($algo);
@@ -11270,7 +11264,7 @@ class XNCrypt {
 		$crc ^= $algo['xorout'];
 		return $crc & $mask;
 	}
-	public static function crc($algo, $data, $crc = null){
+	public static function crc($algo, $data = '123456789', $crc = null){
 		$algo = self::crcalgo($algo);
 		if($algo === false){
 			new XNError('XNCrypt::crc', "Unknown CRC hashing algorithm", XNError::WARNING);
@@ -13098,20 +13092,23 @@ class XNCrypt {
 			$rounds = $iv + 1;
 			$iv &= 0xff;
 		}
+		$tws = self::$tws;
 		if($l === 0)return '';
-		if($l === 1)return chr(self::$tws[1][self::$tws[2][ord($string)] ^ $iv]);
+		if($l === 1)return chr($tws[1][$tws[2][ord($string)] ^ $iv]);
+		$string = array_values(unpack('C*', $string));
 		for($c = 0; $c < $rounds; ++$c)
 			for($i = 0; $i < $l; ++$i){
-				if($i == 0)$h = ord($string[$i] ^ $string[$l - 1]);
-				else $h = ord($string[$i] ^ $string[$i - 1]);
-				$h = self::$tws[0][$h];
-				if($i == $l - 1)$h ^= self::$tws[1][ord($string[0])];
-				else $h ^= self::$tws[1][ord($string[$i + 1])];
+				if($i == 0)$h = $string[$i] ^ $string[$l - 1];
+				else $h = $string[$i] ^ $string[$i - 1];
+				$h = $tws[0][$h];
+				if($i == $l - 1)$h ^= $tws[1][$string[0]];
+				else $h ^= $tws[1][$string[$i + 1]];
 				if($l - $i - 1 !== $i)
-					$h += self::$tws[4][ord($string[$l - $i - 1])];
-				$string[$i] = chr(self::$tws[2][($h % 256) ^ $iv]);
+					$h += $tws[4][$string[$l - $i - 1]];
+				$string[$i] = $tws[2][($h & 0xff) ^ $iv];
 			}
-		return $string;
+		array_unshift($string, 'C*');
+		return call_user_func_array('pack', $string);
 	}
 	public static function untwisting($string, $iv = 0){
 		$l = strlen($string);
@@ -13122,21 +13119,25 @@ class XNCrypt {
 			$rounds = $iv + 1;
 			$iv &= 0xff;
 		}
+		$tws = self::$tws;
 		if($l === 0)return '';
-		if($l === 1)return chr(self::$tws[5][self::$tws[4][ord($string)] ^ $iv]);
+		if($l === 1)return chr($tws[5][$tws[4][ord($string)] ^ $iv]);
+		$twisted = $string;
+		$string = array_values(unpack('C*', $string));
 		for($c = 0; $c < $rounds; ++$c)
 			for($i = $l - 1; $i >= 0; --$i){
-				$h = self::$tws[5][ord($string[$i])] ^ $iv;
+				$h = $tws[5][$string[$i]] ^ $iv;
 				if($l - $i - 1 !== $i)
-					$h -= self::$tws[4][ord($string[$l - $i - 1])];
+					$h -= $tws[4][$string[$l - $i - 1]];
 				if($h < 0)$h += 256;
-				if($i == $l - 1)$h ^= self::$tws[1][ord($string[0])];
-				else $h ^= self::$tws[1][ord($string[$i + 1])];
-				$h = chr(self::$tws[3][$h]);
+				if($i == $l - 1)$h ^= $tws[1][$string[0]];
+				else $h ^= $tws[1][$string[$i + 1]];
+				$h = $tws[3][$h];
 				if($i == 0)$string[$i] = $h ^ $string[$l - 1];
 				else $string[$i] = $h ^ $string[$i - 1];
 			}
-		return $string;
+		array_unshift($string, 'C*');
+		return call_user_func_array('pack', $string);
 	}
 
 	public static function increment($string){
@@ -14105,14 +14106,14 @@ class XNCrypt {
 		$z = strlen($key);
 		for($i = 0; $i < 256; ++$i){
 			$k = $key[$i % $z];
-			$j = ($j + $s[$i] + ord($k)) % 256;
+			$j = ($j + $s[$i] + ord($k)) & 0xff;
 			swap($s[$i], $s[$j]);
 		}
 		for($c = 0; $c < $l; ++$c){
-			$i = ($i + 1) % 256;
-			$j = ($j + $s[$i]) % 256;
+			$i = ($i + 1) & 0xff;
+			$j = ($j + $s[$i]) & 0xff;
 			swap($s[$i], $s[$j]);
-			$res .= chr($s[($s[$i] + $s[$j]) % 256]);
+			$res .= chr($s[($s[$i] + $s[$j]) & 0xff]);
 		}
 		return $res;
 	}
@@ -14389,6 +14390,36 @@ class XNCrypt {
 				(self::$rjt[4][$word >> 16 & 0xFF] << 16) |
 				(self::$rjt[4][$word >> 24 & 0xFF] << 24);
 	}
+	protected function case128f1($r, $i){
+		$n = $this->_mkey[$i] + $r;
+		$n = parent::uInt32(parent::rotBitsLeft32($n, $this->_rkey[$i]));
+		$n = parent::dec2Str($n, 4);
+		$f = parent::uInt32(
+				((self::$_s1[ord($n[0])] ^ self::$_s2[ord($n[1])]) -
+				self::$_s3[ord($n[2])]) + self::$_s4[ord($n[3])]
+			);
+		return $f;
+	}
+	protected function case128f2($r, $i){
+		$n = $this->_mkey[$i] ^ $r;
+		$n = parent::uInt32(parent::rotBitsLeft32($n, $this->_rkey[$i]));
+		$n = parent::dec2Str($n, 4);
+		$f = parent::uInt32(
+				((self::$_s1[ord($n[0])] - self::$_s2[ord($n[1])]) +
+				self::$_s3[ord($n[2])]) ^ self::$_s4[ord($n[3])]
+			);
+		return $f;
+	}
+	protected function case128f3($r, $i){
+		$n = $this->_mkey[$i] - $r;
+		$n = parent::uInt32(parent::rotBitsLeft32($n, $this->_rkey[$i]));
+		$n = parent::dec2Str($n, 4);
+		$f = parent::uInt32(
+				((self::$_s1[ord($n[0])] + self::$_s2[ord($n[1])]) ^
+				self::$_s3[ord($n[2])]) - self::$_s4[ord($n[3])]
+			);
+		return $f;
+	}
 
 	public static function blocklength($cipher, $bits = null){
 		$cipher = strtolower($cipher);
@@ -14405,6 +14436,8 @@ class XNCrypt {
 			case 'des':      return $bits === true ? 64 : 8;
 			case 'tripledes':return $bits === true ? 64 : 8;
 			case 'arc4':     return $bits === true ? 8 : 1;
+			case 'cast128':  return $bits === true ? 128 : 16;
+			case 'case256':  return $bits === true ? 256 : 32;
 		}
 		if(substr($cipher, 0, 8) == 'rijndael')
 			return $bits === true ? (int)substr($cipher, 8) : (int)substr($cipher, 8) >> 3;
@@ -14426,6 +14459,8 @@ class XNCrypt {
 			case 'tripledes':return $bits === true ? 64 : 24;
 			case 'arc4':     return $bits === true ? 8 : 1;
 			case 'rijndael': return $bits === true ? 32 : 4;
+			case 'case128':  return $bits === true ? 128 : 16;
+			case 'cast256':  return $bits === true ? 256 : 32;
 		}
 		$cipher = explode('-', $cipher, 2);
 		if(isset($cipher[1]) && is_numeric($cipher[1]))
@@ -14447,6 +14482,8 @@ class XNCrypt {
 				case 'rc4':
 				case 'des':
 				case 'tripledes':
+				case 'cast128':
+				case 'cast256':
 					return self::zeropad($key, $size);
 			}
 		elseif($options & self::KEYMIX)
@@ -14460,6 +14497,8 @@ class XNCrypt {
 				case 'rc4':
 				case 'des':
 				case 'tripledes':
+				case 'cast128':
+				case 'cast256':
 					return self::mixpad($key, $size);
 			}
 		$lk = strlen($key);
@@ -14481,6 +14520,15 @@ class XNCrypt {
 				if($lk < 28)return substr($key, 0, 24);
 				if($lk < 32)return substr($key, 0, 28);
 				return substr($key, 0, 32);
+			case 'cast128':
+				if($lk < 5)return $key . str_repeat("\0", 5 - $lk);
+				return substr($key, 0, 16);
+			break;
+			case 'cast256':
+				if($lk < 16)return $key . str_repeat("\0", 16 - $lk);
+				if($lk % 2 == 1)$key .= "\0";
+				return substr($key, 32);
+			break;
 			case 'enigma':
 				return $lk < 16 ? $key . str_repeat("\0", 16 - $lk) : $key;
 			case 'skipjack':
@@ -14693,10 +14741,10 @@ class XNCrypt {
 				for($i = 0; $i < 256; ++$i)
 					$t2[$t1[$i] & 0377] = $i;
 				return array(
-					array_map(function($x){return $x % 256;}, $t1),
-					array_map(function($x){return $x % 256;}, $t2),
-					array_map(function($x){return $x % 256;}, $t3),
-					array_map(function($x){return $x % 256;}, $deck)
+					array_map(function($x){return $x & 0xff;}, $t1),
+					array_map(function($x){return $x & 0xff;}, $t2),
+					array_map(function($x){return $x & 0xff;}, $t3),
+					array_map(function($x){return $x & 0xff;}, $deck)
 				);
 			case 'rc2':
 			if($key === null)$key = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
@@ -15703,63 +15751,231 @@ class XNCrypt {
 			'bin', 'base4', 'oct', 'hex', 'base32', 'base64', 'bcrypt64', 'url', 'json', 'serialization'
 		);
 	}
-	public static function randint($min, $max){
-		if($max < $min)swap($min, $max);
-		$abs = $max - $min;
-		$res = 0;
-		while($abs >= PHP_INT_MAX){
-			$res += rand(0, PHP_INT_MAX);
-			$abs /= PHP_INT_MAX;
+
+	const RAND = 0;
+	const RAND_MD5 = 1;
+	const DEV_RAND = 2;
+	const DEV_URAND = 3;
+	const RAND_WIN_COM = 4;
+	const MT19937 = 0;
+	const MTPHP = 1;
+
+	private static $mtstate = array();
+	private static $mtindex = 625;
+	public static function makeseed(){
+		$rand = explode(' ', microtime(), 2);
+		return (int)($rand[1] + $rand[0] * 1000000);
+	}
+	public static function mtseed($seed = null, $mode = 0){
+		if($seed === null)
+			$seed = self::makeseed();
+		if(__xnlib_data::$installedMtrand)
+			return mt_srand($seed, $mode);
+		if($mode === 1)
+			self::$mtstate = true;
+		elseif(PHP_INT_SIZE === 8){
+			$int0 = $seed & 0xffffffff;
+			$int1 = ($seed >> 32) & 0xffffffff;
+			$state = array($seed);
+			for($i = 1; $i < 312; ++$i) {
+				$int0 ^= $int1 >> 30;
+				$carry = (0x4c957f2d * $int0) + $i;
+				$int1 = ((0x4c957f2d * $int1) & 0xffffffff) +
+						((0x5851f42d * $int0) & 0xffffffff) +
+						($carry >> 32) & 0xffffffff;
+				$int0 = $carry & 0xffffffff;
+				$state[$i] = ($int1 << 32) | $int0;
+			}
+			self::$mtstate = $state;
+			self::$mtindex = $i;
+		}else{
+			$state = array($seed & 0xffffffff);
+			$int0 = $seed & 0xffff;
+			$int1 = ($seed >> 16) & 0xffff;
+			for($i = 1; $i < 624; ++$i) {
+				$int0 ^= $int1 >> 14;
+				$carry = (0x8965 * $int0) + $i;
+				$int1 = ((0x8965 * $int1) + (0x6C07 * $int0) + ($carry >> 16)) & 0xffff;
+				$int0 = $carry & 0xffff;
+				$state[$i] = ($int1 << 16) | $int0;
+			}
+			self::$mtstate = $state;
+			self::$mtindex = $i;
 		}
-		return $res + $min + rand(0, $abs);
 	}
-	public static function randbytes($length = 1){
-		if(__xnlib_data::$installedRandomDiv)
-			return random_bytes($length);
-		$res = '';
-		while(--$length >= 0)
-			$res .= chr(rand(0, 255));
-		return $res;
+	public static function mttwist($m, $u, $v){
+		if(PHP_INT_SIZE === 8){
+			$y = ($u & -2147483648) | ($v & 0x7fffffff);
+			return $m ^ (($y >> 1) & 0x7fffffffffffffff) ^ (-5403634167711393303 * ($v & 1));
+		}else{
+			$y = ($u & 0x80000000) | ($v & 0x7fffffff);
+			return $m ^ (($y >> 1) & 0x7fffffff) ^ (0x9908b0df * ($v & 1));
+		}
 	}
-	public static function randiv($cipher){
+	public static function mtint(){
+		if(__xnlib_data::$installedMtrand)
+			return mt_rand();
+		if(self::$mtstate === true)
+			return rand(PHP_INT_MIN, PHP_INT_MAX);
+		elseif(PHP_INT_SIZE === 8){
+			if(self::$index >= 312) {
+				if(self::$index === 313)
+					self::mtseed(5489);
+				$state = self::$mtstate;
+				for($i = 0; $i < 156; ++$i)
+					$state[$i] = self::mttwist($state[$i + 156], $state[$i], $state[$i + 1]);
+				for(; $i < 311; ++$i)
+					$state[$i] = self::mttwist($state[$i - 156], $state[$i], $state[$i + 1]);
+				$state[311] = self::mttwist($state[155], $state[311], $state[0]);
+				self::$mtstate = $state;
+				self::$mtindex = 0;
+			}
+			$y = self::$mtstate[self::$mtindex++];
+			$y ^= ($y >> 29) & 0x0000000555555555;
+			$y ^= ($y << 17) & 0x71d67fffeda60000;
+			$y ^= ($y << 37) &  -2270628950310912;
+			$y ^= ($y >> 43) & 0x00000000001fffff;
+			return $y;
+		}else{
+			if(self::$mtindex >= 624) {
+				if(self::$mtindex === 625)
+					self::mtseed(5489);
+				$state = self::$mtstate;
+				for($i = 0; $i < 227; ++$i)
+					$state[$i] = self::mttwist($state[$i + 397], $state[$i], $state[$i + 1]);
+				for(; $i < 623; ++$i)
+					$state[$i] = self::mttwist($state[$i - 227], $state[$i], $state[$i + 1]);
+				$state[623] = self::mttwist($state[396], $state[623], $state[0]);
+				self::$mtstate = $state;
+				self::$mtindex = 0;
+			}
+			$y = self::$mtstate[self::$mtindex++];
+			$y ^= ($y >> 11) & 0x001fffff;
+			$y ^= ($y <<  7) & 0x9d2c5680;
+			$y ^= ($y << 15) & 0xefc60000;
+			$y ^= ($y >> 18) & 0x00003fff;
+			return $y;
+		}
+	}
+	public static function mtintpb(){
+		if(PHP_INT_SIZE === 8)
+			return (self::mtint() >> 1) & 0x7fffffffffffffff;
+		return (self::mtint() >> 1) & 0x7fffffff;
+	}
+	public static function mtrand($min, $max){
+		if($max < $min)swap($max, $min);
+		if(__xnlib_data::$installedMtrand)
+			return mt_rand($MIn, $max);
+		if(PHP_INT_SIZE === 8)
+			return (int)($min + (($max - $min + 1) * (self::mtint() / 0x80000000)));
+		return (int)($min + (($max - $min + 1) * (self::mtint() / 0x8000000000000000)));
+	}
+
+	public static function randint($min, $max, $type = 0){
+		if($max < $min)swap($max, $min);
+		switch($type){
+			case 2:
+			case 3:
+			case 4:
+				if(function_exists('random_int'))
+					return random_int($min, $max);
+				self::mtseed();
+				return self::mtrand($min, $max);
+			default:
+				return rand($min, $max);
+		}
+	}
+	public static function randbytes($length = 1, $type = 0){
+		switch($type){
+			case 1:
+				$bin = '';
+				self::mtseed();
+				for($i = 0; $i < $length; $i += 16)
+					$bin .= md5(self::mtint(), true);
+				return substr($bin ,0, $length);
+			case 2:
+				if(is_readable('/dev/random')){
+					$file = fopen('/dev/random', 'rb');
+					stream_set_read_buffer($file, 0);
+					$bin = fread($file, $length);
+					fclose($file);
+					return $bin;
+				}
+				if(function_exists('random_bytes'))
+					return random_bytes($length);
+				$bin = '';
+				self::mtseed();
+				for($i = 0; $i < $length; ++$i)
+					$bin .= chr(self::mtrand(0, 255));
+				return $bin;
+			case 3:
+				if(function_exists('random_bytes'))
+					return random_bytes($length);
+				if(is_readable('/dev/urandom')){
+					$file = fopen('/dev/urandom', 'rb');
+					stream_set_read_buffer($file, 0);
+					$bin = fread($file, $length);
+					fclose($file);
+					return $bin;
+				}
+				$bin = '';
+				self::mtseed();
+				for($i = 0; $i < $length; ++$i)
+					$bin .= chr(self::mtrand(0, 255));
+				return $bin;
+			case 4:
+				if(extension_loaded('com_dotnet')){
+					try{
+						$com = @new \COM("CAPICOM.Utilities.1");
+						return $com->GetRandom($length, 0);
+					}catch(Exception $e){}
+				}
+			default:
+				$bin = '';
+				for($i = 0; $i < $length; ++$i)
+					$bin .= chr(rand(0, 255));
+				return $bin;
+		}
+	}
+	public static function randiv($cipher, $type = 0){
 		if(substr($cipher, -3) == 'des' && is_numeric(substr($cipher, 0, -3)))$cipher = 'des';
 		$size = self::blocklength($cipher);
 		if($size === null){
 			new XNError('XNCrypt::decrypt', 'Undefined cipher name', XNError::WARNING);
 			return false;
 		}
-		return self::randbytes($size);
+		return self::randbytes($size, $type);
 	}
-	public static function randbin($length = 1){
-		$res = '';
-		while(--$length >= 0)
-			$res .= rand(0, 1);
-		return $res;
+	public static function randhex($length = 1, $type = 0){
+		return substr(self::hexencode(self::randbytes(ceil($length / 2), $type)), 0, $length);
 	}
-	public static function randbase4($length = 1){
-		$res = '';
-		while(--$length >= 0)
-			$res .= rand(0, 3);
-		return $res;
+	public static function randbin($length = 1, $type = 0){
+		return substr(self::binencode(self::randbytes(ceil($length / 8), $type)), 0, $length);
 	}
-	public static function randhex($length = 1){
-		$res = '';
-		$hex = array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f');
-		while(--$length >= 0)
-			$res .= $hex[rand(0, 15)];
-		return $res;
+	public static function randoct($length = 1, $type = 0){
+		return substr(self::octencode(self::randbytes(ceil($length / 8 * 3), $type)), 0, $length);
 	}
-	public static function randoct($length = 1){
-		$res = '';
-		while(--$length >= 0)
-			$res .= rand(0, 7);
-		return $res;
-	}
-	public static function randdec($length = 1){
-		$res = '';
-		while(--$length >= 0)
-			$res .= rand(0, 9);
-		return $res;
+	public static function randdec($length = 1, $type = 0){
+		if($max < $min)swap($max, $min);
+		$dec = '';
+		switch($type){
+			case 2:
+			case 3:
+			case 4:
+				if(function_exists('random_int')){
+					for($i = 0; $i < $length; ++$i)
+						$dec .= random_int(0, 9);
+					return $dec;
+				}
+				self::mtseed();
+				for($i = 0; $i < $length; ++$i)
+					$dec .= self::mtrand(0, 9);
+				return $dec;
+			default:
+				for($i = 0; $i < $length; ++$i)
+					$dec .= rand(0, 9);
+				return $dec;
+		}
 	}
 }
 
